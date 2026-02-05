@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.roces &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="ontolearn.learners.sat_base" href="../sat_base/index.html" />
+    <link rel="prev" title="ontolearn.learners.ocel" href="../ocel/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">ontolearn.learners</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../alcsat/index.html">ontolearn.learners.alcsat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../base/index.html">ontolearn.learners.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../celoe/index.html">ontolearn.learners.celoe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clip/index.html">ontolearn.learners.clip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../drill/index.html">ontolearn.learners.drill</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../evolearner/index.html">ontolearn.learners.evolearner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces/index.html">ontolearn.learners.nces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces2/index.html">ontolearn.learners.nces2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nero/index.html">ontolearn.learners.nero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../ocel/index.html">ontolearn.learners.ocel</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">ontolearn.learners.roces</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../sat_base/index.html">ontolearn.learners.sat_base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sparql_query_learner/index.html">ontolearn.learners.sparql_query_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell/index.html">ontolearn.learners.spell</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell_kit/index.html">ontolearn.learners.spell_kit</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.learners</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.roces</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/ontolearn/learners/roces/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.learners.roces">
+<span id="ontolearn-learners-roces"></span><h1>ontolearn.learners.roces<a class="headerlink" href="#module-ontolearn.learners.roces" title="Link to this heading"></a></h1>
+<p>ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.roces.ROCES" title="ontolearn.learners.roces.ROCES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ROCES</span></code></a></p></td>
+<td><p>Robust Class Expression Synthesis in Description Logics via Iterative Sampling.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.roces.ROCES">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.roces.</span></span><span class="sig-name descname"><span class="pre">ROCES</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nces2_or_roces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_predictions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_of_trained_models</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_train</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rnn_n_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[32,</span> <span class="pre">64,</span> <span class="pre">128]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_map_dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_of_output_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_pretrained</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforce_validity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/roces.html#ROCES"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.roces.ROCES" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../nces2/index.html#ontolearn.learners.nces2.NCES2" title="ontolearn.learners.nces2.NCES2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.learners.nces2.NCES2</span></code></a></p>
+<p>Robust Class Expression Synthesis in Description Logics via Iterative Sampling.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.roces.ROCES.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ROCES'</span></span><a class="headerlink" href="#ontolearn.learners.roces.ROCES.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.roces.ROCES.k">
+<span class="sig-name descname"><span class="pre">k</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#ontolearn.learners.roces.ROCES.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.roces.ROCES.enforce_validity">
+<span class="sig-name descname"><span class="pre">enforce_validity</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.roces.ROCES.enforce_validity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ocel/index.html" class="btn btn-neutral float-left" title="ontolearn.learners.ocel" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../sat_base/index.html" class="btn btn-neutral float-right" title="ontolearn.learners.sat_base" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

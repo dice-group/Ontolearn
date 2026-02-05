@@ -1,0 +1,565 @@
+ontolearn.learners.drill
+========================
+
+.. py:module:: ontolearn.learners.drill
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.drill.Drill
+   ontolearn.learners.drill.DrillHeuristic
+   ontolearn.learners.drill.DrillNet
+   ontolearn.learners.drill.DepthAbstractDrill
+
+
+Module Contents
+---------------
+
+.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10)
+
+   Bases: :py:obj:`ontolearn.learners.base.RefinementBasedConceptLearner`
+
+
+   Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)
+
+
+   .. py:attribute:: name
+      :value: 'DRILL'
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: learning_problem
+      :value: None
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: num_workers
+      :value: 1
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.001
+
+
+
+   .. py:attribute:: num_episode
+      :value: 10
+
+
+
+   .. py:attribute:: num_of_sequential_actions
+      :value: 3
+
+
+
+   .. py:attribute:: num_epochs_per_replay
+      :value: 2
+
+
+
+   .. py:attribute:: max_len_replay_memory
+      :value: 256
+
+
+
+   .. py:attribute:: epsilon_decay
+      :value: 0.01
+
+
+
+   .. py:attribute:: epsilon_min
+      :value: 0.0
+
+
+
+   .. py:attribute:: batch_size
+      :value: None
+
+
+
+   .. py:attribute:: num_episodes_per_replay
+      :value: 2
+
+
+
+   .. py:attribute:: seen_examples
+
+
+   .. py:attribute:: pos
+      :type:  FrozenSet[owlapy.owl_individual.OWLNamedIndividual]
+      :value: None
+
+
+
+   .. py:attribute:: neg
+      :type:  FrozenSet[owlapy.owl_individual.OWLNamedIndividual]
+      :value: None
+
+
+
+   .. py:attribute:: positive_type_bias
+      :value: 1
+
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
+   .. py:attribute:: goal_found
+      :value: False
+
+
+
+   .. py:attribute:: search_tree
+
+
+   .. py:attribute:: stop_at_goal
+      :value: True
+
+
+
+   .. py:attribute:: epsilon
+      :value: 1
+
+
+
+   .. py:method:: initialize_training_class_expression_learning_problem(pos: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg: FrozenSet[owlapy.owl_individual.OWLNamedIndividual]) -> ontolearn.search.RL_State
+
+      Initialize
+
+
+
+   .. py:method:: rl_learning_loop(pos_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual]) -> List[float]
+
+      Reinforcement Learning Training Loop
+
+              Initialize RL environment for a given learning problem (E^+ pos_iri and E^- neg_iri )
+
+              Training:
+                          2.1 Obtain a trajectory: A sequence of RL states/DL concepts
+                          T, Person, (Female and
+      orall hasSibling Female).
+                          Rewards at each transition are also computed
+
+
+
+
+   .. py:method:: train(dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None, num_of_target_concepts: int = 1, num_learning_problems: int = 1)
+
+      Training RL agent
+      (1) Generate Learning Problems
+      (2) For each learning problem, perform the RL loop
+
+
+
+
+   .. py:method:: save(directory: str = None) -> None
+
+      save weights of the deep Q-network
+
+
+
+   .. py:method:: load(directory: str = None) -> None
+
+      load weights of the deep Q-network
+
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, max_runtime=None)
+
+      Run the concept learning algorithm according to its configuration.
+
+      Once finished, the results can be queried with the `best_hypotheses` function.
+
+
+
+   .. py:method:: init_embeddings_of_examples(pos_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual])
+
+
+   .. py:method:: create_rl_state(c: owlapy.class_expression.OWLClassExpression, parent_node: Optional[ontolearn.search.RL_State] = None, is_root: bool = False) -> ontolearn.search.RL_State
+
+      Create an RL_State instance.
+
+
+
+   .. py:method:: compute_quality_of_class_expression(state: ontolearn.search.RL_State) -> None
+
+      Compute Quality of owl class expression.
+      # (1) Perform concept retrieval
+      # (2) Compute the quality w.r.t. (1), positive and negative examples
+      # (3) Increment the number of tested concepts attribute.
+
+
+
+
+   .. py:method:: apply_refinement(rl_state: ontolearn.search.RL_State) -> Generator
+
+      Downward refinements
+
+
+
+   .. py:method:: select_next_state(current_state, next_rl_states) -> Tuple[ontolearn.search.RL_State, float]
+
+
+   .. py:method:: sequence_of_actions(root_rl_state: ontolearn.search.RL_State) -> Tuple[List[Tuple[ontolearn.search.RL_State, ontolearn.search.RL_State]], List[SupportsFloat]]
+
+      Performing sequence of actions in an RL env whose root state is ⊤
+
+
+
+   .. py:method:: form_experiences(state_pairs: List, rewards: List) -> None
+
+      Form experiences from a sequence of concepts and corresponding rewards.
+
+      state_pairs - A list of tuples containing two consecutive states.
+      reward      - A list of reward.
+
+      Gamma is 1.
+
+      Return
+      X - A list of embeddings of current concept, next concept, positive examples, negative examples.
+      y - Argmax Q value.
+
+
+
+   .. py:method:: learn_from_replay_memory() -> None
+
+      Learning by replaying memory.
+
+
+
+   .. py:method:: update_search(concepts, predicted_Q_values=None)
+
+      @param concepts:
+      @param predicted_Q_values:
+      @return:
+
+
+
+   .. py:method:: get_embeddings_individuals(individuals: List[str]) -> torch.FloatTensor
+
+
+   .. py:method:: get_individuals(rl_state: ontolearn.search.RL_State) -> List[str]
+
+
+   .. py:method:: assign_embeddings(rl_state: ontolearn.search.RL_State) -> None
+
+      Assign embeddings to a rl state. A rl state is represented with vector representation of
+      all individuals belonging to a respective OWLClassExpression.
+
+
+
+   .. py:method:: save_weights(path: str = None) -> None
+
+      Save weights DQL
+
+
+
+   .. py:method:: exploration_exploitation_tradeoff(current_state: ontolearn.abstracts.AbstractNode, next_states: List[ontolearn.abstracts.AbstractNode]) -> ontolearn.abstracts.AbstractNode
+
+      Exploration vs Exploitation tradeoff at finding next state.
+      (1) Exploration.
+      (2) Exploitation.
+
+
+
+   .. py:method:: exploitation(current_state: ontolearn.abstracts.AbstractNode, next_states: List[ontolearn.abstracts.AbstractNode]) -> ontolearn.search.RL_State
+
+      Find next node that is assigned with highest predicted Q value.
+
+      (1) Predict Q values : predictions.shape => torch.Size([n, 1]) where n = len(next_states).
+
+      (2) Find the index of max value in predictions.
+
+      (3) Use the index to obtain next state.
+
+      (4) Return next state.
+
+
+
+   .. py:method:: predict_values(current_state: ontolearn.search.RL_State, next_states: List[ontolearn.search.RL_State]) -> torch.Tensor
+
+      Predict promise of next states given current state.
+
+      :returns: Predicted Q values.
+
+
+
+   .. py:method:: retrieve_concept_chain(rl_state: ontolearn.search.RL_State) -> List[ontolearn.search.RL_State]
+      :staticmethod:
+
+
+
+   .. py:method:: generate_learning_problems(num_of_target_concepts, num_learning_problems) -> List[Tuple[str, Set, Set]]
+
+      Generate learning problems if none is provided.
+
+      Time complexity: O(n^2) n = named concepts
+
+
+
+   .. py:method:: learn_from_illustration(sequence_of_goal_path: List[ontolearn.search.RL_State])
+
+      :param sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter.
+
+
+
+   .. py:method:: best_hypotheses(n=1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, List[owlapy.class_expression.OWLClassExpression]]
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: clean()
+
+      Clear all states of the concept learner.
+
+
+
+   .. py:method:: next_node_to_expand() -> ontolearn.search.RL_State
+
+      Return a node that maximizes the heuristic function at time t.
+
+
+
+   .. py:method:: downward_refinement(*args, **kwargs)
+
+      Execute one refinement step of a refinement based learning algorithm.
+
+      :param node: the search tree node on which to refine.
+      :type node: _N
+
+      :returns: Refinement results as new search tree nodes (they still need to be added to the tree).
+      :rtype: Iterable[_N]
+
+
+
+   .. py:method:: show_search_tree(heading_step: str, top_n: int = 10) -> None
+
+      A debugging function to print out the current search tree and the current n best found hypotheses to
+      standard output.
+
+      :param heading_step: A message to display at the beginning of the output.
+      :param top_n: The number of current best hypotheses to print out.
+
+
+
+   .. py:method:: terminate_training()
+
+
+.. py:class:: DrillHeuristic(pos=None, neg=None, model=None, mode=None, model_args=None, device=None)
+
+   Heuristic in Convolutional DQL concept learning.
+   Heuristic implements a convolutional neural network.
+
+
+   .. py:attribute:: device
+      :value: None
+
+
+
+   .. py:method:: score(node, parent_node=None)
+
+      Compute heuristic value of root node only
+
+
+
+   .. py:method:: apply(node, parent_node=None)
+
+      Assign predicted Q-value to node object.
+
+
+
+.. py:class:: DrillNet(args, device)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   A neural model for Deep Q-Learning.
+
+   An input Drill has the following form:
+           1. Indexes of individuals belonging to current state (s).
+           2. Indexes of individuals belonging to next state (s_prime).
+           3. Indexes of individuals provided as positive examples.
+           4. Indexes of individuals provided as negative examples.
+
+   Given such input, we from a sparse 3D Tensor where  each slice is a **** N *** by ***D***
+   where N is the number of individuals and D is the number of dimension of embeddings.
+   Given that N on the current benchmark datasets < 10^3, we can get away with this computation. By doing so
+   we do not need to subsample from given inputs.
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: conv1
+
+
+   .. py:attribute:: size_of_fc1
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:method:: init()
+
+
+   .. py:method:: forward(X: torch.FloatTensor)
+
+      X  n by 4 by d float tensor
+
+
+
+.. py:class:: DepthAbstractDrill(path_of_embeddings, reward_func, learning_rate=None, num_episode=None, num_episodes_per_replay=None, epsilon=None, num_of_sequential_actions=None, max_len_replay_memory=None, representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None, num_workers=None, verbose=0)
+
+   Abstract class for Convolutional DQL concept learning.
+
+
+   .. py:attribute:: name
+      :value: 'DRILL'
+
+
+
+   .. py:attribute:: instance_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: reward_func
+
+
+   .. py:attribute:: representation_mode
+      :value: None
+
+
+
+   .. py:attribute:: heuristic_func
+      :value: None
+
+
+
+   .. py:attribute:: num_workers
+      :value: None
+
+
+
+   .. py:attribute:: epsilon
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: num_episode
+      :value: None
+
+
+
+   .. py:attribute:: num_of_sequential_actions
+      :value: None
+
+
+
+   .. py:attribute:: num_epochs_per_replay
+      :value: None
+
+
+
+   .. py:attribute:: max_len_replay_memory
+      :value: None
+
+
+
+   .. py:attribute:: epsilon_decay
+      :value: None
+
+
+
+   .. py:attribute:: epsilon_min
+      :value: None
+
+
+
+   .. py:attribute:: batch_size
+      :value: None
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: num_episodes_per_replay
+      :value: None
+
+
+
+   .. py:attribute:: optimizer
+      :value: None
+
+
+
+   .. py:attribute:: seen_examples
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
+   .. py:attribute:: goal_found
+      :value: False
+
+
+
+   .. py:attribute:: experiences
+
+
+   .. py:method:: attributes_sanity_checking_rl()
+
+
+   .. py:method:: init_training(*args, **kwargs)
+      :abstractmethod:
+
+
+      Initialize training for a given E+,E- and K.
+
+
+
+   .. py:method:: terminate_training()
+      :abstractmethod:
+
+
+      Save weights and training data after training phase.
+
+
+

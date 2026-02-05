@@ -1,0 +1,210 @@
+ontolearn.ea_initialization
+===========================
+
+.. py:module:: ontolearn.ea_initialization
+
+.. autoapi-nested-parse::
+
+   Initialization for evolutionary algorithms.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.ea_initialization.Property
+   ontolearn.ea_initialization.Object
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.ea_initialization.RandomInitMethod
+   ontolearn.ea_initialization.AbstractEAInitialization
+   ontolearn.ea_initialization.EARandomInitialization
+   ontolearn.ea_initialization.PropObjPair
+   ontolearn.ea_initialization.EARandomWalkInitialization
+
+
+Module Contents
+---------------
+
+.. py:class:: RandomInitMethod(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   Create a collection of name/value pairs.
+
+   Example enumeration:
+
+   >>> class Color(Enum):
+   ...     RED = 1
+   ...     BLUE = 2
+   ...     GREEN = 3
+
+   Access them by:
+
+   - attribute access::
+
+   >>> Color.RED
+   <Color.RED: 1>
+
+   - value lookup:
+
+   >>> Color(1)
+   <Color.RED: 1>
+
+   - name lookup:
+
+   >>> Color['RED']
+   <Color.RED: 1>
+
+   Enumerations can be iterated over, and know how many members they have:
+
+   >>> len(Color)
+   3
+
+   >>> list(Color)
+   [<Color.RED: 1>, <Color.BLUE: 2>, <Color.GREEN: 3>]
+
+   Methods can be added to enumerations, and members can have their own
+   attributes -- see the documentation for details.
+
+
+   .. py:attribute:: GROW
+      :type:  Final
+
+
+   .. py:attribute:: FULL
+      :type:  Final
+
+
+   .. py:attribute:: RAMPED_HALF_HALF
+      :type:  Final
+
+
+.. py:class:: AbstractEAInitialization
+
+   Abstract base class for initialization methods for evolutionary algorithms.
+
+
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: get_population(container: Callable, pset: deap.gp.PrimitiveSetTyped, population_size: int = 0) -> List[ontolearn.ea_utils.Tree]
+      :abstractmethod:
+
+
+
+   .. py:method:: get_expression(pset: deap.gp.PrimitiveSetTyped) -> ontolearn.ea_utils.Tree
+      :abstractmethod:
+
+
+
+.. py:class:: EARandomInitialization(min_height: int = 3, max_height: int = 6, method: RandomInitMethod = RandomInitMethod.RAMPED_HALF_HALF)
+
+   Bases: :py:obj:`AbstractEAInitialization`
+
+
+   Rnndom initialization methods for evolutionary algorithms.
+
+
+
+
+   .. py:attribute:: __slots__
+      :value: ('min_height', 'max_height', 'method')
+
+
+
+   .. py:attribute:: min_height
+      :type:  int
+
+
+   .. py:attribute:: max_height
+      :type:  int
+
+
+   .. py:attribute:: method
+      :type:  RandomInitMethod
+
+
+   .. py:method:: get_population(container: Callable, pset: deap.gp.PrimitiveSetTyped, population_size: int = 0) -> List[ontolearn.ea_utils.Tree]
+
+
+   .. py:method:: get_expression(pset: deap.gp.PrimitiveSetTyped, type_: type = None) -> ontolearn.ea_utils.Tree
+
+
+.. py:data:: Property
+
+.. py:data:: Object
+
+.. py:class:: PropObjPair
+
+   .. py:attribute:: property_
+      :type:  Property
+
+
+   .. py:attribute:: object_
+      :type:  Object
+
+
+.. py:class:: EARandomWalkInitialization(max_t: int = 2, jump_pr: float = 0.5)
+
+   Bases: :py:obj:`AbstractEAInitialization`
+
+
+   Random walk initialization for description logic learning.
+
+
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_t', 'jump_pr', 'type_counts', 'dp_to_prim_type', 'dp_splits', 'kb')
+
+
+
+   .. py:attribute:: connection_pr
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: max_t
+      :type:  int
+
+
+   .. py:attribute:: jump_pr
+      :type:  float
+
+
+   .. py:attribute:: type_counts
+      :type:  Dict[owlapy.class_expression.OWLClass, int]
+
+
+   .. py:attribute:: dp_to_prim_type
+      :type:  Dict[owlapy.owl_property.OWLDataProperty, Any]
+
+
+   .. py:attribute:: dp_splits
+      :type:  Dict[owlapy.owl_property.OWLDataProperty, List[owlapy.owl_literal.OWLLiteral]]
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:method:: get_population(container: Callable, pset: deap.gp.PrimitiveSetTyped, population_size: int = 0, pos: List[owlapy.owl_individual.OWLNamedIndividual] = None, dp_to_prim_type: Dict[owlapy.owl_property.OWLDataProperty, Any] = None, dp_splits: Dict[owlapy.owl_property.OWLDataProperty, List[owlapy.owl_literal.OWLLiteral]] = None, kb: ontolearn.abstracts.AbstractKnowledgeBase = None) -> List[ontolearn.ea_utils.Tree]
+
+
+   .. py:method:: get_expression(pset: deap.gp.PrimitiveSetTyped, ind: owlapy.owl_individual.OWLNamedIndividual = None) -> ontolearn.ea_utils.Tree
+
+

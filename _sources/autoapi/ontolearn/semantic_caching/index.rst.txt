@@ -1,0 +1,133 @@
+ontolearn.semantic_caching
+==========================
+
+.. py:module:: ontolearn.semantic_caching
+
+.. autoapi-nested-parse::
+
+   python examples/retrieval_eval.py
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.semantic_caching.CacheWithEviction
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.semantic_caching.concept_generator
+   ontolearn.semantic_caching.get_saved_concepts
+   ontolearn.semantic_caching.concept_retrieval
+   ontolearn.semantic_caching.semantic_caching_size
+   ontolearn.semantic_caching.non_semantic_caching_size
+   ontolearn.semantic_caching.retrieve
+   ontolearn.semantic_caching.retrieve_other_reasoner
+   ontolearn.semantic_caching.run_semantic_cache
+   ontolearn.semantic_caching.run_non_semantic_cache
+
+
+Module Contents
+---------------
+
+.. py:function:: concept_generator(path_kg)
+
+.. py:function:: get_saved_concepts(path_kg, data_name, shuffle)
+
+   Shuffle or not the generated concept and save it in a folder for reproducibility.
+
+
+.. py:function:: concept_retrieval(retriever_func, c) -> Set[str]
+
+.. py:class:: CacheWithEviction(cache_size, strategy='LIFO', random_seed=10)
+
+   .. py:attribute:: cache
+
+
+   .. py:attribute:: access_times
+
+
+   .. py:attribute:: cache_size
+
+
+   .. py:attribute:: strategy
+      :value: 'LIFO'
+
+
+
+   .. py:attribute:: random_seed
+      :value: 10
+
+
+
+   .. py:attribute:: initialized
+      :value: False
+
+
+
+   .. py:method:: get(key)
+
+      Retrieve an item from the cache. Updates access time for LRU/MRU.
+
+
+
+   .. py:method:: put(key, value)
+
+      Add an item to the cache. Evicts an entry if the cache is full.
+
+
+
+   .. py:method:: initialize_cache(func, path_onto, third, All_individuals, handle_restriction_func, concepts)
+
+      Initialize the cache with precomputed results for OWLClass and Existential concepts.
+      :param ontology: The loaded ontology.
+      :param func: Function to retrieve individuals for a given expression.
+      :param concepts: List of OWL concepts to precompute and store instances for.
+
+
+
+   .. py:method:: get_all_items()
+
+
+   .. py:method:: is_full()
+
+      Check if the cache is full.
+
+
+
+.. py:function:: semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cache_type, concepts)
+
+   This function implements the semantic caching algorithm for ALC concepts as presented in the paper
+
+
+.. py:function:: non_semantic_caching_size(func, cache_size)
+
+   This function implements a caching algorithm for ALC concepts without semantics.
+
+
+.. py:function:: retrieve(expression: str, path_kg: str, path_kge_model: str) -> Tuple[Set[str], Set[str]]
+
+   Retrieve instances with neural reasoner
+
+
+.. py:function:: retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT')
+
+   Retrieve instances with symbolic reasoners
+
+
+.. py:function:: run_semantic_cache(path_kg: str, path_kge: str, cache_size: int, name_reasoner: str, eviction: str, random_seed: int, cache_type: str, shuffle_concepts: bool)
+
+   Return cache performnace with semantics
+
+
+.. py:function:: run_non_semantic_cache(path_kg: str, path_kge: str, cache_size: int, name_reasoner: str, shuffle_concepts: bool)
+
+   Return cache performnace without any semantics
+
+

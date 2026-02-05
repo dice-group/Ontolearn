@@ -1,0 +1,153 @@
+ontolearn.learners.alcsat
+=========================
+
+.. py:module:: ontolearn.learners.alcsat
+
+.. autoapi-nested-parse::
+
+   ALCSAT Learner - SAT-based ALC concept learning.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.alcsat.ALCSAT
+
+
+Module Contents
+---------------
+
+.. py:class:: ALCSAT(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, max_runtime: Optional[int] = 60, max_concept_size: int = 10, start_concept_size: int = 1, operators: Optional[Set] = None, tree_templates: bool = True, type_encoding: bool = True)
+
+   Bases: :py:obj:`ontolearn.learners.sat_base.SATBaseLearner`
+
+
+   ALCSAT: SAT-based ALC concept learner.
+
+   This learner uses SAT solvers to find ALC concept expressions that fit positive and negative examples.
+   It encodes the concept learning problem as a SAT problem and uses a Glucose SAT solver to find solutions.
+
+   The algorithm incrementally searches for concepts of increasing size (tree depth k) that maximize
+   the accuracy on the given examples.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_concept_size
+
+      Maximum size (depth) of concepts to search for.
+
+      :type: int
+
+   .. attribute:: start_concept_size
+
+      Starting size for incremental search.
+
+      :type: int
+
+   .. attribute:: operators
+
+      Set of ALC operators to use (NEG, AND, OR, EX, ALL).
+
+      :type: Set
+
+   .. attribute:: tree_templates
+
+      Whether to use tree templates for symmetry breaking.
+
+      :type: bool
+
+   .. attribute:: type_encoding
+
+      Whether to use type encoding optimization.
+
+      :type: bool
+
+   .. attribute:: timeout
+
+      Timeout in seconds for the SAT solver (-1 for no timeout).
+
+      :type: float
+
+   .. attribute:: _best_hypothesis
+
+      Best found hypothesis.
+
+      :type: OWLClassExpression
+
+   .. attribute:: _best_hypothesis_accuracy
+
+      Accuracy of the best hypothesis.
+
+      :type: float
+
+   .. attribute:: _structure
+
+      Internal structure representation of the knowledge base.
+
+      :type: Structure
+
+   .. attribute:: _ind_to_owl
+
+      Mapping from internal individual indices to OWL individuals.
+
+      :type: dict
+
+   .. attribute:: _owl_to_ind
+
+      Mapping from OWL individuals to internal indices.
+
+      :type: dict
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_concept_size', 'start_concept_size', 'operators', 'tree_templates', 'type_encoding')
+
+
+
+   .. py:attribute:: name
+      :value: 'alcsat'
+
+
+
+   .. py:attribute:: max_concept_size
+      :value: 10
+
+
+
+   .. py:attribute:: start_concept_size
+      :value: 1
+
+
+
+   .. py:attribute:: operators
+      :value: None
+
+
+
+   .. py:attribute:: tree_templates
+      :value: True
+
+
+
+   .. py:attribute:: type_encoding
+      :value: True
+
+
+
+   .. py:method:: fit(lp: ontolearn.learning_problem.PosNegLPStandard)
+
+      Find ALC concept expressions that explain positive and negative examples.
+
+      :param lp: Learning problem with positive and negative examples.
+
+      :returns: self
+
+
+

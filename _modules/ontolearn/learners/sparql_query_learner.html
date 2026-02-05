@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.sparql_query_learner &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.sparql_query_learner</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.sparql_query_learner</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">SPARQL Query Learner Module.</span>
+
+<span class="sd">This module provides functionality to learn and improve SPARQL queries based on</span>
+<span class="sd">OWL class expressions and learning problems with positive/negative examples.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.converter</span><span class="w"> </span><span class="kn">import</span> <span class="n">converter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sortedcontainers</span><span class="w"> </span><span class="kn">import</span> <span class="n">SortedSet</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">F1</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">more_itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">powerset</span>
+
+
+<div class="viewcode-block" id="SPARQLQueryLearner">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sparql_query_learner/index.html#ontolearn.learners.SPARQLQueryLearner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SPARQLQueryLearner</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning SPARQL queries: Given a description logic concept (potentially generated by a concept learner),</span>
+<span class="sd">    try to improve the fittness (e.g., F1) of the corresponding SPARQL query.</span>
+
+<span class="sd">        Attributes:</span>
+<span class="sd">            name (str): Name of the model = &#39;SPARQL Query Learner&#39;</span>
+<span class="sd">            endpoint_url (string): The URL of the SPARQL endpoint to use</span>
+<span class="sd">            max_number_of_filters (int): Limit the number of filters combined during the improvement process</span>
+<span class="sd">            learning_problem (PosNegLPStandard): the learning problem (sets of positive and negative examples)</span>
+<span class="sd">            uses_complex_filters (bool): Denotes whether the learner uses complex filters</span>
+<span class="sd">                                        (i.e., makes use of the values of data properties) to improve the quality</span>
+<span class="sd">            _root_var (str): The root variable to be used in the OWL2SPARQL conversion</span>
+<span class="sd">            _possible_filters (List[str]): A list of possible FILTERs to use to improve the quality</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;endpoint_url&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;max_number_of_filters&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;uses_complex_filters&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;learning_problem&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;_possible_filters&#39;</span><span class="p">,</span>
+                 <span class="p">)</span>
+
+    <span class="c1"># public</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;SPARQL Query Learner&#39;</span>
+    <span class="n">endpoint_url</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">max_number_of_filters</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span>
+    <span class="n">uses_complex_filters</span><span class="p">:</span> <span class="nb">bool</span>
+
+    <span class="c1"># private</span>
+    <span class="n">_root_var</span> <span class="o">=</span> <span class="s2">&quot;?x&quot;</span>
+    <span class="n">_possible_filters</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">,</span>
+            <span class="n">endpoint_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">max_number_of_filters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="n">use_complex_filters</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+
+        <span class="c1"># init slots</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span> <span class="o">=</span> <span class="n">learning_problem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">endpoint_url</span> <span class="o">=</span> <span class="n">endpoint_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_number_of_filters</span> <span class="o">=</span> <span class="n">max_number_of_filters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uses_complex_filters</span> <span class="o">=</span> <span class="n">use_complex_filters</span>
+
+        <span class="n">str_properties</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">property_positive_values_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">property_negative_values_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># find all data properties having string literals as objects</span>
+        <span class="n">properties_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="s2">&quot;SELECT DISTINCT ?p WHERE { &quot;</span>
+                                                 <span class="s2">&quot;   ?s ?p ?o&quot;</span>
+                                                 <span class="s2">&quot;   FILTER(DATATYPE(?o) = &lt;http://www.w3.org/2001/XMLSchema#string&gt;)&quot;</span>
+                                                 <span class="s2">&quot;}&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">properties_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">]:</span>
+            <span class="n">str_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;p&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+
+        <span class="c1"># find the set of str properties that are used by ALL positive examples</span>
+        <span class="n">str_properties_used_by_all_positive_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">str_properties</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">str_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">positive_example</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">:</span>
+                <span class="n">query_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="s2">&quot;SELECT ?o WHERE {{ &quot;</span>
+                                                    <span class="s2">&quot;   &lt;</span><span class="si">{}</span><span class="s2">&gt; &lt;</span><span class="si">{}</span><span class="s2">&gt; ?o&quot;</span>
+                                                    <span class="s2">&quot;}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">positive_example</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># the positive example uses the property</span>
+                    <span class="k">continue</span>
+                <span class="c1"># the positive example does not use the property -&gt; remove it</span>
+                <span class="n">str_properties_used_by_all_positive_examples</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">property_str</span><span class="p">)</span>
+
+        <span class="c1"># find the set of str properties that are used by ANY negative examples</span>
+        <span class="n">str_properties_used_by_any_negative_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">str_properties</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">negative_example</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">:</span>
+                <span class="n">query_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="s2">&quot;SELECT ?o WHERE {{ &quot;</span>
+                                                    <span class="s2">&quot;   &lt;</span><span class="si">{}</span><span class="s2">&gt; &lt;</span><span class="si">{}</span><span class="s2">&gt; ?o&quot;</span>
+                                                    <span class="s2">&quot;}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">negative_example</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># the negative example uses the property</span>
+                    <span class="n">str_properties_used_by_any_negative_examples</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">property_str</span><span class="p">)</span>
+
+        <span class="c1"># create possible filters using the sets str_properties_used_by_all_positive_examples and str_properties_used_by_all_negative_examples</span>
+        <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">str_properties_used_by_all_positive_examples</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FILTER EXISTS {{ </span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; [] }}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">str_properties_used_by_any_negative_examples</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FILTER NOT EXISTS {{ </span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; [] }}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+
+        <span class="c1"># if enabled, the learner tries to leverage also the values of the data properties</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_complex_filters</span><span class="p">:</span>
+            <span class="c1"># for each property in str_properties, find its possible values</span>
+            <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">str_properties</span><span class="p">:</span>
+
+                <span class="c1"># stores the STR values found by combining property_str with positive examples</span>
+                <span class="n">property_positive_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]</span> <span class="o">=</span> <span class="n">SortedSet</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">positive_example</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">:</span>
+                    <span class="n">query_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="s2">&quot;SELECT DISTINCT ?o WHERE {{ &quot;</span>
+                                                         <span class="s2">&quot;   &lt;</span><span class="si">{}</span><span class="s2">&gt; &lt;</span><span class="si">{}</span><span class="s2">&gt; ?o&quot;</span>
+                                                         <span class="s2">&quot;}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">positive_example</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">query_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">]:</span>
+                        <span class="n">property_positive_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;o&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+
+                <span class="c1"># stores the STR values found by combining property_str with negative examples</span>
+                <span class="n">property_negative_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]</span> <span class="o">=</span> <span class="n">SortedSet</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">negative_example</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">:</span>
+                    <span class="n">query_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="s2">&quot;SELECT DISTINCT ?o WHERE {{ &quot;</span>
+                                                         <span class="s2">&quot;   &lt;</span><span class="si">{}</span><span class="s2">&gt; &lt;</span><span class="si">{}</span><span class="s2">&gt; ?o&quot;</span>
+                                                         <span class="s2">&quot;}}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">negative_example</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">query_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">]:</span>
+                        <span class="n">property_negative_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;o&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+
+
+            <span class="c1"># prepare possible filters by utilizing the values of the data properties pointing to str literals</span>
+            <span class="n">var_id</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># iterate over the (property, positive values) pairs</span>
+            <span class="k">for</span> <span class="n">property_str</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">property_positive_values_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">var_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># there are no positive examples using property_str</span>
+                    <span class="c1"># create a FILTER that looks for individuals that do not use property_str</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FILTER NOT EXISTS {{ </span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; [] }}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># there are positive examples that use property_str</span>
+                    <span class="c1"># create a FILTER that looks for individuals using the values encountered with positive examples</span>
+                    <span class="n">in_list</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">property_positive_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; ?value_</span><span class="si">{}</span><span class="s2"> &quot;</span>
+                                                 <span class="s2">&quot;FILTER(?value_</span><span class="si">{}</span><span class="s2"> IN (</span><span class="si">{}</span><span class="s2">))&quot;</span>
+                                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">,</span> <span class="n">var_id</span><span class="p">,</span> <span class="n">var_id</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">in_list</span><span class="p">)))</span>
+
+            <span class="c1"># iterate over the (property, negative values) pairs</span>
+            <span class="k">for</span> <span class="n">property_str</span> <span class="ow">in</span> <span class="n">property_negative_values_dict</span><span class="p">:</span>
+                <span class="n">var_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">property_negative_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># there are no negative examples using property_str</span>
+                    <span class="c1"># create a FILTER that looks for individuals that use property_str</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;FILTER EXISTS {{ </span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; [] }}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># there are negative examples that use property_str</span>
+                    <span class="c1"># create a FILTER that looks for individuals not using the values encountered with positive examples</span>
+                    <span class="n">in_list</span> <span class="o">=</span> <span class="p">[</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">property_negative_values_dict</span><span class="p">[</span><span class="n">property_str</span><span class="p">]]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> &lt;</span><span class="si">{}</span><span class="s2">&gt; ?value_</span><span class="si">{}</span><span class="s2"> &quot;</span>
+                                                 <span class="s2">&quot;FILTER(?value_</span><span class="si">{}</span><span class="s2"> NOT IN (</span><span class="si">{}</span><span class="s2">))&quot;</span>
+                                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span> <span class="n">property_str</span><span class="p">,</span> <span class="n">var_id</span><span class="p">,</span> <span class="n">var_id</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">in_list</span><span class="p">)))</span>
+
+    <span class="c1"># the provided concept should be generated by a concept learner that was supplied the same learning problem</span>
+<div class="viewcode-block" id="SPARQLQueryLearner.learn_sparql_query">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sparql_query_learner/index.html#ontolearn.learners.SPARQLQueryLearner.learn_sparql_query">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">learn_sparql_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ce</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">):</span>
+        <span class="c1"># compute the f1 score of the provided query</span>
+        <span class="n">confusion_matrix_query</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="n">as_confusion_matrix_query</span><span class="p">(</span><span class="n">ce</span><span class="o">=</span><span class="n">ce</span><span class="p">,</span>
+                                                                     <span class="n">root_variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_root_var</span><span class="p">,</span>
+                                                                     <span class="n">positive_examples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+                                                                     <span class="n">negative_examples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+        <span class="n">original_query</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="n">as_query</span><span class="p">(</span><span class="n">ce</span><span class="o">=</span><span class="n">ce</span><span class="p">,</span> <span class="n">root_variable</span><span class="o">=</span><span class="s2">&quot;?x&quot;</span><span class="p">)</span>
+        <span class="n">original_f1_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_f1_score</span><span class="p">(</span><span class="n">confusion_matrix_query</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Trying to improve the class expression `</span><span class="si">{}</span><span class="s2">`&quot;</span>
+              <span class="s2">&quot;and its corresponding SPARQL query `</span><span class="si">{}</span><span class="s2">` with F1 score: </span><span class="si">{}</span><span class="s2">&quot;</span>
+              <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">original_query</span><span class="o">.</span><span class="n">split</span><span class="p">()),</span> <span class="n">original_f1_score</span><span class="p">))</span>
+
+        <span class="n">best_score</span> <span class="o">=</span> <span class="n">original_f1_score</span>
+        <span class="c1"># template query: it will be assigned the FILTERs</span>
+        <span class="n">confusion_matrix_query</span> <span class="o">=</span> <span class="n">converter</span><span class="o">.</span><span class="n">as_confusion_matrix_query</span><span class="p">(</span><span class="n">ce</span><span class="o">=</span><span class="n">ce</span><span class="p">,</span>
+                                                                     <span class="n">root_variable</span><span class="o">=</span><span class="s2">&quot;?x&quot;</span><span class="p">,</span>
+                                                                     <span class="n">positive_examples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+                                                                     <span class="n">negative_examples</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+        <span class="n">best_query</span> <span class="o">=</span> <span class="n">original_query</span>
+
+        <span class="c1"># start the search</span>
+        <span class="c1"># we try combinations of FILTERs stored in self._possible_filters by iterating their powerset</span>
+        <span class="c1"># we first try single sets</span>
+        <span class="c1"># we then try their combinations</span>
+        <span class="c1"># the maximum number of sets that are combined is specified by self.max_number_of_filters</span>
+        <span class="k">for</span> <span class="n">combination_of_filters</span> <span class="ow">in</span> <span class="n">powerset</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="p">))]):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combination_of_filters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">combination_of_filters</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_number_of_filters</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="c1"># create a SPARQL query using the FILTERs specified in combination_of_filters</span>
+            <span class="n">learned_query_cm</span> <span class="o">=</span> <span class="n">confusion_matrix_query</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;VALUES&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">combination_of_filters</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot; VALUES&quot;</span><span class="p">)</span>
+            <span class="n">f1_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_f1_score</span><span class="p">(</span><span class="n">learned_query_cm</span><span class="p">)</span>
+            <span class="c1"># update the best score and its corresponding query</span>
+            <span class="k">if</span> <span class="n">f1_score</span> <span class="o">&gt;</span> <span class="n">best_score</span><span class="p">:</span>
+                <span class="n">best_score</span> <span class="o">=</span> <span class="n">f1_score</span>
+                <span class="n">best_query</span> <span class="o">=</span> <span class="n">original_query</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">combination_of_filters</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+
+        <span class="c1"># print if we have found a better query</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">best_score</span> <span class="o">&gt;</span> <span class="n">original_f1_score</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found a better SPARQL query `</span><span class="si">{}</span><span class="s2">`, with F1 score: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">best_query</span><span class="o">.</span><span class="n">split</span><span class="p">()),</span> <span class="n">best_score</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The provided class expression and its corresponding SPARQL query could not be improved&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_http_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">requests</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">endpoint_url</span><span class="p">,</span>
+                                 <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/sparql-query&quot;</span><span class="p">},</span>
+                                 <span class="n">data</span><span class="o">=</span><span class="n">query_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\\\\</span><span class="s1">&#39;</span><span class="p">))</span> <span class="c1"># in nctrer there are str literals that contain `\\`, which can be parsed by SPARQL (need to be escaped)</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">200</span> <span class="o">&lt;=</span> <span class="n">status_code</span> <span class="o">&lt;</span> <span class="mi">204</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Query failed&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_f1_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_http_request</span><span class="p">(</span><span class="n">query_str</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">F1</span><span class="p">()</span><span class="o">.</span><span class="n">score2</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;tp&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+                               <span class="n">fp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;fp&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+                               <span class="n">fn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]),</span>
+                               <span class="n">tn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s2">&quot;tn&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exception occurred!&quot;</span><span class="p">)</span>
+            <span class="c1"># query failed (e.g., due to malformed string; continue)</span>
+            <span class="k">return</span> <span class="n">F1</span><span class="p">()</span><span class="o">.</span><span class="n">score2</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tn</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_powerset_of_filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">set_of_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_possible_filters</span><span class="p">))]</span>
+        <span class="c1"># lazily construction of the powerset (can be early terminated)</span>
+        <span class="k">return</span> <span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="n">set_of_indices</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">set_of_indices</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

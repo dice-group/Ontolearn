@@ -1,0 +1,19 @@
+ontolearn.learners.spell_kit
+============================
+
+.. py:module:: ontolearn.learners.spell_kit
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/learners/spell_kit/fitting/index
+   /autoapi/ontolearn/learners/spell_kit/fitting_alc/index
+   /autoapi/ontolearn/learners/spell_kit/o2p_ontology/index
+   /autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index
+   /autoapi/ontolearn/learners/spell_kit/structures/index
+
+

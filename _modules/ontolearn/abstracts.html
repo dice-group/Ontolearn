@@ -1,0 +1,1067 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.abstracts &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.abstracts</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.abstracts</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;The main abstract classes.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Set</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractOWLOntology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">iter_count</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">concept_len</span>
+
+<span class="n">_N</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_N&#39;</span><span class="p">)</span>  <span class="c1">#:</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># @TODO:CD: Each Class definiton in abstract.py should share a prefix, e.g., BaseX or AbstractX.</span>
+<span class="c1"># @TODO:CD: All imports must be located on top of the script</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_expression_to_dl</span>
+<div class="viewcode-block" id="EncodedLearningProblem">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.EncodedLearningProblem">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EncodedLearningProblem</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoded Abstract learning problem for use in Scorers.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="EncodedPosNegLPStandardKind">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.EncodedPosNegLPStandardKind">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EncodedPosNegLPStandardKind</span><span class="p">(</span><span class="n">EncodedLearningProblem</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoded Abstract learning problem following pos-neg lp standard.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span></div>
+
+
+
+<span class="c1"># @TODO: Why we need Generic[_N] and if we need it why we di not use it in all other abstract classes?</span>
+<div class="viewcode-block" id="AbstractScorer">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractScorer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractScorer</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">],</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An abstract class for quality functions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new quality function.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractScorer.score_elp">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractScorer.score_elp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score_elp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instances</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Quality score for a set of instances with regard to the learning problem.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            instances (set): Instances to calculate a quality score for.</span>
+<span class="sd">            learning_problem: Underlying learning problem to compare the quality to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             Tuple, first position indicating if the function could be applied, second position the quality value</span>
+<span class="sd">                in the range 0.0--1.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="c1"># @TODO: It must be moved to the top of the abstracts.py</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncodedPosNegLPStandard</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">learning_problem</span><span class="p">,</span> <span class="n">EncodedPosNegLPStandard</span><span class="p">):</span>
+            <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+            <span class="n">tn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_neg</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+
+            <span class="n">fp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+            <span class="n">fn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_pos</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score2</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">tn</span><span class="o">=</span><span class="n">tn</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">learning_problem</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractScorer.score2">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractScorer.score2">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tp</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fp</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">tn</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Quality score for a coverage count.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tp: True positive count.</span>
+<span class="sd">            fn: False negative count.</span>
+<span class="sd">            fp: False positive count.</span>
+<span class="sd">            tn: True negative count.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             Tuple, first position indicating if the function could be applied, second position the quality value</span>
+<span class="sd">                in the range 0.0--1.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="c1"># @TODO:CD: Why there is &#39;..&#39; in AbstractNode</span>
+<div class="viewcode-block" id="AbstractScorer.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractScorer.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="s1">&#39;AbstractNode&#39;</span><span class="p">,</span> <span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the quality function to a search tree node after calculating the quality score on the given instances.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: search tree node to set the quality on.</span>
+<span class="sd">            instances (set): Instances to calculate the quality for.</span>
+<span class="sd">            learning_problem: Underlying learning problem to compare the quality to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the quality function was applied successfully</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">learning_problem</span><span class="p">,</span> <span class="n">EncodedLearningProblem</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s1">&#39;Expected EncodedLearningProblem but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">learning_problem</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">AbstractNode</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s1">&#39;Expected AbstractNode but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="c1"># @TODO: It must be moved to the top of the abstracts.py</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.search</span><span class="w"> </span><span class="kn">import</span> <span class="n">_NodeQuality</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">_NodeQuality</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s1">&#39;Expected _NodeQuality but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">_NodeQuality</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="n">ret</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_elp</span><span class="p">(</span><span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AbstractHeuristic">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractHeuristic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractHeuristic</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">],</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for heuristic functions.</span>
+
+<span class="sd">    Heuristic functions can guide the search process.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new heuristic function.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractHeuristic.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractHeuristic.apply">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the heuristic on a search tree node and set its heuristic property to the calculated value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: Node to set the heuristic on.</span>
+<span class="sd">            instances (set, optional): Set of instances covered by this node.</span>
+<span class="sd">            learning_problem: Underlying learning problem to compare the heuristic to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AbstractFitness">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractFitness">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractFitness</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for fitness functions.</span>
+
+<span class="sd">    Fitness functions guide the evolutionary process.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new fitness function.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractFitness.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractFitness.apply">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the fitness function on an individual and set its fitness attribute to the calculated value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            individual: Individual to set the fitness on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AbstractNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractNode</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract search tree node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an abstract search tree node.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractNode.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractNode.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation of node, by default its internal memory address.&quot;&quot;&quot;</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="n">addr</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">addr</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s1"> at </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="AbstractNode.__repr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractNode.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AbstractOEHeuristicNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractOEHeuristicNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractOEHeuristicNode</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract Node for the CELOEHeuristic heuristic function.</span>
+
+<span class="sd">    This node must support quality, horizontal expansion (h_exp), is_root, parent_node and refinement_count.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">quality</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the quality of the node.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Quality of the node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">h_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get horizontal expansion.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Horizontal expansion.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Is this the root node?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if this is the root node, otherwise False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parent_node</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_N</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_N</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the parent node.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Parent node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refinement_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the refinement count for this node.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Refinement count.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the heuristic value.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Heuristic value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@heuristic</span><span class="o">.</span><span class="n">setter</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the heuristic value.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="AbstractConceptNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractConceptNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractConceptNode</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract search tree node which has a concept.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concept</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the concept representing this node.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The concept representing this node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractKnowledgeBase</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract knowledge base.&quot;&quot;&quot;</span>
+
+    <span class="n">ontology</span><span class="p">:</span> <span class="n">AbstractOWLOntology</span>
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.describe">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.describe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print a short description of the Knowledge Base to the info logger output.&quot;&quot;&quot;</span>
+        <span class="n">properties_count</span> <span class="o">=</span> <span class="n">iter_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">object_properties_in_signature</span><span class="p">())</span> <span class="o">+</span> <span class="n">iter_count</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">data_properties_in_signature</span><span class="p">())</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of named classes: </span><span class="si">{</span><span class="n">iter_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">())</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;Number of individuals: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">individuals_count</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;Number of properties: </span><span class="si">{</span><span class="n">properties_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.individuals_count">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.individuals_count">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Total number of individuals in this knowledge base.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.individuals_set">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.individuals_set">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode an individual, an iterable of individuals or the individuals that are instances of a given concept</span>
+<span class="sd">        into a set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            arg (OWLNamedIndividual): Individual to encode.</span>
+<span class="sd">            arg (Iterable[OWLNamedIndividual]): Individuals to encode.</span>
+<span class="sd">            arg (OWLClassExpression): Encode individuals that are instances of this concept.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Encoded set representation of individual(s).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.individuals">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.individuals">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">implicit_individuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.abox">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.abox">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.tbox">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.tbox">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tbox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.triples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.triples">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_object_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_object_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.data_properties_for_domain">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.data_properties_for_domain">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_properties_for_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.least_general_named_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.least_general_named_concepts">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">least_general_named_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_classes">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_classes">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_object_property_domains">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_object_property_domains">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_object_property_ranges">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_object_property_ranges">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_data_property_domains">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_data_property_domains">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_data_property_ranges">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_data_property_ranges">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_boolean_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_boolean_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_boolean_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_numeric_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_numeric_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_numeric_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_time_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_time_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_time_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_existential_restrictions">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_existential_restrictions">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_existential_restrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_universal_restrictions">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_universal_restrictions">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_universal_restrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_existential_restrictions_inverse">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_existential_restrictions_inverse">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_existential_restrictions_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.most_general_universal_restrictions_inverse">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.most_general_universal_restrictions_inverse">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_universal_restrictions_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_direct_parents">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_direct_parents">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_direct_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_all_direct_sub_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_all_direct_sub_concepts">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_direct_sub_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_all_sub_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_all_sub_concepts">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_sub_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_concepts">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_object_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_object_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_boolean_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_boolean_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_boolean_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_numeric_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_numeric_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_numeric_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_double_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_double_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_double_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_time_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_time_data_properties">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_time_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_types">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_types">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_object_properties_for_ind">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_object_properties_for_ind">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_properties_for_ind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_data_properties_for_ind">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_data_properties_for_ind">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_properties_for_ind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_object_property_values">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_object_property_values">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.get_data_property_values">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.get_data_property_values">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.contains_class">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.contains_class">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">contains_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractKnowledgeBase.are_owl_concept_disjoint">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase.are_owl_concept_disjoint">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">are_owl_concept_disjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BaseRefinement">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.BaseRefinement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseRefinement</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">],</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for Refinement Operators.</span>
+
+<span class="sd">    Let C, D \\in N_c where N_c os a finite set of concepts.</span>
+
+<span class="sd">    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]</span>
+<span class="sd">      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}</span>
+<span class="sd">        * The operator is finite,</span>
+<span class="sd">        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.</span>
+
+<span class="sd">    *) Theoretical Foundations of Refinement Operators [1].</span>
+
+<span class="sd">    *) Defining a top-down refimenent operator that is a proper is crutial.</span>
+<span class="sd">        4.1.3 Achieving Properness [1]</span>
+<span class="sd">    *) Figure 4.1 [1] defines of the refinement operator.</span>
+
+<span class="sd">    [1] Learning OWL Class Expressions.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;kb&#39;</span>
+
+    <span class="n">kb</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a new base refinement operator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            knowledge_base: Knowledge base to operate on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
+
+<div class="viewcode-block" id="BaseRefinement.refine">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.BaseRefinement.refine">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Refine a given concept.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ce (OWLClassExpression): Concept to refine.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            New refined concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseRefinement.len">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.BaseRefinement.len">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The length of a concept.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: The concept to measure the length for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Length of concept according to some metric configured in the knowledge base.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AbstractLearningProblem">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractLearningProblem">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractLearningProblem</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract learning problem.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new abstract learning problem.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractLearningProblem.encode_kb">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractLearningProblem.encode_kb">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode_kb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;EncodedLearningProblem&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode the learning problem into the knowledge base.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LBLSearchTree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LBLSearchTree</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">],</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract search tree for the Length based learner.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LBLSearchTree.get_most_promising">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.get_most_promising">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_most_promising</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_N</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most &quot;promising&quot; node in the search tree that should be refined next.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most promising search tree node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LBLSearchTree.add_node">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.add_node">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a node to the search tree.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: Node to add.</span>
+<span class="sd">            parent_node: Parent of that node.</span>
+<span class="sd">            kb_learning_problem: Underlying learning problem to compare the quality to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LBLSearchTree.clean">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.clean">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the search tree state.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LBLSearchTree.get_top_n">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.get_top_n">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_top_n</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">_N</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the best n search tree nodes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Maximum number of nodes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of top n search tree nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LBLSearchTree.show_search_tree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.show_search_tree">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Debugging function to print the search tree to standard output.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            root_concept: The tree is printed starting from this search tree node.</span>
+<span class="sd">            heading_step: Message to print at top of the output.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="LBLSearchTree.add_root">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.LBLSearchTree.add_root">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add the root node to the search tree.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: Root node to add.</span>
+<span class="sd">            kb_learning_problem: Underlying learning problem to compare the quality to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DRILLAbstractTree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DRILLAbstractTree</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract Tree for DRILL.&quot;&quot;&quot;</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DRILLAbstractTree.__len__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.__len__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.__getitem__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.__getitem__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">item</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.__setitem__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.__setitem__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.__iter__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.__iter__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.get_top_n_nodes">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.get_top_n_nodes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_top_n_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;quality&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_search_tree_by_decreasing_order</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">dict_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">ith</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">k</span><span class="p">,</span> <span class="n">node</span> <span class="o">=</span> <span class="n">dict_</span>
+            <span class="k">yield</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.redundancy_check">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.redundancy_check">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">redundancy_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span>
+
+<div class="viewcode-block" id="DRILLAbstractTree.add">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.add">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.sort_search_tree_by_decreasing_order">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.sort_search_tree_by_decreasing_order">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sort_search_tree_by_decreasing_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;heuristic&#39;</span><span class="p">:</span>
+            <span class="n">sorted_x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;quality&#39;</span><span class="p">:</span>
+            <span class="n">sorted_x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span>
+            <span class="n">sorted_x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">kv</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong Key. Key must be heuristic, quality or concept_length&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">sorted_x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.best_hypotheses">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.best_hypotheses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">get_top_n_nodes</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.show_search_tree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.show_search_tree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Show search tree.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_top_n_nodes</span><span class="p">(</span><span class="n">top_n</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;######## Search Tree ###########</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictions</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ith</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span><span class="si">}</span><span class="s2"> | Quality:</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="si">}</span><span class="s2">| Heuristic:</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">######## Search Tree ###########</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">predictions</span></div>
+
+
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.show_best_nodes">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.show_best_nodes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_best_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top_n</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_search_tree_by_decreasing_order</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_search_tree</span><span class="p">(</span><span class="s1">&#39;Final&#39;</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="n">top_n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.save_current_top_n_nodes">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.save_current_top_n_nodes">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_current_top_n_nodes</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save current top_n nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">path</span>
+        <span class="k">assert</span> <span class="n">key</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DRILLAbstractTree.clean">
+<a class="viewcode-back" href="../../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

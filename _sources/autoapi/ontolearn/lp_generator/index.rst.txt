@@ -1,0 +1,85 @@
+ontolearn.lp_generator
+======================
+
+.. py:module:: ontolearn.lp_generator
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/lp_generator/generate_data/index
+   /autoapi/ontolearn/lp_generator/helper_classes/index
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.lp_generator.LPGen
+   ontolearn.lp_generator.KB2Data
+
+
+Package Contents
+----------------
+
+.. py:class:: LPGen(kb_path=None, kb=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2, downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1, max_pos_neg_examples_per_lp=None)
+
+   .. py:attribute:: lp_gen
+
+
+   .. py:method:: generate()
+
+
+.. py:class:: KB2Data(path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2, downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1, knowledge_base=None, max_pos_neg_examples_per_lp=None)
+
+   This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.
+   A refinement operator is used to generate a large number of concepts, from which we filter and retain the shortest
+   non-redundant concepts. We export each concept and its instances (eventually positive and negative examples) into
+   a json file.
+
+
+   .. py:attribute:: max_num_lps
+      :value: 1000
+
+
+
+   .. py:attribute:: beyond_alc
+      :value: False
+
+
+
+   .. py:attribute:: dl_syntax_renderer
+
+
+   .. py:attribute:: knowledge_base
+      :value: None
+
+
+
+   .. py:attribute:: min_num_pos_examples
+      :value: 1
+
+
+
+   .. py:attribute:: atomic_concept_names
+
+
+   .. py:attribute:: lp_gen
+
+
+   .. py:method:: find_optimal_number_of_examples()
+
+
+   .. py:method:: generate_descriptions()
+
+
+   .. py:method:: sample_examples(pos, neg)
+
+
+   .. py:method:: save_data()
+
+

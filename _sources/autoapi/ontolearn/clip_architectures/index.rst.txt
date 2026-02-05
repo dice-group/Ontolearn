@@ -1,0 +1,165 @@
+ontolearn.clip_architectures
+============================
+
+.. py:module:: ontolearn.clip_architectures
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.clip_architectures.LengthLearner_LSTM
+   ontolearn.clip_architectures.LengthLearner_GRU
+   ontolearn.clip_architectures.LengthLearner_CNN
+   ontolearn.clip_architectures.LengthLearner_SetTransformer
+
+
+Module Contents
+---------------
+
+.. py:class:: LengthLearner_LSTM(input_size, output_size, proj_dim=256, rnn_n_layers=2, drop_prob=0.2)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   LSTM architecture
+
+
+   .. py:attribute:: name
+      :value: 'LSTM'
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: lstm
+
+
+   .. py:attribute:: dropout
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:attribute:: fc3
+
+
+   .. py:method:: forward(x1, x2)
+
+      Forward pass through the network.
+
+
+
+.. py:class:: LengthLearner_GRU(input_size, output_size, proj_dim=256, rnn_n_layers=2, drop_prob=0.2)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   GRU architecture
+
+
+   .. py:attribute:: name
+      :value: 'GRU'
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: gru
+
+
+   .. py:attribute:: dropout
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:attribute:: fc3
+
+
+   .. py:method:: forward(x1, x2)
+
+      Forward pass through the network.
+
+
+
+.. py:class:: LengthLearner_CNN(input_size, output_size, num_examples, proj_dim=256, kernel_size: list = [[5, 7], [5, 7]], stride: list = [[3, 3], [3, 3]], drop_prob=0.2)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   CNN architecture
+
+
+   .. py:attribute:: name
+      :value: 'CNN'
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: conv1
+
+
+   .. py:attribute:: conv2
+
+
+   .. py:attribute:: dropout1d
+
+
+   .. py:attribute:: dropout2d
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:attribute:: fc3
+
+
+   .. py:method:: forward(x1, x2)
+
+      Forward pass through the network.
+
+
+
+.. py:class:: LengthLearner_SetTransformer(input_size, output_size, proj_dim=256, num_heads=4, num_seeds=1, m=32)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   SetTransformer architecture.
+
+
+   .. py:attribute:: name
+      :value: 'SetTransformer'
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: enc
+
+
+   .. py:attribute:: dec
+
+
+   .. py:method:: forward(x1, x2)
+
+      Forward pass through the network.
+
+
+

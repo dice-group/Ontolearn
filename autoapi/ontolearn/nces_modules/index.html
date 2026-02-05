@@ -1,0 +1,553 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.nces_modules &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.nces_trainer" href="../nces_trainer/index.html" />
+    <link rel="prev" title="ontolearn.nces_architectures" href="../nces_architectures/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.nces_modules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_modules.MAB"><code class="docutils literal notranslate"><span class="pre">MAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.dim_V"><code class="docutils literal notranslate"><span class="pre">MAB.dim_V</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.num_heads"><code class="docutils literal notranslate"><span class="pre">MAB.num_heads</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.fc_q"><code class="docutils literal notranslate"><span class="pre">MAB.fc_q</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.fc_k"><code class="docutils literal notranslate"><span class="pre">MAB.fc_k</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.fc_v"><code class="docutils literal notranslate"><span class="pre">MAB.fc_v</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.fc_o"><code class="docutils literal notranslate"><span class="pre">MAB.fc_o</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.MAB.forward"><code class="docutils literal notranslate"><span class="pre">MAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_modules.SAB"><code class="docutils literal notranslate"><span class="pre">SAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.SAB.mab"><code class="docutils literal notranslate"><span class="pre">SAB.mab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.SAB.forward"><code class="docutils literal notranslate"><span class="pre">SAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_modules.ISAB"><code class="docutils literal notranslate"><span class="pre">ISAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ISAB.I"><code class="docutils literal notranslate"><span class="pre">ISAB.I</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ISAB.mab0"><code class="docutils literal notranslate"><span class="pre">ISAB.mab0</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ISAB.mab1"><code class="docutils literal notranslate"><span class="pre">ISAB.mab1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ISAB.forward"><code class="docutils literal notranslate"><span class="pre">ISAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_modules.PMA"><code class="docutils literal notranslate"><span class="pre">PMA</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.PMA.S"><code class="docutils literal notranslate"><span class="pre">PMA.S</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.PMA.mab"><code class="docutils literal notranslate"><span class="pre">PMA.mab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.PMA.forward"><code class="docutils literal notranslate"><span class="pre">PMA.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_modules.ConEx"><code class="docutils literal notranslate"><span class="pre">ConEx</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.name"><code class="docutils literal notranslate"><span class="pre">ConEx.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.loss"><code class="docutils literal notranslate"><span class="pre">ConEx.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.embedding_dim"><code class="docutils literal notranslate"><span class="pre">ConEx.embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.num_entities"><code class="docutils literal notranslate"><span class="pre">ConEx.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.num_relations"><code class="docutils literal notranslate"><span class="pre">ConEx.num_relations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.input_dropout"><code class="docutils literal notranslate"><span class="pre">ConEx.input_dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">ConEx.feature_map_dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.kernel_size"><code class="docutils literal notranslate"><span class="pre">ConEx.kernel_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.num_of_output_channels"><code class="docutils literal notranslate"><span class="pre">ConEx.num_of_output_channels</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.emb_ent_real"><code class="docutils literal notranslate"><span class="pre">ConEx.emb_ent_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.emb_ent_i"><code class="docutils literal notranslate"><span class="pre">ConEx.emb_ent_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.emb_rel_real"><code class="docutils literal notranslate"><span class="pre">ConEx.emb_rel_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.emb_rel_i"><code class="docutils literal notranslate"><span class="pre">ConEx.emb_rel_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.input_dp_ent_real"><code class="docutils literal notranslate"><span class="pre">ConEx.input_dp_ent_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.input_dp_ent_i"><code class="docutils literal notranslate"><span class="pre">ConEx.input_dp_ent_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.input_dp_rel_real"><code class="docutils literal notranslate"><span class="pre">ConEx.input_dp_rel_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.input_dp_rel_i"><code class="docutils literal notranslate"><span class="pre">ConEx.input_dp_rel_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_ent_real"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_ent_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_ent_i"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_ent_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_rel_real"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_rel_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_rel_i"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_rel_i</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.conv1"><code class="docutils literal notranslate"><span class="pre">ConEx.conv1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.fc_num_input"><code class="docutils literal notranslate"><span class="pre">ConEx.fc_num_input</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.fc"><code class="docutils literal notranslate"><span class="pre">ConEx.fc</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_conv1"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_conv1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.bn_conv2"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_conv2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.feature_dropout"><code class="docutils literal notranslate"><span class="pre">ConEx.feature_dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.residual_convolution"><code class="docutils literal notranslate"><span class="pre">ConEx.residual_convolution()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.forward_head_batch"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_head_batch()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.forward_head_and_loss"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_head_and_loss()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.init"><code class="docutils literal notranslate"><span class="pre">ConEx.init()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.get_embeddings"><code class="docutils literal notranslate"><span class="pre">ConEx.get_embeddings()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.forward_triples"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_triples()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_modules.ConEx.forward_triples_and_loss"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_triples_and_loss()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.nces_modules</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/nces_modules/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.nces_modules">
+<span id="ontolearn-nces-modules"></span><h1>ontolearn.nces_modules<a class="headerlink" href="#module-ontolearn.nces_modules" title="Link to this heading"></a></h1>
+<p>NCES modules.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nces_modules.MAB" title="ontolearn.nces_modules.MAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAB</span></code></a></p></td>
+<td><p>MAB module.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.nces_modules.SAB" title="ontolearn.nces_modules.SAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SAB</span></code></a></p></td>
+<td><p>SAB module.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nces_modules.ISAB" title="ontolearn.nces_modules.ISAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ISAB</span></code></a></p></td>
+<td><p>ISAB module.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.nces_modules.PMA" title="ontolearn.nces_modules.PMA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PMA</span></code></a></p></td>
+<td><p>PMA module.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nces_modules.ConEx" title="ontolearn.nces_modules.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
+<td><p>Convolutional Complex Knowledge Graph Embeddings</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_modules.</span></span><span class="sig-name descname"><span class="pre">MAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#MAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.MAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>MAB module.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.dim_V">
+<span class="sig-name descname"><span class="pre">dim_V</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.dim_V" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.num_heads">
+<span class="sig-name descname"><span class="pre">num_heads</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.num_heads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.fc_q">
+<span class="sig-name descname"><span class="pre">fc_q</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.fc_q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.fc_k">
+<span class="sig-name descname"><span class="pre">fc_k</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.fc_k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.fc_v">
+<span class="sig-name descname"><span class="pre">fc_v</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.fc_v" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.fc_o">
+<span class="sig-name descname"><span class="pre">fc_o</span></span><a class="headerlink" href="#ontolearn.nces_modules.MAB.fc_o" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.MAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#MAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.MAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.SAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_modules.</span></span><span class="sig-name descname"><span class="pre">SAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#SAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.SAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>SAB module.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.SAB.mab">
+<span class="sig-name descname"><span class="pre">mab</span></span><a class="headerlink" href="#ontolearn.nces_modules.SAB.mab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.SAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#SAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.SAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ISAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_modules.</span></span><span class="sig-name descname"><span class="pre">ISAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ISAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ISAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>ISAB module.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ISAB.I">
+<span class="sig-name descname"><span class="pre">I</span></span><a class="headerlink" href="#ontolearn.nces_modules.ISAB.I" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ISAB.mab0">
+<span class="sig-name descname"><span class="pre">mab0</span></span><a class="headerlink" href="#ontolearn.nces_modules.ISAB.mab0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ISAB.mab1">
+<span class="sig-name descname"><span class="pre">mab1</span></span><a class="headerlink" href="#ontolearn.nces_modules.ISAB.mab1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ISAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ISAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ISAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.PMA">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_modules.</span></span><span class="sig-name descname"><span class="pre">PMA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#PMA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.PMA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>PMA module.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.PMA.S">
+<span class="sig-name descname"><span class="pre">S</span></span><a class="headerlink" href="#ontolearn.nces_modules.PMA.S" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.PMA.mab">
+<span class="sig-name descname"><span class="pre">mab</span></span><a class="headerlink" href="#ontolearn.nces_modules.PMA.mab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.PMA.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#PMA.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.PMA.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_modules.</span></span><span class="sig-name descname"><span class="pre">ConEx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dropout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_map_dropout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_of_output_channels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Convolutional Complex Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConEx'</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.embedding_dim">
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.input_dropout">
+<span class="sig-name descname"><span class="pre">input_dropout</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.input_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.kernel_size">
+<span class="sig-name descname"><span class="pre">kernel_size</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.kernel_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.num_of_output_channels">
+<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.num_of_output_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.emb_ent_real">
+<span class="sig-name descname"><span class="pre">emb_ent_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.emb_ent_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.emb_ent_i">
+<span class="sig-name descname"><span class="pre">emb_ent_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.emb_ent_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.emb_rel_real">
+<span class="sig-name descname"><span class="pre">emb_rel_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.emb_rel_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.emb_rel_i">
+<span class="sig-name descname"><span class="pre">emb_rel_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.emb_rel_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.input_dp_ent_real">
+<span class="sig-name descname"><span class="pre">input_dp_ent_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.input_dp_ent_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.input_dp_ent_i">
+<span class="sig-name descname"><span class="pre">input_dp_ent_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.input_dp_ent_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.input_dp_rel_real">
+<span class="sig-name descname"><span class="pre">input_dp_rel_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.input_dp_rel_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.input_dp_rel_i">
+<span class="sig-name descname"><span class="pre">input_dp_rel_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.input_dp_rel_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_ent_real">
+<span class="sig-name descname"><span class="pre">bn_ent_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_ent_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_ent_i">
+<span class="sig-name descname"><span class="pre">bn_ent_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_ent_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_rel_real">
+<span class="sig-name descname"><span class="pre">bn_rel_real</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_rel_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_rel_i">
+<span class="sig-name descname"><span class="pre">bn_rel_i</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_rel_i" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.conv1">
+<span class="sig-name descname"><span class="pre">conv1</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.fc">
+<span class="sig-name descname"><span class="pre">fc</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.fc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_conv1">
+<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.bn_conv2">
+<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.bn_conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.feature_dropout">
+<span class="sig-name descname"><span class="pre">feature_dropout</span></span><a class="headerlink" href="#ontolearn.nces_modules.ConEx.feature_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.residual_convolution">
+<span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.residual_convolution" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.forward_head_batch">
+<span class="sig-name descname"><span class="pre">forward_head_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">e1_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.forward_head_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.forward_head_batch" title="Link to this definition"></a></dt>
+<dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id1"><span class="problematic" id="id2">|Entities|</span></a>)
+Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.forward_head_and_loss">
+<span class="sig-name descname"><span class="pre">forward_head_and_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e1_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.forward_head_and_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.forward_head_and_loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.get_embeddings">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.get_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">e1_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e2_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.forward_triples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_modules.ConEx.forward_triples_and_loss">
+<span class="sig-name descname"><span class="pre">forward_triples_and_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e1_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e2_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_modules.html#ConEx.forward_triples_and_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_modules.ConEx.forward_triples_and_loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../nces_architectures/index.html" class="btn btn-neutral float-left" title="ontolearn.nces_architectures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../nces_trainer/index.html" class="btn btn-neutral float-right" title="ontolearn.nces_trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

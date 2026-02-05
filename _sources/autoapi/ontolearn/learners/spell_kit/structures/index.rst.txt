@@ -1,0 +1,279 @@
+ontolearn.learners.spell_kit.structures
+=======================================
+
+.. py:module:: ontolearn.learners.spell_kit.structures
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.structures.namespaces
+   ontolearn.learners.spell_kit.structures.Signature
+   ontolearn.learners.spell_kit.structures.tag_onto
+   ontolearn.learners.spell_kit.structures.tag_ni
+   ontolearn.learners.spell_kit.structures.tag_type
+   ontolearn.learners.spell_kit.structures.tag_class
+   ontolearn.learners.spell_kit.structures.tag_thing
+   ontolearn.learners.spell_kit.structures.tag_object_prop
+   ontolearn.learners.spell_kit.structures.tag_data_prop
+   ontolearn.learners.spell_kit.structures.tag_annotation_prop
+   ontolearn.learners.spell_kit.structures.attr_resource
+   ontolearn.learners.spell_kit.structures.attr_about
+   ontolearn.learners.spell_kit.structures.attr_datatype
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.structures.Structure
+   ontolearn.learners.spell_kit.structures.ABoxBuilder
+   ontolearn.learners.spell_kit.structures.TBox
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.structures.ind
+   ontolearn.learners.spell_kit.structures.conceptnames
+   ontolearn.learners.spell_kit.structures.rolenames
+   ontolearn.learners.spell_kit.structures.conceptname_ext
+   ontolearn.learners.spell_kit.structures.expand_namespace
+   ontolearn.learners.spell_kit.structures.tag2name
+   ontolearn.learners.spell_kit.structures.name2sparql
+   ontolearn.learners.spell_kit.structures.expand_curie
+   ontolearn.learners.spell_kit.structures.map_ind_name
+   ontolearn.learners.spell_kit.structures.add_ns
+   ontolearn.learners.spell_kit.structures.make_res_absolute
+   ontolearn.learners.spell_kit.structures.load_owl
+   ontolearn.learners.spell_kit.structures.structure_from_owl
+   ontolearn.learners.spell_kit.structures.construct_normalized_tbox
+   ontolearn.learners.spell_kit.structures.compact_canonical_model
+   ontolearn.learners.spell_kit.structures.structure_to_dot
+   ontolearn.learners.spell_kit.structures.not_owl_thing
+   ontolearn.learners.spell_kit.structures.solution2sparql
+   ontolearn.learners.spell_kit.structures.restrict_to_neighborhood
+   ontolearn.learners.spell_kit.structures.generate_all_trees
+   ontolearn.learners.spell_kit.structures.next_rooted_tree
+   ontolearn.learners.spell_kit.structures.levels_to_preds
+   ontolearn.learners.spell_kit.structures.copy_structure
+
+
+Module Contents
+---------------
+
+.. py:data:: namespaces
+
+.. py:data:: Signature
+
+.. py:class:: Structure
+
+   .. py:attribute:: max_ind
+      :type:  int
+
+
+   .. py:attribute:: cn_ext
+      :type:  dict[str, set[int]]
+
+
+   .. py:attribute:: rn_ext
+      :type:  dict[int, set[tuple[int, str]]]
+
+
+   .. py:attribute:: indmap
+      :type:  dict[str, int]
+
+
+   .. py:attribute:: nsmap
+      :type:  dict[str | None, str]
+
+
+.. py:function:: ind(A: Structure) -> range
+
+.. py:function:: conceptnames(sigma: Signature) -> list[str]
+
+.. py:function:: rolenames(sigma: Signature) -> list[str]
+
+.. py:function:: conceptname_ext(A: Structure, cn: str) -> set[int]
+
+.. py:function:: expand_namespace(namespace: str, item: str)
+
+.. py:function:: tag2name(tag: str)
+
+.. py:function:: name2sparql(name: str)
+
+.. py:function:: expand_curie(curie, nsmap)
+
+.. py:function:: map_ind_name(A: Structure, name: str) -> int
+
+.. py:function:: add_ns(n: str)
+
+.. py:class:: ABoxBuilder
+
+   .. py:attribute:: A
+      :type:  Structure
+
+
+   .. py:attribute:: indmap
+      :type:  dict[str, int]
+
+
+   .. py:attribute:: role_names
+
+
+   .. py:method:: map_ind(a: str)
+
+
+   .. py:method:: declare_cn(cn)
+
+
+   .. py:method:: declare_rn(rn)
+
+
+   .. py:method:: concept_assertion(a: int, concept: str)
+
+
+   .. py:method:: role_assertion(idx1: int, ind2: str, role: str)
+
+
+.. py:data:: tag_onto
+
+.. py:data:: tag_ni
+
+.. py:data:: tag_type
+
+.. py:data:: tag_class
+
+.. py:data:: tag_thing
+
+.. py:data:: tag_object_prop
+
+.. py:data:: tag_data_prop
+
+.. py:data:: tag_annotation_prop
+
+.. py:data:: attr_resource
+
+.. py:data:: attr_about
+
+.. py:data:: attr_datatype
+
+.. py:function:: make_res_absolute(nsmap: dict[Any, str], res: str) -> str
+
+.. py:function:: load_owl(file: str)
+
+.. py:function:: structure_from_owl(file) -> Structure
+
+.. py:class:: TBox(top: str)
+
+   .. py:attribute:: fresh_names
+      :type:  set[str]
+
+
+   .. py:attribute:: implic
+      :type:  dict[str, set[str]]
+
+
+   .. py:attribute:: conjs
+      :type:  dict[str, set[frozenset[str]]]
+
+
+   .. py:attribute:: top
+      :type:  str
+
+
+   .. py:attribute:: cns
+      :type:  set[str]
+
+
+   .. py:attribute:: rns
+      :type:  set[str]
+
+
+   .. py:attribute:: rBrhs
+      :type:  dict[str, set[tuple[str, str]]]
+
+
+   .. py:attribute:: rBlhs
+      :type:  dict[str, set[tuple[str, str]]]
+
+
+   .. py:attribute:: range_cn_ctr
+      :type:  int
+
+
+   .. py:attribute:: ranges
+      :type:  dict[str, set[str]]
+
+
+   .. py:attribute:: role_incs
+      :type:  dict[str, set[str]]
+
+
+   .. py:method:: non_empty_conjs()
+
+
+   .. py:method:: non_empty_lhs()
+
+
+   .. py:method:: non_empty_rhs()
+
+
+   .. py:method:: register_cn(A: str)
+
+
+   .. py:method:: register_rn(r: str)
+
+
+   .. py:method:: add_axiom1(A: str, B: str)
+
+
+   .. py:method:: add_axiom2(A1: str, A2: str, B: str)
+
+
+   .. py:method:: add_axiom3(A: str, r: str, B: str)
+
+
+   .. py:method:: add_axiom4(r: str, A: str, B: str)
+
+
+   .. py:method:: add_range_restriction(r: str, A: str)
+
+
+   .. py:method:: add_role_inc(r: str, s: str)
+
+
+   .. py:method:: fresh_cn() -> str
+
+
+   .. py:method:: saturate_role_incs()
+
+
+   .. py:method:: saturate()
+
+
+.. py:function:: construct_normalized_tbox(onto: ontolearn.learners.spell_kit.o2p_ontology.Ontology)
+
+.. py:function:: compact_canonical_model(abox: ABoxBuilder, tbox: TBox)
+
+.. py:function:: structure_to_dot(A: Structure, indmap: dict[str, int])
+
+.. py:function:: not_owl_thing(cn)
+
+.. py:function:: solution2sparql(q: Structure)
+
+.. py:function:: restrict_to_neighborhood(k: int, A: Structure, starts: list[int])
+
+.. py:function:: generate_all_trees(order: int)
+
+.. py:function:: next_rooted_tree(predecessor: list[int])
+
+.. py:function:: levels_to_preds(layout: list[int]) -> list[int]
+
+.. py:function:: copy_structure(A: Structure) -> Structure
+

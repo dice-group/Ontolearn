@@ -1,0 +1,99 @@
+ontolearn.lp_generator.helper_classes
+=====================================
+
+.. py:module:: ontolearn.lp_generator.helper_classes
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.lp_generator.helper_classes.ConceptDescriptionGenerator
+   ontolearn.lp_generator.helper_classes.KB2Data
+
+
+Module Contents
+---------------
+
+.. py:class:: ConceptDescriptionGenerator(knowledge_base, refinement_operator, depth=2, max_length=10, num_sub_roots=150)
+
+   Learning problem generator.
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: rho
+
+
+   .. py:attribute:: depth
+      :value: 2
+
+
+
+   .. py:attribute:: num_sub_roots
+      :value: 150
+
+
+
+   .. py:attribute:: max_length
+      :value: 10
+
+
+
+   .. py:method:: apply_rho(concept)
+
+
+   .. py:method:: generate()
+
+
+.. py:class:: KB2Data(path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2, downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1, knowledge_base=None, max_pos_neg_examples_per_lp=None)
+
+   This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.
+   A refinement operator is used to generate a large number of concepts, from which we filter and retain the shortest
+   non-redundant concepts. We export each concept and its instances (eventually positive and negative examples) into
+   a json file.
+
+
+   .. py:attribute:: max_num_lps
+      :value: 1000
+
+
+
+   .. py:attribute:: beyond_alc
+      :value: False
+
+
+
+   .. py:attribute:: dl_syntax_renderer
+
+
+   .. py:attribute:: knowledge_base
+      :value: None
+
+
+
+   .. py:attribute:: min_num_pos_examples
+      :value: 1
+
+
+
+   .. py:attribute:: atomic_concept_names
+
+
+   .. py:attribute:: lp_gen
+
+
+   .. py:method:: find_optimal_number_of_examples()
+
+
+   .. py:method:: generate_descriptions()
+
+
+   .. py:method:: sample_examples(pos, neg)
+
+
+   .. py:method:: save_data()
+
+

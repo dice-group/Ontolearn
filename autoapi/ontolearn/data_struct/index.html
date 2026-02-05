@@ -1,0 +1,1002 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.data_struct &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.ea_algorithms" href="../ea_algorithms/index.html" />
+    <link rel="prev" title="ontolearn.concept_generator" href="../concept_generator/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.data_struct</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.X"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction.X</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__len__"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__getitem__"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction.__getitem__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.get_all"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction.get_all()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.S"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.S</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.S_Prime"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.S_Prime</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.y"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.y</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.Negatives"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.Negatives</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.X"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.X</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.__len__"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.__getitem__"><code class="docutils literal notranslate"><span class="pre">PrepareBatchOfTraining.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.Experience"><code class="docutils literal notranslate"><span class="pre">Experience</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.current_states"><code class="docutils literal notranslate"><span class="pre">Experience.current_states</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.next_states"><code class="docutils literal notranslate"><span class="pre">Experience.next_states</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.rewards"><code class="docutils literal notranslate"><span class="pre">Experience.rewards</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.__len__"><code class="docutils literal notranslate"><span class="pre">Experience.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.append"><code class="docutils literal notranslate"><span class="pre">Experience.append()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.retrieve"><code class="docutils literal notranslate"><span class="pre">Experience.retrieve()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.Experience.clear"><code class="docutils literal notranslate"><span class="pre">Experience.clear()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.TriplesData"><code class="docutils literal notranslate"><span class="pre">TriplesData</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.Graph"><code class="docutils literal notranslate"><span class="pre">TriplesData.Graph</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.triples"><code class="docutils literal notranslate"><span class="pre">TriplesData.triples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.entities"><code class="docutils literal notranslate"><span class="pre">TriplesData.entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.relations"><code class="docutils literal notranslate"><span class="pre">TriplesData.relations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.entity2idx"><code class="docutils literal notranslate"><span class="pre">TriplesData.entity2idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.relation2idx"><code class="docutils literal notranslate"><span class="pre">TriplesData.relation2idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.load_data"><code class="docutils literal notranslate"><span class="pre">TriplesData.load_data()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.get_relations"><code class="docutils literal notranslate"><span class="pre">TriplesData.get_relations()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesData.get_entities"><code class="docutils literal notranslate"><span class="pre">TriplesData.get_entities()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset"><code class="docutils literal notranslate"><span class="pre">CLIPDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.data"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.embeddings"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.num_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.shuffle_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.shuffle_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.example_sizes"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.example_sizes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.k"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.k</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.sorted_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.sorted_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.__len__"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">CLIPDataset.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.data"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.embeddings"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.num_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.shuffle_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.shuffle_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.sorted_examples"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.sorted_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.__len__"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.__getitem__"><code class="docutils literal notranslate"><span class="pre">CLIPDatasetInference.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset.vocab"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset.vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset.inv_vocab"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset.inv_vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset.max_length"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset.max_length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset.decompose"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset.decompose()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset.get_labels"><code class="docutils literal notranslate"><span class="pre">NCESBaseDataset.get_labels()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset"><code class="docutils literal notranslate"><span class="pre">NCESDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.data"><code class="docutils literal notranslate"><span class="pre">NCESDataset.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.embeddings"><code class="docutils literal notranslate"><span class="pre">NCESDataset.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.num_examples"><code class="docutils literal notranslate"><span class="pre">NCESDataset.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.shuffle_examples"><code class="docutils literal notranslate"><span class="pre">NCESDataset.shuffle_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.example_sizes"><code class="docutils literal notranslate"><span class="pre">NCESDataset.example_sizes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.sorted_examples"><code class="docutils literal notranslate"><span class="pre">NCESDataset.sorted_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.__len__"><code class="docutils literal notranslate"><span class="pre">NCESDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">NCESDataset.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.data"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.embeddings"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.num_examples"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.shuffle_examples"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.shuffle_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.sorted_examples"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.sorted_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.__len__"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.__getitem__"><code class="docutils literal notranslate"><span class="pre">NCESDatasetInference.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset"><code class="docutils literal notranslate"><span class="pre">ROCESDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.data"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.triples_data"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.triples_data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.num_examples"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.k"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.k</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.sampling_strategy"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.sampling_strategy</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.load_embeddings"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.load_embeddings()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.set_k"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.set_k()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.__len__"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">ROCESDataset.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.data"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.triples_data"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.triples_data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.k"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.k</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.sampling_strategy"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.sampling_strategy</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.num_examples"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.num_examples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.num_pred_per_lp"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.num_pred_per_lp</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.load_embeddings"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.load_embeddings()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.set_k"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.set_k()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.__len__"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.__getitem__"><code class="docutils literal notranslate"><span class="pre">ROCESDatasetInference.__getitem__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset"><code class="docutils literal notranslate"><span class="pre">TriplesDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.num_e"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.num_e</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.head_idx"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.head_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.rel_idx"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.rel_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.tail_idx"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.tail_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.__len__"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">TriplesDataset.__getitem__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.data_struct</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/data_struct/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.data_struct">
+<span id="ontolearn-data-struct"></span><h1>ontolearn.data_struct<a class="headerlink" href="#module-ontolearn.data_struct" title="Link to this heading"></a></h1>
+<p>Data structures.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction" title="ontolearn.data_struct.PrepareBatchOfPrediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareBatchOfPrediction</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining" title="ontolearn.data_struct.PrepareBatchOfTraining"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrepareBatchOfTraining</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.Experience" title="ontolearn.data_struct.Experience"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Experience</span></code></a></p></td>
+<td><p>A class to model experiences for Replay Memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.TriplesData" title="ontolearn.data_struct.TriplesData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriplesData</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.CLIPDataset" title="ontolearn.data_struct.CLIPDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLIPDataset</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference" title="ontolearn.data_struct.CLIPDatasetInference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLIPDatasetInference</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset" title="ontolearn.data_struct.NCESBaseDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.NCESDataset" title="ontolearn.data_struct.NCESDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESDataset</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference" title="ontolearn.data_struct.NCESDatasetInference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESDatasetInference</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.ROCESDataset" title="ontolearn.data_struct.ROCESDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ROCESDataset</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference" title="ontolearn.data_struct.ROCESDatasetInference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ROCESDatasetInference</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.data_struct.TriplesDataset" title="ontolearn.data_struct.TriplesDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriplesDataset</span></code></a></p></td>
+<td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfPrediction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">PrepareBatchOfPrediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_state_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfPrediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfPrediction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__getitem__" title="ontolearn.data_struct.PrepareBatchOfPrediction.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__len__" title="ontolearn.data_struct.PrepareBatchOfPrediction.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfPrediction.X">
+<span class="sig-name descname"><span class="pre">X</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfPrediction.X" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfPrediction.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfPrediction.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfPrediction.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfPrediction.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfPrediction.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfPrediction.get_all">
+<span class="sig-name descname"><span class="pre">get_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfPrediction.get_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfPrediction.get_all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">PrepareBatchOfTraining</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_state_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfTraining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.__getitem__" title="ontolearn.data_struct.PrepareBatchOfTraining.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.PrepareBatchOfTraining.__len__" title="ontolearn.data_struct.PrepareBatchOfTraining.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.S">
+<span class="sig-name descname"><span class="pre">S</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.S" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.S_Prime">
+<span class="sig-name descname"><span class="pre">S_Prime</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.S_Prime" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.y">
+<span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.y" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.Negatives">
+<span class="sig-name descname"><span class="pre">Negatives</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.Negatives" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.X">
+<span class="sig-name descname"><span class="pre">X</span></span><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.X" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfTraining.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.PrepareBatchOfTraining.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#PrepareBatchOfTraining.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.PrepareBatchOfTraining.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">Experience</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxlen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#Experience"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.Experience" title="Link to this definition"></a></dt>
+<dd><p>A class to model experiences for Replay Memory.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.current_states">
+<span class="sig-name descname"><span class="pre">current_states</span></span><a class="headerlink" href="#ontolearn.data_struct.Experience.current_states" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.next_states">
+<span class="sig-name descname"><span class="pre">next_states</span></span><a class="headerlink" href="#ontolearn.data_struct.Experience.next_states" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.rewards">
+<span class="sig-name descname"><span class="pre">rewards</span></span><a class="headerlink" href="#ontolearn.data_struct.Experience.rewards" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#Experience.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.Experience.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#Experience.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.Experience.append" title="Link to this definition"></a></dt>
+<dd><p>Append.
+:param e: A tuple of s_i, s_j and reward, where s_i and s_j represent refining s_i and reaching s_j.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.retrieve">
+<span class="sig-name descname"><span class="pre">retrieve</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#Experience.retrieve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.Experience.retrieve" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.Experience.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#Experience.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.Experience.clear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">TriplesData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesData" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.Graph">
+<span class="sig-name descname"><span class="pre">Graph</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.Graph" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.triples">
+<span class="sig-name descname"><span class="pre">triples</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.triples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.entities">
+<span class="sig-name descname"><span class="pre">entities</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.relations">
+<span class="sig-name descname"><span class="pre">relations</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.entity2idx">
+<span class="sig-name descname"><span class="pre">entity2idx</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.entity2idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.relation2idx">
+<span class="sig-name descname"><span class="pre">relation2idx</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesData.relation2idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.load_data">
+<span class="sig-name descname"><span class="pre">load_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesData.load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesData.load_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.get_relations">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_relations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesData.get_relations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesData.get_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesData.get_entities">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesData.get_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesData.get_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">CLIPDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorted_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.__getitem__" title="ontolearn.data_struct.CLIPDataset.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.CLIPDataset.__len__" title="ontolearn.data_struct.CLIPDataset.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.shuffle_examples">
+<span class="sig-name descname"><span class="pre">shuffle_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.shuffle_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.example_sizes">
+<span class="sig-name descname"><span class="pre">example_sizes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.example_sizes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.k">
+<span class="sig-name descname"><span class="pre">k</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.sorted_examples">
+<span class="sig-name descname"><span class="pre">sorted_examples</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.sorted_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDataset.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">CLIPDatasetInference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorted_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDatasetInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.__getitem__" title="ontolearn.data_struct.CLIPDatasetInference.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.CLIPDatasetInference.__len__" title="ontolearn.data_struct.CLIPDatasetInference.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.shuffle_examples">
+<span class="sig-name descname"><span class="pre">shuffle_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.shuffle_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.sorted_examples">
+<span class="sig-name descname"><span class="pre">sorted_examples</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.sorted_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDatasetInference.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.CLIPDatasetInference.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#CLIPDatasetInference.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.CLIPDatasetInference.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">NCESBaseDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESBaseDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset.vocab">
+<span class="sig-name descname"><span class="pre">vocab</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset.vocab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset.inv_vocab">
+<span class="sig-name descname"><span class="pre">inv_vocab</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset.inv_vocab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset.max_length">
+<span class="sig-name descname"><span class="pre">max_length</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset.max_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset.decompose">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">decompose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESBaseDataset.decompose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset.decompose" title="Link to this definition"></a></dt>
+<dd><p>Decomposes a class expression into a sequence of tokens (atoms)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESBaseDataset.get_labels">
+<span class="sig-name descname"><span class="pre">get_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESBaseDataset.get_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESBaseDataset.get_labels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">NCESDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorted_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset" title="ontolearn.data_struct.NCESBaseDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.NCESDataset.__getitem__" title="ontolearn.data_struct.NCESDataset.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.NCESDataset.__len__" title="ontolearn.data_struct.NCESDataset.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.shuffle_examples">
+<span class="sig-name descname"><span class="pre">shuffle_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.shuffle_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.example_sizes">
+<span class="sig-name descname"><span class="pre">example_sizes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.example_sizes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.sorted_examples">
+<span class="sig-name descname"><span class="pre">sorted_examples</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.sorted_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDataset.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">NCESDatasetInference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sorted_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDatasetInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset" title="ontolearn.data_struct.NCESBaseDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.__getitem__" title="ontolearn.data_struct.NCESDatasetInference.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.NCESDatasetInference.__len__" title="ontolearn.data_struct.NCESDatasetInference.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.shuffle_examples">
+<span class="sig-name descname"><span class="pre">shuffle_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.shuffle_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.sorted_examples">
+<span class="sig-name descname"><span class="pre">sorted_examples</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.sorted_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDatasetInference.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.NCESDatasetInference.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#NCESDatasetInference.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.NCESDatasetInference.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">ROCESDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset" title="ontolearn.data_struct.NCESBaseDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.__getitem__" title="ontolearn.data_struct.ROCESDataset.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.ROCESDataset.__len__" title="ontolearn.data_struct.ROCESDataset.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.triples_data">
+<span class="sig-name descname"><span class="pre">triples_data</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.triples_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.k">
+<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.sampling_strategy">
+<span class="sig-name descname"><span class="pre">sampling_strategy</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'p'</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.sampling_strategy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.load_embeddings">
+<span class="sig-name descname"><span class="pre">load_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDataset.load_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.load_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.set_k">
+<span class="sig-name descname"><span class="pre">set_k</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDataset.set_k"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.set_k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDataset.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">ROCESDatasetInference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inv_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'p'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pred_per_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDatasetInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.data_struct.NCESBaseDataset" title="ontolearn.data_struct.NCESBaseDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESBaseDataset</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.__getitem__" title="ontolearn.data_struct.ROCESDatasetInference.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.ROCESDatasetInference.__len__" title="ontolearn.data_struct.ROCESDatasetInference.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.triples_data">
+<span class="sig-name descname"><span class="pre">triples_data</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.triples_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.k">
+<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.sampling_strategy">
+<span class="sig-name descname"><span class="pre">sampling_strategy</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'p'</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.sampling_strategy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.num_examples">
+<span class="sig-name descname"><span class="pre">num_examples</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.num_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.num_pred_per_lp">
+<span class="sig-name descname"><span class="pre">num_pred_per_lp</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.num_pred_per_lp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.load_embeddings">
+<span class="sig-name descname"><span class="pre">load_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDatasetInference.load_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.load_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.set_k">
+<span class="sig-name descname"><span class="pre">set_k</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDatasetInference.set_k"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.set_k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDatasetInference.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.ROCESDatasetInference.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#ROCESDatasetInference.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.ROCESDatasetInference.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.data_struct.</span></span><span class="sig-name descname"><span class="pre">TriplesDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_e</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p>
+<p>All datasets that represent a map from keys to data samples should subclass
+it. All subclasses should overwrite <a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.__getitem__" title="ontolearn.data_struct.TriplesDataset.__getitem__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitem__()</span></code></a>, supporting fetching a
+data sample for a given key. Subclasses could also optionally overwrite
+<a class="reference internal" href="#ontolearn.data_struct.TriplesDataset.__len__" title="ontolearn.data_struct.TriplesDataset.__len__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">__len__()</span></code></a>, which is expected to return the size of the dataset by many
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Sampler</span></code> implementations and the default options
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>. Subclasses could also
+optionally implement <code class="xref py py-meth docutils literal notranslate"><span class="pre">__getitems__()</span></code>, for speedup batched samples
+loading. This method accepts list of indices of samples of batch and returns
+list of samples.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code> by default constructs an index
+sampler that yields integral indices.  To make it work with a map-style
+dataset with non-integral indices/keys, a custom sampler must be provided.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.num_e">
+<span class="sig-name descname"><span class="pre">num_e</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.num_e" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.head_idx">
+<span class="sig-name descname"><span class="pre">head_idx</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.head_idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.rel_idx">
+<span class="sig-name descname"><span class="pre">rel_idx</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.rel_idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.tail_idx">
+<span class="sig-name descname"><span class="pre">tail_idx</span></span><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.tail_idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.data_struct.TriplesDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/data_struct.html#TriplesDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.data_struct.TriplesDataset.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../concept_generator/index.html" class="btn btn-neutral float-left" title="ontolearn.concept_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ea_algorithms/index.html" class="btn btn-neutral float-right" title="ontolearn.ea_algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

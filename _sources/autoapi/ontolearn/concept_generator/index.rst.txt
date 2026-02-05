@@ -1,0 +1,209 @@
+ontolearn.concept_generator
+===========================
+
+.. py:module:: ontolearn.concept_generator
+
+.. autoapi-nested-parse::
+
+   A module to generate concepts.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.concept_generator.ConceptGenerator
+
+
+Module Contents
+---------------
+
+.. py:class:: ConceptGenerator
+
+   A class that can generate some sorts of OWL Class Expressions.
+
+
+   .. py:method:: negation_from_iterables(class_expressions: Iterable[owlapy.class_expression.OWLClassExpression])
+
+      Negate a sequence of Class Expressions.
+
+      :param class_expressions: Iterable of class expressions to negate.
+
+      :returns:
+
+                Negated form of input.
+
+                    { x \| ( x \equv not s}
+
+
+
+   .. py:method:: intersect_from_iterables(a_operands: Iterable[owlapy.class_expression.OWLClassExpression], b_operands: Iterable[owlapy.class_expression.OWLClassExpression]) -> Iterable[owlapy.class_expression.OWLObjectIntersectionOf]
+      :staticmethod:
+
+
+      Create an intersection of each class expression in a_operands with each class expression in b_operands.
+
+
+
+   .. py:method:: union_from_iterables(a_operands: Iterable[owlapy.class_expression.OWLClassExpression], b_operands: Iterable[owlapy.class_expression.OWLClassExpression]) -> Iterable[owlapy.class_expression.OWLObjectUnionOf]
+      :staticmethod:
+
+
+      Create an union of each class expression in a_operands with each class expression in b_operands.
+
+
+
+   .. py:method:: intersection(ops: Iterable[owlapy.class_expression.OWLClassExpression]) -> owlapy.class_expression.OWLObjectIntersectionOf
+
+      Create intersection of class expression.
+
+      :param ops: Operands of the intersection.
+
+      :returns: Intersection with all operands (intersections are merged).
+
+
+
+   .. py:method:: union(ops: Iterable[owlapy.class_expression.OWLClassExpression]) -> owlapy.class_expression.OWLObjectUnionOf
+
+      Create union of class expressions.
+
+      :param ops: Operands of the union
+
+      :returns: Union with all operands (unions are merged).
+
+
+
+   .. py:method:: existential_restriction(filler: owlapy.class_expression.OWLClassExpression, property: owlapy.owl_property.OWLObjectPropertyExpression) -> owlapy.class_expression.OWLObjectSomeValuesFrom
+
+      Create existential restriction.
+
+      :param property: Property.
+      :param filler: Filler of the restriction.
+
+      :returns: Existential restriction.
+
+
+
+   .. py:method:: universal_restriction(filler: owlapy.class_expression.OWLClassExpression, property: owlapy.owl_property.OWLObjectPropertyExpression) -> owlapy.class_expression.OWLObjectAllValuesFrom
+
+      Create universal restriction.
+
+      :param property: Property.
+      :param filler: Filler of the restriction.
+
+      :returns: universal restriction
+
+
+
+   .. py:method:: has_value_restriction(individual: owlapy.owl_individual.OWLIndividual, property: owlapy.owl_property.OWLObjectPropertyExpression) -> owlapy.class_expression.OWLObjectHasValue
+
+      Create object has value restriction.
+
+      :param property: Property.
+      :param individual: Individual of the restriction.
+
+      :returns: Object has value restriction.
+
+
+
+   .. py:method:: min_cardinality_restriction(filler: owlapy.class_expression.OWLClassExpression, property: owlapy.owl_property.OWLObjectPropertyExpression, card: int) -> owlapy.class_expression.OWLObjectMinCardinality
+
+      Create min cardinality restriction.
+
+      :param filler: Filler of the restriction.
+      :param property: Property.
+      :param card: Cardinality of the restriction.
+
+      :returns: Min cardinality restriction.
+
+
+
+   .. py:method:: max_cardinality_restriction(filler: owlapy.class_expression.OWLClassExpression, property: owlapy.owl_property.OWLObjectPropertyExpression, card: int) -> owlapy.class_expression.OWLObjectMaxCardinality
+
+      Create max cardinality restriction.
+
+      :param filler: Filler of the restriction.
+      :param property: Property.
+      :param card: Cardinality of the restriction.
+
+      :returns: Max cardinality restriction.
+
+
+
+   .. py:method:: exact_cardinality_restriction(filler: owlapy.class_expression.OWLClassExpression, property: owlapy.owl_property.OWLObjectPropertyExpression, card: int) -> owlapy.class_expression.OWLObjectExactCardinality
+
+      Create exact cardinality restriction.
+
+      :param filler: Filler of the restriction.
+      :param property: Property.
+      :param card: Cardinality of the restriction.
+
+      :returns: Exact cardinality restriction.
+
+
+
+   .. py:method:: data_existential_restriction(filler: owlapy.owl_data_ranges.OWLDataRange, property: owlapy.owl_property.OWLDataPropertyExpression) -> owlapy.class_expression.OWLDataSomeValuesFrom
+      :staticmethod:
+
+
+      Create data existential restriction.
+
+      :param filler: Filler of the restriction.
+      :param property: Property.
+
+      :returns: Data existential restriction.
+
+
+
+   .. py:method:: data_universal_restriction(filler: owlapy.owl_data_ranges.OWLDataRange, property: owlapy.owl_property.OWLDataPropertyExpression) -> owlapy.class_expression.OWLDataAllValuesFrom
+      :staticmethod:
+
+
+      Create data universal restriction.
+
+      :param filler: Filler of the restriction.
+      :param property: Property.
+
+      :returns: Data universal restriction.
+
+
+
+   .. py:method:: data_has_value_restriction(value: owlapy.owl_literal.OWLLiteral, property: owlapy.owl_property.OWLDataPropertyExpression) -> owlapy.class_expression.OWLDataHasValue
+      :staticmethod:
+
+
+      Create data has value restriction.
+
+      :param value: Value of the restriction.
+      :param property: Property.
+
+      :returns: Data has value restriction.
+
+
+
+   .. py:method:: negation(concept: owlapy.class_expression.OWLClassExpression) -> owlapy.class_expression.OWLClassExpression
+
+      Create negation of a concept.
+
+      :param concept: Class expression.
+
+      :returns: Negation of concept.
+
+
+
+   .. py:property:: thing
+      :type: owlapy.class_expression.OWLClass
+
+
+      OWL Thing.
+
+
+   .. py:property:: nothing
+      :type: owlapy.class_expression.OWLClass
+
+
+      OWL Nothing.
+
+

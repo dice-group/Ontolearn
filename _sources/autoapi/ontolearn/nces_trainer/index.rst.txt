@@ -1,0 +1,111 @@
+ontolearn.nces_trainer
+======================
+
+.. py:module:: ontolearn.nces_trainer
+
+.. autoapi-nested-parse::
+
+   Trainer for NCES instances
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nces_trainer.NCESTrainer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.nces_trainer.before_pad
+
+
+Module Contents
+---------------
+
+.. py:function:: before_pad(arg)
+
+.. py:class:: NCESTrainer(synthesizer, epochs=300, batch_size=128, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, num_workers=8, storage_path='./')
+
+   Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES.
+
+
+   .. py:attribute:: synthesizer
+
+
+   .. py:attribute:: epochs
+      :value: 300
+
+
+
+   .. py:attribute:: batch_size
+      :value: 128
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.0001
+
+
+
+   .. py:attribute:: tmax
+      :value: 20
+
+
+
+   .. py:attribute:: eta_min
+      :value: 1e-05
+
+
+
+   .. py:attribute:: clip_value
+      :value: 5.0
+
+
+
+   .. py:attribute:: num_workers
+      :value: 8
+
+
+
+   .. py:attribute:: storage_path
+      :value: './'
+
+
+
+   .. py:method:: compute_accuracy(prediction, target)
+      :staticmethod:
+
+
+
+   .. py:method:: get_optimizer(model, emb_model=None, optimizer='Adam')
+
+
+   .. py:method:: get_data_idxs()
+
+
+   .. py:method:: get_er_vocab()
+
+
+   .. py:method:: show_num_trainable_params(synthesizer)
+      :staticmethod:
+
+
+
+   .. py:method:: collate_batch(batch)
+
+
+   .. py:method:: map_to_token(idx_array)
+
+
+   .. py:method:: train_step(batch, model, emb_model, optimizer, device, triples_dataloader=None)
+
+
+   .. py:method:: train(data, shuffle_examples=False, example_sizes=None, save_model=True, optimizer='Adam', record_runtime=True)
+
+

@@ -1,0 +1,468 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.nero_utils &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.nero_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.nero_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">PriorityQueue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Set</span><span class="p">,</span> <span class="n">List</span>
+
+<div class="viewcode-block" id="Role">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.Role">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Role</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents an OWL object property/role.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+<div class="viewcode-block" id="Role.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.Role.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Role at </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s1"> | </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="Role.__repr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.Role.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TargetClassExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.TargetClassExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TargetClassExpression</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a target class expression for neural training.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">label_id</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="p">:</span> <span class="n">Set</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span> <span class="o">=</span> <span class="n">str_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">=</span> <span class="n">expression_chain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span>
+
+<div class="viewcode-block" id="TargetClassExpression.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.TargetClassExpression.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">quality</span></div>
+
+
+<div class="viewcode-block" id="TargetClassExpression.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.TargetClassExpression.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;TargetClassExpression | </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> | Indv:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span><span class="si">}</span><span class="s1"> | Quality:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="TargetClassExpression.__repr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.TargetClassExpression.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ClassExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClassExpression</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for class expressions.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span>
+                 <span class="n">owl_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_individuals</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression_chain</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span> <span class="o">=</span> <span class="n">str_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">=</span> <span class="n">expression_chain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span> <span class="k">if</span> <span class="n">quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owl_class</span> <span class="o">=</span> <span class="n">owl_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span> <span class="k">if</span> <span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;class_expression&#39;</span>  <span class="c1"># Default type, overridden by subclasses</span>
+
+<div class="viewcode-block" id="ClassExpression.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s1"> | </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> | Indv:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span><span class="si">}</span><span class="s1"> | Quality:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="ClassExpression.__repr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_individuals</span>
+
+<div class="viewcode-block" id="ClassExpression.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">quality</span></div>
+
+
+<div class="viewcode-block" id="ClassExpression.__mul__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression.__mul__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create intersection of two class expressions (A ⊓ B)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊓ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊓ (</span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">) ⊓ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">) ⊓ (</span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊓ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">IntersectionClassExpression</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">concepts</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">),</span>
+            <span class="n">str_individuals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">),</span>
+            <span class="n">expression_chain</span><span class="o">=</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,)),</span> <span class="s1">&#39;AND&#39;</span><span class="p">,</span>
+                            <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">+</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="p">,)))</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ClassExpression.__add__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ClassExpression.__add__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create union of two class expressions (A ⊔ B)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊔ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊔ (</span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">) ⊔ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">) ⊔ (</span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> ⊔ </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">return</span> <span class="n">UnionClassExpression</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">str_individuals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">),</span>
+            <span class="n">concepts</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">),</span>
+            <span class="n">expression_chain</span><span class="o">=</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,)),</span> <span class="s1">&#39;OR&#39;</span><span class="p">,</span>
+                            <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">expression_chain</span> <span class="o">+</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">name</span><span class="p">,)))</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AtomicExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.AtomicExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AtomicExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents an atomic class expression.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span>
+                 <span class="n">owl_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="n">owl_class</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;atomic_expression&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span></div>
+
+
+
+<div class="viewcode-block" id="ComplementOfAtomicExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ComplementOfAtomicExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComplementOfAtomicExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a negated atomic class expression.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">atomic_expression</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span>
+                 <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="n">owl_class</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_expression</span> <span class="o">=</span> <span class="n">atomic_expression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;negated_expression&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span></div>
+
+
+
+<div class="viewcode-block" id="UniversalQuantifierExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.UniversalQuantifierExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UniversalQuantifierExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a universal quantifier expression (∀).&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_individuals</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression_chain</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filler</span> <span class="o">=</span> <span class="n">filler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s2">&quot;universal_quantifier_expression&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+
+
+<div class="viewcode-block" id="ExistentialQuantifierExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.ExistentialQuantifierExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExistentialQuantifierExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents an existential quantifier expression (∃).&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span>
+                 <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_individuals</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression_chain</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filler</span> <span class="o">=</span> <span class="n">filler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s2">&quot;existantial_quantifier_expression&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+
+
+<div class="viewcode-block" id="IntersectionClassExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.IntersectionClassExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntersectionClassExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents an intersection of class expressions.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span>
+                 <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">concepts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="n">owl_class</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;intersection_expression&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">concepts</span> <span class="o">=</span> <span class="n">concepts</span></div>
+
+
+
+<div class="viewcode-block" id="UnionClassExpression">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.UnionClassExpression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnionClassExpression</span><span class="p">(</span><span class="n">ClassExpression</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a union of class expressions.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span>
+                 <span class="n">expression_chain</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">concepts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">idx_individuals</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">str_individuals</span><span class="o">=</span><span class="n">str_individuals</span><span class="p">,</span>
+                         <span class="n">expression_chain</span><span class="o">=</span><span class="n">expression_chain</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">,</span> <span class="n">owl_class</span><span class="o">=</span><span class="n">owl_class</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">length</span> <span class="o">&gt;=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s1">&#39;union_expression&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_id</span> <span class="o">=</span> <span class="n">label_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_individuals</span> <span class="o">=</span> <span class="n">idx_individuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">concepts</span> <span class="o">=</span> <span class="n">concepts</span></div>
+
+
+<div class="viewcode-block" id="State">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.State">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">State</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">tce</span><span class="p">:</span> <span class="n">TargetClassExpression</span><span class="p">,</span> <span class="n">str_individuals</span><span class="p">:</span> <span class="nb">set</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tce</span> <span class="o">=</span> <span class="n">tce</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tce</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">str_individuals</span> <span class="o">=</span> <span class="n">str_individuals</span>
+
+<div class="viewcode-block" id="State.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.State.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">quality</span></div>
+
+
+<div class="viewcode-block" id="State.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.State.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tce</span><span class="si">}</span><span class="s1"> | Quality:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span></div>
+</div>
+
+
+<div class="viewcode-block" id="SearchTree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SearchTree</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Priority queue for managing search states.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxsize</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">(</span><span class="n">maxsize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SearchTree.__contains__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.__contains__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.put">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.put">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">expression</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="o">-</span><span class="n">expression</span><span class="o">.</span><span class="n">quality</span>
+                <span class="c1"># The lowest valued entries are retrieved first</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">expression</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="p">[</span><span class="n">expression</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">expression</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Define the condition&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.get">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="p">[</span><span class="n">expression</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">expression</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.get_all">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.get_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.__len__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.__len__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.__iter__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.__iter__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># No garantie of returing best</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">exp</span> <span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SearchTree.extend_queue">
+<a class="viewcode-back" href="../../autoapi/ontolearn/nero_utils/index.html#ontolearn.nero_utils.SearchTree.extend_queue">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extend_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extend queue with other queue.</span>
+<span class="sd">        :param other:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">other</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

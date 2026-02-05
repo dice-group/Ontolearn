@@ -1,0 +1,74 @@
+ontolearn.experiments
+=====================
+
+.. py:module:: ontolearn.experiments
+
+.. autoapi-nested-parse::
+
+   Experiments to validate a concept learning model.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.experiments.Experiments
+
+
+Module Contents
+---------------
+
+.. py:class:: Experiments(max_test_time_per_concept=3)
+
+   .. py:attribute:: random_state_k_fold
+      :value: 1
+
+
+
+   .. py:attribute:: max_test_time_per_concept
+      :value: 3
+
+
+
+   .. py:method:: store_report(model, learning_problems: List[Iterable], test_report: List[dict]) -> Tuple[str, Dict[str, Any]]
+      :staticmethod:
+
+
+      Create a report for concepts generated for a particular learning problem.
+      :param model: Concept learner.
+      :param learning_problems: A list of learning problems (lps) where lp corresponds to target concept, positive and
+                                negative examples, respectively.
+      :param test_report: A list of predictions (preds) where test_report => { 'Prediction': str, 'F-measure': float,
+                          'Accuracy', 'Runtime':float}.
+
+      :returns: Both report as string and report as dictionary.
+
+
+
+   .. py:method:: start_KFold(k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None)
+
+      Perform KFold cross validation.
+
+      :param models: concept learners.
+      :param k: k value of k-fold.
+      :param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept j denotes the set of
+                      positive examples and k denotes the set of negative examples.
+
+      .. note:: This method returns nothing. It just prints the report results.
+
+
+
+   .. py:method:: start(dataset: List[Tuple[str, Set, Set]] = None, models: List = None)
+
+
+   .. py:method:: report_results(results, num_problems)
+      :staticmethod:
+
+
+      Prints the result generated from validations.
+
+
+
+

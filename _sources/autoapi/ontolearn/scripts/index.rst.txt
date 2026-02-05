@@ -1,0 +1,15 @@
+ontolearn.scripts
+=================
+
+.. py:module:: ontolearn.scripts
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/scripts/run/index
+
+

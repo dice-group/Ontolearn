@@ -1,0 +1,548 @@
+ontolearn.data_struct
+=====================
+
+.. py:module:: ontolearn.data_struct
+
+.. autoapi-nested-parse::
+
+   Data structures.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.data_struct.PrepareBatchOfPrediction
+   ontolearn.data_struct.PrepareBatchOfTraining
+   ontolearn.data_struct.Experience
+   ontolearn.data_struct.TriplesData
+   ontolearn.data_struct.CLIPDataset
+   ontolearn.data_struct.CLIPDatasetInference
+   ontolearn.data_struct.NCESBaseDataset
+   ontolearn.data_struct.NCESDataset
+   ontolearn.data_struct.NCESDatasetInference
+   ontolearn.data_struct.ROCESDataset
+   ontolearn.data_struct.ROCESDatasetInference
+   ontolearn.data_struct.TriplesDataset
+
+
+Module Contents
+---------------
+
+.. py:class:: PrepareBatchOfPrediction(current_state: torch.FloatTensor, next_state_batch: torch.FloatTensor, p: torch.FloatTensor, n: torch.FloatTensor)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: X
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+   .. py:method:: get_all()
+
+
+.. py:class:: PrepareBatchOfTraining(current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor, n: torch.Tensor, q: torch.Tensor)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: S
+
+
+   .. py:attribute:: S_Prime
+
+
+   .. py:attribute:: y
+
+
+   .. py:attribute:: Negatives
+
+
+   .. py:attribute:: X
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: Experience(maxlen: int)
+
+   A class to model experiences for Replay Memory.
+
+
+   .. py:attribute:: current_states
+
+
+   .. py:attribute:: next_states
+
+
+   .. py:attribute:: rewards
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: append(e)
+
+      Append.
+      :param e: A tuple of s_i, s_j and reward, where s_i and s_j represent refining s_i and reaching s_j.
+
+
+
+   .. py:method:: retrieve()
+
+
+   .. py:method:: clear()
+
+
+.. py:class:: TriplesData(knowledge_base_path)
+
+   .. py:attribute:: Graph
+
+
+   .. py:attribute:: triples
+      :value: []
+
+
+
+   .. py:attribute:: entities
+
+
+   .. py:attribute:: relations
+
+
+   .. py:attribute:: entity2idx
+
+
+   .. py:attribute:: relation2idx
+
+
+   .. py:method:: load_data()
+
+
+   .. py:method:: get_relations(data)
+      :staticmethod:
+
+
+
+   .. py:method:: get_entities(data)
+      :staticmethod:
+
+
+
+.. py:class:: CLIPDataset(data, embeddings, num_examples, shuffle_examples, example_sizes=None, k=5, sorted_examples=True)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: shuffle_examples
+
+
+   .. py:attribute:: example_sizes
+      :value: None
+
+
+
+   .. py:attribute:: k
+      :value: 5
+
+
+
+   .. py:attribute:: sorted_examples
+      :value: True
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: CLIPDatasetInference(data: list, embeddings, num_examples, shuffle_examples, sorted_examples=True)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: shuffle_examples
+
+
+   .. py:attribute:: sorted_examples
+      :value: True
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: NCESBaseDataset(vocab, inv_vocab, max_length)
+
+   .. py:attribute:: vocab
+
+
+   .. py:attribute:: inv_vocab
+
+
+   .. py:attribute:: max_length
+
+
+   .. py:method:: decompose(concept_name: str) -> list
+      :staticmethod:
+
+
+      Decomposes a class expression into a sequence of tokens (atoms)
+
+
+
+   .. py:method:: get_labels(target)
+
+
+.. py:class:: NCESDataset(data, embeddings, num_examples, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True)
+
+   Bases: :py:obj:`NCESBaseDataset`, :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: shuffle_examples
+
+
+   .. py:attribute:: example_sizes
+      :value: None
+
+
+
+   .. py:attribute:: sorted_examples
+      :value: True
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: NCESDatasetInference(data, embeddings, num_examples, vocab, inv_vocab, shuffle_examples, max_length=48, sorted_examples=True)
+
+   Bases: :py:obj:`NCESBaseDataset`, :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: shuffle_examples
+
+
+   .. py:attribute:: sorted_examples
+      :value: True
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: ROCESDataset(data, triples_data, num_examples, k, vocab, inv_vocab, max_length, sampling_strategy='p')
+
+   Bases: :py:obj:`NCESBaseDataset`, :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: triples_data
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: sampling_strategy
+      :value: 'p'
+
+
+
+   .. py:method:: load_embeddings(embedding_model)
+
+
+   .. py:method:: set_k(k)
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: ROCESDatasetInference(data, triples_data, num_examples, k, vocab, inv_vocab, max_length, sampling_strategy='p', num_pred_per_lp=1)
+
+   Bases: :py:obj:`NCESBaseDataset`, :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: data
+
+
+   .. py:attribute:: triples_data
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: sampling_strategy
+      :value: 'p'
+
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: num_pred_per_lp
+      :value: 1
+
+
+
+   .. py:method:: load_embeddings(embedding_model)
+
+
+   .. py:method:: set_k(k)
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: TriplesDataset(er_vocab, num_e)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   An abstract class representing a :class:`Dataset`.
+
+   All datasets that represent a map from keys to data samples should subclass
+   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
+   data sample for a given key. Subclasses could also optionally overwrite
+   :meth:`__len__`, which is expected to return the size of the dataset by many
+   :class:`~torch.utils.data.Sampler` implementations and the default options
+   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
+   optionally implement :meth:`__getitems__`, for speedup batched samples
+   loading. This method accepts list of indices of samples of batch and returns
+   list of samples.
+
+   .. note::
+     :class:`~torch.utils.data.DataLoader` by default constructs an index
+     sampler that yields integral indices.  To make it work with a map-style
+     dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: num_e
+
+
+   .. py:attribute:: head_idx
+
+
+   .. py:attribute:: rel_idx
+
+
+   .. py:attribute:: tail_idx
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+

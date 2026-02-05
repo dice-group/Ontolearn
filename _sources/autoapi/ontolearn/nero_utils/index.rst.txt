@@ -1,0 +1,416 @@
+ontolearn.nero_utils
+====================
+
+.. py:module:: ontolearn.nero_utils
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nero_utils.Role
+   ontolearn.nero_utils.TargetClassExpression
+   ontolearn.nero_utils.ClassExpression
+   ontolearn.nero_utils.AtomicExpression
+   ontolearn.nero_utils.ComplementOfAtomicExpression
+   ontolearn.nero_utils.UniversalQuantifierExpression
+   ontolearn.nero_utils.ExistentialQuantifierExpression
+   ontolearn.nero_utils.IntersectionClassExpression
+   ontolearn.nero_utils.UnionClassExpression
+   ontolearn.nero_utils.State
+   ontolearn.nero_utils.SearchTree
+
+
+Module Contents
+---------------
+
+.. py:class:: Role(*, name: str)
+
+   Represents an OWL object property/role.
+
+
+   .. py:attribute:: name
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: TargetClassExpression(*, label_id, name: str, idx_individuals: Set = None, expression_chain: List = None, length: int = None, str_individuals: Set = None, _type=None)
+
+   Represents a target class expression for neural training.
+
+
+   .. py:attribute:: label_id
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: str_individuals
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :value: None
+
+
+
+   .. py:attribute:: expression_chain
+      :value: None
+
+
+
+   .. py:attribute:: num_individuals
+      :value: 0
+
+
+
+   .. py:attribute:: length
+      :value: None
+
+
+
+   .. py:attribute:: quality
+      :value: None
+
+
+
+   .. py:property:: size
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: ClassExpression(*, name: str, str_individuals: Set, expression_chain: List, owl_class=None, quality=None, length=None)
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Base class for class expressions.
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: str_individuals
+
+
+   .. py:attribute:: expression_chain
+
+
+   .. py:attribute:: num_individuals
+
+
+   .. py:attribute:: quality
+      :value: None
+
+
+
+   .. py:attribute:: owl_class
+      :value: None
+
+
+
+   .. py:attribute:: length
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :value: 'class_expression'
+
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:property:: size
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __mul__(other)
+
+      Create intersection of two class expressions (A ⊓ B)
+
+
+
+   .. py:method:: __add__(other)
+
+      Create union of two class expressions (A ⊔ B)
+
+
+
+.. py:class:: AtomicExpression(*, name: str, str_individuals: Set, expression_chain: List, owl_class=None, quality=None, label_id=None, idx_individuals=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents an atomic class expression.
+
+
+   .. py:attribute:: length
+      :value: 1
+
+
+
+   .. py:attribute:: type
+      :value: 'atomic_expression'
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+.. py:class:: ComplementOfAtomicExpression(*, name: str, atomic_expression, str_individuals: Set, expression_chain: List, quality=None, owl_class=None, label_id=None, idx_individuals=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents a negated atomic class expression.
+
+
+   .. py:attribute:: atomic_expression
+
+
+   .. py:attribute:: length
+      :value: 2
+
+
+
+   .. py:attribute:: type
+      :value: 'negated_expression'
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+.. py:class:: UniversalQuantifierExpression(*, name: str, role=None, filler=None, label_id=None, idx_individuals=None, str_individuals: Set, expression_chain: List, quality=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents a universal quantifier expression (∀).
+
+
+   .. py:attribute:: role
+      :value: None
+
+
+
+   .. py:attribute:: filler
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :value: 'universal_quantifier_expression'
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: length
+      :value: 3
+
+
+
+.. py:class:: ExistentialQuantifierExpression(*, name: str, role=None, filler=None, str_individuals: Set, expression_chain: List, quality=None, label_id=None, idx_individuals=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents an existential quantifier expression (∃).
+
+
+   .. py:attribute:: role
+      :value: None
+
+
+
+   .. py:attribute:: filler
+      :value: None
+
+
+
+   .. py:attribute:: type
+      :value: 'existantial_quantifier_expression'
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: length
+      :value: 3
+
+
+
+.. py:class:: IntersectionClassExpression(*, name: str, length: int, str_individuals: Set, expression_chain: List, owl_class=None, quality=None, label_id=None, concepts=None, idx_individuals=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents an intersection of class expressions.
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: type
+      :value: 'intersection_expression'
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: concepts
+      :value: None
+
+
+
+.. py:class:: UnionClassExpression(*, name: str, length: int, str_individuals: Set, expression_chain: List, owl_class=None, concepts=None, quality=None, label_id=None, idx_individuals=None)
+
+   Bases: :py:obj:`ClassExpression`
+
+
+   Represents a union of class expressions.
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: type
+      :value: 'union_expression'
+
+
+
+   .. py:attribute:: label_id
+      :value: None
+
+
+
+   .. py:attribute:: idx_individuals
+      :value: None
+
+
+
+   .. py:attribute:: concepts
+      :value: None
+
+
+
+.. py:class:: State(quality: float, tce: TargetClassExpression, str_individuals: set)
+
+   .. py:attribute:: quality
+
+
+   .. py:attribute:: tce
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: str_individuals
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: SearchTree(maxsize=0)
+
+   Priority queue for managing search states.
+
+
+   .. py:attribute:: items_in_queue
+
+
+   .. py:attribute:: gate
+
+
+   .. py:method:: __contains__(key)
+
+
+   .. py:method:: put(expression, key=None, condition=None)
+
+
+   .. py:method:: get()
+
+
+   .. py:method:: get_all()
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: extend_queue(other) -> None
+
+      Extend queue with other queue.
+      :param other:
+
+
+

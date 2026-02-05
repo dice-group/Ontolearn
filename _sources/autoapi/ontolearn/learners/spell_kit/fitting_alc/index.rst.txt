@@ -1,0 +1,290 @@
+ontolearn.learners.spell_kit.fitting_alc
+========================================
+
+.. py:module:: ontolearn.learners.spell_kit.fitting_alc
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting_alc.TYPE_ENCODING
+   ontolearn.learners.spell_kit.fitting_alc.TREE_TEMPLATES
+   ontolearn.learners.spell_kit.fitting_alc.TREE_TEMPLATE_LIMIT
+   ontolearn.learners.spell_kit.fitting_alc.d_op
+   ontolearn.learners.spell_kit.fitting_alc.d_var_names
+   ontolearn.learners.spell_kit.fitting_alc.TOP
+   ontolearn.learners.spell_kit.fitting_alc.BOT
+   ontolearn.learners.spell_kit.fitting_alc.NEG
+   ontolearn.learners.spell_kit.fitting_alc.AND
+   ontolearn.learners.spell_kit.fitting_alc.OR
+   ontolearn.learners.spell_kit.fitting_alc.EX
+   ontolearn.learners.spell_kit.fitting_alc.ALL
+   ontolearn.learners.spell_kit.fitting_alc.ALC_OP
+   ontolearn.learners.spell_kit.fitting_alc.ALC_OP_B
+   ontolearn.learners.spell_kit.fitting_alc.X
+   ontolearn.learners.spell_kit.fitting_alc.Z
+   ontolearn.learners.spell_kit.fitting_alc.V
+   ontolearn.learners.spell_kit.fitting_alc.L
+   ontolearn.learners.spell_kit.fitting_alc.T
+   ontolearn.learners.spell_kit.fitting_alc.NNF
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting_alc.bcolors
+   ontolearn.learners.spell_kit.fitting_alc.STreeNode
+   ontolearn.learners.spell_kit.fitting_alc.FittingALC
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting_alc.interrupt
+   ontolearn.learners.spell_kit.fitting_alc.solver_solve
+   ontolearn.learners.spell_kit.fitting_alc.all_trees
+
+
+Module Contents
+---------------
+
+.. py:data:: TYPE_ENCODING
+   :type:  bool
+   :value: True
+
+
+.. py:data:: TREE_TEMPLATES
+   :type:  bool
+   :value: True
+
+
+.. py:data:: TREE_TEMPLATE_LIMIT
+   :value: 10
+
+
+.. py:class:: bcolors
+
+   .. py:attribute:: HEADER
+      :value: '\x1b[95m'
+
+
+
+   .. py:attribute:: OKBLUE
+      :value: '\x1b[94m'
+
+
+
+   .. py:attribute:: OKCYAN
+      :value: '\x1b[96m'
+
+
+
+   .. py:attribute:: OKGREEN
+      :value: '\x1b[92m'
+
+
+
+   .. py:attribute:: WARNING
+      :value: '\x1b[93m'
+
+
+
+   .. py:attribute:: FAIL
+      :value: '\x1b[91m'
+
+
+
+   .. py:attribute:: ENDC
+      :value: '\x1b[0m'
+
+
+
+   .. py:attribute:: BOLD
+      :value: '\x1b[1m'
+
+
+
+   .. py:attribute:: UNDERLINE
+      :value: '\x1b[4m'
+
+
+
+.. py:data:: d_op
+
+.. py:data:: d_var_names
+
+.. py:data:: TOP
+   :value: 0
+
+
+.. py:data:: BOT
+   :value: 1
+
+
+.. py:data:: NEG
+   :value: 2
+
+
+.. py:data:: AND
+   :value: 3
+
+
+.. py:data:: OR
+   :value: 4
+
+
+.. py:data:: EX
+   :value: 5
+
+
+.. py:data:: ALL
+   :value: 6
+
+
+.. py:data:: ALC_OP
+
+.. py:data:: ALC_OP_B
+
+.. py:data:: X
+   :value: 0
+
+
+.. py:data:: Z
+   :value: 2
+
+
+.. py:data:: V
+   :value: 4
+
+
+.. py:data:: L
+   :value: 5
+
+
+.. py:data:: T
+   :value: 6
+
+
+.. py:data:: NNF
+   :type:  bool
+   :value: False
+
+
+.. py:function:: interrupt(s)
+
+.. py:function:: solver_solve(solver: pysat.solvers.Glucose4, timeout: float)
+
+.. py:class:: STreeNode(node, children)
+
+   .. py:attribute:: node
+
+
+   .. py:attribute:: children
+
+
+   .. py:method:: to_asciitree()
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: FromDict(dict, root) -> STreeNode
+      :classmethod:
+
+
+
+.. py:class:: FittingALC(A: ontolearn.learners.spell_kit.structures.Structure, k: int, P: list[int], N: list[int], op=ALC_OP, cov_p=-1, cov_n=-1, tree_templates=True, type_encoding=True)
+
+   .. py:attribute:: tree_templates
+      :value: True
+
+
+
+   .. py:attribute:: type_encoding
+      :value: True
+
+
+
+   .. py:attribute:: P
+      :type:  list[int]
+
+
+   .. py:attribute:: N
+      :type:  list[int]
+
+
+   .. py:attribute:: A
+      :type:  ontolearn.learners.spell_kit.structures.Structure
+
+
+   .. py:attribute:: sigma
+      :type:  ontolearn.learners.spell_kit.structures.Signature
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: op
+
+
+   .. py:attribute:: op_b
+
+
+   .. py:attribute:: op_r
+
+
+   .. py:attribute:: tree_node_symbols
+
+
+   .. py:attribute:: types
+
+
+   .. py:attribute:: vars
+
+
+   .. py:attribute:: n_op
+
+
+   .. py:attribute:: cov_p
+
+
+   .. py:attribute:: cov_n
+
+
+   .. py:attribute:: solver
+
+
+   .. py:attribute:: max_var
+      :value: 0
+
+
+
+   .. py:method:: solve()
+
+
+   .. py:method:: solve_incr(max_k: int, start_k: int = 1, return_string=False, timeout: float = -1)
+
+
+   .. py:method:: cn_types() -> set[frozenset[str]]
+
+
+   .. py:method:: solve_approx(k: int, min_n: int, timeout: float = -1)
+
+
+   .. py:method:: solve_approx2(k: int, min_n: int, timeout: float = -1)
+
+
+   .. py:method:: solve_incr_approx(max_k: int, start_k: int = 1, min_n: int = 1, timeout: float = -1)
+
+
+   .. py:method:: printVariables()
+
+
+.. py:function:: all_trees(k: int, start: int = 0) -> list[list[tuple[int] | tuple[int, int] | tuple[]]]
+

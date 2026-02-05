@@ -1,0 +1,365 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.semantic_caching &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.tentris" href="../tentris/index.html" />
+    <link rel="prev" title="ontolearn.search" href="../search/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.semantic_caching</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.concept_generator"><code class="docutils literal notranslate"><span class="pre">concept_generator()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.get_saved_concepts"><code class="docutils literal notranslate"><span class="pre">get_saved_concepts()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.concept_retrieval"><code class="docutils literal notranslate"><span class="pre">concept_retrieval()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.cache"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.cache</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.access_times"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.access_times</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.cache_size"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.cache_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.strategy"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.strategy</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.random_seed"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.random_seed</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.initialized"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.initialized</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.get"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.get()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.put"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.put()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.initialize_cache"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.initialize_cache()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.get_all_items"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.get_all_items()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction.is_full"><code class="docutils literal notranslate"><span class="pre">CacheWithEviction.is_full()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.semantic_caching_size"><code class="docutils literal notranslate"><span class="pre">semantic_caching_size()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.non_semantic_caching_size"><code class="docutils literal notranslate"><span class="pre">non_semantic_caching_size()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.retrieve"><code class="docutils literal notranslate"><span class="pre">retrieve()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.retrieve_other_reasoner"><code class="docutils literal notranslate"><span class="pre">retrieve_other_reasoner()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.run_semantic_cache"><code class="docutils literal notranslate"><span class="pre">run_semantic_cache()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.semantic_caching.run_non_semantic_cache"><code class="docutils literal notranslate"><span class="pre">run_non_semantic_cache()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.semantic_caching</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/semantic_caching/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.semantic_caching">
+<span id="ontolearn-semantic-caching"></span><h1>ontolearn.semantic_caching<a class="headerlink" href="#module-ontolearn.semantic_caching" title="Link to this heading"></a></h1>
+<p>python examples/retrieval_eval.py</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.CacheWithEviction" title="ontolearn.semantic_caching.CacheWithEviction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CacheWithEviction</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.concept_generator" title="ontolearn.semantic_caching.concept_generator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_generator</span></code></a>(path_kg)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.get_saved_concepts" title="ontolearn.semantic_caching.get_saved_concepts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_saved_concepts</span></code></a>(path_kg, data_name, shuffle)</p></td>
+<td><p>Shuffle or not the generated concept and save it in a folder for reproducibility.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.concept_retrieval" title="ontolearn.semantic_caching.concept_retrieval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_retrieval</span></code></a>(→ Set[str])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.semantic_caching_size" title="ontolearn.semantic_caching.semantic_caching_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">semantic_caching_size</span></code></a>(func, cache_size, ...)</p></td>
+<td><p>This function implements the semantic caching algorithm for ALC concepts as presented in the paper</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.non_semantic_caching_size" title="ontolearn.semantic_caching.non_semantic_caching_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">non_semantic_caching_size</span></code></a>(func, cache_size)</p></td>
+<td><p>This function implements a caching algorithm for ALC concepts without semantics.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.retrieve" title="ontolearn.semantic_caching.retrieve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">retrieve</span></code></a>(→ Tuple[Set[str], Set[str]])</p></td>
+<td><p>Retrieve instances with neural reasoner</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.retrieve_other_reasoner" title="ontolearn.semantic_caching.retrieve_other_reasoner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">retrieve_other_reasoner</span></code></a>(expression, path_kg[, ...])</p></td>
+<td><p>Retrieve instances with symbolic reasoners</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.run_semantic_cache" title="ontolearn.semantic_caching.run_semantic_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_semantic_cache</span></code></a>(path_kg, path_kge, cache_size, ...)</p></td>
+<td><p>Return cache performnace with semantics</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.semantic_caching.run_non_semantic_cache" title="ontolearn.semantic_caching.run_non_semantic_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_non_semantic_cache</span></code></a>(path_kg, path_kge, cache_size, ...)</p></td>
+<td><p>Return cache performnace without any semantics</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.concept_generator">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">concept_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#concept_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.concept_generator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.get_saved_concepts">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">get_saved_concepts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#get_saved_concepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.get_saved_concepts" title="Link to this definition"></a></dt>
+<dd><p>Shuffle or not the generated concept and save it in a folder for reproducibility.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.concept_retrieval">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">concept_retrieval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">retriever_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#concept_retrieval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.concept_retrieval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">CacheWithEviction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LIFO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.cache">
+<span class="sig-name descname"><span class="pre">cache</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.cache" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.access_times">
+<span class="sig-name descname"><span class="pre">access_times</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.access_times" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.cache_size">
+<span class="sig-name descname"><span class="pre">cache_size</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.cache_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.strategy">
+<span class="sig-name descname"><span class="pre">strategy</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LIFO'</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.strategy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.random_seed">
+<span class="sig-name descname"><span class="pre">random_seed</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.random_seed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.initialized">
+<span class="sig-name descname"><span class="pre">initialized</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.initialized" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.get" title="Link to this definition"></a></dt>
+<dd><p>Retrieve an item from the cache. Updates access time for LRU/MRU.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.put">
+<span class="sig-name descname"><span class="pre">put</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction.put"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.put" title="Link to this definition"></a></dt>
+<dd><p>Add an item to the cache. Evicts an entry if the cache is full.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.initialize_cache">
+<span class="sig-name descname"><span class="pre">initialize_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_onto</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">third</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">All_individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handle_restriction_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concepts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction.initialize_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.initialize_cache" title="Link to this definition"></a></dt>
+<dd><p>Initialize the cache with precomputed results for OWLClass and Existential concepts.
+:param ontology: The loaded ontology.
+:param func: Function to retrieve individuals for a given expression.
+:param concepts: List of OWL concepts to precompute and store instances for.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.get_all_items">
+<span class="sig-name descname"><span class="pre">get_all_items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction.get_all_items"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.get_all_items" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.CacheWithEviction.is_full">
+<span class="sig-name descname"><span class="pre">is_full</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#CacheWithEviction.is_full"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.CacheWithEviction.is_full" title="Link to this definition"></a></dt>
+<dd><p>Check if the cache is full.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.semantic_caching_size">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">semantic_caching_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eviction_strategy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concepts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#semantic_caching_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.semantic_caching_size" title="Link to this definition"></a></dt>
+<dd><p>This function implements the semantic caching algorithm for ALC concepts as presented in the paper</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.non_semantic_caching_size">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">non_semantic_caching_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#non_semantic_caching_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.non_semantic_caching_size" title="Link to this definition"></a></dt>
+<dd><p>This function implements a caching algorithm for ALC concepts without semantics.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.retrieve">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">retrieve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_kg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_kge_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#retrieve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.retrieve" title="Link to this definition"></a></dt>
+<dd><p>Retrieve instances with neural reasoner</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.retrieve_other_reasoner">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">retrieve_other_reasoner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_reasoner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HermiT'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#retrieve_other_reasoner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.retrieve_other_reasoner" title="Link to this definition"></a></dt>
+<dd><p>Retrieve instances with symbolic reasoners</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.run_semantic_cache">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">run_semantic_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_kg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_kge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_reasoner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eviction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_concepts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#run_semantic_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.run_semantic_cache" title="Link to this definition"></a></dt>
+<dd><p>Return cache performnace with semantics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.semantic_caching.run_non_semantic_cache">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.semantic_caching.</span></span><span class="sig-name descname"><span class="pre">run_non_semantic_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_kg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_kge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_reasoner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_concepts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/semantic_caching.html#run_non_semantic_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.semantic_caching.run_non_semantic_cache" title="Link to this definition"></a></dt>
+<dd><p>Return cache performnace without any semantics</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../search/index.html" class="btn btn-neutral float-left" title="ontolearn.search" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../tentris/index.html" class="btn btn-neutral float-right" title="ontolearn.tentris" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,247 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluate a class expression &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Concept Learning" href="06_concept_learners.html" />
+    <link rel="prev" title="Knowledge Bases" href="04_knowledge_base.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Evaluate a class expression</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#construct-a-learning-problem">Construct a learning problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#construct-a-concept">Construct a concept</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#evaluation-and-results">Evaluation and results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Evaluate a class expression</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/usage/05_evaluate_ce.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="evaluate-a-class-expression">
+<h1>Evaluate a class expression<a class="headerlink" href="#evaluate-a-class-expression" title="Link to this heading"></a></h1>
+<p>When using a concept learner, the generated concepts (class expressions) for a certain learning problem
+can be evaluated using different approaches. One of them is to use the static functions <code class="docutils literal notranslate"><span class="pre">evaluate_concept</span></code>.
+It requires the following arguments:</p>
+<ol class="arabic simple">
+<li><p>a knowledge base: <a class="reference internal" href="../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="xref myst py py-class">AbstractKnowledgeBase</span></a></p></li>
+<li><p>a concept to evaluate: <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/class_expression/index.html#owlapy.class_expression.class_expression.OWLClassExpression">OWLClassExpression</a></p></li>
+<li><p>a quality function: <a class="reference internal" href="../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="xref myst py py-class">AbstractScorer</span></a></p></li>
+<li><p>the encoded learning problem: <a class="reference internal" href="../autoapi/ontolearn/learning_problem/index.html#ontolearn.learning_problem.EncodedPosNegLPStandard" title="ontolearn.learning_problem.EncodedPosNegLPStandard"><span class="xref myst py py-class">EncodedLearningProblem</span></a></p></li>
+</ol>
+<p>When you use a concept learner to generate a class expression (CE) you usually evaluate the performance of the CE
+in the learning problem examples that you used to generate the CE in the first place.
+The function <code class="docutils literal notranslate"><span class="pre">evaluate_concept</span></code> returns an object of <a class="reference internal" href="../autoapi/ontolearn/search/index.html#ontolearn.search.EvaluatedConcept" title="ontolearn.search.EvaluatedConcept"><span class="xref myst py py-class">EvaluatedConcept</span></a>.</p>
+<p>In this guide we will not use a concept learner to generate a CE but will construct a learning problem and a
+CE manually. Furthermore, we will consider you already have created an object of
+<a class="reference internal" href="#ontolearn.knowledge_base.AbstractKnowledgeBase"><span class="xref myst">AbstractKnowledgeBase</span></a> (either KnowlegeBase or TripleStore).
+If that’s not the case, check <a class="reference internal" href="04_knowledge_base.html"><span class="std std-doc">Knowledge Bases</span></a>.</p>
+<section id="construct-a-learning-problem">
+<h2>Construct a learning problem<a class="headerlink" href="#construct-a-learning-problem" title="Link to this heading"></a></h2>
+<p>Let’s define a learning problem for the <em>Father</em> ontology. Firstly, we create two simple sets containing
+the positive and negative examples for the concept of ‘Father’. Our positive examples
+(individuals to describe) are stefan, markus, and martin. And our negative examples
+(individuals to not describe) are heinz, anna, and michelle.</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">IRI</span>
+
+<span class="n">NS</span> <span class="o">=</span> <span class="s2">&quot;http://example.com/father#&quot;</span>
+
+<span class="n">positive_examples</span> <span class="o">=</span> <span class="p">{</span><span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;stefan&#39;</span><span class="p">)),</span>
+                     <span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;markus&#39;</span><span class="p">)),</span>
+                     <span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;martin&#39;</span><span class="p">))}</span>
+
+<span class="n">negative_examples</span> <span class="o">=</span> <span class="p">{</span><span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;heinz&#39;</span><span class="p">)),</span>
+                     <span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;anna&#39;</span><span class="p">)),</span>
+                     <span class="n">OWLNamedIndividual</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s1">&#39;michelle&#39;</span><span class="p">))}</span>
+</pre></div>
+</div>
+<p>Now the learning problem can be represented by using the
+<a class="reference internal" href="../autoapi/ontolearn/learning_problem/index.html#ontolearn.learning_problem.PosNegLPStandard" title="ontolearn.learning_problem.PosNegLPStandard"><span class="xref myst py py-class">positive-negative standard learning problem</span></a>.</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+
+<span class="n">lp</span> <span class="o">=</span> <span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">positive_examples</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">negative_examples</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We then encod it to the knowledge base:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">encoded_lp</span> <span class="o">=</span> <span class="n">lp</span><span class="o">.</span><span class="n">encode_kb</span><span class="p">(</span><span class="n">kb</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">kb</span></code> is an instance of <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code> or <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code>, instantiated in our previous guide.</p>
+<p>Now that we have an encoded learning problem, we need a concept to evaluate.</p>
+</section>
+<section id="construct-a-concept">
+<h2>Construct a concept<a class="headerlink" href="#construct-a-concept" title="Link to this heading"></a></h2>
+<p>Suppose that the class expression <code class="docutils literal notranslate"><span class="pre">(¬female)</span> <span class="pre">⊓</span> <span class="pre">(∃</span> <span class="pre">hasChild.⊤)</span></code>
+was generated by <a class="reference internal" href="../autoapi/ontolearn/learners/celoe/index.html#ontolearn.learners.celoe.CELOE" title="ontolearn.learners.celoe.CELOE"><span class="xref myst py py-class">CELOE</span></a>
+for the target concept of ‘Father’. We will see how that can happen later
+but for now we let’s construct this class expression manually using owlapy:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClass</span><span class="p">,</span> <span class="n">OWLObjectSomeValuesFrom</span> <span class="p">,</span> <span class="n">OWLObjectIntersectionOf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.concept_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptGenerator</span>
+
+<span class="n">generator</span> <span class="o">=</span> <span class="n">ConceptGenerator</span><span class="p">()</span>
+
+<span class="n">female</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span><span class="s1">&#39;female&#39;</span><span class="p">))</span>
+<span class="n">not_female</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">negation</span><span class="p">(</span><span class="n">female</span><span class="p">)</span>
+<span class="n">has_child_property</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s2">&quot;hasChild&quot;</span><span class="p">))</span>
+<span class="n">thing</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="s1">&#39;http://www.w3.org/2002/07/owl#&#39;</span><span class="p">,</span> <span class="s1">&#39;Thing&#39;</span><span class="p">))</span>
+<span class="n">exist_has_child_T</span> <span class="o">=</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">has_child_property</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">thing</span><span class="p">)</span>
+
+<span class="n">concept_to_test</span> <span class="o">=</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">([</span><span class="n">not_female</span><span class="p">,</span> <span class="n">exist_has_child_T</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>We use an instance of <a class="reference internal" href="../autoapi/ontolearn/concept_generator/index.html#ontolearn.concept_generator.ConceptGenerator" title="ontolearn.concept_generator.ConceptGenerator"><span class="xref myst py py-class">ConceptGenerator</span></a> to create the negated concept <code class="docutils literal notranslate"><span class="pre">¬female</span></code>.
+<a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/owl_class/index.html#owlapy.class_expression.owl_class.OWLClass">OWLClass</a>
+represent a named class in OWL, <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_property/index.html#owlapy.owl_property.OWLObjectProperty">OWLObjectProperty</a>,
+represents an object property in OWL and <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/index.html#owlapy.class_expression.OWLObjectSomeValuesFrom">OWLObjectSomeValuesFrom</a>, <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/nary_boolean_expression/index.html#owlapy.class_expression.nary_boolean_expression.OWLObjectIntersectionOf">OWLObjectIntersectionOf</a> represent
+class expression constructs.</p>
+</section>
+<section id="evaluation-and-results">
+<h2>Evaluation and results<a class="headerlink" href="#evaluation-and-results" title="Link to this heading"></a></h2>
+<p>You can now evaluate the class expression you just created:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.quality_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_concept</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">F1</span>
+
+<span class="n">evaluated_concept</span> <span class="o">=</span> <span class="n">evaluate_concept</span><span class="p">(</span><span class="n">kg</span><span class="p">,</span> <span class="n">concept_to_test</span><span class="p">,</span> <span class="n">F1</span><span class="p">(),</span> <span class="n">encoded_lp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this example we use F1-score to evaluate the concept, but there are more <a class="reference internal" href="../autoapi/ontolearn/metrics/index.html#module-ontolearn.metrics" title="ontolearn.metrics"><span class="xref myst py py-mod">metrics</span></a>
+which you can use including Accuracy, Precision and Recall.</p>
+<p>You can now:</p>
+<ul>
+<li><p>Print the quality:</p>
+  <!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">evaluated_concept</span><span class="o">.</span><span class="n">q</span><span class="p">)</span> <span class="c1"># 1.0</span>
+</pre></div>
+</div>
+</li>
+<li><p>Print the set of individuals covered by the class expression:</p>
+  <!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">evaluated_concept</span><span class="o">.</span><span class="n">inds</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> 
+
+<span class="c1"># OWLNamedIndividual(http://example.com/father#markus)</span>
+<span class="c1"># OWLNamedIndividual(http://example.com/father#martin)</span>
+<span class="c1"># OWLNamedIndividual(http://example.com/father#stefan)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Print the amount of them:</p>
+  <!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">evaluated_concept</span><span class="o">.</span><span class="n">ic</span><span class="p">)</span> <span class="c1"># 3</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<hr class="docutils" />
+<p>In the next guide we will walk through the steps of using a concept learning model.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="04_knowledge_base.html" class="btn btn-neutral float-left" title="Knowledge Bases" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="06_concept_learners.html" class="btn btn-neutral float-right" title="Concept Learning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

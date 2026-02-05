@@ -1,0 +1,265 @@
+ontolearn.tentris
+=================
+
+.. py:module:: ontolearn.tentris
+
+.. autoapi-nested-parse::
+
+   Tentris representations.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.tentris.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.tentris.EncodedPosNegLPStandardTentris
+   ontolearn.tentris.TentrisOntology
+   ontolearn.tentris.TentrisReasoner
+   ontolearn.tentris.EvaluatedConceptTentris
+   ontolearn.tentris.TentrisKnowledgeBase
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: EncodedPosNegLPStandardTentris(id)
+
+   Bases: :py:obj:`ontolearn.abstracts.EncodedPosNegLPStandardKind`
+
+
+   Encoded Abstract learning problem following pos-neg lp standard.
+
+
+   .. py:attribute:: __slots__
+      :value: 'id'
+
+
+
+   .. py:attribute:: id
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: TentrisOntology(path: str, endpoint_url: str, timeout: float)
+
+   Bases: :py:obj:`owlapy.owl_ontology.OWLOntology`
+
+
+   .. py:attribute:: __slots__
+      :value: ('_path', '_endpoint_url', '_backing_mgr', '_backing_onto', '_endpoint_timeout')
+
+
+
+   .. py:method:: classes_in_signature() -> Iterable[owlapy.class_expression.OWLClass]
+
+
+   .. py:method:: data_properties_in_signature() -> Iterable[owlapy.owl_property.OWLDataProperty]
+
+
+   .. py:method:: object_properties_in_signature() -> Iterable[owlapy.owl_property.OWLObjectProperty]
+
+
+   .. py:method:: individuals_in_signature() -> Iterable[owlapy.owl_individual.OWLNamedIndividual]
+
+
+   .. py:method:: data_property_range_axioms(property: owlapy.owl_property.OWLDataProperty) -> Iterable[owlapy.owl_axiom.OWLDataPropertyRangeAxiom]
+      :abstractmethod:
+
+
+
+   .. py:method:: data_property_domain_axioms(property: owlapy.owl_property.OWLDataProperty) -> Iterable[owlapy.owl_axiom.OWLDataPropertyDomainAxiom]
+
+
+   .. py:method:: object_property_domain_axioms(property: owlapy.owl_property.OWLObjectProperty) -> Iterable[owlapy.owl_axiom.OWLObjectPropertyDomainAxiom]
+
+
+   .. py:method:: object_property_range_axioms(property: owlapy.owl_property.OWLObjectProperty) -> Iterable[owlapy.owl_axiom.OWLObjectPropertyRangeAxiom]
+
+
+   .. py:method:: get_owl_ontology_manager() -> owlapy.owl_ontology._M
+      :abstractmethod:
+
+
+
+   .. py:method:: get_ontology_id() -> owlapy.owl_ontology.OWLOntologyID
+      :abstractmethod:
+
+
+
+   .. py:method:: __eq__(other)
+
+
+   .. py:method:: __hash__()
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: TentrisReasoner(ontology: TentrisOntology)
+
+   Bases: :py:obj:`ontolearn.base.ext.OWLReasonerEx`
+
+
+   .. py:attribute:: __slots__
+      :value: ('_ontology', '_backing_reasoner')
+
+
+
+   .. py:method:: data_property_domains(pe: owlapy.owl_property.OWLDataProperty, direct: bool = False) -> Iterable[owlapy.class_expression.OWLClass]
+      :abstractmethod:
+
+
+
+   .. py:method:: object_property_domains(pe: owlapy.owl_property.OWLObjectProperty, direct: bool = False) -> Iterable[owlapy.class_expression.OWLClass]
+
+
+   .. py:method:: object_property_ranges(pe: owlapy.owl_property.OWLObjectProperty, direct: bool = False) -> Iterable[owlapy.class_expression.OWLClass]
+
+
+   .. py:method:: equivalent_classes(ce: owlapy.class_expression.OWLClassExpression, only_named: bool = True) -> Iterable[owlapy.class_expression.OWLClassExpression]
+      :abstractmethod:
+
+
+
+   .. py:method:: data_property_values(ind: owlapy.owl_individual.OWLNamedIndividual, pe: owlapy.owl_property.OWLDataProperty) -> Iterable[owlapy.owl_literal.OWLLiteral]
+      :abstractmethod:
+
+
+
+   .. py:method:: object_property_values(ind: owlapy.owl_individual.OWLNamedIndividual, pe: owlapy.owl_property.OWLObjectPropertyExpression) -> Iterable[owlapy.owl_individual.OWLNamedIndividual]
+      :abstractmethod:
+
+
+
+   .. py:method:: flush() -> None
+      :abstractmethod:
+
+
+
+   .. py:method:: instances(ce: owlapy.class_expression.OWLClassExpression, direct: bool = False) -> Iterable[owlapy.owl_individual.OWLNamedIndividual]
+
+
+   .. py:method:: sub_classes(ce: owlapy.class_expression.OWLClassExpression, direct: bool = False, only_named: bool = True) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+
+   .. py:method:: sub_data_properties(dp: owlapy.owl_property.OWLDataProperty, direct: bool = False) -> Iterable[owlapy.owl_property.OWLDataProperty]
+
+
+   .. py:method:: sub_object_properties(op: owlapy.owl_property.OWLObjectPropertyExpression, direct: bool = False) -> Iterable[owlapy.owl_property.OWLObjectPropertyExpression]
+
+
+   .. py:method:: types(ind: owlapy.owl_individual.OWLNamedIndividual, direct: bool = False) -> Iterable[owlapy.class_expression.OWLClass]
+      :abstractmethod:
+
+
+
+   .. py:method:: get_root_ontology() -> TentrisOntology
+
+
+   .. py:method:: super_classes(ce: owlapy.class_expression.OWLClassExpression, direct: bool = False, only_named: bool = True) -> Iterable[owlapy.class_expression.OWLClassExpression]
+      :abstractmethod:
+
+
+
+.. py:class:: EvaluatedConceptTentris
+
+   Bases: :py:obj:`ontolearn.search.EvaluatedConcept`
+
+
+   Explicitly declare the attributes that should be returned by the evaluate_concept method of a
+      AbstractKnowledgeBase.
+
+   This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+   memory usage.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:property:: inds
+
+
+.. py:class:: TentrisKnowledgeBase(path: str, *, length_metric_factory: Optional[ontolearn.utils.Factory[[], ontolearn.base.owl.utils.OWLClassExpressionLengthMetric]] = None, length_metric: Optional[ontolearn.base.owl.utils.OWLClassExpressionLengthMetric] = None, individuals_cache_size=128)
+
+   Bases: :py:obj:`ontolearn.knowledge_base.KnowledgeBase`
+
+
+   Representation of an OWL knowledge base in Ontolearn.
+
+   :param path: Path to an ontology file that is to be loaded.
+   :param ontology: OWL ontology object.
+   :param reasoner_factory: Factory that creates a reasoner to reason about the ontology.
+   :param reasoner: reasoner Over the ontology.
+                    reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
+                    argument it will override this setting.
+   :param include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named
+                                        Individuals (does not contain this type) as individuals.
+
+   .. attribute:: generator
+
+      Instance of concept generator.
+
+      :type: ConceptGenerator
+
+   .. attribute:: path
+
+      Path of the ontology file.
+
+      :type: str
+
+
+   .. py:attribute:: __slots__
+      :value: ('endpoint_url', 'endpoint_timeout', 'async_client', 'tasks', '_total_req', '_current_req')
+
+
+
+   .. py:attribute:: endpoint_url
+      :type:  str
+
+
+   .. py:attribute:: endpoint_timeout
+      :type:  float
+
+
+   .. py:attribute:: path
+
+
+   .. py:attribute:: tasks
+      :value: 8
+
+
+
+   .. py:attribute:: async_client
+
+
+   .. py:attribute:: use_individuals_cache
+
+
+   .. py:method:: encode_learning_problem(lp: ontolearn.abstracts.AbstractLearningProblem)
+      :abstractmethod:
+
+
+
+   .. py:method:: evaluate_concept(concept: owlapy.class_expression.OWLClassExpression, quality_func: ontolearn.abstracts.AbstractScorer, encoded_learning_problem: EncodedPosNegLPStandardTentris) -> ontolearn.search.EvaluatedConcept
+
+
+   .. py:method:: evaluate_concept_async(concept: owlapy.class_expression.OWLClassExpression, quality_func: ontolearn.abstracts.AbstractScorer, encoded_learning_problem: EncodedPosNegLPStandardTentris) -> ontolearn.search.EvaluatedConcept
+      :async:
+
+
+

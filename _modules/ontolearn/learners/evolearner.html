@@ -1,0 +1,624 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.evolearner &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.evolearner</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.evolearner</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;EvoLearner: An evolutionary approach to learn concepts in ALCQ(D).&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">deap</span><span class="w"> </span><span class="kn">import</span> <span class="n">gp</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">creator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLThing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLLiteral</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDataProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractOWLReasoner</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.concept_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptGenerator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractKnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractFitness</span><span class="p">,</span> <span class="n">AbstractScorer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConceptLearner</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.ea_algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractEvolutionaryAlgorithm</span><span class="p">,</span> <span class="n">EASimple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.ea_initialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractEAInitialization</span><span class="p">,</span> <span class="n">EARandomInitialization</span><span class="p">,</span> <span class="n">EARandomWalkInitialization</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.ea_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrimitiveFactory</span><span class="p">,</span> <span class="n">OperatorVocabulary</span><span class="p">,</span> <span class="n">ToolboxVocabulary</span><span class="p">,</span> <span class="n">Tree</span><span class="p">,</span> <span class="n">escape</span><span class="p">,</span> <span class="n">ind_to_string</span><span class="p">,</span> \
+    <span class="n">owlliteral_to_primitive_string</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.fitness_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearPressureFitness</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">EncodedPosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">Accuracy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">concept_len</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.quality_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_concept</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.search</span><span class="w"> </span><span class="kn">import</span> <span class="n">EvoLearnerNode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.value_splitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractValueSplitter</span><span class="p">,</span> <span class="n">BinningValueSplitter</span><span class="p">,</span> <span class="n">EntropyValueSplitter</span>
+
+
+<div class="viewcode-block" id="EvoLearner">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvoLearner</span><span class="p">(</span><span class="n">BaseConceptLearner</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An evolutionary approach to learn concepts in ALCQ(D).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm.</span>
+<span class="sd">        card_limit (int): The upper cardinality limit if using cardinality restriction on object properties.</span>
+<span class="sd">        fitness_func (AbstractFitness): Fitness function.</span>
+<span class="sd">        height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.</span>
+<span class="sd">        init_method (AbstractEAInitialization): The evolutionary algorithm initialization method.</span>
+<span class="sd">        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.</span>
+<span class="sd">        max_num_of_concepts_tested (int): Limit to stop the algorithm after n concepts tested.</span>
+<span class="sd">        max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds.</span>
+<span class="sd">        mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation operation.</span>
+<span class="sd">        name (str): Name of the model = &#39;evolearner&#39;.</span>
+<span class="sd">        num_generations (int): Number of generation for the evolutionary algorithm.</span>
+<span class="sd">        _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.</span>
+<span class="sd">        population_size (int): Population size for the evolutionary algorithm.</span>
+<span class="sd">        pset (gp.PrimitiveSetTyped): Contains the primitives that can be used to solve a Strongly Typed GP problem.</span>
+<span class="sd">        quality_func: Function to evaluate the quality of solution concepts.</span>
+<span class="sd">        reasoner (AbstractOWLReasoner): The reasoner that this model is using.</span>
+<span class="sd">        start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`</span>
+<span class="sd">                            takes to execute.</span>
+<span class="sd">        terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.</span>
+<span class="sd">        toolbox (base.Toolbox): A toolbox for evolution that contains the evolutionary operators.</span>
+<span class="sd">        tournament_size (int): The number of evolutionary individuals participating in each tournament.</span>
+<span class="sd">        use_card_restrictions (bool): Use cardinality restriction for object properties?</span>
+<span class="sd">        use_data_properties (bool): Consider data properties?</span>
+<span class="sd">        use_inverse (bool): Consider inversed concepts?</span>
+<span class="sd">        value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;fitness_func&#39;</span><span class="p">,</span> <span class="s1">&#39;init_method&#39;</span><span class="p">,</span> <span class="s1">&#39;algorithm&#39;</span><span class="p">,</span> <span class="s1">&#39;value_splitter&#39;</span><span class="p">,</span> <span class="s1">&#39;tournament_size&#39;</span><span class="p">,</span> \
+        <span class="s1">&#39;population_size&#39;</span><span class="p">,</span> <span class="s1">&#39;num_generations&#39;</span><span class="p">,</span> <span class="s1">&#39;height_limit&#39;</span><span class="p">,</span> <span class="s1">&#39;use_data_properties&#39;</span><span class="p">,</span> <span class="s1">&#39;pset&#39;</span><span class="p">,</span> <span class="s1">&#39;toolbox&#39;</span><span class="p">,</span> \
+        <span class="s1">&#39;_learning_problem&#39;</span><span class="p">,</span> <span class="s1">&#39;_result_population&#39;</span><span class="p">,</span> <span class="s1">&#39;mut_uniform_gen&#39;</span><span class="p">,</span> <span class="s1">&#39;_dp_to_prim_type&#39;</span><span class="p">,</span> <span class="s1">&#39;_dp_splits&#39;</span><span class="p">,</span> \
+        <span class="s1">&#39;_split_properties&#39;</span><span class="p">,</span> <span class="s1">&#39;_cache&#39;</span><span class="p">,</span> <span class="s1">&#39;use_card_restrictions&#39;</span><span class="p">,</span> <span class="s1">&#39;card_limit&#39;</span><span class="p">,</span> <span class="s1">&#39;use_inverse&#39;</span><span class="p">,</span> <span class="s1">&#39;total_fits&#39;</span><span class="p">,</span> <span class="s1">&#39;generator&#39;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;evolearner&#39;</span>
+
+    <span class="n">kb</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span>
+    <span class="n">fitness_func</span><span class="p">:</span> <span class="n">AbstractFitness</span>
+    <span class="n">init_method</span><span class="p">:</span> <span class="n">AbstractEAInitialization</span>
+    <span class="n">algorithm</span><span class="p">:</span> <span class="n">AbstractEvolutionaryAlgorithm</span>
+    <span class="n">mut_uniform_gen</span><span class="p">:</span> <span class="n">AbstractEAInitialization</span>
+    <span class="n">value_splitter</span><span class="p">:</span> <span class="n">AbstractValueSplitter</span>
+    <span class="n">use_data_properties</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">use_card_restrictions</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">use_inverse</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">tournament_size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">card_limit</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">population_size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">num_generations</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">height_limit</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">generator</span><span class="p">:</span> <span class="n">ConceptGenerator</span>
+
+    <span class="n">pset</span><span class="p">:</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveSetTyped</span>
+    <span class="n">toolbox</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">Toolbox</span>
+    <span class="n">_learning_problem</span><span class="p">:</span> <span class="n">EncodedPosNegLPStandard</span>
+    <span class="n">_result_population</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">]]</span>
+    <span class="n">_dp_to_prim_type</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">_dp_splits</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLLiteral</span><span class="p">]]</span>
+    <span class="n">_split_properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]</span>
+    <span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">,</span>
+                 <span class="n">reasoner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractOWLReasoner</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">quality_func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractScorer</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fitness_func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractFitness</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">init_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractEAInitialization</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">algorithm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractEvolutionaryAlgorithm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">mut_uniform_gen</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractEAInitialization</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">value_splitter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractValueSplitter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">terminate_on_goal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">use_data_properties</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_card_restrictions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_inverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">tournament_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>
+                 <span class="n">card_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                 <span class="n">population_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">800</span><span class="p">,</span>
+                 <span class="n">num_generations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+                 <span class="n">height_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">17</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Create a new instance of EvoLearner</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm. Defaults to `EASimple`.</span>
+<span class="sd">            card_limit (int): The upper cardinality limit if using cardinality restriction for object properties.</span>
+<span class="sd">                                Defaults to 10.</span>
+<span class="sd">            fitness_func (AbstractFitness): Fitness function. Defaults to `LinearPressureFitness`.</span>
+<span class="sd">            height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.</span>
+<span class="sd">                                Defaults to 17.</span>
+<span class="sd">            init_method (AbstractEAInitialization): The evolutionary algorithm initialization method. Defaults</span>
+<span class="sd">                                                    to EARandomWalkInitialization.</span>
+<span class="sd">            knowledge_base (AbstractKnowledgeBase): The knowledge base that the concept learner is using.</span>
+<span class="sd">            max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.</span>
+<span class="sd">            mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation</span>
+<span class="sd">                                                        operation. Defaults to</span>
+<span class="sd">                                                        EARandomInitialization(min_height=1, max_height=3).</span>
+<span class="sd">            num_generations (int): Number of generation for the evolutionary algorithm. Defaults to 200.</span>
+<span class="sd">            population_size (int): Population size for the evolutionary algorithm. Defaults to 800.</span>
+<span class="sd">            quality_func: Function to evaluate the quality of solution concepts. Defaults to `Accuracy`.</span>
+<span class="sd">            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of</span>
+<span class="sd">                                    the :attr:`knowledge_base` is used.</span>
+<span class="sd">            terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.</span>
+<span class="sd">            tournament_size (int): The number of evolutionary individuals participating in each tournament.</span>
+<span class="sd">                                    Defaults to 7.</span>
+<span class="sd">            use_card_restrictions (bool): Use cardinality restriction for object properties? Default to True.</span>
+<span class="sd">            use_data_properties (bool): Consider data properties? Defaults to True.</span>
+<span class="sd">            use_inverse (bool): Consider inversed concepts? Defaults to False.</span>
+<span class="sd">            value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to</span>
+<span class="sd">                                                `EntropyValueSplitter`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">quality_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quality_func</span> <span class="o">=</span> <span class="n">Accuracy</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">knowledge_base</span><span class="p">,</span>
+                         <span class="n">reasoner</span><span class="o">=</span><span class="n">reasoner</span><span class="p">,</span>
+                         <span class="n">quality_func</span><span class="o">=</span><span class="n">quality_func</span><span class="p">,</span>
+                         <span class="n">terminate_on_goal</span><span class="o">=</span><span class="n">terminate_on_goal</span><span class="p">,</span>
+                         <span class="n">max_runtime</span><span class="o">=</span><span class="n">max_runtime</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness_func</span> <span class="o">=</span> <span class="n">fitness_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span> <span class="o">=</span> <span class="n">init_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">=</span> <span class="n">algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span> <span class="o">=</span> <span class="n">mut_uniform_gen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span> <span class="o">=</span> <span class="n">value_splitter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span> <span class="o">=</span> <span class="n">use_data_properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span> <span class="o">=</span> <span class="n">use_card_restrictions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span> <span class="o">=</span> <span class="n">use_inverse</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tournament_size</span> <span class="o">=</span> <span class="n">tournament_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_limit</span> <span class="o">=</span> <span class="n">card_limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population_size</span> <span class="o">=</span> <span class="n">population_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_generations</span> <span class="o">=</span> <span class="n">num_generations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span> <span class="o">=</span> <span class="n">height_limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_fits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">ConceptGenerator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__setup</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitness_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness_func</span> <span class="o">=</span> <span class="n">LinearPressureFitness</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span> <span class="o">=</span> <span class="n">EARandomWalkInitialization</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">=</span> <span class="n">EASimple</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span> <span class="o">=</span> <span class="n">EARandomInitialization</span><span class="p">(</span><span class="n">min_height</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_height</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span> <span class="o">=</span> <span class="n">EntropyValueSplitter</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split_properties</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__build_primitive_set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__build_toolbox</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__build_primitive_set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveSetTyped</span><span class="p">:</span>
+        <span class="n">factory</span> <span class="o">=</span> <span class="n">PrimitiveFactory</span><span class="p">()</span>
+        <span class="n">union</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_union</span><span class="p">()</span>
+        <span class="n">intersection</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_intersection</span><span class="p">()</span>
+
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveSetTyped</span><span class="p">(</span><span class="s2">&quot;concept_tree&quot;</span><span class="p">,</span> <span class="p">[],</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">negation</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                          <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">NEGATION</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">union</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                          <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">UNION</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">intersection</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                          <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">INTERSECTION</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">():</span>
+            <span class="c1"># AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same</span>
+            <span class="c1"># remainder but different namespaces</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">str</span><span class="p">)</span>
+            <span class="n">existential</span><span class="p">,</span> <span class="n">universal</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_existential_universal</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">existential</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                              <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">EXISTENTIAL</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">universal</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                              <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">UNIVERSAL</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="n">existential</span><span class="p">,</span> <span class="n">universal</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_existential_universal</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">get_inverse_property</span><span class="p">())</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">existential</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">INVERSE</span> <span class="o">+</span> <span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">EXISTENTIAL</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">universal</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">INVERSE</span> <span class="o">+</span> <span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">UNIVERSAL</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span><span class="p">:</span>
+            <span class="k">class</span><span class="w"> </span><span class="nc">Bool</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+            <span class="n">false_</span> <span class="o">=</span> <span class="n">OWLLiteral</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">true_</span> <span class="o">=</span> <span class="n">OWLLiteral</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="n">false_</span><span class="p">,</span> <span class="n">Bool</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">owlliteral_to_primitive_string</span><span class="p">(</span><span class="n">false_</span><span class="p">))</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="n">true_</span><span class="p">,</span> <span class="n">Bool</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">owlliteral_to_primitive_string</span><span class="p">(</span><span class="n">true_</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">bool_dp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_boolean_data_properties</span><span class="p">():</span>
+                <span class="c1"># AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same</span>
+                <span class="c1"># remainder but different namespaces</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">bool_dp</span><span class="o">.</span><span class="n">str</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span><span class="p">[</span><span class="n">bool_dp</span><span class="p">]</span> <span class="o">=</span> <span class="n">Bool</span>
+
+                <span class="n">data_has_value</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_data_has_value</span><span class="p">(</span><span class="n">bool_dp</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">data_has_value</span><span class="p">,</span> <span class="p">[</span><span class="n">Bool</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">DATA_HAS_VALUE</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">split_dp</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_time_data_properties</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_numeric_data_properties</span><span class="p">()):</span>
+                <span class="c1"># AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same</span>
+                <span class="c1"># remainder but different namespaces</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">split_dp</span><span class="o">.</span><span class="n">str</span><span class="p">)</span>
+                <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="nb">object</span><span class="p">,),</span> <span class="p">{})</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span><span class="p">[</span><span class="n">split_dp</span><span class="p">]</span> <span class="o">=</span> <span class="n">type_</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_split_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">split_dp</span><span class="p">)</span>
+
+                <span class="n">min_inc</span><span class="p">,</span> <span class="n">max_inc</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_data_some_values</span><span class="p">(</span><span class="n">split_dp</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">min_inc</span><span class="p">,</span> <span class="p">[</span><span class="n">type_</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">DATA_MIN_INCLUSIVE</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">max_inc</span><span class="p">,</span> <span class="p">[</span><span class="n">type_</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">DATA_MAX_INCLUSIVE</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">card_limit</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">():</span>
+                <span class="c1"># AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same</span>
+                <span class="c1"># remainder but different namespaces</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">op</span><span class="o">.</span><span class="n">str</span><span class="p">)</span>
+                <span class="n">card_min</span><span class="p">,</span> <span class="n">card_max</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_card_restrictions</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">card_min</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">CARD_MIN</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+                <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">card_max</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">CARD_MAX</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">class_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_concepts</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">class_</span> <span class="o">==</span> <span class="n">OWLThing</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same</span>
+            <span class="c1"># remainder but different namespaces</span>
+            <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="n">class_</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">escape</span><span class="p">(</span><span class="n">class_</span><span class="o">.</span><span class="n">str</span><span class="p">))</span>
+
+        <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                         <span class="n">name</span><span class="o">=</span><span class="n">escape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="o">.</span><span class="n">str</span><span class="p">))</span>
+        <span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">nothing</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                         <span class="n">name</span><span class="o">=</span><span class="n">escape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">nothing</span><span class="o">.</span><span class="n">str</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">pset</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__build_toolbox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">Toolbox</span><span class="p">:</span>
+        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Fitness&quot;</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
+        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Quality&quot;</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
+        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Individual&quot;</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveTree</span><span class="p">,</span> <span class="n">fitness</span><span class="o">=</span><span class="n">creator</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">creator</span><span class="o">.</span><span class="n">Quality</span><span class="p">)</span>
+
+        <span class="n">toolbox</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">Toolbox</span><span class="p">()</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">INIT_POPULATION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span><span class="o">.</span><span class="n">get_population</span><span class="p">,</span>
+                         <span class="n">creator</span><span class="o">.</span><span class="n">Individual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">COMPILE</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">compile</span><span class="p">,</span> <span class="n">pset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">FITNESS_FUNCTION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fitness_func</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">SELECTION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">tools</span><span class="o">.</span><span class="n">selTournament</span><span class="p">,</span> <span class="n">tournsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tournament_size</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">cxOnePoint</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;create_tree_mut&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span><span class="o">.</span><span class="n">get_expression</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">MUTATION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">mutUniform</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">toolbox</span><span class="o">.</span><span class="n">create_tree_mut</span><span class="p">,</span> <span class="n">pset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                         <span class="n">gp</span><span class="o">.</span><span class="n">staticLimit</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">HEIGHT_KEY</span><span class="p">),</span>
+                                        <span class="n">max_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span><span class="p">))</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">MUTATION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                         <span class="n">gp</span><span class="o">.</span><span class="n">staticLimit</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">HEIGHT_KEY</span><span class="p">),</span>
+                                        <span class="n">max_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span><span class="p">))</span>
+
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;get_top_hypotheses&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;terminate_on_goal&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminate_on_goal</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;max_runtime&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pset&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">toolbox</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__set_splitting_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span><span class="p">[</span><span class="n">p</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_numeric_data_properties</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OWLLiteral</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">pass</span>  <span class="c1"># TODO:</span>
+
+            <span class="c1"># Remove terminal for multiple fits, unfortunately there exists no better way in DEAP</span>
+            <span class="c1"># This removal is probably not needed, the important one is removal from the context below</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="o">.</span><span class="n">terminals</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span><span class="p">[</span><span class="n">p</span><span class="p">]:</span>
+                <span class="n">terminal_name</span> <span class="o">=</span> <span class="n">owlliteral_to_primitive_string</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+                <span class="c1"># Remove terminal for multiple fits, unfortunately there exists no better way in DEAP</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">terminal_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="o">.</span><span class="n">addTerminal</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="n">terminal_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EvoLearner.register_op">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.register_op">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a *function* in the toolbox under the name *alias*.</span>
+<span class="sd">        You may provide default arguments that will be passed automatically when</span>
+<span class="sd">        calling the registered function. Fixed arguments can then be overriden</span>
+<span class="sd">        at function call time.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alias: The name the operator will take in the toolbox. If the</span>
+<span class="sd">                    alias already exist it will overwrite the operator</span>
+<span class="sd">                    already present.</span>
+<span class="sd">            function: The function to which refer the alias.</span>
+<span class="sd">            args: One or more argument (and keyword argument) to pass</span>
+<span class="sd">                     automatically to the registered function when called,</span>
+<span class="sd">                     optional.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alias</span> <span class="o">==</span> <span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span> <span class="ow">or</span> <span class="n">alias</span> <span class="o">==</span> <span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">MUTATION</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">staticLimit</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">HEIGHT_KEY</span><span class="p">),</span>
+                                                        <span class="n">max_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="EvoLearner.fit">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;EvoLearner&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find hypotheses that explain pos and neg.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Don&#39;t reset everything if the user is just using this model for 1 learning problem, since he may use the</span>
+        <span class="c1"># register_op method, else-wise we need to `clean` before fitting to get a fresh fit.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fits</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_fits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">learning_problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_learning_problem</span><span class="p">(</span><span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span> <span class="o">=</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">encode_kb</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">)</span>
+
+        <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_goal_found</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">evolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="p">,</span>
+                                                                          <span class="n">population</span><span class="p">,</span>
+                                                                          <span class="bp">self</span><span class="o">.</span><span class="n">num_generations</span><span class="p">,</span>
+                                                                          <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                                                                          <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">]:</span>
+        <span class="n">reasoner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">reasoner</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span><span class="p">,</span> <span class="n">BinningValueSplitter</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span><span class="o">.</span><span class="n">compute_splits_properties</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span>
+                                                                                <span class="bp">self</span><span class="o">.</span><span class="n">_split_properties</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span><span class="p">,</span> <span class="n">EntropyValueSplitter</span><span class="p">):</span>
+                <span class="n">entropy_splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span><span class="o">.</span><span class="n">compute_splits_properties</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span>
+                                                                               <span class="bp">self</span><span class="o">.</span><span class="n">_split_properties</span><span class="p">,</span>
+                                                                               <span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
+                <span class="n">no_splits</span> <span class="o">=</span> <span class="p">[</span><span class="n">prop</span> <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">entropy_splits</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">entropy_splits</span><span class="p">[</span><span class="n">prop</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="n">temp_splitter</span> <span class="o">=</span> <span class="n">BinningValueSplitter</span><span class="p">(</span><span class="n">max_nr_splits</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+                <span class="n">binning_splits</span> <span class="o">=</span> <span class="n">temp_splitter</span><span class="o">.</span><span class="n">compute_splits_properties</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">no_splits</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">entropy_splits</span><span class="p">,</span> <span class="o">**</span><span class="n">binning_splits</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__set_splitting_values</span><span class="p">()</span>
+
+        <span class="n">population</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_method</span><span class="p">,</span> <span class="n">EARandomWalkInitialization</span><span class="p">):</span>
+            <span class="n">population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">population</span><span class="p">(</span><span class="n">population_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">population_size</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">pos</span><span class="p">),</span>
+                                                 <span class="n">kb</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span> <span class="n">dp_to_prim_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span><span class="p">,</span>
+                                                 <span class="n">dp_splits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">population</span><span class="p">(</span><span class="n">population_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">population_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">population</span>
+
+<div class="viewcode-block" id="EvoLearner.best_hypotheses">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.best_hypotheses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="n">return_node</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span>
+    <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]]:</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_node</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">concept</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_node</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span><span class="o">.</span><span class="n">concept</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitness&#39;</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">EvoLearnerNode</span><span class="p">]:</span>
+        <span class="n">best_inds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">selBest</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">n</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">fit_attr</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">best_inds_distinct</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">best_inds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">best_inds_distinct</span><span class="p">:</span>
+                <span class="n">best_inds_distinct</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+        <span class="n">best_concepts</span> <span class="o">=</span> <span class="p">[</span><span class="n">gp</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">best_inds_distinct</span><span class="p">[:</span><span class="n">n</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">con</span><span class="p">,</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">best_concepts</span><span class="p">,</span> <span class="n">best_inds</span><span class="p">):</span>
+            <span class="n">individuals_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">con</span><span class="p">))</span>
+            <span class="k">yield</span> <span class="n">EvoLearnerNode</span><span class="p">(</span><span class="n">con</span><span class="p">,</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">con</span><span class="p">),</span> <span class="n">individuals_count</span><span class="p">,</span> <span class="n">ind</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                 <span class="nb">len</span><span class="p">(</span><span class="n">ind</span><span class="p">),</span> <span class="n">ind</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fitness_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">:</span> <span class="n">Tree</span><span class="p">):</span>
+        <span class="n">ind_str</span> <span class="o">=</span> <span class="n">ind_to_string</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+        <span class="c1"># experimental</span>
+        <span class="k">if</span> <span class="n">ind_str</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span>
+            <span class="n">individual</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">ind_str</span><span class="p">][</span><span class="mi">0</span><span class="p">],)</span>
+            <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">ind_str</span><span class="p">][</span><span class="mi">1</span><span class="p">],)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">concept</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">evaluate_concept</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span> <span class="n">concept</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span><span class="p">)</span>
+            <span class="n">individual</span><span class="o">.</span><span class="n">quality</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">q</span><span class="p">,)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">ind_str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">q</span><span class="p">,</span> <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_tested_concepts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="EvoLearner.clean">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># Resets classes if they already exist, names must match the ones that were created in the toolbox</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Fitness</span>
+            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Individual</span>
+            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Quality</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">partial</span><span class="p">:</span>
+            <span class="c1"># Reset everything if fitting more than one lp. Tests have shown that this is necessary to get the</span>
+            <span class="c1"># best performance of EvoLearner.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitness_func</span> <span class="o">=</span> <span class="n">LinearPressureFitness</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span> <span class="o">=</span> <span class="n">EARandomWalkInitialization</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">=</span> <span class="n">EASimple</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span> <span class="o">=</span> <span class="n">EARandomInitialization</span><span class="p">(</span><span class="n">min_height</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_height</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value_splitter</span> <span class="o">=</span> <span class="n">EntropyValueSplitter</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dp_to_prim_type</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dp_splits</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_split_properties</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__build_primitive_set</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__build_toolbox</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

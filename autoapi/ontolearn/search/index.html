@@ -1,0 +1,1039 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.search &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.semantic_caching" href="../semantic_caching/index.html" />
+    <link rel="prev" title="ontolearn.scripts.run" href="../scripts/run/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.search</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.Node.__slots__"><code class="docutils literal notranslate"><span class="pre">Node.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.Node.__str__"><code class="docutils literal notranslate"><span class="pre">Node.__str__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.OENode"><code class="docutils literal notranslate"><span class="pre">OENode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.__slots__"><code class="docutils literal notranslate"><span class="pre">OENode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.renderer"><code class="docutils literal notranslate"><span class="pre">OENode.renderer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.h_exp"><code class="docutils literal notranslate"><span class="pre">OENode.h_exp</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.increment_h_exp"><code class="docutils literal notranslate"><span class="pre">OENode.increment_h_exp()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.refinement_count"><code class="docutils literal notranslate"><span class="pre">OENode.refinement_count</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.OENode.__str__"><code class="docutils literal notranslate"><span class="pre">OENode.__str__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.EvoLearnerNode"><code class="docutils literal notranslate"><span class="pre">EvoLearnerNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.EvoLearnerNode.__slots__"><code class="docutils literal notranslate"><span class="pre">EvoLearnerNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.EvoLearnerNode.tree_length"><code class="docutils literal notranslate"><span class="pre">EvoLearnerNode.tree_length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.EvoLearnerNode.tree_depth"><code class="docutils literal notranslate"><span class="pre">EvoLearnerNode.tree_depth</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.EvoLearnerNode.__str__"><code class="docutils literal notranslate"><span class="pre">EvoLearnerNode.__str__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.NCESNode"><code class="docutils literal notranslate"><span class="pre">NCESNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.NCESNode.__slots__"><code class="docutils literal notranslate"><span class="pre">NCESNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.NCESNode.__str__"><code class="docutils literal notranslate"><span class="pre">NCESNode.__str__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.RL_State"><code class="docutils literal notranslate"><span class="pre">RL_State</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.renderer"><code class="docutils literal notranslate"><span class="pre">RL_State.renderer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.__slots__"><code class="docutils literal notranslate"><span class="pre">RL_State.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.parent_node"><code class="docutils literal notranslate"><span class="pre">RL_State.parent_node</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.is_root"><code class="docutils literal notranslate"><span class="pre">RL_State.is_root</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.length"><code class="docutils literal notranslate"><span class="pre">RL_State.length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.embeddings"><code class="docutils literal notranslate"><span class="pre">RL_State.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.__str__"><code class="docutils literal notranslate"><span class="pre">RL_State.__str__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.__lt__"><code class="docutils literal notranslate"><span class="pre">RL_State.__lt__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.RL_State.__gt__"><code class="docutils literal notranslate"><span class="pre">RL_State.__gt__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.LBLNode"><code class="docutils literal notranslate"><span class="pre">LBLNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LBLNode.__slots__"><code class="docutils literal notranslate"><span class="pre">LBLNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LBLNode.add_child"><code class="docutils literal notranslate"><span class="pre">LBLNode.add_child()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LBLNode.remove_child"><code class="docutils literal notranslate"><span class="pre">LBLNode.remove_child()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LBLNode.children"><code class="docutils literal notranslate"><span class="pre">LBLNode.children</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LBLNode.parent_node"><code class="docutils literal notranslate"><span class="pre">LBLNode.parent_node</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode.__slots__"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode.node"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode.node</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode.len"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode.len</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode.__lt__"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode.__lt__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.LengthOrderedNode.__eq__"><code class="docutils literal notranslate"><span class="pre">LengthOrderedNode.__eq__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode"><code class="docutils literal notranslate"><span class="pre">HeuristicOrderedNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode.__slots__"><code class="docutils literal notranslate"><span class="pre">HeuristicOrderedNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode.node"><code class="docutils literal notranslate"><span class="pre">HeuristicOrderedNode.node</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode.__lt__"><code class="docutils literal notranslate"><span class="pre">HeuristicOrderedNode.__lt__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode.__eq__"><code class="docutils literal notranslate"><span class="pre">HeuristicOrderedNode.__eq__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.QualityOrderedNode"><code class="docutils literal notranslate"><span class="pre">QualityOrderedNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.QualityOrderedNode.__slots__"><code class="docutils literal notranslate"><span class="pre">QualityOrderedNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.QualityOrderedNode.node"><code class="docutils literal notranslate"><span class="pre">QualityOrderedNode.node</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.QualityOrderedNode.__lt__"><code class="docutils literal notranslate"><span class="pre">QualityOrderedNode.__lt__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.QualityOrderedNode.__eq__"><code class="docutils literal notranslate"><span class="pre">QualityOrderedNode.__eq__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.quality_func"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.quality_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.heuristic_func"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.heuristic_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.items_in_queue"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.items_in_queue</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue..nodes"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue..nodes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.nodes"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.nodes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.expressionTests"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.expressionTests</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.str_to_obj_instance_mapping"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.str_to_obj_instance_mapping</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.quality_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.heuristic_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.nodes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.items_in_queue</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.add"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.add()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.add_root"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.add_root()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.add_node"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.add_node()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.get_most_promising"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.get_most_promising()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.get_top_n"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.get_top_n()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.clean"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.clean()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue.show_search_tree"><code class="docutils literal notranslate"><span class="pre">SearchTreePriorityQueue.show_search_tree()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.TreeNode"><code class="docutils literal notranslate"><span class="pre">TreeNode</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.TreeNode.__slots__"><code class="docutils literal notranslate"><span class="pre">TreeNode.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.TreeNode.node"><code class="docutils literal notranslate"><span class="pre">TreeNode.node</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.TreeNode.children"><code class="docutils literal notranslate"><span class="pre">TreeNode.children</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.quality_func"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.quality_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.heuristic_func"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.heuristic_func</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.items_in_queue"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.items_in_queue</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue..nodes"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue..nodes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.nodes"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.nodes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.expressionTests"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.expressionTests</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.str_to_obj_instance_mapping"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.str_to_obj_instance_mapping</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.verbose"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.verbose</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.items_in_queue</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.add"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.add()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.show_current_search_tree"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.show_current_search_tree()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.get_most_promising"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.get_most_promising()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.get_top_n"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.get_top_n()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue.clean"><code class="docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue.clean()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.EvaluatedConcept"><code class="docutils literal notranslate"><span class="pre">EvaluatedConcept</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.EvaluatedConcept.__slots__"><code class="docutils literal notranslate"><span class="pre">EvaluatedConcept.__slots__</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.search.SuperProp"><code class="docutils literal notranslate"><span class="pre">SuperProp</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SuperProp.__getattr__"><code class="docutils literal notranslate"><span class="pre">SuperProp.__getattr__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SuperProp.__setattr__"><code class="docutils literal notranslate"><span class="pre">SuperProp.__setattr__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.search.SuperProp.__delattr__"><code class="docutils literal notranslate"><span class="pre">SuperProp.__delattr__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.search</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/search/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.search">
+<span id="ontolearn-search"></span><h1>ontolearn.search<a class="headerlink" href="#module-ontolearn.search" title="Link to this heading"></a></h1>
+<p>Node representation.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.Node" title="ontolearn.search.Node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Node</span></code></a></p></td>
+<td><p>Simple node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OENode</span></code></a></p></td>
+<td><p>OENode search tree node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.EvoLearnerNode" title="ontolearn.search.EvoLearnerNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvoLearnerNode</span></code></a></p></td>
+<td><p>EvoLearner search tree node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.NCESNode" title="ontolearn.search.NCESNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESNode</span></code></a></p></td>
+<td><p>EvoLearner search tree node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RL_State</span></code></a></p></td>
+<td><p>Abstract search tree node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LBLNode</span></code></a></p></td>
+<td><p>LBL search tree node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.LengthOrderedNode" title="ontolearn.search.LengthOrderedNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthOrderedNode</span></code></a></p></td>
+<td><p>Abstract base class for generic types.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode" title="ontolearn.search.HeuristicOrderedNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HeuristicOrderedNode</span></code></a></p></td>
+<td><p>A comparator that orders the Nodes based on Heuristic, then OrderedOWLObject of the concept</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.QualityOrderedNode" title="ontolearn.search.QualityOrderedNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QualityOrderedNode</span></code></a></p></td>
+<td><p>QualityOrderedNode search tree node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.SearchTreePriorityQueue" title="ontolearn.search.SearchTreePriorityQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SearchTreePriorityQueue</span></code></a></p></td>
+<td><p>Search tree based on priority queue.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.TreeNode" title="ontolearn.search.TreeNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TreeNode</span></code></a></p></td>
+<td><p>Simple search tree node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.DRILLSearchTreePriorityQueue" title="ontolearn.search.DRILLSearchTreePriorityQueue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DRILLSearchTreePriorityQueue</span></code></a></p></td>
+<td><p><a class="reference external" href="mailto:#&#37;&#52;&#48;TODO">#<span>&#64;</span>TODO</a> Move to learners/drill.py</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.search.EvaluatedConcept" title="ontolearn.search.EvaluatedConcept"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluatedConcept</span></code></a></p></td>
+<td><p>Explicitly declare the attributes that should be returned by the evaluate_concept method of a</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.search.SuperProp" title="ontolearn.search.SuperProp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperProp</span></code></a></p></td>
+<td><p>Super wrapper which allows property setting &amp; deletion. Super can't be subclassed with empty __init__ arguments.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.Node">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#Node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.Node" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeConcept</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeLen</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeIndividualsCount</span></code>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractNode</span></code></a></p>
+<p>Simple node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.Node.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_concept',</span> <span class="pre">'_len',</span> <span class="pre">'_individuals_count')</span></span><a class="headerlink" href="#ontolearn.search.Node.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.Node.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#Node.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.Node.__str__" title="Link to this definition"></a></dt>
+<dd><p>String representation of node, by default its internal memory address.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.OENode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">OENode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#OENode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.OENode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeConcept</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeLen</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeIndividualsCount</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeQuality</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeHeuristic</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeParentRef</span></code>[<a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OENode</span></code></a>], <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractNode</span></code></a>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractConceptNode" title="ontolearn.abstracts.AbstractConceptNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractConceptNode</span></code></a>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractOEHeuristicNode" title="ontolearn.abstracts.AbstractOEHeuristicNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractOEHeuristicNode</span></code></a></p>
+<p>OENode search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_concept',</span> <span class="pre">'_len',</span> <span class="pre">'_individuals_count',</span> <span class="pre">'_quality',</span> <span class="pre">'_heuristic',</span> <span class="pre">'_parent_ref',...</span></span><a class="headerlink" href="#ontolearn.search.OENode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.renderer">
+<span class="sig-name descname"><span class="pre">renderer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_object.OWLObjectRenderer</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.OENode.renderer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.h_exp">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">h_exp</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.search.OENode.h_exp" title="Link to this definition"></a></dt>
+<dd><p>Get horizontal expansion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Horizontal expansion.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.increment_h_exp">
+<span class="sig-name descname"><span class="pre">increment_h_exp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#OENode.increment_h_exp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.OENode.increment_h_exp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.refinement_count">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">refinement_count</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.search.OENode.refinement_count" title="Link to this definition"></a></dt>
+<dd><p>Get the refinement count for this node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Refinement count.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.OENode.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#OENode.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.OENode.__str__" title="Link to this definition"></a></dt>
+<dd><p>String representation of node, by default its internal memory address.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.EvoLearnerNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">EvoLearnerNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individuals_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#EvoLearnerNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.EvoLearnerNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeConcept</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeLen</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeIndividualsCount</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeQuality</span></code>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractNode</span></code></a>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractConceptNode" title="ontolearn.abstracts.AbstractConceptNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractConceptNode</span></code></a></p>
+<p>EvoLearner search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.EvoLearnerNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_concept',</span> <span class="pre">'_len',</span> <span class="pre">'_individuals_count',</span> <span class="pre">'_quality',</span> <span class="pre">'_tree_length',</span> <span class="pre">'_tree_depth')</span></span><a class="headerlink" href="#ontolearn.search.EvoLearnerNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.EvoLearnerNode.tree_length">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tree_length</span></span><a class="headerlink" href="#ontolearn.search.EvoLearnerNode.tree_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.EvoLearnerNode.tree_depth">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tree_depth</span></span><a class="headerlink" href="#ontolearn.search.EvoLearnerNode.tree_depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.EvoLearnerNode.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#EvoLearnerNode.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.EvoLearnerNode.__str__" title="Link to this definition"></a></dt>
+<dd><p>String representation of node, by default its internal memory address.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.NCESNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">NCESNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individuals_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#NCESNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.NCESNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeConcept</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeLen</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeIndividualsCount</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeQuality</span></code>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractNode</span></code></a>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractConceptNode" title="ontolearn.abstracts.AbstractConceptNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractConceptNode</span></code></a></p>
+<p>EvoLearner search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.NCESNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_concept',</span> <span class="pre">'_len',</span> <span class="pre">'_individuals_count',</span> <span class="pre">'_quality')</span></span><a class="headerlink" href="#ontolearn.search.NCESNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.NCESNode.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#NCESNode.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.NCESNode.__str__" title="Link to this definition"></a></dt>
+<dd><p>String representation of node, by default its internal memory address.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">RL_State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#RL_State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.RL_State" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeConcept</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeQuality</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeHeuristic</span></code>, <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.AbstractNode</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeParentRef</span></code>[<a class="reference internal" href="#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RL_State</span></code></a>]</p>
+<p>Abstract search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.renderer">
+<span class="sig-name descname"><span class="pre">renderer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_object.OWLObjectRenderer</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.RL_State.renderer" title="Link to this definition"></a></dt>
+<dd><p>RL_State node.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_concept',</span> <span class="pre">'embeddings',</span> <span class="pre">'_quality',</span> <span class="pre">'_heuristic',</span> <span class="pre">'length',</span> <span class="pre">'parent_node',</span> <span class="pre">'is_root',...</span></span><a class="headerlink" href="#ontolearn.search.RL_State.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.parent_node">
+<span class="sig-name descname"><span class="pre">parent_node</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.search.RL_State.parent_node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.is_root">
+<span class="sig-name descname"><span class="pre">is_root</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.search.RL_State.is_root" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.length">
+<span class="sig-name descname"><span class="pre">length</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.search.RL_State.length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.search.RL_State.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#RL_State.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.RL_State.__str__" title="Link to this definition"></a></dt>
+<dd><p>String representation of node, by default its internal memory address.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#RL_State.__lt__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.RL_State.__lt__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.RL_State.__gt__">
+<span class="sig-name descname"><span class="pre">__gt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#RL_State.__gt__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.RL_State.__gt__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">LBLNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LBLNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LBLNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">_NodeIndividuals</span></code>, <a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OENode</span></code></a></p>
+<p>LBL search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_children',</span> <span class="pre">'_individuals')</span></span><a class="headerlink" href="#ontolearn.search.LBLNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode.add_child">
+<span class="sig-name descname"><span class="pre">add_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LBLNode.add_child"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LBLNode.add_child" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode.remove_child">
+<span class="sig-name descname"><span class="pre">remove_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LBLNode.remove_child"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LBLNode.remove_child" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode.children">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#ontolearn.search.LBLNode.children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.search.LBLNode.parent_node">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">parent_node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.search.LBLNode.parent_node" title="Link to this definition"></a></dt>
+<dd><p>Get the parent node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parent node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">LengthOrderedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LengthOrderedNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LengthOrderedNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">_N</span></code>]</p>
+<p>Abstract base class for generic types.</p>
+<p>A generic type is typically declared by inheriting from
+this class parameterized with one or more type variables.
+For example, a generic mapping type might be defined as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Mapping</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">KT</span><span class="p">,</span> <span class="n">VT</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">KT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VT</span><span class="p">:</span>
+        <span class="o">...</span>
+    <span class="c1"># Etc.</span>
+</pre></div>
+</div>
+<p>This class can then be used as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">lookup_name</span><span class="p">(</span><span class="n">mapping</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">KT</span><span class="p">,</span> <span class="n">VT</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="n">KT</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">VT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VT</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mapping</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('node',</span> <span class="pre">'len')</span></span><a class="headerlink" href="#ontolearn.search.LengthOrderedNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode.node">
+<span class="sig-name descname"><span class="pre">node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">_N</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.LengthOrderedNode.node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode.len">
+<span class="sig-name descname"><span class="pre">len</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.LengthOrderedNode.len" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LengthOrderedNode.__lt__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LengthOrderedNode.__lt__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.LengthOrderedNode.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#LengthOrderedNode.__eq__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.LengthOrderedNode.__eq__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.HeuristicOrderedNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">HeuristicOrderedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#HeuristicOrderedNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.HeuristicOrderedNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">_N</span></code>]</p>
+<p>A comparator that orders the Nodes based on Heuristic, then OrderedOWLObject of the concept</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.HeuristicOrderedNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'node'</span></span><a class="headerlink" href="#ontolearn.search.HeuristicOrderedNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.HeuristicOrderedNode.node">
+<span class="sig-name descname"><span class="pre">node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">_N</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.HeuristicOrderedNode.node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.HeuristicOrderedNode.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#HeuristicOrderedNode.__lt__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.HeuristicOrderedNode.__lt__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.HeuristicOrderedNode.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_N</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#HeuristicOrderedNode.__eq__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.HeuristicOrderedNode.__eq__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.QualityOrderedNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">QualityOrderedNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#QualityOrderedNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.QualityOrderedNode" title="Link to this definition"></a></dt>
+<dd><p>QualityOrderedNode search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.QualityOrderedNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'node'</span></span><a class="headerlink" href="#ontolearn.search.QualityOrderedNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.QualityOrderedNode.node">
+<span class="sig-name descname"><span class="pre">node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.QualityOrderedNode.node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.QualityOrderedNode.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#QualityOrderedNode.__lt__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.QualityOrderedNode.__lt__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.QualityOrderedNode.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#QualityOrderedNode.__eq__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.QualityOrderedNode.__eq__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">SearchTreePriorityQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quality_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristic_func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.LBLSearchTree" title="ontolearn.abstracts.LBLSearchTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.LBLSearchTree</span></code></a>[<a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LBLNode</span></code></a>]</p>
+<p>Search tree based on priority queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quality_func</strong> – An instance of a subclass of AbstractScorer that measures the quality of a node.</p></li>
+<li><p><strong>heuristic_func</strong> – An instance of a subclass of AbstractScorer that measures the promise of a node.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.quality_func">
+<span class="sig-name descname"><span class="pre">quality_func</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.quality_func" title="Link to this definition"></a></dt>
+<dd><p>An instance of a subclass of AbstractScorer that measures the quality of a node.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.heuristic_func">
+<span class="sig-name descname"><span class="pre">heuristic_func</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.heuristic_func" title="Link to this definition"></a></dt>
+<dd><p>An instance of a subclass of AbstractScorer that measures the promise of a node.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.items_in_queue">
+<span class="sig-name descname"><span class="pre">items_in_queue</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.items_in_queue" title="Link to this definition"></a></dt>
+<dd><p>An instance of PriorityQueue Class.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue..nodes">
+<span class="sig-prename descclassname"><span class="pre">.</span></span><span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue..nodes" title="Link to this definition"></a></dt>
+<dd><p>A dictionary where keys are string representation of nodes and values are corresponding node objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.nodes">
+<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.nodes" title="Link to this definition"></a></dt>
+<dd><p>A property method for ._nodes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.expressionTests">
+<span class="sig-name descname"><span class="pre">expressionTests</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.expressionTests" title="Link to this definition"></a></dt>
+<dd><p>not being used .</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.str_to_obj_instance_mapping">
+<span class="sig-name descname"><span class="pre">str_to_obj_instance_mapping</span></span><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.str_to_obj_instance_mapping" title="Link to this definition"></a></dt>
+<dd><p>not being used.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">quality_func</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">heuristic_func</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractHeuristic" title="ontolearn.abstracts.AbstractHeuristic"><span class="pre">AbstractHeuristic</span></a></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">nodes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">items_in_queue</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">PriorityQueue</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.search.HeuristicOrderedNode" title="ontolearn.search.HeuristicOrderedNode"><span class="pre">HeuristicOrderedNode</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.add" title="Link to this definition"></a></dt>
+<dd><p>Append a node into the search tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> – A Node object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.add_root">
+<span class="sig-name descname"><span class="pre">add_root</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kb_learning_problem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.add_root"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.add_root" title="Link to this definition"></a></dt>
+<dd><p>Add the root node to the search tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> – Root node to add.</p></li>
+<li><p><strong>kb_learning_problem</strong> – Underlying learning problem to compare the quality to.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.add_node">
+<span class="sig-name descname"><span class="pre">add_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kb_learning_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.EncodedLearningProblem" title="ontolearn.abstracts.EncodedLearningProblem"><span class="pre">EncodedLearningProblem</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.add_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.add_node" title="Link to this definition"></a></dt>
+<dd><p>Add a node into the search tree after calculating heuristic value given its parent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> – A Node object</p></li>
+<li><p><strong>parent_node</strong> – A Node object</p></li>
+<li><p><strong>kb_learning_problem</strong> – the encoded learning problem to compare the quality on</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if node is a “goal node”, i.e. quality_metric(node)=1.0
+False if node is a “weak node”, i.e. quality_metric(node)=0.0
+None otherwise</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>node is a refinement of refined_node</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.get_most_promising">
+<span class="sig-name descname"><span class="pre">get_most_promising</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a></span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.get_most_promising"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.get_most_promising" title="Link to this definition"></a></dt>
+<dd><p>Gets the current most promising node from Queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A node object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="../learners/spell_kit/fitting_alc/index.html#ontolearn.learners.spell_kit.fitting_alc.STreeNode.node" title="ontolearn.learners.spell_kit.fitting_alc.STreeNode.node"><em>node</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.get_top_n">
+<span class="sig-name descname"><span class="pre">get_top_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'quality'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.search.LBLNode" title="ontolearn.search.LBLNode"><span class="pre">LBLNode</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.get_top_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.get_top_n" title="Link to this definition"></a></dt>
+<dd><p>Gets the top n nodes determined by key from the search tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of node objects</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>top_n_predictions</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.clean" title="Link to this definition"></a></dt>
+<dd><p>Reset the search tree state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SearchTreePriorityQueue.show_search_tree">
+<span class="sig-name descname"><span class="pre">show_search_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SearchTreePriorityQueue.show_search_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SearchTreePriorityQueue.show_search_tree" title="Link to this definition"></a></dt>
+<dd><p>Debugging function to print the search tree to standard output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root_concept</strong> – The tree is printed starting from this search tree node.</p></li>
+<li><p><strong>heading_step</strong> – Message to print at top of the output.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.TreeNode">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">TreeNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_tree_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_TN</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#TreeNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.TreeNode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">_N</span></code>]</p>
+<p>Simple search tree node.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.TreeNode.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('children',</span> <span class="pre">'node')</span></span><a class="headerlink" href="#ontolearn.search.TreeNode.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.TreeNode.node">
+<span class="sig-name descname"><span class="pre">node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Final</span><span class="p"><span class="pre">[</span></span><span class="pre">_N</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.TreeNode.node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.TreeNode.children">
+<span class="sig-name descname"><span class="pre">children</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.search.TreeNode" title="ontolearn.search.TreeNode"><span class="pre">TreeNode</span></a><span class="p"><span class="pre">[</span></span><span class="pre">_N</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.search.TreeNode.children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">DRILLSearchTreePriorityQueue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.DRILLAbstractTree" title="ontolearn.abstracts.DRILLAbstractTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.DRILLAbstractTree</span></code></a></p>
+<p><a class="reference external" href="mailto:#&#37;&#52;&#48;TODO">#<span>&#64;</span>TODO</a> Move to learners/drill.py</p>
+<p>Search tree based on priority queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quality_func</strong> (<em>An instance</em><em> of </em><em>a subclass</em><em> of </em><em>AbstractScorer that measures the quality</em><em> of </em><em>a node.</em>)</p></li>
+<li><p><strong>heuristic_func</strong> (<em>An instance</em><em> of </em><em>a subclass</em><em> of </em><em>AbstractScorer that measures the promise</em><em> of </em><em>a node.</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.quality_func">
+<span class="sig-name descname"><span class="pre">quality_func</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.quality_func" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of a subclass of AbstractScorer that measures the quality of a node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.heuristic_func">
+<span class="sig-name descname"><span class="pre">heuristic_func</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.heuristic_func" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of a subclass of AbstractScorer that measures the promise of a node.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.items_in_queue">
+<span class="sig-name descname"><span class="pre">items_in_queue</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.items_in_queue" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of PriorityQueue Class.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue..nodes">
+<span class="sig-prename descclassname"><span class="pre">.</span></span><span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue..nodes" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary where keys are string representation of nodes and values are corresponding node objects.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.nodes">
+<span class="sig-name descname"><span class="pre">nodes</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.nodes" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A property method for ._nodes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.expressionTests">
+<span class="sig-name descname"><span class="pre">expressionTests</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.expressionTests" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>not being used .</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.str_to_obj_instance_mapping">
+<span class="sig-name descname"><span class="pre">str_to_obj_instance_mapping</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.str_to_obj_instance_mapping" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>not being used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.verbose">
+<span class="sig-name descname"><span class="pre">verbose</span></span><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.verbose" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">items_in_queue</span></span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.add" title="Link to this definition"></a></dt>
+<dd><p>Append a node into the search tree.
+:param node:
+:type node: A RL_State object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>None</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.show_current_search_tree">
+<span class="sig-name descname"><span class="pre">show_current_search_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue.show_current_search_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.show_current_search_tree" title="Link to this definition"></a></dt>
+<dd><p>Show search tree.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.get_most_promising">
+<span class="sig-name descname"><span class="pre">get_most_promising</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue.get_most_promising"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.get_most_promising" title="Link to this definition"></a></dt>
+<dd><p>Gets the current most promising node from Queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A node object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.get_top_n">
+<span class="sig-name descname"><span class="pre">get_top_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'quality'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.search.Node" title="ontolearn.search.Node"><span class="pre">Node</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue.get_top_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.get_top_n" title="Link to this definition"></a></dt>
+<dd><p>Gets the top n nodes determined by key from the search tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>top_n_predictions</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of node objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.DRILLSearchTreePriorityQueue.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#DRILLSearchTreePriorityQueue.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.DRILLSearchTreePriorityQueue.clean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.EvaluatedConcept">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">EvaluatedConcept</span></span><a class="reference internal" href="../../../_modules/ontolearn/search.html#EvaluatedConcept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.EvaluatedConcept" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Explicitly declare the attributes that should be returned by the evaluate_concept method of a</dt><dd><p>AbstractKnowledgeBase.</p>
+</dd>
+</dl>
+<p>This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+memory usage.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.search.EvaluatedConcept.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('q',</span> <span class="pre">'inds',</span> <span class="pre">'ic')</span></span><a class="headerlink" href="#ontolearn.search.EvaluatedConcept.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.search.SuperProp">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.search.</span></span><span class="sig-name descname"><span class="pre">SuperProp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">super_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SuperProp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SuperProp" title="Link to this definition"></a></dt>
+<dd><p>Super wrapper which allows property setting &amp; deletion. Super can’t be subclassed with empty __init__ arguments.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SuperProp.__getattr__">
+<span class="sig-name descname"><span class="pre">__getattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SuperProp.__getattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SuperProp.__getattr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SuperProp.__setattr__">
+<span class="sig-name descname"><span class="pre">__setattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SuperProp.__setattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SuperProp.__setattr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.search.SuperProp.__delattr__">
+<span class="sig-name descname"><span class="pre">__delattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/search.html#SuperProp.__delattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.search.SuperProp.__delattr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../scripts/run/index.html" class="btn btn-neutral float-left" title="ontolearn.scripts.run" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../semantic_caching/index.html" class="btn btn-neutral float-right" title="ontolearn.semantic_caching" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

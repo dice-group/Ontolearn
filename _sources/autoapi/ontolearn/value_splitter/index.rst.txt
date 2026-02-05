@@ -1,0 +1,136 @@
+ontolearn.value_splitter
+========================
+
+.. py:module:: ontolearn.value_splitter
+
+.. autoapi-nested-parse::
+
+   Value splitters.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.value_splitter.Values
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.value_splitter.AbstractValueSplitter
+   ontolearn.value_splitter.BinningValueSplitter
+   ontolearn.value_splitter.Split
+   ontolearn.value_splitter.IndividualValues
+   ontolearn.value_splitter.EntropyValueSplitter
+
+
+Module Contents
+---------------
+
+.. py:data:: Values
+
+.. py:class:: AbstractValueSplitter(max_nr_splits: int)
+
+   Abstract base class for split calculation of data properties.
+
+
+   .. py:attribute:: __slots__
+      :value: 'max_nr_splits'
+
+
+
+   .. py:attribute:: max_nr_splits
+      :type:  int
+
+
+   .. py:method:: compute_splits_properties(reasoner: owlapy.abstracts.AbstractOWLReasoner, properties: List[owlapy.owl_property.OWLDataProperty]) -> Dict[owlapy.owl_property.OWLDataProperty, List[owlapy.owl_literal.OWLLiteral]]
+      :abstractmethod:
+
+
+
+   .. py:method:: reset()
+
+
+.. py:class:: BinningValueSplitter(max_nr_splits: int = 12)
+
+   Bases: :py:obj:`AbstractValueSplitter`
+
+
+   Calculate a number of bins of equal size as splits.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: compute_splits_properties(reasoner: owlapy.abstracts.AbstractOWLReasoner, properties: List[owlapy.owl_property.OWLDataProperty]) -> Dict[owlapy.owl_property.OWLDataProperty, List[owlapy.owl_literal.OWLLiteral]]
+
+
+.. py:class:: Split
+
+   .. py:attribute:: pos
+      :type:  List[str]
+
+
+   .. py:attribute:: neg
+      :type:  List[str]
+
+
+   .. py:attribute:: entropy
+      :type:  float
+
+
+   .. py:attribute:: used_properties
+      :type:  Set[str]
+
+
+   .. py:method:: __eq__(other)
+
+
+   .. py:method:: __lt__(other)
+
+
+.. py:class:: IndividualValues
+
+   .. py:attribute:: pos_map
+      :type:  Dict[str, Values]
+
+
+   .. py:attribute:: neg_map
+      :type:  Dict[str, Values]
+
+
+   .. py:method:: get_pos_values() -> List[Values]
+
+
+   .. py:method:: get_neg_values() -> List[Values]
+
+
+   .. py:method:: get_overlapping_with_split(split: Split) -> IndividualValues
+
+
+.. py:class:: EntropyValueSplitter(max_nr_splits: int = 2)
+
+   Bases: :py:obj:`AbstractValueSplitter`
+
+
+   Calculate the splits depending on the entropy of the resulting sets.
+
+
+   .. py:attribute:: __slots__
+      :value: '_prop_to_values'
+
+
+
+   .. py:method:: compute_splits_properties(reasoner: owlapy.abstracts.AbstractOWLReasoner, properties: List[owlapy.owl_property.OWLDataProperty], pos: Set[owlapy.owl_individual.OWLNamedIndividual] = None, neg: Set[owlapy.owl_individual.OWLNamedIndividual] = None) -> Dict[owlapy.owl_property.OWLDataProperty, List[owlapy.owl_literal.OWLLiteral]]
+
+
+   .. py:method:: reset()
+
+

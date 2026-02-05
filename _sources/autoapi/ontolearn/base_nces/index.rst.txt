@@ -1,0 +1,158 @@
+ontolearn.base_nces
+===================
+
+.. py:module:: ontolearn.base_nces
+
+.. autoapi-nested-parse::
+
+   The base class of NCES.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.base_nces.BaseNCES
+
+
+Module Contents
+---------------
+
+.. py:class:: BaseNCES(knowledge_base, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0)
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: kb_namespace
+
+
+   .. py:attribute:: dl_parser
+
+
+   .. py:attribute:: renderer
+
+
+   .. py:attribute:: atomic_concept_names
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: all_individuals
+
+
+   .. py:attribute:: inv_vocab
+
+
+   .. py:attribute:: vocab
+
+
+   .. py:attribute:: num_predictions
+
+
+   .. py:attribute:: auto_train
+      :value: True
+
+
+
+   .. py:attribute:: proj_dim
+      :value: 128
+
+
+
+   .. py:attribute:: drop_prob
+      :value: 0.1
+
+
+
+   .. py:attribute:: num_heads
+      :value: 4
+
+
+
+   .. py:attribute:: num_seeds
+      :value: 1
+
+
+
+   .. py:attribute:: m
+      :value: 32
+
+
+
+   .. py:attribute:: ln
+      :value: False
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.0001
+
+
+
+   .. py:attribute:: tmax
+      :value: 20
+
+
+
+   .. py:attribute:: eta_min
+      :value: 1e-05
+
+
+
+   .. py:attribute:: clip_value
+      :value: 5.0
+
+
+
+   .. py:attribute:: batch_size
+      :value: 256
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: max_length
+      :value: 48
+
+
+
+   .. py:attribute:: load_pretrained
+      :value: True
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: num_examples
+
+
+   .. py:attribute:: best_predictions
+      :value: None
+
+
+
+   .. py:method:: find_optimal_number_of_examples(kb)
+      :staticmethod:
+
+
+
+   .. py:method:: add_data_values(data)
+
+
+   .. py:method:: collate_batch_inference(batch)
+
+
+   .. py:method:: get_synthesizer()
+      :abstractmethod:
+
+
+

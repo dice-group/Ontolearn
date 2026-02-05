@@ -1,0 +1,1240 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.knowledge_base &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.knowledge_base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.knowledge_base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot; Knowledge Base.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Generator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">owlapy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">,</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">,</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">,</span> \
+    <span class="n">OWLThing</span><span class="p">,</span> <span class="n">OWLObjectMinCardinality</span><span class="p">,</span> <span class="n">OWLObjectOneOf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_axiom</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassAssertionAxiom</span><span class="p">,</span> <span class="n">OWLObjectPropertyAssertionAxiom</span><span class="p">,</span> <span class="n">OWLDataPropertyAssertionAxiom</span><span class="p">,</span> \
+    <span class="n">OWLSubClassOfAxiom</span><span class="p">,</span> <span class="n">OWLEquivalentClassesAxiom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_datatype</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDatatype</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">BooleanOWLDatatype</span><span class="p">,</span> <span class="n">NUMERIC_DATATYPES</span><span class="p">,</span> <span class="n">DoubleOWLDatatype</span><span class="p">,</span> <span class="n">TIME_DATATYPES</span><span class="p">,</span> <span class="n">OWLLiteral</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractOWLOntology</span><span class="p">,</span> <span class="n">AbstractOWLReasoner</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectProperty</span><span class="p">,</span> <span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">,</span> \
+    <span class="n">OWLDataPropertyExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_ontology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ontology</span><span class="p">,</span> <span class="n">SyncOntology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_reasoner</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuralReasoner</span><span class="p">,</span> <span class="n">SyncReasoner</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">DLSyntaxObjectRenderer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">iter_count</span><span class="p">,</span> <span class="n">LRUCache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractKnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.concept_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptGenerator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_hierarchy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassHierarchy</span><span class="p">,</span> <span class="n">ObjectPropertyHierarchy</span><span class="p">,</span> <span class="n">DatatypePropertyHierarchy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_hierarchy_instances</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDataSomeValuesFrom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_data_ranges</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDataRange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDataOneOf</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KnowledgeBase">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">KnowledgeBase</span><span class="p">(</span><span class="n">AbstractKnowledgeBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Representation of an OWL knowledge base in Ontolearn.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path: Path to an ontology file that is to be loaded.</span>
+<span class="sd">        ontology: OWL ontology object.</span>
+<span class="sd">        reasoner_factory: Factory that creates a reasoner to reason about the ontology.</span>
+<span class="sd">        reasoner: reasoner Over the ontology.</span>
+<span class="sd">            reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`</span>
+<span class="sd">            argument it will override this setting.</span>
+<span class="sd">        include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named</span>
+<span class="sd">            Individuals (does not contain this type) as individuals.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        generator (ConceptGenerator): Instance of concept generator.</span>
+<span class="sd">        path (str): Path of the ontology file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># __slots__ = &#39;_manager&#39;, &#39;_ontology&#39;, &#39;_reasoner&#39;, \</span>
+    <span class="c1">#    &#39;_ind_cache&#39;, &#39;path&#39;, &#39;generator&#39;, &#39;_class_hierarchy&#39;, \</span>
+    <span class="c1">#    &#39;_object_property_hierarchy&#39;, &#39;_data_property_hierarchy&#39;, &#39;_op_domains&#39;, &#39;_op_ranges&#39;, &#39;_dp_domains&#39;, \</span>
+    <span class="c1">#    &#39;_dp_ranges&#39;</span>
+
+    <span class="n">ind_cache</span><span class="p">:</span> <span class="n">LRUCache</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]]</span>  <span class="c1"># class expression =&gt; individuals</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">generator</span><span class="p">:</span> <span class="n">ConceptGenerator</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">reasoner_factory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">AbstractOWLOntology</span><span class="p">],</span> <span class="n">AbstractOWLReasoner</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ontology</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractOWLOntology</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">reasoner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractOWLReasoner</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">class_hierarchy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ClassHierarchy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">load_class_hierarchy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">object_property_hierarchy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ObjectPropertyHierarchy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">data_property_hierarchy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatatypePropertyHierarchy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">include_implicit_individuals</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">AbstractKnowledgeBase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ontology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">reasoner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;You should either provide a path &quot;</span>
+                                                                                     <span class="s2">&quot;of the ontology or the ontology&quot;</span>
+                                                                                     <span class="s2">&quot;object!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">ontology</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">reasoner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">((</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ontology</span><span class="p">,</span> <span class="n">Ontology</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">StructuralReasoner</span><span class="p">))</span>
+                    <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ontology</span><span class="p">,</span><span class="n">SyncOntology</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span><span class="n">SyncReasoner</span><span class="p">))),</span>\
+                <span class="s2">&quot;You should either use a native ontology and reasoner or use both a SyncOntology and a SyncReasoner!&quot;</span>
+            <span class="k">if</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">ontology</span> <span class="o">!=</span> <span class="n">ontology</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: The ontology provided in the constructor is not the same as the one &quot;</span>
+                      <span class="s2">&quot;provided in the reasoner. This could lead to inconsistencies.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+
+        <span class="k">if</span> <span class="n">ontology</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span> <span class="o">=</span> <span class="n">ontology</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># default to native Ontology of owlapy. To use SyncOntology, pass the ontology explicitly as an argument.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span> <span class="o">=</span> <span class="n">Ontology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="n">reasoner</span><span class="p">:</span> <span class="n">AbstractOWLReasoner</span>
+        <span class="k">if</span> <span class="n">reasoner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span>
+        <span class="k">elif</span> <span class="n">reasoner_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner_factory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">Ontology</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">StructuralReasoner</span><span class="p">(</span><span class="n">ontology</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">SyncReasoner</span><span class="p">(</span><span class="n">ontology</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">reasoner</span><span class="o">=</span><span class="s2">&quot;Pellet&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">load_class_hierarchy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="p">:</span> <span class="n">ClassHierarchy</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="p">:</span> <span class="n">ObjectPropertyHierarchy</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="p">:</span> <span class="n">DatatypePropertyHierarchy</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="p">)</span> <span class="o">=</span> <span class="n">init_hierarchy_instances</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span>
+                                                                      <span class="n">class_hierarchy</span><span class="o">=</span><span class="n">class_hierarchy</span><span class="p">,</span>
+                                                                      <span class="n">object_property_hierarchy</span><span class="o">=</span><span class="n">object_property_hierarchy</span><span class="p">,</span>
+                                                                      <span class="n">data_property_hierarchy</span><span class="o">=</span><span class="n">data_property_hierarchy</span><span class="p">)</span>
+        <span class="c1"># Object property domain and range:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># Data property domain and range:g</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLDataRange</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># OWL class expression generator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">ConceptGenerator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+
+<div class="viewcode-block" id="KnowledgeBase.individuals">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.individuals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">implicit_individuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Given an OWL class expression, retrieve all individuals belonging to it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Class expression of which to list individuals.</span>
+<span class="sd">            implicit_individuals: No purpose for now (tbd)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Individuals belonging to the given class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># named_individuals check must be supported by the reasoner .instances method</span>
+        <span class="k">if</span> <span class="n">concept</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">instances</span><span class="p">(</span><span class="n">concept</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">individuals_in_signature</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.abox">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.abox">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;native&#39;</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all the abox axioms for a given individual. If no individual is given, get all abox axioms</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            individual (OWLNamedIndividual): Individual/s to get the abox axioms from.</span>
+<span class="sd">            mode (str): The return format.</span>
+<span class="sd">             1) &#39;native&#39; -&gt; returns triples as tuples of owlapy objects,</span>
+<span class="sd">             2) &#39;iri&#39; -&gt; returns triples as tuples of IRIs as string,</span>
+<span class="sd">             3) &#39;axiom&#39; -&gt; triples are represented by owlapy axioms.</span>
+
+<span class="sd">        Returns: Iterable of tuples or owlapy axiom, depending on the mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;native&#39;</span><span class="p">,</span> <span class="s1">&#39;iri&#39;</span><span class="p">,</span> <span class="s1">&#39;axiom&#39;</span><span class="p">,</span>
+                        <span class="s2">&quot;expression&quot;</span><span class="p">],</span> <span class="s2">&quot;Valid modes are: &#39;native&#39;, &#39;iri&#39; ,&#39;expression&#39; or &#39;axiom&#39;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">SyncOntology</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mode</span><span class="o">==</span><span class="s2">&quot;axiom&quot;</span> <span class="ow">and</span> <span class="n">individual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">get_abox_axioms</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="n">OWLNamedIndividual</span><span class="p">):</span>
+            <span class="n">inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">individual</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="n">inds</span> <span class="o">=</span> <span class="n">individual</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;native&quot;</span><span class="p">:</span>
+                <span class="c1"># Obtain all class assertion triples/axioms</span>
+                <span class="c1"># For now, &#39;rdfs:type&#39; predicate will be represented as an IRI</span>
+                <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">),</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+                <span class="c1"># Obtain all property assertion triples/axioms</span>
+                <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">literal</span><span class="p">)</span> <span class="k">for</span> <span class="n">literal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">))</span>
+
+                <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">ind</span><span class="p">)</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;iri&quot;</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">,</span>
+                             <span class="n">t</span><span class="o">.</span><span class="n">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">dp</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">literal</span><span class="o">.</span><span class="n">get_literal</span><span class="p">())</span> <span class="k">for</span> <span class="n">literal</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">get_data_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">((</span><span class="n">i</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">op</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">get_object_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;axiom&quot;</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="p">(</span><span class="n">OWLClassAssertionAxiom</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">(</span><span class="n">OWLDataPropertyAssertionAxiom</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">,</span> <span class="n">literal</span><span class="p">)</span> <span class="k">for</span> <span class="n">literal</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">get_data_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">dp</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_properties_for_ind</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">yield from</span> <span class="p">(</span><span class="n">OWLObjectPropertyAssertionAxiom</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">ind</span><span class="p">)</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">get_object_property_values</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">op</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;expression&quot;</span><span class="p">:</span>
+                <span class="n">object_restrictions_quantifiers</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="c1"># To no return duplicate objects.</span>
+                <span class="n">quantifier_gate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="c1"># (1) Iterate over triples where individual is in the subject position. Recursion</span>
+                <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">abox</span><span class="p">(</span><span class="n">individual</span><span class="o">=</span><span class="n">individual</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;native&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">IRI</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">):</span>
+<span class="w">                        </span><span class="sd">&quot;&quot;&quot; Return OWLClass &quot;&quot;&quot;</span>
+                        <span class="k">yield</span> <span class="n">o</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">OWLObjectProperty</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">OWLNamedIndividual</span><span class="p">):</span>
+<span class="w">                        </span><span class="sd">&quot;&quot;&quot; STORE: ObjectSomeValuesFrom with ObjectOneOf over OWLNamedIndividual&quot;&quot;&quot;</span>
+                        <span class="n">object_restrictions_quantifiers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">OWLDataProperty</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">OWLLiteral</span><span class="p">):</span>
+<span class="w">                        </span><span class="sd">&quot;&quot;&quot; RETURN: OWLDataSomeValuesFrom with OWLDataOneOf over OWLLiteral&quot;&quot;&quot;</span>
+                        <span class="k">yield</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">OWLDataOneOf</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unrecognized triples to expression mappings&quot;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">iter_inds</span> <span class="ow">in</span> <span class="n">object_restrictions_quantifiers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="c1"># RETURN Existential Quantifiers over Nominals: \exists r. {x....y}</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">iter_inds</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">OWLObjectOneOf</span><span class="p">(</span><span class="n">values</span><span class="o">=</span><span class="n">x</span><span class="p">))</span>
+                    <span class="n">type_</span><span class="p">:</span> <span class="n">OWLClass</span>
+                    <span class="n">count</span><span class="p">:</span> <span class="nb">int</span>
+                    <span class="k">for</span> <span class="n">type_</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">Counter</span><span class="p">(</span>
+                            <span class="p">[</span><span class="n">type_i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">iter_inds</span> <span class="k">for</span> <span class="n">type_i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_types</span><span class="p">(</span><span class="n">ind</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)])</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="n">existential_quantifier</span> <span class="o">=</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">type_</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">existential_quantifier</span> <span class="ow">in</span> <span class="n">quantifier_gate</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># RETURN Existential Quantifiers over Concepts: \exists r. C</span>
+                            <span class="n">quantifier_gate</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">existential_quantifier</span><span class="p">)</span>
+                            <span class="k">yield</span> <span class="n">existential_quantifier</span>
+                        <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">min_cardinality_item</span> <span class="o">=</span> <span class="n">OWLObjectMinCardinality</span><span class="p">(</span><span class="n">cardinality</span><span class="o">=</span><span class="n">count</span><span class="p">,</span> <span class="nb">property</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">type_</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">min_cardinality_item</span> <span class="ow">in</span> <span class="n">quantifier_gate</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">quantifier_gate</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">min_cardinality_item</span><span class="p">)</span>
+                                <span class="c1"># RETURN \ge number r. C</span>
+                                <span class="k">yield</span> <span class="n">min_cardinality_item</span>
+
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unrecognized mode:</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.</span>
+    <span class="c1"># For named individuals there is the method `get_types`.</span>
+<div class="viewcode-block" id="KnowledgeBase.tbox">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.tbox">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tbox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">],</span> <span class="n">OWLClass</span><span class="p">,</span>
+    <span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">OWLObjectProperty</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;native&#39;</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all the tbox axioms for the given concept-s|propert-y/ies.</span>
+<span class="sd">         If no concept-s|propert-y/ies are given, get all tbox axioms.</span>
+
+<span class="sd">         Args:</span>
+<span class="sd">             entities: Entities to obtain tbox axioms from. This can be a single</span>
+<span class="sd">              OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list</span>
+<span class="sd">              that combines classes and properties (which we don&#39;t recommend doing), only axioms for one type will be</span>
+<span class="sd">              returned, whichever comes first (classes or props).</span>
+<span class="sd">             mode (str): The return format.</span>
+<span class="sd">              1) &#39;native&#39; -&gt; returns triples as tuples of owlapy objects,</span>
+<span class="sd">              2) &#39;iri&#39; -&gt; returns triples as tuples of IRIs as string,</span>
+<span class="sd">              3) &#39;axiom&#39; -&gt; triples are represented by owlapy axioms.</span>
+
+<span class="sd">         Returns: Iterable of tuples or owlapy axiom, depending on the mode.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;native&#39;</span><span class="p">,</span> <span class="s1">&#39;iri&#39;</span><span class="p">,</span> <span class="s1">&#39;axiom&#39;</span><span class="p">],</span> <span class="s2">&quot;Valid modes are: &#39;native&#39;, &#39;iri&#39; or &#39;axiom&#39;&quot;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;iri&quot;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARN  KnowledgeBase.tbox()    :: Ranges of data properties are not implemented for the &#39;iri&#39; mode!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">SyncOntology</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mode</span><span class="o">==</span><span class="s2">&quot;axiom&quot;</span> <span class="ow">and</span> <span class="n">entities</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">get_tbox_axioms</span><span class="p">()</span>
+        <span class="n">include_all</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Using a set to avoid yielding duplicated results.</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entities</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+            <span class="n">ens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">entities</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ens</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">OWLClass</span><span class="p">):</span>
+                <span class="n">classes</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entities</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entities</span><span class="p">:</span>
+            <span class="n">ens</span> <span class="o">=</span> <span class="p">[</span><span class="n">entities</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entities</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">):</span>
+                <span class="n">classes</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_concepts</span><span class="p">())</span>
+            <span class="n">ens</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">()))</span>
+            <span class="n">ens</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">()))</span>
+            <span class="n">include_all</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">include_all</span> <span class="ow">or</span> <span class="n">classes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">ens</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subClassOf&quot;</span><span class="p">),</span> <span class="n">concept</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_sub_concepts</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">concept</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2002/07/owl#equivalentClass&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">equivalent_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">only_named</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>  <span class="c1"># This kind of check is just for performance purposes</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">concept</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subClassOf&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span>
+                         <span class="ow">in</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_parents</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;iri&#39;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subClassOf&quot;</span><span class="p">,</span>
+                                  <span class="n">concept</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_sub_concepts</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">concept</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2002/07/owl#equivalentClass&quot;</span><span class="p">,</span>
+                                  <span class="n">cast</span><span class="p">(</span><span class="n">OWLClass</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">equivalent_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">only_named</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">concept</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subClassOf&quot;</span><span class="p">,</span>
+                                      <span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_parents</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;axiom&quot;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">OWLSubClassOfAxiom</span><span class="p">(</span><span class="n">super_class</span><span class="o">=</span><span class="n">concept</span><span class="p">,</span> <span class="n">sub_class</span><span class="o">=</span><span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_sub_concepts</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">OWLEquivalentClassesAxiom</span><span class="p">([</span><span class="n">concept</span><span class="p">,</span> <span class="n">j</span><span class="p">]))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">equivalent_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">only_named</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">OWLSubClassOfAxiom</span><span class="p">(</span><span class="n">super_class</span><span class="o">=</span><span class="n">j</span><span class="p">,</span> <span class="n">sub_class</span><span class="o">=</span><span class="n">concept</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">get_direct_parents</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">include_all</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">classes</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">ens</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">OWLObjectProperty</span><span class="p">):</span>
+                    <span class="n">prop_type</span> <span class="o">=</span> <span class="s2">&quot;Object&quot;</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">OWLDataProperty</span><span class="p">):</span>
+                    <span class="n">prop_type</span> <span class="o">=</span> <span class="s2">&quot;Data&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;native&#39;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subPropertyOf&quot;</span><span class="p">),</span> <span class="n">prop</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;sub_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2002/07/owl#equivalentProperty&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;equivalent_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#domain&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_property_domains&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#range&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_property_ranges&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="p">,</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subPropertyOf&quot;</span><span class="p">),</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span>
+                         <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;super_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;iri&#39;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subPropertyOf&quot;</span><span class="p">,</span>
+                                  <span class="n">prop</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;sub_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2002/07/owl#equivalentProperty&quot;</span><span class="p">,</span>
+                                  <span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;equivalent_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#domain&quot;</span><span class="p">,</span>
+                                  <span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_property_domains&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="n">prop_type</span> <span class="o">==</span> <span class="s1">&#39;Object&#39;</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#range&quot;</span><span class="p">,</span>
+                                      <span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_ranges</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="c1"># # ranges of data properties not implemented for this mode</span>
+                    <span class="c1"># else:</span>
+                    <span class="c1">#     [results.add((prop.str, &quot;http://www.w3.org/2000/01/rdf-schema#range&quot;,</span>
+                    <span class="c1">#                   str(j))) for j in self.reasoner.data_property_ranges(prop, direct=True)]</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">prop</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#subPropertyOf&quot;</span><span class="p">,</span>
+                                      <span class="n">j</span><span class="o">.</span><span class="n">str</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span>
+                         <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;super_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;axiom&#39;</span><span class="p">:</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">owlapy</span><span class="o">.</span><span class="n">owl_axiom</span><span class="p">,</span> <span class="s2">&quot;OWLSub&quot;</span> <span class="o">+</span> <span class="n">prop_type</span> <span class="o">+</span> <span class="s2">&quot;PropertyOfAxiom&quot;</span><span class="p">)(</span><span class="n">j</span><span class="p">,</span> <span class="n">prop</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;sub_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">owlapy</span><span class="o">.</span><span class="n">owl_axiom</span><span class="p">,</span> <span class="s2">&quot;OWLEquivalent&quot;</span> <span class="o">+</span> <span class="n">prop_type</span> <span class="o">+</span> <span class="s2">&quot;PropertiesAxiom&quot;</span><span class="p">)([</span><span class="n">j</span><span class="p">,</span> <span class="n">prop</span><span class="p">]))</span>
+                     <span class="k">for</span>
+                     <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;equivalent_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">owlapy</span><span class="o">.</span><span class="n">owl_axiom</span><span class="p">,</span> <span class="s2">&quot;OWL&quot;</span> <span class="o">+</span> <span class="n">prop_type</span> <span class="o">+</span> <span class="s2">&quot;PropertyDomainAxiom&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_property_domains&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">owlapy</span><span class="o">.</span><span class="n">owl_axiom</span><span class="p">,</span> <span class="s2">&quot;OWL&quot;</span> <span class="o">+</span> <span class="n">prop_type</span> <span class="o">+</span> <span class="s2">&quot;PropertyRangeAxiom&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                     <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_property_ranges&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+                        <span class="p">[</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">owlapy</span><span class="o">.</span><span class="n">owl_axiom</span><span class="p">,</span> <span class="s2">&quot;OWLSub&quot;</span> <span class="o">+</span> <span class="n">prop_type</span> <span class="o">+</span> <span class="s2">&quot;PropertyOfAxiom&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">j</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span>
+                         <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="s2">&quot;super_&quot;</span> <span class="o">+</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;_properties&quot;</span><span class="p">)(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.triples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.triples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;native&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all tbox and abox axioms/triples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The return format.</span>
+<span class="sd">              1) &#39;native&#39; -&gt; returns triples as tuples of owlapy objects,</span>
+<span class="sd">              2) &#39;iri&#39; -&gt; returns triples as tuples of IRIs as string,</span>
+<span class="sd">              3) &#39;axiom&#39; -&gt; triples are represented by owlapy axioms.</span>
+
+<span class="sd">        Returns: Iterable of tuples or owlapy axiom, depending on the mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">abox</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">tbox</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.ignore_and_copy">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.ignore_and_copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ignore_and_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignored_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">ignored_object_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">ignored_data_properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;KnowledgeBase&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Makes a copy of the knowledge base while ignoring specified concepts and properties.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ignored_classes: Classes to ignore.</span>
+<span class="sd">            ignored_object_properties: Object properties to ignore.</span>
+<span class="sd">            ignored_data_properties: Data properties to ignore.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A new KnowledgeBase with the hierarchies restricted as requested.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">new</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">KnowledgeBase</span><span class="p">)</span>
+
+        <span class="n">AbstractKnowledgeBase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">ontology</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">op_domains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">op_ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">dp_domains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">dp_ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span>
+
+
+        <span class="k">if</span> <span class="n">ignored_classes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">owl_concepts_to_ignore</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ignored_classes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">contains_class</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                    <span class="n">owl_concepts_to_ignore</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1"> could not found in </span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="p">[</span><span class="n">_</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">()]</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Concepts to ignore: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">render</span><span class="p">,</span> <span class="n">owl_concepts_to_ignore</span><span class="p">))))</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">class_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">restrict_and_copy</span><span class="p">(</span><span class="n">remove</span><span class="o">=</span><span class="n">owl_concepts_to_ignore</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">class_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span>
+
+        <span class="k">if</span> <span class="n">ignored_object_properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">object_property_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="o">.</span><span class="n">restrict_and_copy</span><span class="p">(</span>
+                <span class="n">remove</span><span class="o">=</span><span class="n">ignored_object_properties</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">object_property_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span>
+
+        <span class="k">if</span> <span class="n">ignored_data_properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">data_property_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="o">.</span><span class="n">restrict_and_copy</span><span class="p">(</span>
+                <span class="n">remove</span><span class="o">=</span><span class="n">ignored_data_properties</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new</span><span class="o">.</span><span class="n">data_property_hierarchy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span>
+
+        <span class="k">return</span> <span class="n">new</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.clean">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean all stored values (states and caches) if there is any.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            1. If you have more than one learning problem that you want to fit to the same model (i.e. to learn the</span>
+<span class="sd">            concept using the same concept learner model) use this method to make sure that you have cleared every</span>
+<span class="sd">            previous stored value.</span>
+<span class="sd">            2. If you store another KnowledgeBase instance using the same variable name as before, it is recommended to</span>
+<span class="sd">            use this method before the initialization to avoid data mismatch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+    <span class="c1"># def cache_individuals(self, ce: OWLClassExpression) -&gt; None:</span>
+    <span class="c1">#     if not self.use_individuals_cache:</span>
+    <span class="c1">#         raise TypeError</span>
+    <span class="c1">#     if ce in self.ind_cache:</span>
+    <span class="c1">#         return</span>
+    <span class="c1">#     if isinstance(self.reasoner, StructuralReasoner):</span>
+    <span class="c1">#         self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         temp = self.reasoner.instances(ce)</span>
+    <span class="c1">#         self.ind_cache[ce] = frozenset(temp)</span>
+
+    <span class="c1"># TODO:CD: Remove this function from KB. Size count should not be done by KB.</span>
+    <span class="c1"># Lets keep this for now since lots of operations depend on this method</span>
+<div class="viewcode-block" id="KnowledgeBase.individuals_count">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.individuals_count">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of all individuals belonging to the concept in the ontology.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Class expression of the individuals to count.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Number of the individuals belonging to the given class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">concept</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.individuals_set">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.individuals_set">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">arg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FrozenSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the individuals specified in the arg as a frozenset. If `arg` is an OWLClassExpression then this</span>
+<span class="sd">        method behaves as the method &quot;individuals&quot; but will return the final result as a frozenset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            arg: more than one individual/ single individual/ class expression of which to list individuals.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Frozenset of the individuals depending on the arg type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+            <span class="c1"># if self.use_individuals_cache:</span>
+            <span class="c1">#     self.cache_individuals(arg)</span>
+            <span class="c1">#     r = self.ind_cache[arg]</span>
+            <span class="c1">#     return r</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#     return frozenset(self.individuals(arg))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">OWLNamedIndividual</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">arg</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_object_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_object_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">inverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the most general object property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+<span class="sd">            inverse: Inverse order?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+        <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_property_ranges</span> <span class="k">if</span> <span class="n">inverse</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_object_property_domains</span>
+
+        <span class="n">inds_domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="o">.</span><span class="n">most_general_roles</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">domain</span><span class="o">.</span><span class="n">is_owl_thing</span><span class="p">()</span> <span class="ow">or</span> <span class="n">inds_domain</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">func</span><span class="p">(</span><span class="n">prop</span><span class="p">)):</span>
+                <span class="k">yield</span> <span class="n">prop</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.data_properties_for_domain">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.data_properties_for_domain">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_properties_for_domain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">data_properties</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">])</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+        <span class="c1"># TODO AB: It is unclear what this method is supposed to do and why is it implemented this way.</span>
+        <span class="n">inds_domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">data_properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">domain</span><span class="o">.</span><span class="n">is_owl_thing</span><span class="p">()</span> <span class="ow">or</span> <span class="n">inds_domain</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data_property_domains</span><span class="p">(</span><span class="n">prop</span><span class="p">)):</span>
+                <span class="k">yield</span> <span class="n">prop</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.least_general_named_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.least_general_named_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">least_general_named_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get leaf classes.</span>
+<span class="sd">        @TODO: Docstring needed</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">leaves</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_classes">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_classes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get most general named concepts classes.</span>
+<span class="sd">        @TODO: Docstring needed</span>
+<span class="sd">        Returns:&quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">roots</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.are_owl_concept_disjoint">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.are_owl_concept_disjoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">are_owl_concept_disjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="n">OWLClass</span><span class="p">,</span> <span class="n">cc</span><span class="p">:</span> <span class="n">OWLClass</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">disjoint_classes</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_direct_sub_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_direct_sub_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_direct_sub_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClass</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Direct sub-classes of atomic class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Atomic concept.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Direct sub classes of concept { x \\| ( x subClassOf concept )}.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">sub_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_object_property_domains">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_object_property_domains">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="n">OWLObjectProperty</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the domains of an object property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prop: Object property.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Domains of the property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span><span class="p">:</span>
+            <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_domains</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">domains</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">domains</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">domains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_domains</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_object_property_ranges">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_object_property_ranges">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="n">OWLObjectProperty</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the ranges of an object property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prop: Object property.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Ranges of the property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span><span class="p">:</span>
+            <span class="n">ranges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_ranges</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">ranges</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranges</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">ranges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_ranges</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_data_property_domains">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_data_property_domains">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_domains</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="n">OWLDataProperty</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the domains of a data property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prop: Data property.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Domains of the property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span><span class="p">:</span>
+            <span class="n">domains</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">data_property_domains</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">domains</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">domains</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">domains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_domains</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_data_property_ranges">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_data_property_ranges">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">:</span> <span class="n">OWLDataProperty</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLDataRange</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the ranges of a data property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prop: Data property.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Ranges of the property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">data_property_ranges</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dp_ranges</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general data properties that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general data properties for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties_for_domain</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_boolean_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_boolean_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_boolean_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general boolean data properties that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general boolean data properties for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties_for_domain</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_boolean_data_properties</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_numeric_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_numeric_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_numeric_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general numeric data properties that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general numeric data properties for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties_for_domain</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_numeric_data_properties</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_time_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_time_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_time_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general time data properties that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general time data properties for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties_for_domain</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_time_data_properties</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_existential_restrictions">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_existential_restrictions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_existential_restrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                              <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">filler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectSomeValuesFrom</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general existential restrictions that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+<span class="sd">            filler: Optional filler to put in the restriction (not normally used).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">           Most general existential restrictions for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">most_general_object_properties</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">filler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_universal_restrictions">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_universal_restrictions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_universal_restrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                            <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">filler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectAllValuesFrom</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general universal restrictions that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+<span class="sd">            filler: Optional filler to put in the restriction (not normally used).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general universal restrictions for the given domain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">most_general_object_properties</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">prop</span><span class="p">,</span> <span class="n">filler</span><span class="o">=</span><span class="n">filler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_existential_restrictions_inverse">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_existential_restrictions_inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_existential_restrictions_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                                      <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                                      <span class="n">filler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectSomeValuesFrom</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general inverse existential restrictions that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+<span class="sd">            filler: Optional filler to put in the restriction (not normally used).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general existential restrictions over inverse property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">most_general_object_properties</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">prop</span><span class="o">.</span><span class="n">get_inverse_property</span><span class="p">(),</span> <span class="n">filler</span><span class="o">=</span><span class="n">filler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.most_general_universal_restrictions_inverse">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.most_general_universal_restrictions_inverse">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">most_general_universal_restrictions_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                                    <span class="n">domain</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                                                    <span class="n">filler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectAllValuesFrom</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find most general inverse universal restrictions that are applicable to a domain.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            domain: Domain for which to search properties.</span>
+<span class="sd">            filler: Optional filler to put in the restriction (not normally used).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Most general universal restrictions over inverse property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">most_general_object_properties</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">prop</span><span class="o">.</span><span class="n">get_inverse_property</span><span class="p">(),</span> <span class="n">filler</span><span class="o">=</span><span class="n">filler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_direct_parents">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_direct_parents">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_direct_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Direct parent concepts.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Concept to find super concepts of.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Direct parent concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">super_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_all_direct_sub_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_all_direct_sub_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_direct_sub_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All direct sub concepts of a concept.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Parent concept for which to get sub concepts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Direct sub concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">sub_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_all_sub_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_all_sub_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_sub_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;All sub concepts of a concept.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Parent concept for which to get sub concepts.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Sub concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">sub_classes</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all concepts of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all concepts of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all object properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Object properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all data properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Data properties for the given range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+<div class="viewcode-block" id="KnowledgeBase.get_object_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_object_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all object properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Object properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_property_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ranges</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">OWLDatatype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all data properties of this concept generator for the given ranges.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">           ranges: Ranges for which to extract the data properties.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Data properties for the given range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ranges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_property_ranges</span><span class="p">(</span><span class="n">dp</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">ranges</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">dp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_hierarchy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_boolean_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_boolean_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_boolean_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all boolean data properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Boolean data properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">({</span><span class="n">BooleanOWLDatatype</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_numeric_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_numeric_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_numeric_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all numeric data properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Numeric data properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">(</span><span class="n">NUMERIC_DATATYPES</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_double_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_double_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_double_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all numeric data properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Numeric data properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">(</span><span class="n">DoubleOWLDatatype</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_time_data_properties">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_time_data_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_time_data_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all time data properties of this concept generator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Time data properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">(</span><span class="n">TIME_DATATYPES</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_types">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_types">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">direct</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the named classes which are (direct) types of the specified individual.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ind: Individual.</span>
+<span class="sd">            direct: Whether to consider direct types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Types of the given individual.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_types</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_concepts</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">type_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">types</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">direct</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">type_</span> <span class="ow">in</span> <span class="n">all_types</span> <span class="ow">or</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">OWLThing</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">type_</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_object_properties_for_ind">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_object_properties_for_ind">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_properties_for_ind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">direct</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the object properties for the given individual.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ind: Individual</span>
+<span class="sd">            direct: Whether only direct properties should be considered (True), or if also</span>
+<span class="sd">                    indirect properties should be considered (False). Indirect properties</span>
+<span class="sd">                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Object properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">())</span>
+        <span class="k">yield from</span> <span class="p">(</span><span class="n">pe</span> <span class="k">for</span> <span class="n">pe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">ind_object_properties</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">direct</span><span class="p">)</span> <span class="k">if</span> <span class="n">pe</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_data_properties_for_ind">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_data_properties_for_ind">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_properties_for_ind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="n">direct</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the data properties for the given individual</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ind: Individual</span>
+<span class="sd">            direct: Whether only direct properties should be considered (True), or if also</span>
+<span class="sd">                    indirect properties should be considered (False). Indirect properties</span>
+<span class="sd">                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Data properties.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_data_properties</span><span class="p">())</span>
+        <span class="k">yield from</span> <span class="p">(</span><span class="n">pe</span> <span class="k">for</span> <span class="n">pe</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">ind_data_properties</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">direct</span><span class="p">)</span> <span class="k">if</span> <span class="n">pe</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_object_property_values">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_object_property_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_object_property_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span>
+                                   <span class="n">property_</span><span class="p">:</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">,</span>
+                                   <span class="n">direct</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the object property values for the given individual and property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ind: Individual.</span>
+<span class="sd">            property_: Object property.</span>
+<span class="sd">            direct: Whether only the property property_ should be considered (True), or if also</span>
+<span class="sd">                    the values of sub properties of property_ should be considered (False).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Individuals.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">SyncReasoner</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_values</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_values</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">property_</span><span class="p">,</span> <span class="n">direct</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.get_data_property_values">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.get_data_property_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_data_property_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ind</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span>
+                                 <span class="n">property_</span><span class="p">:</span> <span class="n">OWLDataPropertyExpression</span><span class="p">,</span>
+                                 <span class="n">direct</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLLiteral</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the data property values for the given individual and property.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ind: Individual.</span>
+<span class="sd">            property_: Data property.</span>
+<span class="sd">            direct: Whether only the property property_ should be considered (True), or if also</span>
+<span class="sd">                    the values of sub properties of property_ should be considered (False).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Literals.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">SyncReasoner</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">data_property_values</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">data_property_values</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">property_</span><span class="p">,</span> <span class="n">direct</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.contains_class">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.contains_class">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">contains_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if an atomic class is contained within this concept generator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concept: Atomic class.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Whether the class is contained in the concept generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">concept</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_hierarchy</span></div>
+
+
+<div class="viewcode-block" id="KnowledgeBase.__repr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">properties_count</span> <span class="o">=</span> <span class="n">iter_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">object_properties_in_signature</span><span class="p">())</span> <span class="o">+</span> <span class="n">iter_count</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">data_properties_in_signature</span><span class="p">())</span>
+        <span class="n">class_count</span> <span class="o">=</span> <span class="n">iter_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">())</span>
+        <span class="n">individuals_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">individuals_count</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;KnowledgeBase(path=</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="si">}</span><span class="s1"> &lt;</span><span class="si">{</span><span class="n">class_count</span><span class="si">}</span><span class="s1"> classes, </span><span class="si">{</span><span class="n">properties_count</span><span class="si">}</span><span class="s1"> properties, &#39;</span> \
+               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">individuals_count</span><span class="si">}</span><span class="s1"> individuals)&#39;</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

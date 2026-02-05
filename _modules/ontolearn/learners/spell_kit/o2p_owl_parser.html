@@ -1,0 +1,831 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.spell_kit.o2p_owl_parser &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.spell_kit.o2p_owl_parser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.spell_kit.o2p_owl_parser</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">lxml.etree</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementTree</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.spell_kit.o2p_ontology</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">Ontology</span><span class="p">,</span> <span class="n">ClassIdentifier</span><span class="p">,</span> <span class="n">DisjointWith</span><span class="p">,</span> <span class="n">SubClassOf</span><span class="p">,</span>
+                                                       <span class="n">EquivalentClass</span><span class="p">,</span> <span class="n">Thing</span><span class="p">,</span> <span class="n">Restriction</span><span class="p">,</span> <span class="n">Intersection</span><span class="p">,</span> <span class="n">Complement</span><span class="p">,</span>
+                                                       <span class="n">Union</span><span class="p">,</span> <span class="n">OneOf</span><span class="p">,</span> <span class="n">ObjectProperty</span><span class="p">,</span> <span class="n">PropertyReference</span><span class="p">,</span> <span class="n">SomeValues</span><span class="p">,</span>
+                                                       <span class="n">AllValues</span><span class="p">,</span> <span class="n">Cardinality</span><span class="p">,</span> <span class="n">MinCardinality</span><span class="p">,</span> <span class="n">MaxCardinality</span><span class="p">,</span> <span class="n">HasValue</span><span class="p">,</span>
+                                                       <span class="n">HasSelf</span><span class="p">)</span>
+
+<span class="c1">#  - TODO don&#39;t skip useful tags (see &#39;skipping&#39;)</span>
+<span class="c1">#  - TODO parse DataRange</span>
+
+
+<div class="viewcode-block" id="print_element">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.print_element">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pretty print an XML element (for debugging purposes).</span>
+
+<span class="sd">    :param element: element to print</span>
+<span class="sd">    :type element: xml.etree.ElementTree.Element</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">lxml</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">lxml</span><span class="o">.</span><span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_res_absolute">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.make_res_absolute">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_res_absolute</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">res</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;#&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">nsmap</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="OWLReader">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OWLReader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">namespaces</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;owl&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2002/07/owl#&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rdf&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rdfs&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.w3.org/2000/01/rdf-schema#&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+<div class="viewcode-block" id="OWLReader.expand_namespace">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.expand_namespace">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expand_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Expand a namespace alias to the fully qualified name.</span>
+
+<span class="sd">        :param namespace: a namespace alias (should be in namespaces).</span>
+<span class="sd">        :param item: the name of the item in the namespace</span>
+<span class="sd">        :return: fully qualified namespace</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;{</span><span class="si">%s</span><span class="s2">}</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">namespaces</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">namespace</span><span class="p">),</span> <span class="n">item</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.extract_namespace">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.extract_namespace">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.register_factory">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.register_factory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">tagname</span><span class="p">,</span> <span class="n">factory</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factories</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">tagname</span><span class="p">)]</span> <span class="o">=</span> <span class="n">factory</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.get_factory">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.get_factory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_factory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tagname</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">factories</span><span class="p">[</span><span class="n">tagname</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.register_factories">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.register_factories">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_factories</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;subClassOf&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_subclass</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;disjointWith&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_disjoint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;equivalentClass&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_eqclass</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Class&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_class</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Restriction&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_restriction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;intersectionOf&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_intersection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;complementOf&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_complement</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;unionOf&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_union</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;Description&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_class</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;oneOf&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_one_of</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factory</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Thing&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_thing</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">property_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;ObjectProperty&quot;</span><span class="p">):</span> <span class="p">{},</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;FunctionalProperty&quot;</span><span class="p">):</span> <span class="p">{</span><span class="s2">&quot;is_functional&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;FunctionalObjectProperty&quot;</span><span class="p">):</span> <span class="p">{</span>
+                <span class="s2">&quot;is_functional&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;TransitiveProperty&quot;</span><span class="p">):</span> <span class="p">{</span><span class="s2">&quot;is_transitive&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;InverseFunctionalProperty&quot;</span><span class="p">):</span> <span class="p">{</span>
+                <span class="s2">&quot;is_inverse_functional&quot;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">},</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;DatatypeProperty&quot;</span><span class="p">):</span> <span class="p">{},</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;comment&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">),</span>
+            <span class="c1"># self.expand_namespace(&#39;rdf&#39;, &#39;Description&#39;),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;Datatype&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Ontology&quot;</span><span class="p">),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;DatatypeProperty&#39;),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Axiom&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;NamedIndividual&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;DataRange&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;AllDifferent&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;AnnotationProperty&quot;</span><span class="p">),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;Prefix&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;Declaration&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;EquivalentClasses&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;SubClassOf&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;DisjointClasses&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;ClassAssertion&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;SameIndividual&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;DifferentIndividuals&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;ObjectPropertyAssertion&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;SubObjectPropertyOf&#39;),</span>
+            <span class="c1"># self.expand_namespace(&#39;owl&#39;, &#39;InverseObjectProperties&#39;),</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">strictness</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factories</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">property_types</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipping</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_factories</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strictness</span> <span class="o">=</span> <span class="n">strictness</span>
+
+<div class="viewcode-block" id="OWLReader.parse_error">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_error">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">severity</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strictness</span> <span class="o">&lt;</span> <span class="n">severity</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;=</span> <span class="n">severity</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING:&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="OWLReader.read">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ontology</span> <span class="o">=</span> <span class="n">Ontology</span><span class="p">()</span>
+
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+
+        <span class="n">tag_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Class&quot;</span><span class="p">)</span>
+        <span class="n">tag_properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">property_types</span>
+
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">():</span>
+            <span class="c1"># Parse all elements</span>
+            <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">tag_class</span><span class="p">:</span>
+                <span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_rule</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">rules</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">ontology</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">skipping</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span>
+                    <span class="mi">1</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="s2">&quot;Unknown top-level element: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">tag_properties</span><span class="p">:</span>
+                <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_property</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="n">ontology</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_namespace</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">namespaces</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span>
+                    <span class="mi">2</span><span class="p">,</span>
+                    <span class="n">element</span><span class="p">,</span>
+                    <span class="s2">&quot;Unknown top-level element in external namespace: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># other elements</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span>
+                    <span class="mi">3</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="s2">&quot;Unknown top-level element: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ontology</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_rule">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_rule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="c1"># Get the identifier.</span>
+        <span class="n">identifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_of</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;ID&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;about&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Parse the children.</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">]</span>
+
+        <span class="c1"># Separate rules from non-rules.</span>
+        <span class="n">children_rules</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">child</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">is_rule</span>
+        <span class="p">]</span>
+        <span class="n">children_not_rules</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">child</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">is_rule</span>
+        <span class="p">]</span>
+
+        <span class="c1"># There can be at most one non-rule child.</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_not_rules</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">identifier</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">children_not_rules</span><span class="p">:</span>
+                <span class="n">children_rules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EquivalentClass</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">children_not_rules</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_not_rules</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="n">children_not_rules</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children_rules</span><span class="p">:</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="n">subject</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_thing">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_thing">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_thing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">identifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_of</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;ID&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;about&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Thing</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_element">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_element">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">factory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_factory</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">factory</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="s2">&quot;Unknown element: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_disjoint">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_disjoint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_disjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">attrib_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attrib_ref</span><span class="p">])</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;rdfs:disjointWith can only have one child!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DisjointWith</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">bs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_subclass">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_subclass">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_subclass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">attrib_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attrib_ref</span><span class="p">])</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;rdfs:subClassOf can only have one child!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SubClassOf</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">bs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_eqclass">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_eqclass">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_eqclass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">attrib_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attrib_ref</span><span class="p">])</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;rdfs:equivalentClass can only have one child!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">EquivalentClass</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">bs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_class">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_class">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">identifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_of</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;ID&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;about&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Parse the children.</span>
+        <span class="n">children</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">]</span>
+
+        <span class="c1"># Separate rules from non-rules.</span>
+        <span class="n">children_rules</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">child</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">is_rule</span>
+        <span class="p">]</span>
+        <span class="n">children_not_rules</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">child</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span> <span class="k">if</span> <span class="n">child</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">is_rule</span>
+        <span class="p">]</span>
+
+        <span class="c1"># A child can not contain rules.</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">children_rules</span>
+
+        <span class="c1"># There can be at most one non-rule child.</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_not_rules</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">identifier</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">children_not_rules</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="n">children_not_rules</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">subject</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_restriction">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_restriction">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_restriction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;onProperty&quot;</span><span class="p">)</span>
+
+        <span class="n">quantifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+        <span class="n">property_wrap</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+
+        <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_propertyref</span><span class="p">(</span><span class="n">property_wrap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find property&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Restriction</span><span class="p">(</span><span class="n">quantifier</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_datarange">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_datarange">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_datarange</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="c1"># TODO implement</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_intersection">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_intersection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_intersection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_collection</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">Intersection</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_complement">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_complement">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_complement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">attrib_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attrib_ref</span><span class="p">])</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">bs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;owl:complementOf can only have one child!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Complement</span><span class="p">(</span><span class="n">bs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_union">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_union">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_union</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_collection</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">Union</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_one_of">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_one_of">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_one_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_collection</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">OneOf</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_collection">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_collection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="n">objs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">objs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">objs</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Collection can&#39;t be empty!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">objs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_property_rule">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_property_rule">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_property_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_classref">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_classref">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_classref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">rdf_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">rdf_resource</span><span class="p">])))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;Class&quot;</span><span class="p">):</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_class</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unexpected child!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find class reference!&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Too many class references!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_propertyref">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_propertyref">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_propertyref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">rdf_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PropertyReference</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">rdf_resource</span><span class="p">])))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_property</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">prop</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unexpected child!&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t find property reference!&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Too many property references!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_property">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_property">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">property_types</span> <span class="ow">and</span> <span class="s2">&quot;Description&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">identifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_of</span><span class="p">(</span>
+            <span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;about&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;ID&quot;</span><span class="p">),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;IRI&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">identifier</span> <span class="o">=</span> <span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">identifier</span><span class="p">)</span>
+            <span class="c1"># self.parse_error(5, element, &#39;No property identifier found!&#39;)</span>
+
+        <span class="n">rdf_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;Description&quot;</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get the property options - very important to make a copy!</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">property_types</span><span class="p">[</span><span class="n">element</span><span class="o">.</span><span class="n">tag</span><span class="p">])</span>
+
+        <span class="c1"># Process all the children</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">prop_type</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">rdf_resource</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;InverseFunctionalProperty&quot;</span><span class="p">):</span>
+                        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;is_inverse_functional&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;FunctionalProperty&quot;</span><span class="p">):</span>
+                        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;is_functional&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;TransitiveProperty&quot;</span><span class="p">):</span>
+                        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;is_transitive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;SymmetricProperty&quot;</span><span class="p">):</span>
+                        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;is_symmetric&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;ReflexiveProperty&quot;</span><span class="p">):</span>
+                        <span class="n">options</span><span class="p">[</span><span class="s2">&quot;is_reflexive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;DatatypeProperty&quot;</span><span class="p">):</span>
+                        <span class="k">pass</span>  <span class="c1"># TODO skipping DatatypeProperty</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;ObjectProperty&quot;</span><span class="p">):</span>
+                        <span class="k">pass</span>
+                    <span class="k">elif</span> <span class="n">prop_type</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;#Property&quot;</span><span class="p">):</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span>
+                            <span class="mi">2</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="s2">&quot;Unhandled property type: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">prop_type</span>
+                        <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">print_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Missing identifier!&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;subPropertyOf&quot;</span><span class="p">):</span>
+                <span class="n">parents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_subpropertyof</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;domain&quot;</span><span class="p">):</span>
+                <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_classref</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">options</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdfs&quot;</span><span class="p">,</span> <span class="s2">&quot;range&quot;</span><span class="p">):</span>
+                <span class="n">domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_classref</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">options</span><span class="p">[</span><span class="s2">&quot;range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">domain</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;inverseOf&quot;</span><span class="p">):</span>
+                <span class="n">inverse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_propertyref</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="n">options</span><span class="p">[</span><span class="s2">&quot;inverse_of&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inverse</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parse_error</span><span class="p">(</span>
+                    <span class="mi">2</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="s2">&quot;Unhandled property modifier: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ObjectProperty</span><span class="p">(</span><span class="n">identifier</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_subpropertyof">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_subpropertyof">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_subpropertyof</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="n">rdf_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PropertyReference</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">rdf_resource</span><span class="p">])))</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_property</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">prop</span><span class="p">:</span>
+                <span class="n">print_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Expected property!&quot;</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="c1"># Input is a Restriction</span>
+
+        <span class="n">possible_quantifiers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;someValuesFrom&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_exists</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;allValuesFrom&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_all</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;cardinality&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_card</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;minCardinality&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_mincard</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;maxCardinality&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_maxcard</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;hasValue&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_has_value</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;owl&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;qualifiedCardinality&quot;</span><span class="p">,</span>
+            <span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_qualified_cardinality</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;owl&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;maxQualifiedCardinality&quot;</span><span class="p">,</span>
+            <span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_min_qualified_cardinality</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;owl&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;minQualifiedCardinality&quot;</span><span class="p">,</span>
+            <span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_max_qualified_cardinality</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;owl&quot;</span><span class="p">,</span> <span class="s2">&quot;hasSelf&quot;</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_quantifier_self</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">quantifiers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">possible_quantifiers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="o">*</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="n">quantifiers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">quantifiers</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Expecting exactly one quantifier!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">quantifiers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_self">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_self">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_self</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">HasSelf</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_qualified_cardinality">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_qualified_cardinality">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_qualified_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;QualifiedCardinality&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Cardinality</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_min_qualified_cardinality">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_min_qualified_cardinality">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_min_qualified_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MinQualifiedCardinality&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Cardinality</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_max_qualified_cardinality">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_max_qualified_cardinality">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_max_qualified_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;MaxQualifiedCardinality&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Cardinality</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_quantifier_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="n">identifier</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_one_of</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;resource&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;rdf&quot;</span><span class="p">,</span> <span class="s2">&quot;nodeID&quot;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">element</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_element</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">print_element</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Value or class required!&quot;</span><span class="p">)</span>
+            <span class="n">identifier</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">identifier</span> <span class="o">=</span> <span class="n">ClassIdentifier</span><span class="p">(</span><span class="n">make_res_absolute</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">identifier</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_exists">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_exists">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_from</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">SomeValues</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_all">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_from</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">AllValues</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_quantifier_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_card">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_card">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_card</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_card</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">Cardinality</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_mincard">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_mincard">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_mincard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_card</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">MinCardinality</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_maxcard">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_maxcard">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_maxcard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_card</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">MaxCardinality</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OWLReader.parse_quantifier_has_value">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_owl_parser/index.html#ontolearn.learners.spell_kit.o2p_owl_parser.OWLReader.parse_quantifier_has_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_quantifier_has_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_quantifier_from</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">HasValue</span><span class="p">)</span></div>
+
+    
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_one_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="o">*</span><span class="n">attrs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        :param element:</span>
+<span class="sd">        :type element: xml.etree.ElementTree.Element</span>
+<span class="sd">        :param attrs:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">attr_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_namespace</span><span class="p">(</span><span class="o">*</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">attr_name</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Only one match allowed: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

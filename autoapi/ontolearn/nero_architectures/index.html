@@ -1,0 +1,497 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.nero_architectures &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.nero_utils" href="../nero_utils/index.html" />
+    <link rel="prev" title="ontolearn.nces_utils" href="../nces_utils/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.nero_architectures</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.MAB"><code class="docutils literal notranslate"><span class="pre">MAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.dim_V"><code class="docutils literal notranslate"><span class="pre">MAB.dim_V</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.num_heads"><code class="docutils literal notranslate"><span class="pre">MAB.num_heads</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.fc_q"><code class="docutils literal notranslate"><span class="pre">MAB.fc_q</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.fc_k"><code class="docutils literal notranslate"><span class="pre">MAB.fc_k</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.fc_v"><code class="docutils literal notranslate"><span class="pre">MAB.fc_v</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.fc_o"><code class="docutils literal notranslate"><span class="pre">MAB.fc_o</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.MAB.forward"><code class="docutils literal notranslate"><span class="pre">MAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.SAB"><code class="docutils literal notranslate"><span class="pre">SAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SAB.mab"><code class="docutils literal notranslate"><span class="pre">SAB.mab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SAB.forward"><code class="docutils literal notranslate"><span class="pre">SAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.ISAB"><code class="docutils literal notranslate"><span class="pre">ISAB</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.ISAB.I"><code class="docutils literal notranslate"><span class="pre">ISAB.I</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.ISAB.mab0"><code class="docutils literal notranslate"><span class="pre">ISAB.mab0</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.ISAB.mab1"><code class="docutils literal notranslate"><span class="pre">ISAB.mab1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.ISAB.forward"><code class="docutils literal notranslate"><span class="pre">ISAB.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.PMA"><code class="docutils literal notranslate"><span class="pre">PMA</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.PMA.S"><code class="docutils literal notranslate"><span class="pre">PMA.S</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.PMA.mab"><code class="docutils literal notranslate"><span class="pre">PMA.mab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.PMA.forward"><code class="docutils literal notranslate"><span class="pre">PMA.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformer"><code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformer.enc"><code class="docutils literal notranslate"><span class="pre">SetTransformer.enc</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformer.dec"><code class="docutils literal notranslate"><span class="pre">SetTransformer.dec</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformer.forward"><code class="docutils literal notranslate"><span class="pre">SetTransformer.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet"><code class="docutils literal notranslate"><span class="pre">DeepSet</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.name"><code class="docutils literal notranslate"><span class="pre">DeepSet.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.num_instances"><code class="docutils literal notranslate"><span class="pre">DeepSet.num_instances</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.num_embedding_dim"><code class="docutils literal notranslate"><span class="pre">DeepSet.num_embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.num_outputs"><code class="docutils literal notranslate"><span class="pre">DeepSet.num_outputs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.embeddings"><code class="docutils literal notranslate"><span class="pre">DeepSet.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.fc0"><code class="docutils literal notranslate"><span class="pre">DeepSet.fc0</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.fc1"><code class="docutils literal notranslate"><span class="pre">DeepSet.fc1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.forward"><code class="docutils literal notranslate"><span class="pre">DeepSet.forward()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.positive_expression_embeddings"><code class="docutils literal notranslate"><span class="pre">DeepSet.positive_expression_embeddings()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet.negative_expression_embeddings"><code class="docutils literal notranslate"><span class="pre">DeepSet.negative_expression_embeddings()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.name"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.num_instances"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.num_instances</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.num_embedding_dim"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.num_embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.num_outputs"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.num_outputs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.embeddings"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.set_transformer_negative"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.set_transformer_negative</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.set_transformer_positive"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.set_transformer_positive</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet.forward"><code class="docutils literal notranslate"><span class="pre">SetTransformerNet.forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.nero_architectures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/nero_architectures/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.nero_architectures">
+<span id="ontolearn-nero-architectures"></span><h1>ontolearn.nero_architectures<a class="headerlink" href="#module-ontolearn.nero_architectures" title="Link to this heading"></a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.MAB" title="ontolearn.nero_architectures.MAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAB</span></code></a></p></td>
+<td><p>Multi-head Attention Block.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.SAB" title="ontolearn.nero_architectures.SAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SAB</span></code></a></p></td>
+<td><p>Self-Attention Block.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.ISAB" title="ontolearn.nero_architectures.ISAB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ISAB</span></code></a></p></td>
+<td><p>Induced Self-Attention Block.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.PMA" title="ontolearn.nero_architectures.PMA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PMA</span></code></a></p></td>
+<td><p>Pooling by Multihead Attention.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformer" title="ontolearn.nero_architectures.SetTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetTransformer</span></code></a></p></td>
+<td><p>Set Transformer architecture.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.DeepSet" title="ontolearn.nero_architectures.DeepSet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeepSet</span></code></a></p></td>
+<td><p>DeepSet neural architecture for set-based learning.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nero_architectures.SetTransformerNet" title="ontolearn.nero_architectures.SetTransformerNet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetTransformerNet</span></code></a></p></td>
+<td><p>Set Transformer based architecture.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">MAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_V</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#MAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.MAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Multi-head Attention Block.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.dim_V">
+<span class="sig-name descname"><span class="pre">dim_V</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.dim_V" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.num_heads">
+<span class="sig-name descname"><span class="pre">num_heads</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.num_heads" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.fc_q">
+<span class="sig-name descname"><span class="pre">fc_q</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.fc_q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.fc_k">
+<span class="sig-name descname"><span class="pre">fc_k</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.fc_k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.fc_v">
+<span class="sig-name descname"><span class="pre">fc_v</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.fc_v" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.fc_o">
+<span class="sig-name descname"><span class="pre">fc_o</span></span><a class="headerlink" href="#ontolearn.nero_architectures.MAB.fc_o" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.MAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#MAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.MAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">SAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Self-Attention Block.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SAB.mab">
+<span class="sig-name descname"><span class="pre">mab</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SAB.mab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.ISAB">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">ISAB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_inds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#ISAB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.ISAB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Induced Self-Attention Block.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.ISAB.I">
+<span class="sig-name descname"><span class="pre">I</span></span><a class="headerlink" href="#ontolearn.nero_architectures.ISAB.I" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.ISAB.mab0">
+<span class="sig-name descname"><span class="pre">mab0</span></span><a class="headerlink" href="#ontolearn.nero_architectures.ISAB.mab0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.ISAB.mab1">
+<span class="sig-name descname"><span class="pre">mab1</span></span><a class="headerlink" href="#ontolearn.nero_architectures.ISAB.mab1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.ISAB.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#ISAB.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.ISAB.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.PMA">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">PMA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#PMA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.PMA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Pooling by Multihead Attention.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.PMA.S">
+<span class="sig-name descname"><span class="pre">S</span></span><a class="headerlink" href="#ontolearn.nero_architectures.PMA.S" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.PMA.mab">
+<span class="sig-name descname"><span class="pre">mab</span></span><a class="headerlink" href="#ontolearn.nero_architectures.PMA.mab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.PMA.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#PMA.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.PMA.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">SetTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_inds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_hidden</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SetTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Set Transformer architecture.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformer.enc">
+<span class="sig-name descname"><span class="pre">enc</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformer.enc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformer.dec">
+<span class="sig-name descname"><span class="pre">dec</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformer.dec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SetTransformer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformer.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">DeepSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_instances</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_embedding_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#DeepSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>DeepSet neural architecture for set-based learning.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DeepSet'</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.num_instances">
+<span class="sig-name descname"><span class="pre">num_instances</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.num_instances" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.num_embedding_dim">
+<span class="sig-name descname"><span class="pre">num_embedding_dim</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.num_embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.num_outputs">
+<span class="sig-name descname"><span class="pre">num_outputs</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.num_outputs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.fc0">
+<span class="sig-name descname"><span class="pre">fc0</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.fc0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xneg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#DeepSet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.positive_expression_embeddings">
+<span class="sig-name descname"><span class="pre">positive_expression_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_idx_individuals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#DeepSet.positive_expression_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.positive_expression_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.DeepSet.negative_expression_embeddings">
+<span class="sig-name descname"><span class="pre">negative_expression_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_idx_individuals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#DeepSet.negative_expression_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.DeepSet.negative_expression_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nero_architectures.</span></span><span class="sig-name descname"><span class="pre">SetTransformerNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_instances</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_embedding_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SetTransformerNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Set Transformer based architecture.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ST'</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.num_instances">
+<span class="sig-name descname"><span class="pre">num_instances</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.num_instances" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.num_embedding_dim">
+<span class="sig-name descname"><span class="pre">num_embedding_dim</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.num_embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.num_outputs">
+<span class="sig-name descname"><span class="pre">num_outputs</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.num_outputs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.embeddings">
+<span class="sig-name descname"><span class="pre">embeddings</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.set_transformer_negative">
+<span class="sig-name descname"><span class="pre">set_transformer_negative</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.set_transformer_negative" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.set_transformer_positive">
+<span class="sig-name descname"><span class="pre">set_transformer_positive</span></span><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.set_transformer_positive" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nero_architectures.SetTransformerNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xneg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nero_architectures.html#SetTransformerNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nero_architectures.SetTransformerNet.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../nces_utils/index.html" class="btn btn-neutral float-left" title="ontolearn.nces_utils" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../nero_utils/index.html" class="btn btn-neutral float-right" title="ontolearn.nero_utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

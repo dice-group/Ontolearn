@@ -1,0 +1,751 @@
+ontolearn.abstracts
+===================
+
+.. py:module:: ontolearn.abstracts
+
+.. autoapi-nested-parse::
+
+   The main abstract classes.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.abstracts.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.abstracts.EncodedLearningProblem
+   ontolearn.abstracts.EncodedPosNegLPStandardKind
+   ontolearn.abstracts.AbstractScorer
+   ontolearn.abstracts.AbstractHeuristic
+   ontolearn.abstracts.AbstractFitness
+   ontolearn.abstracts.AbstractNode
+   ontolearn.abstracts.AbstractOEHeuristicNode
+   ontolearn.abstracts.AbstractConceptNode
+   ontolearn.abstracts.AbstractKnowledgeBase
+   ontolearn.abstracts.BaseRefinement
+   ontolearn.abstracts.AbstractLearningProblem
+   ontolearn.abstracts.LBLSearchTree
+   ontolearn.abstracts.DRILLAbstractTree
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: EncodedLearningProblem
+
+   Encoded Abstract learning problem for use in Scorers.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+.. py:class:: EncodedPosNegLPStandardKind
+
+   Bases: :py:obj:`EncodedLearningProblem`
+
+
+   Encoded Abstract learning problem following pos-neg lp standard.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+.. py:class:: AbstractScorer(*args, **kwargs)
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   An abstract class for quality functions.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  ClassVar[str]
+
+
+   .. py:method:: score_elp(instances: set, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]
+
+      Quality score for a set of instances with regard to the learning problem.
+
+      :param instances: Instances to calculate a quality score for.
+      :type instances: set
+      :param learning_problem: Underlying learning problem to compare the quality to.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, Optional[float]]
+      :abstractmethod:
+
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+   .. py:method:: apply(node: AbstractNode, instances, learning_problem: EncodedLearningProblem) -> bool
+
+      Apply the quality function to a search tree node after calculating the quality score on the given instances.
+
+      :param node: search tree node to set the quality on.
+      :param instances: Instances to calculate the quality for.
+      :type instances: set
+      :param learning_problem: Underlying learning problem to compare the quality to.
+
+      :returns: True if the quality function was applied successfully
+
+
+
+.. py:class:: AbstractHeuristic
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   Abstract base class for heuristic functions.
+
+   Heuristic functions can guide the search process.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: apply(node: _N, instances, learning_problem: EncodedLearningProblem)
+      :abstractmethod:
+
+
+      Apply the heuristic on a search tree node and set its heuristic property to the calculated value.
+
+      :param node: Node to set the heuristic on.
+      :param instances: Set of instances covered by this node.
+      :type instances: set, optional
+      :param learning_problem: Underlying learning problem to compare the heuristic to.
+
+
+
+.. py:class:: AbstractFitness
+
+   Abstract base class for fitness functions.
+
+   Fitness functions guide the evolutionary process.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  ClassVar[str]
+
+
+   .. py:method:: apply(individual)
+      :abstractmethod:
+
+
+      Apply the fitness function on an individual and set its fitness attribute to the calculated value.
+
+      :param individual: Individual to set the fitness on.
+
+
+
+.. py:class:: AbstractNode
+
+   Abstract search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: AbstractOEHeuristicNode
+
+   Abstract Node for the CELOEHeuristic heuristic function.
+
+   This node must support quality, horizontal expansion (h_exp), is_root, parent_node and refinement_count.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:property:: quality
+      :type: Optional[float]
+
+      :abstractmethod:
+
+
+      Get the quality of the node.
+
+      :returns: Quality of the node.
+
+
+   .. py:property:: h_exp
+      :type: int
+
+      :abstractmethod:
+
+
+      Get horizontal expansion.
+
+      :returns: Horizontal expansion.
+
+
+   .. py:property:: is_root
+      :type: bool
+
+      :abstractmethod:
+
+
+      Is this the root node?
+
+      :returns: True if this is the root node, otherwise False.
+
+
+   .. py:property:: parent_node
+      :type: Optional[_N]
+
+      :abstractmethod:
+
+
+      Get the parent node.
+
+      :returns: Parent node.
+
+
+   .. py:property:: refinement_count
+      :type: int
+
+      :abstractmethod:
+
+
+      Get the refinement count for this node.
+
+      :returns: Refinement count.
+
+
+   .. py:property:: heuristic
+      :type: Optional[float]
+
+      :abstractmethod:
+
+
+      Get the heuristic value.
+
+      :returns: Heuristic value.
+
+
+.. py:class:: AbstractConceptNode
+
+   Abstract search tree node which has a concept.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:property:: concept
+      :type: owlapy.class_expression.OWLClassExpression
+
+      :abstractmethod:
+
+
+      Get the concept representing this node.
+
+      :returns: The concept representing this node.
+
+
+.. py:class:: AbstractKnowledgeBase
+
+   Abstract knowledge base.
+
+
+   .. py:attribute:: ontology
+      :type:  owlapy.abstracts.AbstractOWLOntology
+
+
+   .. py:method:: describe() -> None
+
+      Print a short description of the Knowledge Base to the info logger output.
+
+
+
+   .. py:method:: individuals_count() -> int
+      :abstractmethod:
+
+
+      Total number of individuals in this knowledge base.
+
+
+
+   .. py:method:: individuals_set(*args, **kwargs) -> Set
+      :abstractmethod:
+
+
+      Encode an individual, an iterable of individuals or the individuals that are instances of a given concept
+      into a set.
+
+      :param arg: Individual to encode.
+      :type arg: OWLNamedIndividual
+      :param arg: Individuals to encode.
+      :type arg: Iterable[OWLNamedIndividual]
+      :param arg: Encode individuals that are instances of this concept.
+      :type arg: OWLClassExpression
+
+      :returns: Encoded set representation of individual(s).
+
+
+
+   .. py:method:: individuals(concept: Optional[owlapy.class_expression.OWLClassExpression] = None, implicit_individuals: bool = True) -> Iterable[owlapy.owl_individual.OWLNamedIndividual]
+      :abstractmethod:
+
+
+
+   .. py:method:: abox(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: tbox(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: triples(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_object_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: data_properties_for_domain(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: least_general_named_concepts(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_classes(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_object_property_domains(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_object_property_ranges(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_data_property_domains(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_data_property_ranges(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_boolean_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_numeric_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_time_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_existential_restrictions(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_universal_restrictions(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_existential_restrictions_inverse(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: most_general_universal_restrictions_inverse(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_direct_parents(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_all_direct_sub_concepts(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_all_sub_concepts(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_concepts(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:property:: concepts
+      :abstractmethod:
+
+
+
+   .. py:property:: object_properties
+      :abstractmethod:
+
+
+
+   .. py:property:: data_properties
+      :abstractmethod:
+
+
+
+   .. py:method:: get_object_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_boolean_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_numeric_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_double_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_time_data_properties(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_types(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_object_properties_for_ind(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_data_properties_for_ind(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_object_property_values(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: get_data_property_values(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: contains_class(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: are_owl_concept_disjoint(*args, **kwargs)
+      :abstractmethod:
+
+
+
+.. py:class:: BaseRefinement(knowledge_base: AbstractKnowledgeBase)
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   Base class for Refinement Operators.
+
+   Let C, D \in N_c where N_c os a finite set of concepts.
+
+   * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
+     * ρ(C) = {C ⊓ T} ∪ {D \| D is not empty AND D \sqset C}
+       * The operator is finite,
+       * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+
+   *) Theoretical Foundations of Refinement Operators [1].
+
+   *) Defining a top-down refimenent operator that is a proper is crutial.
+       4.1.3 Achieving Properness [1]
+   *) Figure 4.1 [1] defines of the refinement operator.
+
+   [1] Learning OWL Class Expressions.
+
+   .. attribute:: kb
+
+      The knowledge base used by this refinement operator.
+
+      :type: AbstractKnowledgeBase
+
+
+   .. py:attribute:: __slots__
+      :value: 'kb'
+
+
+
+   .. py:attribute:: kb
+      :type:  AbstractKnowledgeBase
+
+
+   .. py:method:: refine(*args, **kwargs) -> Iterable[owlapy.class_expression.OWLClassExpression]
+      :abstractmethod:
+
+
+      Refine a given concept.
+
+      :param ce: Concept to refine.
+      :type ce: OWLClassExpression
+
+      :returns: New refined concepts.
+
+
+
+   .. py:method:: len(concept: owlapy.class_expression.OWLClassExpression) -> int
+
+      The length of a concept.
+
+      :param concept: The concept to measure the length for.
+
+      :returns: Length of concept according to some metric configured in the knowledge base.
+
+
+
+.. py:class:: AbstractLearningProblem(*args, **kwargs)
+
+   Abstract learning problem.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: encode_kb(knowledge_base: AbstractKnowledgeBase) -> EncodedLearningProblem
+      :abstractmethod:
+
+
+      Encode the learning problem into the knowledge base.
+
+
+
+.. py:class:: LBLSearchTree
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   Abstract search tree for the Length based learner.
+
+
+   .. py:method:: get_most_promising() -> _N
+      :abstractmethod:
+
+
+      Find most "promising" node in the search tree that should be refined next.
+
+      :returns: Most promising search tree node.
+
+
+
+   .. py:method:: add_node(node: _N, parent_node: _N, kb_learning_problem: EncodedLearningProblem)
+      :abstractmethod:
+
+
+      Add a node to the search tree.
+
+      :param node: Node to add.
+      :param parent_node: Parent of that node.
+      :param kb_learning_problem: Underlying learning problem to compare the quality to.
+
+
+
+   .. py:method:: clean()
+      :abstractmethod:
+
+
+      Reset the search tree state.
+
+
+
+   .. py:method:: get_top_n(n: int) -> List[_N]
+      :abstractmethod:
+
+
+      Retrieve the best n search tree nodes.
+
+      :param n: Maximum number of nodes.
+
+      :returns: List of top n search tree nodes.
+
+
+
+   .. py:method:: show_search_tree(root_concept: owlapy.class_expression.OWLClassExpression, heading_step: str)
+      :abstractmethod:
+
+
+      Debugging function to print the search tree to standard output.
+
+      :param root_concept: The tree is printed starting from this search tree node.
+      :param heading_step: Message to print at top of the output.
+
+
+
+   .. py:method:: add_root(node: _N, kb_learning_problem: EncodedLearningProblem)
+      :abstractmethod:
+
+
+      Add the root node to the search tree.
+
+      :param node: Root node to add.
+      :param kb_learning_problem: Underlying learning problem to compare the quality to.
+
+
+
+.. py:class:: DRILLAbstractTree
+
+   Abstract Tree for DRILL.
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(item)
+
+
+   .. py:method:: __setitem__(k, v)
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: get_top_n_nodes(n: int, key='quality')
+
+
+   .. py:method:: redundancy_check(n)
+
+
+   .. py:property:: nodes
+
+
+   .. py:method:: add(*args, **kwargs)
+      :abstractmethod:
+
+
+
+   .. py:method:: sort_search_tree_by_decreasing_order(*, key: str)
+
+
+   .. py:method:: best_hypotheses(n=10) -> List
+
+
+   .. py:method:: show_search_tree(top_n=100)
+
+      Show search tree.
+
+
+
+   .. py:method:: show_best_nodes(top_n, key=None)
+
+
+   .. py:method:: save_current_top_n_nodes(key=None, n=10, path=None)
+      :staticmethod:
+
+
+      Save current top_n nodes.
+
+
+
+   .. py:method:: clean()
+
+

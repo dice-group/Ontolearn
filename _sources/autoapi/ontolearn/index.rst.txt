@@ -1,0 +1,67 @@
+ontolearn
+=========
+
+.. py:module:: ontolearn
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/abstracts/index
+   /autoapi/ontolearn/base_nces/index
+   /autoapi/ontolearn/binders/index
+   /autoapi/ontolearn/clip_architectures/index
+   /autoapi/ontolearn/clip_trainer/index
+   /autoapi/ontolearn/concept_abstract_syntax_tree/index
+   /autoapi/ontolearn/concept_generator/index
+   /autoapi/ontolearn/data_struct/index
+   /autoapi/ontolearn/ea_algorithms/index
+   /autoapi/ontolearn/ea_initialization/index
+   /autoapi/ontolearn/ea_utils/index
+   /autoapi/ontolearn/executor/index
+   /autoapi/ontolearn/experiments/index
+   /autoapi/ontolearn/fitness_functions/index
+   /autoapi/ontolearn/heuristics/index
+   /autoapi/ontolearn/incomplete_kb/index
+   /autoapi/ontolearn/knowledge_base/index
+   /autoapi/ontolearn/learners/index
+   /autoapi/ontolearn/learning_problem/index
+   /autoapi/ontolearn/learning_problem_generator/index
+   /autoapi/ontolearn/lp_generator/index
+   /autoapi/ontolearn/metrics/index
+   /autoapi/ontolearn/nces_architectures/index
+   /autoapi/ontolearn/nces_modules/index
+   /autoapi/ontolearn/nces_trainer/index
+   /autoapi/ontolearn/nces_utils/index
+   /autoapi/ontolearn/nero_architectures/index
+   /autoapi/ontolearn/nero_utils/index
+   /autoapi/ontolearn/quality_funcs/index
+   /autoapi/ontolearn/refinement_operators/index
+   /autoapi/ontolearn/scripts/index
+   /autoapi/ontolearn/search/index
+   /autoapi/ontolearn/semantic_caching/index
+   /autoapi/ontolearn/tentris/index
+   /autoapi/ontolearn/triple_store/index
+   /autoapi/ontolearn/utils/index
+   /autoapi/ontolearn/value_splitter/index
+   /autoapi/ontolearn/verbalizer/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.__version__
+
+
+Package Contents
+----------------
+
+.. py:data:: __version__
+   :value: '0.10.0'
+
+

@@ -1,0 +1,51 @@
+ontolearn.utils.oplogging
+=========================
+
+.. py:module:: ontolearn.utils.oplogging
+
+.. autoapi-nested-parse::
+
+   Logging shortcuts.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.utils.oplogging.CRITICAL
+   ontolearn.utils.oplogging.ERROR
+   ontolearn.utils.oplogging.WARNING
+   ontolearn.utils.oplogging.INFO
+   ontolearn.utils.oplogging.DEBUG
+   ontolearn.utils.oplogging.TRACE
+
+
+Module Contents
+---------------
+
+.. py:data:: CRITICAL
+   :value: 50
+
+
+.. py:data:: ERROR
+   :value: 40
+
+
+.. py:data:: WARNING
+   :value: 30
+
+
+.. py:data:: INFO
+   :value: 20
+
+
+.. py:data:: DEBUG
+   :value: 10
+
+
+.. py:data:: TRACE
+   :value: 5
+
+

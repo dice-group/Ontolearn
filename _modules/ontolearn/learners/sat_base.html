@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.sat_base &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.sat_base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.sat_base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Base class for SAT-based concept learners.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLThing</span><span class="p">,</span> <span class="n">OWLClass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">,</span> <span class="n">OWLObjectSomeValuesFrom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractOWLReasoner</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractKnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.spell_kit.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+
+<div class="viewcode-block" id="SATBaseLearner">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sat_base/index.html#ontolearn.learners.sat_base.SATBaseLearner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SATBaseLearner</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for SAT-based concept learners that use the SPELL framework.</span>
+<span class="sd">    </span>
+<span class="sd">    This class provides common functionality for converting between OWL ontologies</span>
+<span class="sd">    and the Structure format used by SPELL, as well as converting results back to</span>
+<span class="sd">    OWL class expressions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;kb&#39;</span><span class="p">,</span> <span class="s1">&#39;reasoner&#39;</span><span class="p">,</span> <span class="s1">&#39;max_runtime&#39;</span><span class="p">,</span> <span class="s1">&#39;_best_hypothesis&#39;</span><span class="p">,</span> 
+                 <span class="s1">&#39;_best_hypothesis_accuracy&#39;</span><span class="p">,</span><span class="s1">&#39;cache_structure&#39;</span><span class="p">,</span> <span class="s1">&#39;_structure&#39;</span><span class="p">,</span> <span class="s1">&#39;_ind_to_owl&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;_owl_to_ind&#39;</span><span class="p">,</span> <span class="s1">&#39;_learning_problem&#39;</span><span class="p">,</span> <span class="s1">&#39;start_time&#39;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">,</span>
+                 <span class="n">reasoner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractOWLReasoner</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+                 <span class="n">cache_structure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize SAT-based learner.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            knowledge_base: The knowledge base to use for learning.</span>
+<span class="sd">            reasoner: Optional reasoner (if None, uses the KB&#39;s reasoner).</span>
+<span class="sd">            max_runtime: Maximum allowed runtime in seconds.</span>
+<span class="sd">            cache_structure: Whether to cache the structure representation. Set to False if you plan to modify the</span>
+<span class="sd">                ontology between multiple calls to fit().</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span> <span class="k">if</span> <span class="n">reasoner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">reasoner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_structure</span> <span class="o">=</span> <span class="n">cache_structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis_accuracy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ind_to_owl</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_structure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_kb_to_structure</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="SATBaseLearner.clean">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sat_base/index.html#ontolearn.learners.sat_base.SATBaseLearner.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear all states of the concept learner.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis_accuracy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_structure</span><span class="p">:</span>
+            <span class="c1"># if ontology is modified, the structure will also reflect the changes on next the fit</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ind_to_owl</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_structure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_kb_to_structure</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_kb_to_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Structure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert knowledge base to SPELL Structure format.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Structure object for use with SPELL solvers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get all relevant individuals</span>
+        <span class="n">all_individuals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">())</span>
+        <span class="n">max_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_individuals</span><span class="p">)</span>
+
+        <span class="c1"># Create mappings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span> <span class="o">=</span> <span class="p">{</span><span class="n">ind</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_individuals</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ind_to_owl</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="c1"># Extract concept names and their extensions</span>
+        <span class="n">cn_ext</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">is_owl_thing</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">cls</span><span class="o">.</span><span class="n">is_owl_nothing</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">cls_name</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">get_remainder</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">cls_name</span><span class="p">:</span>
+                <span class="n">instances</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">instances</span><span class="p">(</span><span class="bp">cls</span><span class="p">))</span>
+                <span class="n">cn_ext</span><span class="p">[</span><span class="n">cls_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">instances</span> 
+                                    <span class="k">if</span> <span class="n">ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">}</span>
+        
+        <span class="c1"># Extract role names and their extensions</span>
+        <span class="n">rn_ext</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ind</span><span class="p">)}</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">object_properties_in_signature</span><span class="p">():</span>
+            <span class="n">prop_name</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">get_remainder</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">prop_name</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">all_individuals</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">:</span>
+                        <span class="n">ind_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                        <span class="c1"># Get property values for this individual</span>
+                        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span><span class="o">.</span><span class="n">object_property_values</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">:</span>
+                                <span class="n">value_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                                <span class="n">rn_ext</span><span class="p">[</span><span class="n">ind_idx</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">value_idx</span><span class="p">,</span> <span class="n">prop_name</span><span class="p">))</span>
+
+        <span class="c1"># Create individual name mapping</span>
+        <span class="n">indmap</span> <span class="o">=</span> <span class="p">{</span><span class="n">ind</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">as_str</span><span class="p">():</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_owl_to_ind</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        
+        <span class="c1"># Create namespace mapping</span>
+        <span class="n">nsmap</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">return</span> <span class="n">Structure</span><span class="p">(</span>
+            <span class="n">max_ind</span><span class="o">=</span><span class="n">max_ind</span><span class="p">,</span>
+            <span class="n">cn_ext</span><span class="o">=</span><span class="n">cn_ext</span><span class="p">,</span>
+            <span class="n">rn_ext</span><span class="o">=</span><span class="n">rn_ext</span><span class="p">,</span>
+            <span class="n">indmap</span><span class="o">=</span><span class="n">indmap</span><span class="p">,</span>
+            <span class="n">nsmap</span><span class="o">=</span><span class="n">nsmap</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_structure_to_owl_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">Structure</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a Structure query result to an OWL class expression.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            query: Structure object representing a query/concept.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            OWL class expression.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get base IRI for the ontology</span>
+        <span class="n">onto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">onto</span><span class="p">,</span> <span class="s1">&#39;get_ontology_iri&#39;</span><span class="p">):</span>
+            <span class="n">base_iri</span> <span class="o">=</span> <span class="n">onto</span><span class="o">.</span><span class="n">get_ontology_iri</span><span class="p">()</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback: try to extract from any class IRI</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">some_class</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">onto</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">()))</span>
+                <span class="n">base_iri</span> <span class="o">=</span> <span class="n">some_class</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="n">base_iri</span> <span class="o">=</span> <span class="s2">&quot;http://example.org/ontology&quot;</span>
+        
+        <span class="c1"># Build concept expression from query structure</span>
+        <span class="c1"># Start with the root node (index 0)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_expression_from_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">base_iri</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_expression_from_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">node_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">base_iri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recursively build an OWL expression from a query structure.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            query: Structure query object.</span>
+<span class="sd">            node_idx: Current node index in the query.</span>
+<span class="sd">            base_iri: Base IRI for the ontology.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            OWL class expression for this node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get concept assertions for this node</span>
+        <span class="n">concepts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cn_name</span><span class="p">,</span> <span class="n">cn_inds</span> <span class="ow">in</span> <span class="n">query</span><span class="o">.</span><span class="n">cn_ext</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="n">cn_inds</span><span class="p">:</span>
+                <span class="n">concept_iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">cn_name</span><span class="p">)</span>
+                <span class="n">concepts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OWLClass</span><span class="p">(</span><span class="n">concept_iri</span><span class="p">))</span>
+        
+        <span class="c1"># Get role assertions for this node</span>
+        <span class="n">role_restrictions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">node_idx</span> <span class="ow">in</span> <span class="n">query</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">role_name</span> <span class="ow">in</span> <span class="n">query</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">node_idx</span><span class="p">]:</span>
+                <span class="n">prop</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">role_name</span><span class="p">))</span>
+                <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_expression_from_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">target_idx</span><span class="p">,</span> <span class="n">base_iri</span><span class="p">)</span>
+                <span class="n">role_restrictions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">filler</span><span class="p">))</span>
+        
+        <span class="c1"># Combine all parts</span>
+        <span class="n">all_parts</span> <span class="o">=</span> <span class="n">concepts</span> <span class="o">+</span> <span class="n">role_restrictions</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OWLThing</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">all_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">(</span><span class="n">all_parts</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="SATBaseLearner.fit">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sat_base/index.html#ontolearn.learners.sat_base.SATBaseLearner.fit">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lp</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find concept expressions that explain positive and negative examples.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            lp: Learning problem with positive and negative examples.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    
+<div class="viewcode-block" id="SATBaseLearner.best_hypothesis">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sat_base/index.html#ontolearn.learners.sat_base.SATBaseLearner.best_hypothesis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the best found hypothesis.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            OWL class expression, or OWLThing if no hypothesis found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OWLThing</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis</span></div>
+
+
+<div class="viewcode-block" id="SATBaseLearner.best_hypothesis_accuracy">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/sat_base/index.html#ontolearn.learners.sat_base.SATBaseLearner.best_hypothesis_accuracy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypothesis_accuracy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the accuracy of the best found hypothesis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Accuracy as float, or None if no hypothesis found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_hypothesis_accuracy</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

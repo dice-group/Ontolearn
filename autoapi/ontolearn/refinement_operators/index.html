@@ -1,0 +1,926 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.refinement_operators &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.scripts" href="../scripts/index.html" />
+    <link rel="prev" title="ontolearn.quality_funcs" href="../quality_funcs/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.refinement_operators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_inverse"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.use_inverse</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_data_properties"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.use_data_properties</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_card_restrictions"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.use_card_restrictions</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_nominals"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.use_nominals</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.top_refinements"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.top_refinements</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.pos"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.pos</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.neg"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.neg</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.set_input_examples"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.set_input_examples()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_top"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_top()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_atomic_concept"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_atomic_concept()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_complement_of"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_complement_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_some_values_from"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_object_some_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_all_values_from"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_object_all_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_union_of"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_object_union_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_intersection_of"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine_object_intersection_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.refine()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement.from_iterables"><code class="docutils literal notranslate"><span class="pre">LengthBasedRefinement.from_iterables()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.__slots__"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.kb"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.kb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.value_splitter"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.value_splitter</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.max_child_length"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.max_child_length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_negation"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_negation</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_all_constructor"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_all_constructor</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_card_restrictions"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_card_restrictions</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_numeric_datatypes"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_numeric_datatypes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_time_datatypes"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_time_datatypes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_boolean_datatype"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_boolean_datatype</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.card_limit"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.card_limit</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.max_nr_fillers"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.max_nr_fillers</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.dp_splits"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.dp_splits</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.generator"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.generator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_inverse"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.use_inverse</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_atomic_concept"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_atomic_concept()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_complement_of"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_complement_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_some_values_from"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_some_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_all_values_from"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_all_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_min_card_restriction"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_min_card_restriction()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_max_card_restriction"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_max_card_restriction()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_union_of"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_union_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_intersection_of"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_object_intersection_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_some_values_from"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_data_some_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_has_value"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine_data_has_value()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine"><code class="docutils literal notranslate"><span class="pre">ModifiedCELOERefinement.refine()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.__slots__"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.expressivity"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.expressivity</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.downsample"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.downsample</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.sample_fillers_count"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.sample_fillers_count</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.generator"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.generator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_atomic_concept"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_atomic_concept()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_complement_of"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_complement_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_some_values_from"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_some_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_all_values_from"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_all_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_min_card_restriction"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_min_card_restriction()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_max_card_restriction"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_max_card_restriction()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_union_of"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_union_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_intersection_of"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_object_intersection_of()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_data_some_values_from"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_data_some_values_from()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine_data_has_value"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine_data_has_value()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement.refine"><code class="docutils literal notranslate"><span class="pre">ExpressRefinement.refine()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement"><code class="docutils literal notranslate"><span class="pre">NERORefinement</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.renderer"><code class="docutils literal notranslate"><span class="pre">NERORefinement.renderer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.N_I"><code class="docutils literal notranslate"><span class="pre">NERORefinement.N_I</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.expressions"><code class="docutils literal notranslate"><span class="pre">NERORefinement.expressions</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.str_nc_star"><code class="docutils literal notranslate"><span class="pre">NERORefinement.str_nc_star</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.dict_sh_direct_down"><code class="docutils literal notranslate"><span class="pre">NERORefinement.dict_sh_direct_down</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.dict_sh_direct_up"><code class="docutils literal notranslate"><span class="pre">NERORefinement.dict_sh_direct_up</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.fast_init"><code class="docutils literal notranslate"><span class="pre">NERORefinement.fast_init</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.length_to_expression_str"><code class="docutils literal notranslate"><span class="pre">NERORefinement.length_to_expression_str</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.str_ae_to_neg_ae"><code class="docutils literal notranslate"><span class="pre">NERORefinement.str_ae_to_neg_ae</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.top_refinements"><code class="docutils literal notranslate"><span class="pre">NERORefinement.top_refinements</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement.refine"><code class="docutils literal notranslate"><span class="pre">NERORefinement.refine()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.refinement_operators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/refinement_operators/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.refinement_operators">
+<span id="ontolearn-refinement-operators"></span><h1>ontolearn.refinement_operators<a class="headerlink" href="#module-ontolearn.refinement_operators" title="Link to this heading"></a></h1>
+<p>Refinement Operators for refinement-based concept learners.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.refinement_operators.LengthBasedRefinement" title="ontolearn.refinement_operators.LengthBasedRefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthBasedRefinement</span></code></a></p></td>
+<td><p>A top-down length based (&quot;no semantic information leveraged) refinement operator in ALC.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement" title="ontolearn.refinement_operators.ModifiedCELOERefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModifiedCELOERefinement</span></code></a></p></td>
+<td><p>A top down/downward refinement operator in SHIQ(D).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.refinement_operators.ExpressRefinement" title="ontolearn.refinement_operators.ExpressRefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExpressRefinement</span></code></a></p></td>
+<td><p>A top-down refinement operator in ALCHIQ(D).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.refinement_operators.NERORefinement" title="ontolearn.refinement_operators.NERORefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NERORefinement</span></code></a></p></td>
+<td><p>A custom refinement operator for NERO that generates candidate class expressions.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.refinement_operators.</span></span><span class="sig-name descname"><span class="pre">LengthBasedRefinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_data_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_card_restrictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_nominals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cardinality_restriction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cardinality_restriction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.BaseRefinement</span></code></a></p>
+<p>A top-down length based (“no semantic information leveraged) refinement operator in ALC.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.use_inverse">
+<span class="sig-name descname"><span class="pre">use_inverse</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_inverse" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.use_data_properties">
+<span class="sig-name descname"><span class="pre">use_data_properties</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_data_properties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.use_card_restrictions">
+<span class="sig-name descname"><span class="pre">use_card_restrictions</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_card_restrictions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.use_nominals">
+<span class="sig-name descname"><span class="pre">use_nominals</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.use_nominals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.top_refinements">
+<span class="sig-name descname"><span class="pre">top_refinements</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.top_refinements" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.pos">
+<span class="sig-name descname"><span class="pre">pos</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.pos" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.neg">
+<span class="sig-name descname"><span class="pre">neg</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.neg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.set_input_examples">
+<span class="sig-name descname"><span class="pre">set_input_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">frozenset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">frozenset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.set_input_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.set_input_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_top">
+<span class="sig-name descname"><span class="pre">refine_top</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_top"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_top" title="Link to this definition"></a></dt>
+<dd><p>Refine Top Class Expression</p>
+<p>rho(T)</p>
+<ol class="arabic simple">
+<li><p>Most General OWL Named Concepts</p></li>
+</ol>
+<p>2. Complement of Least General OWL Named Concepts General
+3- Intersection and Union of (1) and (2)
+4. Restriction: SomeValuesFrom and AllValuesFrom
+4.1. For each object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+4.2. For each inverse of object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+4.3. For each object property, return OWLObjectMinCardinality
+4.4. For each inverse of object property, return OWLObjectMinCardinality</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_atomic_concept">
+<span class="sig-name descname"><span class="pre">refine_atomic_concept</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClass</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectIntersectionOf</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_atomic_concept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_atomic_concept" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_complement_of">
+<span class="sig-name descname"><span class="pre">refine_complement_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectComplementOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectComplementOf</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_complement_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_complement_of" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_object_some_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_some_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectSomeValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_object_some_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_some_values_from" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_object_all_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_all_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectAllValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_object_all_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_all_values_from" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_object_union_of">
+<span class="sig-name descname"><span class="pre">refine_object_union_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectUnionOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_object_union_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_union_of" title="Link to this definition"></a></dt>
+<dd><p>Refine OWLObjectUnionof by refining each operands:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine_object_intersection_of">
+<span class="sig-name descname"><span class="pre">refine_object_intersection_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectIntersectionOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine_object_intersection_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine_object_intersection_of" title="Link to this definition"></a></dt>
+<dd><p>Refine OWLObjectIntersectionOf by refining each operands:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.refine">
+<span class="sig-name descname"><span class="pre">refine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.refine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.refine" title="Link to this definition"></a></dt>
+<dd><p>Refine a given concept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLClassExpression</em>) – Concept to refine.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.LengthBasedRefinement.from_iterables">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_iterables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_operands</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_operands</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#LengthBasedRefinement.from_iterables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.LengthBasedRefinement.from_iterables" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.refinement_operators.</span></span><span class="sig-name descname"><span class="pre">ModifiedCELOERefinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_splitter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../value_splitter/index.html#ontolearn.value_splitter.AbstractValueSplitter" title="ontolearn.value_splitter.AbstractValueSplitter"><span class="pre">AbstractValueSplitter</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_negation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_all_constructor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_card_restrictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_numeric_datatypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_time_datatypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_boolean_datatype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">card_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.BaseRefinement</span></code></a>[<a class="reference internal" href="../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.search.OENode</span></code></a>]</p>
+<p>A top down/downward refinement operator in SHIQ(D).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('max_child_length',</span> <span class="pre">'use_negation',</span> <span class="pre">'use_all_constructor',</span> <span class="pre">'use_inverse',...</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.kb">
+<span class="sig-name descname"><span class="pre">kb</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.kb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.value_splitter">
+<span class="sig-name descname"><span class="pre">value_splitter</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../value_splitter/index.html#ontolearn.value_splitter.AbstractValueSplitter" title="ontolearn.value_splitter.AbstractValueSplitter"><span class="pre">AbstractValueSplitter</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.value_splitter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.max_child_length">
+<span class="sig-name descname"><span class="pre">max_child_length</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.max_child_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_negation">
+<span class="sig-name descname"><span class="pre">use_negation</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_negation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_all_constructor">
+<span class="sig-name descname"><span class="pre">use_all_constructor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_all_constructor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_card_restrictions">
+<span class="sig-name descname"><span class="pre">use_card_restrictions</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_card_restrictions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_numeric_datatypes">
+<span class="sig-name descname"><span class="pre">use_numeric_datatypes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_numeric_datatypes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_time_datatypes">
+<span class="sig-name descname"><span class="pre">use_time_datatypes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_time_datatypes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_boolean_datatype">
+<span class="sig-name descname"><span class="pre">use_boolean_datatype</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_boolean_datatype" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.card_limit">
+<span class="sig-name descname"><span class="pre">card_limit</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.card_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.max_nr_fillers">
+<span class="sig-name descname"><span class="pre">max_nr_fillers</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">DefaultDict</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLObjectPropertyExpression</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.max_nr_fillers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.dp_splits">
+<span class="sig-name descname"><span class="pre">dp_splits</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLDataPropertyExpression</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_literal.OWLLiteral</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.dp_splits" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.generator">
+<span class="sig-name descname"><span class="pre">generator</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../concept_generator/index.html#ontolearn.concept_generator.ConceptGenerator" title="ontolearn.concept_generator.ConceptGenerator"><span class="pre">ConceptGenerator</span></a></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.generator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.use_inverse">
+<span class="sig-name descname"><span class="pre">use_inverse</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.use_inverse" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_atomic_concept">
+<span class="sig-name descname"><span class="pre">refine_atomic_concept</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_atomic_concept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_atomic_concept" title="Link to this definition"></a></dt>
+<dd><p>Refinement operator implementation in CELOE-DL-learner,
+distinguishes the refinement of atomic concepts and start concept(they called Top concept).
+[1] Concept learning, Lehmann et. al</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Generate all subconcepts given C, Denoted by (SH_down(C)),</p></li>
+</ol>
+<p>(2) Generate {A AND C | A in SH_down(C)},
+(2) Generate {A OR C | A in SH_down(C)},
+(3) Generate {not A | A in SH_down(C) AND_logical not exist B in T : B sqsubset A},
+(4) Generate restrictions,
+(5) Intersect and union (1),(2),(3),(4),
+(6) Create negation of all leaf_concepts.</p>
+<blockquote>
+<div><p>(<a href="#id1"><span class="problematic" id="id2">**</span></a><a href="#id3"><span class="problematic" id="id4">*</span></a>) The most general relation is not available.</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> – Atomic concept to refine.</p></li>
+<li><p><strong>max_length</strong> – Refine up to this concept length.</p></li>
+<li><p><strong>current_domain</strong> – Domain.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_complement_of">
+<span class="sig-name descname"><span class="pre">refine_complement_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectComplementOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_complement_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_complement_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:complementOf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectComplementOf</em>) – owl:complementOf - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_some_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_some_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectSomeValuesFrom</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_some_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_some_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:someValuesFrom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectSomeValuesFrom</em>) – owl:someValuesFrom class expression.</p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – Refine up to this concept length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_all_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_all_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectAllValuesFrom</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectAllValuesFrom</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_all_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_all_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:allValuesFrom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectAllValuesFrom</em>) – owl:allValuesFrom - class expression.</p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – Refine up to this concept length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_min_card_restriction">
+<span class="sig-name descname"><span class="pre">refine_object_min_card_restriction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectMinCardinality</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectMinCardinality</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_min_card_restriction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_min_card_restriction" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:minCardinality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectMinCardinality</em>) – owl:minCardinality - class expression.</p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – Refine up to this concept length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_max_card_restriction">
+<span class="sig-name descname"><span class="pre">refine_object_max_card_restriction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectMaxCardinality</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectMaxCardinality</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_max_card_restriction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_max_card_restriction" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:maxCardinality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectMaxCardinality</em>) – owl:maxCardinality - class expression.</p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – Refine up to this concept length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_union_of">
+<span class="sig-name descname"><span class="pre">refine_object_union_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectUnionOf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectUnionOf</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_union_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_union_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:unionOf.</p>
+<p>Given a node corresponding a concepts that comprises union operation:
+1) Obtain two concepts A, B,
+2) Refine A and union refinements with B,
+3) Repeat (2) for B.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectUnionOf</em>) – owl:unionOf - class expression.</p></li>
+<li><p><strong>current_domain</strong> (<em>OWLClassExpression</em>) – Domain.</p></li>
+<li><p><strong>max_length</strong> (<em>int</em>) – Refine up to this concept length.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_intersection_of">
+<span class="sig-name descname"><span class="pre">refine_object_intersection_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectIntersectionOf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectIntersectionOf</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_object_intersection_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_object_intersection_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:intersectionOf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> (<em>OWLObjectIntersectionOf</em>) – owl:intersectionOf - class expression.</p></li>
+<li><p><strong>current_domain</strong> (<em>int</em>) – Domain.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_some_values_from">
+<span class="sig-name descname"><span class="pre">refine_data_some_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLDataSomeValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLDataSomeValuesFrom</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_data_some_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_some_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:someValuesFrom for data properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLDataSomeValuesFrom</em>) – owl:someValuesFrom - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_has_value">
+<span class="sig-name descname"><span class="pre">refine_data_has_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLDataHasValue</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLDataHasValue</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine_data_has_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine_data_has_value" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:hasValue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLDataHasValue</em>) – owl:hasValue - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ModifiedCELOERefinement.refine">
+<span class="sig-name descname"><span class="pre">refine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ModifiedCELOERefinement.refine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ModifiedCELOERefinement.refine" title="Link to this definition"></a></dt>
+<dd><p>Refine a given concept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ce</strong> – Concept to refine.</p></li>
+<li><p><strong>max_length</strong> – Refine up to this concept length.</p></li>
+<li><p><strong>current_domain</strong> – Domain.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.refinement_operators.</span></span><span class="sig-name descname"><span class="pre">ExpressRefinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expressivity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_fillers_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_splitter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../value_splitter/index.html#ontolearn.value_splitter.AbstractValueSplitter" title="ontolearn.value_splitter.AbstractValueSplitter"><span class="pre">AbstractValueSplitter</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_card_restrictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_numeric_datatypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_time_datatypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_boolean_datatype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">card_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.refinement_operators.ModifiedCELOERefinement" title="ontolearn.refinement_operators.ModifiedCELOERefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModifiedCELOERefinement</span></code></a></p>
+<p>A top-down refinement operator in ALCHIQ(D).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('expressivity',</span> <span class="pre">'downsample',</span> <span class="pre">'sample_fillers_count',</span> <span class="pre">'generator')</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.expressivity">
+<span class="sig-name descname"><span class="pre">expressivity</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.expressivity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.downsample">
+<span class="sig-name descname"><span class="pre">downsample</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.downsample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.sample_fillers_count">
+<span class="sig-name descname"><span class="pre">sample_fillers_count</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.sample_fillers_count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.generator">
+<span class="sig-name descname"><span class="pre">generator</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../concept_generator/index.html#ontolearn.concept_generator.ConceptGenerator" title="ontolearn.concept_generator.ConceptGenerator"><span class="pre">ConceptGenerator</span></a></span><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.generator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_atomic_concept">
+<span class="sig-name descname"><span class="pre">refine_atomic_concept</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClass</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_atomic_concept"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_atomic_concept" title="Link to this definition"></a></dt>
+<dd><p>Refine atomic concept.
+:param ce: Atomic concept to refine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_complement_of">
+<span class="sig-name descname"><span class="pre">refine_complement_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectComplementOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_complement_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_complement_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:complementOf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectComplementOf</em>) – owl:complementOf - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_some_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_some_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectSomeValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_some_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_some_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:someValuesFrom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectSomeValuesFrom</em>) – owl:someValuesFrom class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_all_values_from">
+<span class="sig-name descname"><span class="pre">refine_object_all_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectAllValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_all_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_all_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:allValuesFrom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectAllValuesFrom</em>) – owl:allValuesFrom - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_min_card_restriction">
+<span class="sig-name descname"><span class="pre">refine_object_min_card_restriction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectMinCardinality</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectMinCardinality</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_min_card_restriction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_min_card_restriction" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:allValuesFrom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectAllValuesFrom</em>) – owl:allValuesFrom - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_max_card_restriction">
+<span class="sig-name descname"><span class="pre">refine_object_max_card_restriction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectMaxCardinality</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLObjectMaxCardinality</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_max_card_restriction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_max_card_restriction" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:maxCardinality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectMaxCardinality</em>) – owl:maxCardinality - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_union_of">
+<span class="sig-name descname"><span class="pre">refine_object_union_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectUnionOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_union_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_union_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:unionOf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectUnionOf</em>) – owl:unionOf - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_object_intersection_of">
+<span class="sig-name descname"><span class="pre">refine_object_intersection_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLObjectIntersectionOf</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_object_intersection_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_object_intersection_of" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:intersectionOf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLObjectIntersectionOf</em>) – owl:intersectionOf - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_data_some_values_from">
+<span class="sig-name descname"><span class="pre">refine_data_some_values_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLDataSomeValuesFrom</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLDataSomeValuesFrom</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_data_some_values_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_data_some_values_from" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:someValuesFrom for data properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLDataSomeValuesFrom</em>) – owl:someValuesFrom - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine_data_has_value">
+<span class="sig-name descname"><span class="pre">refine_data_has_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLDataHasValue</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLDataHasValue</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine_data_has_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine_data_has_value" title="Link to this definition"></a></dt>
+<dd><p>Refine owl:hasValue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> (<em>OWLDataHasValue</em>) – owl:hasValue - class expression.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.ExpressRefinement.refine">
+<span class="sig-name descname"><span class="pre">refine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#ExpressRefinement.refine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.ExpressRefinement.refine" title="Link to this definition"></a></dt>
+<dd><p>Refine a given concept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ce</strong> – Concept to refine</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable of refined concepts.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.refinement_operators.</span></span><span class="sig-name descname"><span class="pre">NERORefinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase" title="ontolearn.knowledge_base.KnowledgeBase"><span class="pre">KnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#NERORefinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.BaseRefinement</span></code></a></p>
+<p>A custom refinement operator for NERO that generates candidate class expressions.
+This is a faithful implementation of SimpleRefinement from the original NERO.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.renderer">
+<span class="sig-name descname"><span class="pre">renderer</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.renderer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.N_I">
+<span class="sig-name descname"><span class="pre">N_I</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.N_I" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.expressions">
+<span class="sig-name descname"><span class="pre">expressions</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.expressions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.str_nc_star">
+<span class="sig-name descname"><span class="pre">str_nc_star</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.str_nc_star" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.dict_sh_direct_down">
+<span class="sig-name descname"><span class="pre">dict_sh_direct_down</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.dict_sh_direct_down" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.dict_sh_direct_up">
+<span class="sig-name descname"><span class="pre">dict_sh_direct_up</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.dict_sh_direct_up" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.fast_init">
+<span class="sig-name descname"><span class="pre">fast_init</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.fast_init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.length_to_expression_str">
+<span class="sig-name descname"><span class="pre">length_to_expression_str</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.length_to_expression_str" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.str_ae_to_neg_ae">
+<span class="sig-name descname"><span class="pre">str_ae_to_neg_ae</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.str_ae_to_neg_ae" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.top_refinements">
+<span class="sig-name descname"><span class="pre">top_refinements</span></span><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.top_refinements" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.refinement_operators.NERORefinement.refine">
+<span class="sig-name descname"><span class="pre">refine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../nero_utils/index.html#ontolearn.nero_utils.ClassExpression" title="ontolearn.nero_utils.ClassExpression"><span class="pre">ClassExpression</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../nero_utils/index.html#ontolearn.nero_utils.ClassExpression" title="ontolearn.nero_utils.ClassExpression"><span class="pre">ClassExpression</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/refinement_operators.html#NERORefinement.refine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.refinement_operators.NERORefinement.refine" title="Link to this definition"></a></dt>
+<dd><p>Generate refinements for a given class expression.
+This implements the full refinement logic from the original NERO.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../quality_funcs/index.html" class="btn btn-neutral float-left" title="ontolearn.quality_funcs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../scripts/index.html" class="btn btn-neutral float-right" title="ontolearn.scripts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

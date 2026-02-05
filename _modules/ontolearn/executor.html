@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.executor &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.executor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.executor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Model adapters.&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.tree_learner</span><span class="w"> </span><span class="kn">import</span> <span class="n">TDL</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_axiom</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLAxiom</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractOWLReasoner</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractNode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConceptLearner</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_f1_score</span><span class="p">,</span> <span class="n">get_file_base_name</span><span class="p">,</span> <span class="n">prepare_output_path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.learners</span><span class="w"> </span><span class="kn">import</span> <span class="n">CELOE</span><span class="p">,</span> <span class="n">OCEL</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners</span><span class="w"> </span><span class="kn">import</span> <span class="n">EvoLearner</span><span class="p">,</span> <span class="n">NCES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.ea_algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="n">EASimple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.ea_initialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">EARandomWalkInitialization</span><span class="p">,</span> <span class="n">EARandomInitialization</span><span class="p">,</span> <span class="n">RandomInitMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.fitness_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearPressureFitness</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.heuristics</span><span class="w"> </span><span class="kn">import</span> <span class="n">CELOEHeuristic</span><span class="p">,</span> <span class="n">OCELHeuristic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.refinement_operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModifiedCELOERefinement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">Accuracy</span><span class="p">,</span> <span class="n">F1</span><span class="p">,</span> <span class="n">Recall</span><span class="p">,</span> <span class="n">Precision</span><span class="p">,</span> <span class="n">WeightedAccuracy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.triple_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TripleStore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.value_splitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BinningValueSplitter</span><span class="p">,</span> <span class="n">EntropyValueSplitter</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;f1&#39;</span><span class="p">:</span> <span class="n">F1</span><span class="p">,</span>
+           <span class="s1">&#39;accuracy&#39;</span><span class="p">:</span> <span class="n">Accuracy</span><span class="p">,</span>
+           <span class="s1">&#39;recall&#39;</span><span class="p">:</span> <span class="n">Recall</span><span class="p">,</span>
+           <span class="s1">&#39;precision&#39;</span><span class="p">:</span> <span class="n">Precision</span><span class="p">,</span>
+           <span class="s1">&#39;weighted_accuracy&#39;</span><span class="p">:</span> <span class="n">WeightedAccuracy</span>
+           <span class="p">}</span>
+
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;celoe&#39;</span><span class="p">:</span> <span class="n">CELOE</span><span class="p">,</span>
+          <span class="s1">&#39;ocel&#39;</span><span class="p">:</span> <span class="n">OCEL</span><span class="p">,</span>
+          <span class="s1">&#39;evolearner&#39;</span><span class="p">:</span> <span class="n">EvoLearner</span><span class="p">,</span>
+          <span class="s1">&#39;nces&#39;</span><span class="p">:</span> <span class="n">NCES</span><span class="p">,</span>
+          <span class="s1">&#39;tdl&#39;</span><span class="p">:</span> <span class="n">TDL</span><span class="p">}</span>
+
+<span class="n">heuristics</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;celoe&#39;</span><span class="p">:</span> <span class="n">CELOEHeuristic</span><span class="p">,</span>
+              <span class="s1">&#39;ocel&#39;</span><span class="p">:</span> <span class="n">OCELHeuristic</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="transform_string">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.transform_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">transform_string</span><span class="p">(</span><span class="n">input_string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to turn camelCase arguments to snake_case&quot;&quot;&quot;</span>
+    <span class="c1"># Use regex to find all capital letters C and replace them with &#39;_C&#39;</span>
+    <span class="n">transformed_string</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([A-Z])&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;_\1&#39;</span><span class="p">,</span> <span class="n">input_string</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="c1"># Remove the leading underscore if it exists</span>
+    <span class="n">transformed_string</span> <span class="o">=</span> <span class="n">transformed_string</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">transformed_string</span></div>
+
+
+
+<div class="viewcode-block" id="compute_quality">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.compute_quality">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_quality</span><span class="p">(</span><span class="n">KB</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">,</span> <span class="n">qulaity_func</span><span class="o">=</span><span class="s2">&quot;f1&quot;</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">qulaity_func</span><span class="p">]()</span><span class="o">.</span><span class="n">score2</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">KB</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">solution</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pos</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="p">{</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">instances</span><span class="p">}</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+    <span class="n">tn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">tn</span><span class="o">=</span><span class="n">tn</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_matching_opts</span><span class="p">(</span><span class="n">_Type</span><span class="p">,</span> <span class="n">optargs</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the keys in kwargs that are parameters of _Type.</span>
+
+<span class="sd">    If prefix is specified, the keys in kwargs need to be prefixed with prefix_.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">p</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">s</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">p</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">s</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">sig</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">_Type</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">sig</span><span class="o">.</span><span class="n">difference_update</span><span class="p">({</span><span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;kwds&#39;</span><span class="p">})</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sig</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">_Type</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">sig</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">sig</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">opts</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">transform_string</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">opts</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">transform_string</span><span class="p">(</span><span class="n">p</span><span class="p">(</span><span class="n">opt</span><span class="p">)))</span>
+        <span class="k">elif</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">optargs</span><span class="p">:</span>
+            <span class="n">opts</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="n">optargs</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">opts</span>
+
+
+<span class="n">_N</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_N&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AbstractNode</span><span class="p">)</span>  <span class="c1">#:</span>
+
+
+<div class="viewcode-block" id="Trainer">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.Trainer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Trainer</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learner</span><span class="p">:</span> <span class="n">BaseConceptLearner</span><span class="p">,</span> <span class="n">reasoner</span><span class="p">:</span> <span class="n">AbstractOWLReasoner</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A class to disentangle the learner from its training.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            learner: The concept learner.</span>
+<span class="sd">            reasoner: The reasoner to use (should have the same ontology as the `kb` argument of the learner).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">get_root_ontology</span><span class="p">()</span><span class="o">.</span><span class="n">get_ontology_id</span><span class="p">()</span><span class="o">.</span><span class="n">get_ontology_iri</span><span class="p">()</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span> <span class="o">==</span> \
+               <span class="n">learner</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">get_ontology_id</span><span class="p">()</span><span class="o">.</span><span class="n">get_ontology_iri</span><span class="p">()</span><span class="o">.</span><span class="n">as_str</span><span class="p">(),</span> <span class="s2">&quot;New reasoner does not have &quot;</span> <span class="o">+</span> \
+                                                                                    <span class="s2">&quot;the same ontology as the learner!&quot;</span>
+        <span class="n">learner</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learner</span> <span class="o">=</span> <span class="n">learner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span>
+
+<div class="viewcode-block" id="Trainer.fit">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.Trainer.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the concept learning algorithm according to its configuration.</span>
+
+<span class="sd">        Once finished, the results can be queried with the `best_hypotheses` function.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Trainer.best_hypotheses">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.Trainer.best_hypotheses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current best found hypotheses according to the quality.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Maximum number of results.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Iterable with hypotheses in form of search tree nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">learner</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Trainer.predict">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.Trainer.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span>
+                <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">_N</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">axioms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OWLAxiom</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses</span>
+<span class="sd">                (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,</span>
+<span class="sd">                axioms describing these individuals must be provided.</span>
+
+<span class="sd">        The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            individuals: A list of individuals/instances.</span>
+<span class="sd">            hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the</span>
+<span class="sd">                        current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.</span>
+<span class="sd">            axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.</span>
+<span class="sd">                    If the individual list contains individuals that are not in the ontology yet, axioms</span>
+<span class="sd">                    describing these individuals must be provided. The argument can also be used to add</span>
+<span class="sd">                    arbitrary axioms to the ontology for the prediction.</span>
+<span class="sd">            n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each</span>
+<span class="sd">            hypothesis whether the individual is entailed in the hypothesis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">learner</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="n">hypotheses</span><span class="p">,</span> <span class="n">axioms</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Trainer.save_best_hypothesis">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.Trainer.save_best_hypothesis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Predictions&#39;</span><span class="p">,</span> <span class="n">rdf_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;rdfxml&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialise the best hypotheses to a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Maximum number of hypotheses to save.</span>
+<span class="sd">            path: Filename base (extension will be added automatically).</span>
+<span class="sd">            rdf_format: Serialisation format. currently supported: &quot;rdfxml&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learner</span><span class="o">.</span><span class="n">save_best_hypothesis</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">rdf_format</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="execute">
+<a class="viewcode-back" href="../../autoapi/ontolearn/executor/index.html#ontolearn.executor.execute">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">args</span><span class="p">):</span> <span class="c1"># pragma: no cover</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">knowledge_base_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">knowledge_base_path</span><span class="p">)</span>
+
+    <span class="n">args_d</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="vm">__dict__</span>
+    <span class="n">learner_type</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">]</span>
+    <span class="n">optargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">:</span>
+        <span class="n">kb</span> <span class="o">=</span> <span class="n">TripleStore</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">knowledge_base_path</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">path_learning_problem</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;problems&quot;</span> <span class="ow">in</span> <span class="n">settings</span><span class="p">:</span>
+        <span class="n">problems</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;problems&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">positives_key</span> <span class="o">=</span> <span class="s2">&quot;positive_examples&quot;</span>
+        <span class="n">negatives_key</span> <span class="o">=</span> <span class="s2">&quot;negative_examples&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">problems</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="n">positives_key</span> <span class="o">=</span> <span class="s2">&quot;positive examples&quot;</span>
+        <span class="n">negatives_key</span> <span class="o">=</span> <span class="s2">&quot;negative examples&quot;</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">str_target_concept</span><span class="p">,</span> <span class="n">examples</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Target concept: &#39;</span><span class="p">,</span> <span class="n">str_target_concept</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;LP&quot;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">str_target_concept</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="n">positives_key</span><span class="p">]))))</span>
+        <span class="n">neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="n">negatives_key</span><span class="p">]))))</span>
+        <span class="n">lp</span> <span class="o">=</span> <span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;celoe&quot;</span><span class="p">,</span> <span class="s2">&quot;ocel&quot;</span><span class="p">]:</span>
+            <span class="n">heur_func</span> <span class="o">=</span> <span class="n">heuristics</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">](</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">heuristics</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="p">],</span> <span class="p">{},</span> <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">refinement_op</span> <span class="o">=</span> <span class="n">ModifiedCELOERefinement</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">ModifiedCELOERefinement</span><span class="p">,</span>
+                                                    <span class="p">{</span><span class="s2">&quot;knowledge_base&quot;</span><span class="p">:</span> <span class="n">kb</span><span class="p">,</span>
+                                                    <span class="s2">&quot;value_splitter&quot;</span><span class="p">:</span> <span class="n">BinningValueSplitter</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">max_nr_splits</span><span class="p">)},</span>
+                                                    <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">optargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;knowledge_base&quot;</span><span class="p">:</span> <span class="n">kb</span><span class="p">,</span>
+                    <span class="s2">&quot;quality_func&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">quality_metric</span><span class="p">](),</span>
+                    <span class="s2">&quot;heuristic_func&quot;</span><span class="p">:</span> <span class="n">heur_func</span><span class="p">,</span>
+                    <span class="s2">&quot;refinement_operator&quot;</span><span class="p">:</span> <span class="n">refinement_op</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;evolearner&quot;</span><span class="p">:</span>
+            <span class="n">fit_func</span> <span class="o">=</span> <span class="n">LinearPressureFitness</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">LinearPressureFitness</span><span class="p">,</span> <span class="p">{},</span> <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">init_rw_method</span> <span class="o">=</span> <span class="n">EARandomWalkInitialization</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">EARandomWalkInitialization</span><span class="p">,</span> <span class="p">{},</span> <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">algorithm</span> <span class="o">=</span> <span class="n">EASimple</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">EASimple</span><span class="p">,</span> <span class="p">{},</span> <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">mut_uniform_gen</span> <span class="o">=</span> <span class="n">EARandomInitialization</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span>
+                <span class="n">EARandomInitialization</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">RandomInitMethod</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">init_method_type</span><span class="p">)},</span> <span class="n">args_d</span><span class="p">))</span>
+            <span class="n">value_splitter</span> <span class="o">=</span> <span class="n">EntropyValueSplitter</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">EntropyValueSplitter</span><span class="p">,</span> <span class="p">{},</span> <span class="n">args_d</span><span class="p">))</span>
+
+            <span class="n">optargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;knowledge_base&quot;</span><span class="p">:</span> <span class="n">kb</span><span class="p">,</span>
+                    <span class="s2">&quot;quality_func&quot;</span><span class="p">:</span> <span class="n">metrics</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">quality_metric</span><span class="p">](),</span>
+                    <span class="s2">&quot;fitness_func&quot;</span><span class="p">:</span> <span class="n">fit_func</span><span class="p">,</span>
+                    <span class="s2">&quot;init_method&quot;</span><span class="p">:</span> <span class="n">init_rw_method</span><span class="p">,</span>
+                    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="n">algorithm</span><span class="p">,</span>
+                    <span class="s2">&quot;mut_uniform_gen&quot;</span><span class="p">:</span> <span class="n">mut_uniform_gen</span><span class="p">,</span>
+                    <span class="s2">&quot;value_splitter&quot;</span><span class="p">:</span> <span class="n">value_splitter</span><span class="p">}</span>
+        <span class="c1"># elif args.model == &quot;drill&quot;:</span>
+        <span class="c1">#     optargs = {&quot;knowledge_base&quot;: kb,</span>
+        <span class="c1">#                &quot;quality_func&quot;: metrics[args.quality_metric]()}</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;nces&quot;</span><span class="p">,</span> <span class="s2">&quot;tdl&quot;</span><span class="p">]:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">learner_type</span><span class="p">(</span><span class="o">**</span><span class="n">_get_matching_opts</span><span class="p">(</span><span class="n">learner_type</span><span class="p">,</span> <span class="n">optargs</span><span class="p">,</span> <span class="n">args_d</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;celoe&quot;</span><span class="p">,</span> <span class="s2">&quot;evolearner&quot;</span><span class="p">,</span> <span class="s2">&quot;ocel&quot;</span><span class="p">]:</span>
+            <span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">kb</span><span class="o">.</span><span class="n">reasoner</span><span class="p">)</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">save</span><span class="p">:</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">save_best_hypothesis</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;nces&quot;</span><span class="p">]:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">NCES</span><span class="p">(</span><span class="n">knowledge_base_path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">knowledge_base_path</span><span class="p">,</span>
+                    <span class="n">quality_func</span><span class="o">=</span><span class="n">F1</span><span class="p">(),</span>
+                    <span class="n">load_pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">path_of_embeddings</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">path_of_nces_embeddings</span><span class="p">,</span>
+                    <span class="n">path_of_trained_models</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">path_of_nces_trained_models</span><span class="p">,</span>
+                    <span class="n">learner_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LSTM&quot;</span><span class="p">,</span> <span class="s2">&quot;GRU&quot;</span><span class="p">,</span> <span class="s2">&quot;SetTransformer&quot;</span><span class="p">],</span>
+                    <span class="n">num_predictions</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">lp</span> <span class="o">=</span> <span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NCES starts..&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">hypothesis</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># This will also print the prediction</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NCES ends..&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">rt_tdl</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="n">f1_tdl</span> <span class="o">=</span> <span class="n">compute_f1_score</span><span class="p">(</span><span class="n">individuals</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">hypothesis</span><span class="p">)}),</span>
+                                            <span class="n">pos</span><span class="o">=</span><span class="n">lp</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+                                            <span class="n">neg</span><span class="o">=</span><span class="n">lp</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;F1-NCES&quot;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f1_tdl</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;RT-NCES&quot;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rt_tdl</span><span class="p">)</span>
+            <span class="c1"># @TODO:CD: model.fit() should return a train model itself, not predictions</span>
+            <span class="c1"># report = f&quot;Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: &quot; + \</span>
+            <span class="c1">#         f&quot;{kb.individuals_count(hypothesis)}&quot;</span>
+            <span class="c1"># print(report)</span>
+        <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tdl&#39;</span><span class="p">]:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">TDL</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">kb</span><span class="p">,</span>
+                  <span class="n">plot_tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">plot_feature_importance</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">grid_search_apply</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">verbalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">kwargs_classifier</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;criterion&#39;</span><span class="p">:</span> <span class="s1">&#39;entropy&#39;</span><span class="p">})</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TDL starts..&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">hypothesis</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TDL ends..&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">rt_tdl</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="n">f1_tdl</span> <span class="o">=</span> <span class="n">compute_f1_score</span><span class="p">(</span><span class="n">individuals</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">hypothesis</span><span class="p">)}),</span>
+                                            <span class="n">pos</span><span class="o">=</span><span class="n">lp</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span>
+                                            <span class="n">neg</span><span class="o">=</span><span class="n">lp</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
+
+            <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;F1-TDL&quot;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f1_tdl</span><span class="p">)</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;RT-TDL&quot;</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rt_tdl</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TDL Quality: </span><span class="si">{</span><span class="n">f1_tdl</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TDL Runtime: </span><span class="si">{</span><span class="n">rt_tdl</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">()</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">file_base_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">get_file_base_name</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">knowledge_base_path</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">prepare_output_path</span><span class="p">(</span><span class="n">base_name</span><span class="o">=</span><span class="n">file_base_name</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

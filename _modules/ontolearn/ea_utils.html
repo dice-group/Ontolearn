@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.ea_utils &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.ea_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.ea_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Utils for evolutionary algorithms.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">deap.gp</span><span class="w"> </span><span class="kn">import</span> <span class="n">Primitive</span><span class="p">,</span> <span class="n">Terminal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">,</span> <span class="n">OWLObjectUnionOf</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLDataHasValue</span><span class="p">,</span> \
+    <span class="n">OWLDataSomeValuesFrom</span><span class="p">,</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">,</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">,</span> <span class="n">OWLObjectExactCardinality</span><span class="p">,</span> \
+    <span class="n">OWLObjectMaxCardinality</span><span class="p">,</span> <span class="n">OWLObjectMinCardinality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLLiteral</span><span class="p">,</span> <span class="n">NUMERIC_DATATYPES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">,</span> <span class="n">OWLDataPropertyExpression</span><span class="p">,</span> <span class="n">OWLDataProperty</span><span class="p">,</span> \
+    <span class="n">OWLObjectProperty</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.concept_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConceptGenerator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.providers</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_datatype_min_exclusive_restriction</span><span class="p">,</span> <span class="n">owl_datatype_min_inclusive_restriction</span><span class="p">,</span> \
+    <span class="n">owl_datatype_max_exclusive_restriction</span><span class="p">,</span> <span class="n">owl_datatype_max_inclusive_restriction</span>
+
+
+<span class="n">Tree</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Primitive</span><span class="p">,</span> <span class="n">Terminal</span><span class="p">]]</span>
+
+
+<div class="viewcode-block" id="PrimitiveFactory">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrimitiveFactory</span><span class="p">:</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;generator&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">ConceptGenerator</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PrimitiveFactory.create_union">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_union">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_union</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectUnionOf</span><span class="p">]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">union</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">B</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectUnionOf</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">union</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">union</span></div>
+
+
+<div class="viewcode-block" id="PrimitiveFactory.create_intersection">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_intersection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_intersection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">intersection</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">B</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">([</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">intersection</span></div>
+
+
+<div class="viewcode-block" id="PrimitiveFactory.create_existential_universal">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_existential_universal">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_existential_universal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_</span><span class="p">:</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">],</span>
+                     <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">]]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">universal_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">universal_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">existential_restriction</span><span class="p">,</span> <span class="n">universal_restriction</span></div>
+
+
+<div class="viewcode-block" id="PrimitiveFactory.create_card_restrictions">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_card_restrictions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_card_restrictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_</span><span class="p">:</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">)</span> \
+        <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectMinCardinality</span><span class="p">],</span>
+                 <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectMaxCardinality</span><span class="p">],</span>
+                 <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLObjectExactCardinality</span><span class="p">]]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">min_cardinality</span><span class="p">(</span><span class="n">card</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filler</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectMinCardinality</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">min_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">max_cardinality</span><span class="p">(</span><span class="n">card</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filler</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectMaxCardinality</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">max_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">exact_cardinality</span><span class="p">(</span><span class="n">card</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filler</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectExactCardinality</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">exact_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">min_cardinality</span><span class="p">,</span> <span class="n">max_cardinality</span><span class="p">,</span> <span class="n">exact_cardinality</span></div>
+
+
+<div class="viewcode-block" id="PrimitiveFactory.create_data_some_values">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_data_some_values">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_data_some_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_</span><span class="p">:</span> <span class="n">OWLDataPropertyExpression</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">OWLLiteral</span><span class="p">],</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLLiteral</span><span class="p">],</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">],</span>
+                     <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLLiteral</span><span class="p">],</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLLiteral</span><span class="p">],</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">]]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">data_some_min_inclusive</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="n">owl_datatype_min_inclusive_restriction</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">data_existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">data_some_max_inclusive</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="n">owl_datatype_max_inclusive_restriction</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">data_existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">data_some_min_exclusive</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="n">owl_datatype_min_exclusive_restriction</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">data_existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">data_some_max_exclusive</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLDataSomeValuesFrom</span><span class="p">:</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="n">owl_datatype_max_exclusive_restriction</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">data_existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_some_min_inclusive</span><span class="p">,</span> <span class="n">data_some_max_inclusive</span><span class="p">,</span> <span class="n">data_some_min_exclusive</span><span class="p">,</span> <span class="n">data_some_max_exclusive</span></div>
+
+
+<div class="viewcode-block" id="PrimitiveFactory.create_data_has_value">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.PrimitiveFactory.create_data_has_value">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_data_has_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">property_</span><span class="p">:</span> <span class="n">OWLDataPropertyExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OWLLiteral</span><span class="p">],</span> <span class="n">OWLDataHasValue</span><span class="p">]:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">data_has_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLDataHasValue</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">data_has_value_restriction</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">property_</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data_has_value</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OperatorVocabulary">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.OperatorVocabulary">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OperatorVocabulary</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">UNION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;union&quot;</span>  <span class="c1">#:</span>
+    <span class="n">INTERSECTION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;intersection&quot;</span>  <span class="c1">#:</span>
+    <span class="n">NEGATION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;negation&quot;</span>  <span class="c1">#:</span>
+    <span class="n">EXISTENTIAL</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;exists&quot;</span>  <span class="c1">#:</span>
+    <span class="n">UNIVERSAL</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;forall&quot;</span>  <span class="c1">#:</span>
+    <span class="n">INVERSE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;inverse&quot;</span>  <span class="c1">#:</span>
+    <span class="n">CARD_MIN</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;cardMin&quot;</span>  <span class="c1">#:</span>
+    <span class="n">CARD_MAX</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;cardMax&quot;</span>  <span class="c1">#:</span>
+    <span class="n">CARD_EXACT</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;cardExact&quot;</span>  <span class="c1">#:</span>
+    <span class="n">DATA_MIN_INCLUSIVE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;dataMinInc&quot;</span>  <span class="c1">#:</span>
+    <span class="n">DATA_MAX_INCLUSIVE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;dataMaxInc&quot;</span>  <span class="c1">#:</span>
+    <span class="n">DATA_MIN_EXCLUSIVE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;dataMinExc&quot;</span>  <span class="c1">#:</span>
+    <span class="n">DATA_MAX_EXCLUSIVE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;dataMaxExc&quot;</span>  <span class="c1">#:</span>
+    <span class="n">DATA_HAS_VALUE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;dataHasValue&quot;</span>  <span class="c1">#:</span></div>
+
+
+
+<div class="viewcode-block" id="ToolboxVocabulary">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.ToolboxVocabulary">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ToolboxVocabulary</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">MUTATION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;mutate&quot;</span>  <span class="c1">#:</span>
+    <span class="n">CROSSOVER</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;mate&quot;</span>  <span class="c1">#:</span>
+    <span class="n">SELECTION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;select&quot;</span>  <span class="c1">#:</span>
+    <span class="n">COMPILE</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;compile&quot;</span>  <span class="c1">#:</span>
+    <span class="n">INIT_POPULATION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;population&quot;</span>  <span class="c1">#:</span>
+    <span class="n">FITNESS_FUNCTION</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;apply_fitness&quot;</span>  <span class="c1">#:</span>
+    <span class="n">HEIGHT_KEY</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s2">&quot;height&quot;</span>  <span class="c1">#:</span></div>
+
+
+
+<div class="viewcode-block" id="escape">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.escape">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">escape</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;minus&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;http://&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;https://&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[\W+]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ind_to_string">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.ind_to_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ind_to_string</span><span class="p">(</span><span class="n">ind</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">prim</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">prim</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">])</span></div>
+
+
+
+<span class="c1"># TODO: Ugly hack for now</span>
+<div class="viewcode-block" id="owlliteral_to_primitive_string">
+<a class="viewcode-back" href="../../autoapi/ontolearn/ea_utils/index.html#ontolearn.ea_utils.owlliteral_to_primitive_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">owlliteral_to_primitive_string</span><span class="p">(</span><span class="n">lit</span><span class="p">:</span> <span class="n">OWLLiteral</span><span class="p">,</span> <span class="n">pe</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">OWLDataProperty</span><span class="p">,</span> <span class="n">OWLObjectProperty</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> \
+        <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">str_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">lit</span><span class="o">.</span><span class="n">to_python</span><span class="p">())</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">escape</span><span class="p">(</span><span class="n">lit</span><span class="o">.</span><span class="n">get_literal</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">lit</span><span class="o">.</span><span class="n">get_datatype</span><span class="p">()</span> <span class="ow">in</span> <span class="n">NUMERIC_DATATYPES</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">pe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">escape</span><span class="p">(</span><span class="n">pe</span><span class="o">.</span><span class="n">str</span><span class="p">)</span> <span class="o">+</span> <span class="n">str_</span>
+    <span class="k">return</span> <span class="n">str_</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

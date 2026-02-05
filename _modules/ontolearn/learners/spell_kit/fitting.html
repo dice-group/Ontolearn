@@ -1,0 +1,707 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.spell_kit.fitting &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.spell_kit.fitting</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.spell_kit.fitting</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pysat.card</span><span class="w"> </span><span class="kn">import</span> <span class="n">CardEnc</span><span class="p">,</span> <span class="n">EncType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pysat.solvers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Glucose4</span><span class="p">,</span> <span class="n">pysolvers</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners.spell_kit.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Signature</span><span class="p">,</span>
+    <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">conceptname_ext</span><span class="p">,</span>
+    <span class="n">conceptnames</span><span class="p">,</span>
+    <span class="n">generate_all_trees</span><span class="p">,</span>
+    <span class="n">ind</span><span class="p">,</span>
+    <span class="n">restrict_to_neighborhood</span><span class="p">,</span>
+    <span class="n">rolenames</span><span class="p">,</span>
+    <span class="n">solution2sparql</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">mode</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;exact neg_approx full_approx alc&quot;</span><span class="p">)</span>
+
+<span class="n">HC</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+<span class="n">Simul</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+<span class="n">Pi</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
+<span class="n">Pr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+
+
+<div class="viewcode-block" id="Variables">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.Variables">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Variables</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">simul</span><span class="p">:</span> <span class="n">Simul</span>
+    <span class="n">pi</span><span class="p">:</span> <span class="n">Pi</span>
+    <span class="n">pr</span><span class="p">:</span> <span class="n">Pr</span>
+    <span class="n">hc</span><span class="p">:</span> <span class="n">HC</span></div>
+
+
+
+<div class="viewcode-block" id="compute_successors">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.compute_successors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_successors</span><span class="p">(</span><span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">):</span>
+    <span class="n">succs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+        <span class="n">succs</span><span class="p">[</span><span class="n">rn</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)}</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">a</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+                <span class="n">succs</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">succs</span></div>
+
+
+
+<span class="n">var_counter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<div class="viewcode-block" id="fresh_var">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.fresh_var">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fresh_var</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">var_counter</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">var_counter</span>
+    <span class="n">var_counter</span> <span class="o">=</span> <span class="n">var_counter</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+
+
+<div class="viewcode-block" id="constraint_conceptname">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.constraint_conceptname">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">constraint_conceptname</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">hc</span><span class="p">:</span> <span class="n">HC</span><span class="p">,</span>
+    <span class="n">ind_tp_idx</span><span class="p">,</span>
+    <span class="n">anti_types</span><span class="p">,</span>
+    <span class="n">type_var</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+    <span class="n">simul</span><span class="p">:</span> <span class="n">Simul</span><span class="p">,</span>
+<span class="p">):</span>
+
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="n">type_var</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">ind_tp_idx</span><span class="p">[</span><span class="n">a</span><span class="p">]])</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">tp</span> <span class="ow">in</span> <span class="n">anti_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">tp</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">type_var</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">idx</span><span class="p">],</span> <span class="o">-</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">])</span>
+
+            <span class="k">yield</span> <span class="p">[</span><span class="n">type_var</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">idx</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">]</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">tp</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="constraint_succ">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.constraint_succ">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">constraint_succ</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span>
+    <span class="n">pi</span><span class="p">:</span> <span class="n">Pi</span><span class="p">,</span>
+    <span class="n">pr</span><span class="p">:</span> <span class="n">Pr</span><span class="p">,</span>
+    <span class="n">simul</span><span class="p">:</span> <span class="n">Simul</span><span class="p">,</span>
+    <span class="n">DR</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
+<span class="p">):</span>
+    <span class="n">succs</span> <span class="o">=</span> <span class="n">compute_successors</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+
+    <span class="n">D2</span> <span class="o">=</span> <span class="p">[[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd2</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">DR</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="o">-</span><span class="n">pi</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">],</span> <span class="n">D2</span><span class="p">[</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">])</span>
+
+    <span class="c1"># for a in ind(A):</span>
+    <span class="c1">#     for pInd2 in range(size):</span>
+    <span class="c1">#         rns = []</span>
+    <span class="c1">#         for (b, rn) in A[2][a]:</span>
+    <span class="c1">#             if rn in rolenames(sigma):</span>
+    <span class="c1">#                 rns.append(pr[rn][pInd2])</span>
+    <span class="c1">#         yield [-D2[pInd2][a] ] + rns</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+                <span class="n">succ_sim</span> <span class="o">=</span> <span class="p">[</span><span class="n">simul</span><span class="p">[</span><span class="n">pInd2</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">succs</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">a</span><span class="p">]]</span>
+                <span class="k">yield</span> <span class="p">[</span><span class="o">-</span><span class="n">D2</span><span class="p">[</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="o">-</span><span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">pInd2</span><span class="p">]]</span> <span class="o">+</span> <span class="n">succ_sim</span></div>
+
+
+
+<div class="viewcode-block" id="complement_type">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.complement_type">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">complement_type</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">cn</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="k">if</span> <span class="n">cn</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tp</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_types">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.compute_types">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_types</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">):</span>
+    <span class="n">types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">conceptname_ext</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">cn</span><span class="p">):</span>
+            <span class="n">types</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cn</span><span class="p">)</span>
+
+    <span class="n">fixed_types</span> <span class="o">=</span> <span class="p">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span> <span class="k">for</span> <span class="n">tp</span> <span class="ow">in</span> <span class="n">types</span><span class="p">}</span>
+    <span class="n">fixed_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fixed_types</span><span class="p">)</span>
+    <span class="n">fixed_types</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+    <span class="n">fixed_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">,</span> <span class="n">fixed_types</span><span class="p">))</span>
+
+    <span class="n">tp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">tp</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">tp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fixed_types</span><span class="p">)}</span>
+    <span class="n">anti_types</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="n">complement_type</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span> <span class="k">for</span> <span class="n">tp</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tp_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">ind_tp_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">tp_map</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">types</span><span class="p">[</span><span class="n">a</span><span class="p">])]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">ind_tp_idx</span><span class="p">,</span> <span class="n">anti_types</span></div>
+
+
+
+<span class="c1"># Returns a list of constraints that enforce the simulation conditions</span>
+<div class="viewcode-block" id="simulation_constraints">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.simulation_constraints">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulation_constraints</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span>
+<span class="p">):</span>
+    <span class="n">simul</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">hc</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="c1"># Defect vars</span>
+    <span class="n">DR</span> <span class="o">=</span> <span class="p">[[[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="n">ind_tp_idx</span><span class="p">,</span> <span class="n">anti_types</span> <span class="o">=</span> <span class="n">compute_types</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+    <span class="n">type_var</span> <span class="o">=</span> <span class="p">[{</span><span class="n">idx</span><span class="p">:</span> <span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">ind_tp_idx</span><span class="p">)}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="k">yield from</span> <span class="n">constraint_conceptname</span><span class="p">(</span>
+        <span class="n">size</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">hc</span><span class="p">,</span> <span class="n">ind_tp_idx</span><span class="p">,</span> <span class="n">anti_types</span><span class="p">,</span> <span class="n">type_var</span><span class="p">,</span> <span class="n">simul</span>
+    <span class="p">)</span>
+
+    <span class="k">yield from</span> <span class="n">constraint_succ</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">pr</span><span class="p">,</span> <span class="n">simul</span><span class="p">,</span> <span class="n">DR</span><span class="p">)</span>
+
+    <span class="c1"># positive Simulationsbedingung</span>
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+            <span class="c1"># TODO: In some cases this can be a bottleneck, we could use the type-variables here</span>
+            <span class="n">cn_part</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">type_var</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">ind_tp_idx</span><span class="p">[</span><span class="n">a</span><span class="p">]]]</span>
+            <span class="n">rn_part</span> <span class="o">=</span> <span class="p">[</span><span class="n">DR</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)]</span>
+            <span class="k">yield</span> <span class="p">[</span><span class="n">simul</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">a</span><span class="p">]]</span> <span class="o">+</span> <span class="n">cn_part</span> <span class="o">+</span> <span class="n">rn_part</span>
+
+    <span class="c1"># Same for roles</span>
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">DR</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="n">pi</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">a</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+                        <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">DR</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="o">-</span><span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">pInd2</span><span class="p">],</span> <span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="n">pInd2</span><span class="p">][</span><span class="n">b</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">a</span><span class="p">],</span> <span class="o">-</span><span class="n">DR</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">][</span><span class="n">a</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="real_coverage">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.real_coverage">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">real_coverage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">N</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">simul</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">simul</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">P</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+            <span class="n">cov</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">N</span><span class="p">:</span>
+        <span class="k">if</span> <span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+            <span class="n">cov</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">cov</span></div>
+
+
+
+<div class="viewcode-block" id="is_model">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.is_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_model</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span><span class="p">,</span> <span class="n">solver</span><span class="p">:</span> <span class="n">Glucose4</span>
+<span class="p">):</span>
+    <span class="n">assums</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">pr</span>
+    <span class="n">hc</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">hc</span>
+
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+                <span class="n">assums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">assums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pi</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span> <span class="ow">and</span> <span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">pInd2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+                    <span class="n">assums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pi</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">])</span>
+                    <span class="n">assums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">pInd2</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">solver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">assumptions</span><span class="o">=</span><span class="n">assums</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="minimize_concept_assertions">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.minimize_concept_assertions">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">minimize_concept_assertions</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">solver</span><span class="p">:</span> <span class="n">Glucose4</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+    <span class="n">best_model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="c1"># Greedily reduce number of concept assertions and abuse sat solver as a fast query engine</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">mapping</span><span class="o">.</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">best_model</span><span class="p">:</span>
+                <span class="n">test_model</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">best_model</span><span class="p">)</span>
+                <span class="n">test_model</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">test_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">-</span><span class="n">mapping</span><span class="o">.</span><span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">is_model</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">test_model</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">solver</span><span class="p">):</span>
+                    <span class="n">best_model</span> <span class="o">=</span> <span class="n">test_model</span>
+    <span class="k">return</span> <span class="n">best_model</span></div>
+
+
+
+<div class="viewcode-block" id="model2fitting_query">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.model2fitting_query">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">model2fitting_query</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Structure</span><span class="p">:</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">pr</span>
+    <span class="n">hc</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">hc</span>
+
+    <span class="n">q</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span>
+        <span class="n">max_ind</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">cn_ext</span><span class="o">=</span><span class="p">{</span><span class="n">cn</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">)},</span>
+        <span class="n">rn_ext</span><span class="o">=</span><span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)},</span>
+        <span class="n">indmap</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">nsmap</span><span class="o">=</span><span class="p">{},</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">hc</span><span class="p">[</span><span class="n">cn</span><span class="p">][</span><span class="n">pInd</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+                <span class="n">q</span><span class="o">.</span><span class="n">cn_ext</span><span class="p">[</span><span class="n">cn</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pInd</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pi</span><span class="p">[</span><span class="n">pInd</span><span class="p">][</span><span class="n">pInd2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span> <span class="ow">and</span> <span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">pInd2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">model</span><span class="p">:</span>
+                    <span class="n">q</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">pInd</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">pInd2</span><span class="p">,</span> <span class="n">rn</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">q</span></div>
+
+
+
+<div class="viewcode-block" id="create_variables">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.create_variables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_variables</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Variables</span><span class="p">:</span>
+    <span class="k">global</span> <span class="n">var_counter</span>
+    <span class="n">var_counter</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">simul</span> <span class="o">=</span> <span class="p">[[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">)]</span> <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span>
+
+    <span class="c1"># pi[i][j] is true if there is an edge between i and j</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="n">pInd2</span><span class="p">:</span> <span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">pInd2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pInd1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)}</span>
+        <span class="k">for</span> <span class="n">pInd1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="c1"># pr[rn][i] is true if product ind i has an incoming rn role</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="p">{</span><span class="n">rn</span><span class="p">:</span> <span class="p">[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span> <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">)}</span>
+
+    <span class="c1"># Conceptnames of product individuals</span>
+    <span class="n">hc</span> <span class="o">=</span> <span class="p">{</span><span class="n">cn</span><span class="p">:</span> <span class="p">[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">pInd</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">)]</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">conceptnames</span><span class="p">(</span><span class="n">sigma</span><span class="p">)}</span>
+
+    <span class="k">return</span> <span class="n">Variables</span><span class="p">(</span><span class="n">simul</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">pr</span><span class="p">,</span> <span class="n">hc</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="tree_query_constraints">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.tree_query_constraints">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tree_query_constraints</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Variables</span><span class="p">):</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">pr</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">pr</span>
+
+    <span class="k">if</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">12</span><span class="p">:</span>
+        <span class="n">ktrees</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">generate_all_trees</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+
+        <span class="n">treechoice</span> <span class="o">=</span> <span class="p">[</span><span class="n">fresh_var</span><span class="p">()</span> <span class="k">for</span> <span class="n">tree</span> <span class="ow">in</span> <span class="n">ktrees</span><span class="p">]</span>
+        <span class="c1"># At least one tree</span>
+        <span class="k">yield</span> <span class="n">treechoice</span>
+
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">14</span><span class="p">:</span>
+            <span class="c1"># At most one tree. Skip this if size gets too large, since it grows quadratically in the number of trees</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ktrees</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">treechoice</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="n">treechoice</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ktrees</span><span class="p">)):</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">ktrees</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">tree</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">treechoice</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">pi</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">treechoice</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="o">-</span><span class="n">pi</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="c1"># Every pInd has at least a predecessor</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">[</span><span class="n">pi</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span>
+
+    <span class="c1"># Every pInd has at most one predecessor</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i1</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">pi</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="o">-</span><span class="n">pi</span><span class="p">[</span><span class="n">i2</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="c1"># Every pind has at least one incoming role</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="p">[</span><span class="n">pr</span><span class="p">[</span><span class="n">rn</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">)]</span>
+
+    <span class="c1"># Every pInd has at most one incoming role</span>
+    <span class="n">rns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rolenames</span><span class="p">(</span><span class="n">sigma</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">r1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rns</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">r2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">r1</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="o">-</span><span class="n">pr</span><span class="p">[</span><span class="n">rns</span><span class="p">[</span><span class="n">r1</span><span class="p">]][</span><span class="n">i</span><span class="p">],</span> <span class="o">-</span><span class="n">pr</span><span class="p">[</span><span class="n">rns</span><span class="p">[</span><span class="n">r2</span><span class="p">]][</span><span class="n">i</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="create_coverage_formula">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.create_coverage_formula">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_coverage_formula</span><span class="p">(</span>
+    <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">N</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">coverage</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="n">Variables</span><span class="p">,</span> <span class="n">all_pos</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+    <span class="n">simul</span> <span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">simul</span>
+
+    <span class="k">global</span> <span class="n">var_counter</span>
+    <span class="k">if</span> <span class="n">coverage</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[[</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">a</span><span class="p">]]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">P</span><span class="p">]</span> <span class="o">+</span> <span class="p">[[</span><span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">b</span><span class="p">]]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">N</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">all_pos</span><span class="p">:</span>
+        <span class="n">lits</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">N</span><span class="p">]</span>
+
+        <span class="n">bound</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">coverage</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">CardEnc</span><span class="o">.</span><span class="n">atleast</span><span class="p">(</span>
+            <span class="n">lits</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">bound</span><span class="p">,</span> <span class="n">top_id</span><span class="o">=</span><span class="n">var_counter</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">EncType</span><span class="o">.</span><span class="n">kmtotalizer</span>
+        <span class="p">)</span>
+
+        <span class="n">var_counter</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">nv</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="p">[[</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">a</span><span class="p">]]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">P</span><span class="p">]</span> <span class="o">+</span> <span class="n">enc</span><span class="o">.</span><span class="n">clauses</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lits</span> <span class="o">=</span> <span class="p">[</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">P</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="o">-</span><span class="n">simul</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">b</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">N</span><span class="p">]</span>
+
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">CardEnc</span><span class="o">.</span><span class="n">atleast</span><span class="p">(</span>
+            <span class="n">lits</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">coverage</span><span class="p">,</span> <span class="n">top_id</span><span class="o">=</span><span class="n">var_counter</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">EncType</span><span class="o">.</span><span class="n">kmtotalizer</span>
+        <span class="p">)</span>
+
+        <span class="n">var_counter</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">nv</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">enc</span><span class="o">.</span><span class="n">clauses</span></div>
+
+
+
+<div class="viewcode-block" id="non_empty_symbols">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.non_empty_symbols">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">non_empty_symbols</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signature</span><span class="p">:</span>
+    <span class="n">cns</span> <span class="o">=</span> <span class="p">[</span><span class="n">cn</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">cn_ext</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">cn_ext</span><span class="p">[</span><span class="n">cn</span><span class="p">]]</span>
+    <span class="n">rns</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ind</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">a</span><span class="p">]:</span>
+            <span class="n">rns</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rn</span><span class="p">)</span>
+    <span class="n">rns2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rns</span><span class="p">)</span>
+
+    <span class="n">cns</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+    <span class="n">rns2</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">cns</span><span class="p">,</span> <span class="n">rns2</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Returns the (concept and role) symbols that are relevant given the positive</span>
+<span class="c1"># examples</span>
+<div class="viewcode-block" id="determine_relevant_symbols">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.determine_relevant_symbols">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">determine_relevant_symbols</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">minP</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dist</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Signature</span><span class="p">:</span>
+
+    <span class="p">(</span><span class="n">cns</span><span class="p">,</span> <span class="n">rns</span><span class="p">)</span> <span class="o">=</span> <span class="n">non_empty_symbols</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="p">{</span><span class="n">cn</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">cns</span><span class="p">}</span>
+    <span class="n">countr</span> <span class="o">=</span> <span class="p">{</span><span class="n">rn</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rns</span><span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">P</span><span class="p">:</span>
+        <span class="n">cns2</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">rns2</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">cns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">cn_ext</span><span class="p">[</span><span class="n">cn</span><span class="p">]:</span>
+                <span class="n">cns2</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cn</span><span class="p">)</span>
+
+        <span class="n">dinds</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dist</span><span class="p">):</span>
+            <span class="n">step</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="n">dinds</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i2</span><span class="p">,</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">rn_ext</span><span class="p">[</span><span class="n">i1</span><span class="p">]:</span>
+                    <span class="n">step</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i2</span><span class="p">)</span>
+                    <span class="n">rns2</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rn</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">cns</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">i2</span> <span class="ow">in</span> <span class="n">A</span><span class="o">.</span><span class="n">cn_ext</span><span class="p">[</span><span class="n">cn</span><span class="p">]:</span>
+                            <span class="n">cns2</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cn</span><span class="p">)</span>
+            <span class="n">dinds</span> <span class="o">=</span> <span class="n">step</span>
+
+        <span class="k">for</span> <span class="n">cn</span> <span class="ow">in</span> <span class="n">cns2</span><span class="p">:</span>
+            <span class="n">count</span><span class="p">[</span><span class="n">cn</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">rn</span> <span class="ow">in</span> <span class="n">rns2</span><span class="p">:</span>
+            <span class="n">countr</span><span class="p">[</span><span class="n">rn</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">cns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cn</span> <span class="k">for</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="n">count</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;=</span> <span class="n">minP</span><span class="p">)</span>
+    <span class="n">rns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">rn</span> <span class="k">for</span> <span class="p">(</span><span class="n">rn</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="n">countr</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">c</span> <span class="o">&gt;=</span> <span class="n">minP</span><span class="p">)</span>
+    <span class="n">cns</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+    <span class="n">rns</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">cns</span><span class="p">,</span> <span class="n">rns</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="restrict_nb">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.restrict_nb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">restrict_nb</span><span class="p">(</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span> <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">N</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Structure</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+    <span class="p">(</span><span class="n">A2</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span> <span class="o">=</span> <span class="n">restrict_to_neighborhood</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">P</span> <span class="o">+</span> <span class="n">N</span><span class="p">)</span>
+    <span class="n">P2</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">P</span><span class="p">]</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">N</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">A2</span><span class="p">,</span> <span class="n">P2</span><span class="p">,</span> <span class="n">N2</span></div>
+
+
+
+<span class="c1"># Constructs a formula to find a separating query of size and solves it</span>
+<span class="c1"># Guaranted that we can reach min_coverage</span>
+<div class="viewcode-block" id="solve">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.solve">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">N</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">coverage_lb</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">all_pos</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Structure</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+
+    <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span>
+    <span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span> <span class="o">=</span> <span class="n">restrict_nb</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">all_pos</span><span class="p">:</span>
+        <span class="n">min_pos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If we want to cover at least min_coverage examples, we have to cover at</span>
+        <span class="c1"># least min_pos positive examples</span>
+        <span class="n">min_pos</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">coverage_lb</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Use symbols that occur in distance k - 1 of at least min_pos positive example</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">determine_relevant_symbols</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">min_pos</span><span class="p">,</span> <span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">Glucose4</span><span class="p">()</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="n">create_variables</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">A</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tree_query_constraints</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+        <span class="n">pysolvers</span><span class="o">.</span><span class="n">glucose41_add_cl</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">glucose</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">simulation_constraints</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+        <span class="n">pysolvers</span><span class="o">.</span><span class="n">glucose41_add_cl</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">glucose</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+    <span class="n">best_sol</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">coverage_ub</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">coverage_lb</span> <span class="o">&lt;=</span> <span class="n">coverage_ub</span> <span class="ow">and</span> <span class="p">(</span><span class="n">dt</span> <span class="o">&lt;</span> <span class="n">timeout</span> <span class="ow">or</span> <span class="n">timeout</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">create_coverage_formula</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">coverage_lb</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">all_pos</span><span class="p">):</span>
+            <span class="n">pysolvers</span><span class="o">.</span><span class="n">glucose41_add_cl</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">glucose</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="n">satisfiable</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">satisfiable</span><span class="p">:</span>
+            <span class="n">g</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">best_sol</span>
+
+        <span class="c1"># print(g.accum_stats())</span>
+        <span class="n">model</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">get_model</span><span class="p">())</span>  <span class="c1"># type: ignore</span>
+        <span class="n">coverage_lb</span> <span class="o">=</span> <span class="n">real_coverage</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">mapping</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Required for minimization</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">create_coverage_formula</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">coverage_lb</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">all_pos</span><span class="p">):</span>
+                <span class="n">pysolvers</span><span class="o">.</span><span class="n">glucose41_add_cl</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">glucose</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+            <span class="n">model</span> <span class="o">=</span> <span class="n">minimize_concept_assertions</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">best_q</span> <span class="o">=</span> <span class="n">model2fitting_query</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">best_sol</span> <span class="o">=</span> <span class="p">(</span><span class="n">coverage_lb</span><span class="p">,</span> <span class="n">best_q</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">solution2sparql</span><span class="p">(</span><span class="n">best_q</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;== Coverage: </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2"> == Accuracy: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">coverage_lb</span><span class="p">,</span> <span class="n">coverage_ub</span><span class="p">,</span> <span class="n">coverage_lb</span> <span class="o">/</span> <span class="n">coverage_ub</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">coverage_lb</span> <span class="o">=</span> <span class="n">coverage_lb</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+
+    <span class="n">g</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">best_sol</span></div>
+
+
+
+<span class="c1"># Search for a small separating query by incrementally increasing the size</span>
+<div class="viewcode-block" id="solve_incr">
+<a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/fitting/index.html#ontolearn.learners.spell_kit.fitting.solve_incr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">solve_incr</span><span class="p">(</span>
+    <span class="n">A</span><span class="p">:</span> <span class="n">Structure</span><span class="p">,</span>
+    <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">N</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">m</span><span class="p">:</span> <span class="n">mode</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">starting_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">max_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">19</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Structure</span><span class="p">]:</span>
+    <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">starting_size</span>
+    <span class="n">best_coverage</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+    <span class="n">best_q</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">max_ind</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cn_ext</span><span class="o">=</span><span class="p">{},</span> <span class="n">rn_ext</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="nb">set</span><span class="p">()},</span> <span class="n">indmap</span><span class="o">=</span><span class="p">{},</span> <span class="n">nsmap</span><span class="o">=</span><span class="p">{})</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+    <span class="k">while</span> <span class="p">(</span>
+        <span class="n">best_coverage</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">max_size</span>
+        <span class="ow">and</span> <span class="p">(</span><span class="n">dt</span> <span class="o">&lt;</span> <span class="n">timeout</span> <span class="ow">or</span> <span class="n">timeout</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;== Searching for a fitting query of size </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="n">mode</span><span class="o">.</span><span class="n">exact</span><span class="p">:</span>
+            <span class="n">sol</span> <span class="o">=</span> <span class="n">solve</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">-</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">m</span> <span class="o">==</span> <span class="n">mode</span><span class="o">.</span><span class="n">neg_approx</span><span class="p">:</span>
+            <span class="n">sol</span> <span class="o">=</span> <span class="n">solve</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">best_coverage</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">-</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sol</span> <span class="o">=</span> <span class="n">solve</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">best_coverage</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">-</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">best_coverage</span><span class="p">,</span> <span class="n">best_q</span> <span class="o">=</span> <span class="n">sol</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">process_time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="s2">&quot;== Best query found with coverage </span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">best_coverage</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">P</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">solution2sparql</span><span class="p">(</span><span class="n">best_q</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">best_coverage</span><span class="p">,</span> <span class="n">best_q</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

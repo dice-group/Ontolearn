@@ -1,0 +1,127 @@
+ontolearn.learners.nces2
+========================
+
+.. py:module:: ontolearn.learners.nces2
+
+.. autoapi-nested-parse::
+
+   NCES2: Neural Class Expression Synthesis in ALCHIQ(D).
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.nces2.NCES2
+
+
+Module Contents
+---------------
+
+.. py:class:: NCES2(knowledge_base, nces2_or_roces=True, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, num_predictions=5, path_of_trained_models=None, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy='nces2', input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity: Optional[bool] = None)
+
+   Bases: :py:obj:`ontolearn.base_nces.BaseNCES`
+
+
+   Neural Class Expression Synthesis in ALCHIQ(D).
+
+
+   .. py:attribute:: name
+      :value: 'NCES2'
+
+
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: knowledge_base_path
+
+
+   .. py:attribute:: triples_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: path_of_trained_models
+      :value: None
+
+
+
+   .. py:attribute:: embedding_dim
+      :value: 128
+
+
+
+   .. py:attribute:: sampling_strategy
+      :value: 'nces2'
+
+
+
+   .. py:attribute:: input_dropout
+      :value: 0.0
+
+
+
+   .. py:attribute:: feature_map_dropout
+      :value: 0.1
+
+
+
+   .. py:attribute:: kernel_size
+      :value: 4
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: 32
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: enforce_validity
+      :value: None
+
+
+
+   .. py:method:: get_synthesizer(path=None, verbose=True)
+
+
+   .. py:method:: refresh(path=None)
+
+
+   .. py:method:: get_prediction(dataloaders, return_normalize_scores=False)
+
+
+   .. py:method:: fit_one(pos: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]], neg: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]])
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, **kwargs)
+
+
+   .. py:method:: best_hypotheses(n=1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, Iterable[owlapy.class_expression.OWLClassExpression], ontolearn.abstracts.AbstractNode, Iterable[ontolearn.abstracts.AbstractNode], None]
+
+
+   .. py:method:: convert_to_list_str_from_iterable(data)
+
+
+   .. py:method:: fit_from_iterable(data: Union[List[Tuple[str, Set[owlapy.owl_individual.OWLNamedIndividual], Set[owlapy.owl_individual.OWLNamedIndividual]]], List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List
+
+      - data is a list of tuples where the first items are strings corresponding to target concepts.
+
+      - This function returns predictions as owl class expressions, not nodes as in fit
+
+
+
+   .. py:method:: train(data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False)
+
+

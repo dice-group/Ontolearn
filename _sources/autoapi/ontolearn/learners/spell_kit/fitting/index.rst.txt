@@ -1,0 +1,130 @@
+ontolearn.learners.spell_kit.fitting
+====================================
+
+.. py:module:: ontolearn.learners.spell_kit.fitting
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting.mode
+   ontolearn.learners.spell_kit.fitting.HC
+   ontolearn.learners.spell_kit.fitting.Simul
+   ontolearn.learners.spell_kit.fitting.Pi
+   ontolearn.learners.spell_kit.fitting.Pr
+   ontolearn.learners.spell_kit.fitting.var_counter
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting.Variables
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.fitting.compute_successors
+   ontolearn.learners.spell_kit.fitting.fresh_var
+   ontolearn.learners.spell_kit.fitting.constraint_conceptname
+   ontolearn.learners.spell_kit.fitting.constraint_succ
+   ontolearn.learners.spell_kit.fitting.complement_type
+   ontolearn.learners.spell_kit.fitting.compute_types
+   ontolearn.learners.spell_kit.fitting.simulation_constraints
+   ontolearn.learners.spell_kit.fitting.real_coverage
+   ontolearn.learners.spell_kit.fitting.is_model
+   ontolearn.learners.spell_kit.fitting.minimize_concept_assertions
+   ontolearn.learners.spell_kit.fitting.model2fitting_query
+   ontolearn.learners.spell_kit.fitting.create_variables
+   ontolearn.learners.spell_kit.fitting.tree_query_constraints
+   ontolearn.learners.spell_kit.fitting.create_coverage_formula
+   ontolearn.learners.spell_kit.fitting.non_empty_symbols
+   ontolearn.learners.spell_kit.fitting.determine_relevant_symbols
+   ontolearn.learners.spell_kit.fitting.restrict_nb
+   ontolearn.learners.spell_kit.fitting.solve
+   ontolearn.learners.spell_kit.fitting.solve_incr
+
+
+Module Contents
+---------------
+
+.. py:data:: mode
+
+.. py:data:: HC
+
+.. py:data:: Simul
+
+.. py:data:: Pi
+
+.. py:data:: Pr
+
+.. py:class:: Variables
+
+   Bases: :py:obj:`NamedTuple`
+
+
+   .. py:attribute:: simul
+      :type:  Simul
+
+
+   .. py:attribute:: pi
+      :type:  Pi
+
+
+   .. py:attribute:: pr
+      :type:  Pr
+
+
+   .. py:attribute:: hc
+      :type:  HC
+
+
+.. py:function:: compute_successors(sigma: ontolearn.learners.spell_kit.structures.Signature, A: ontolearn.learners.spell_kit.structures.Structure)
+
+.. py:data:: var_counter
+   :type:  int
+   :value: 1
+
+
+.. py:function:: fresh_var()
+
+.. py:function:: constraint_conceptname(size: int, A: ontolearn.learners.spell_kit.structures.Structure, hc: HC, ind_tp_idx, anti_types, type_var: list[dict[int, int]], simul: Simul)
+
+.. py:function:: constraint_succ(size: int, A: ontolearn.learners.spell_kit.structures.Structure, sigma: ontolearn.learners.spell_kit.structures.Signature, pi: Pi, pr: Pr, simul: Simul, DR: list[list[list[int]]])
+
+.. py:function:: complement_type(tp, sigma: ontolearn.learners.spell_kit.structures.Signature)
+
+.. py:function:: compute_types(A: ontolearn.learners.spell_kit.structures.Structure, sigma: ontolearn.learners.spell_kit.structures.Signature)
+
+.. py:function:: simulation_constraints(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, A: ontolearn.learners.spell_kit.structures.Structure, mapping: Variables)
+
+.. py:function:: real_coverage(model, P: list[int], N: list[int], mapping: Variables) -> int
+
+.. py:function:: is_model(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, model: set[int], mapping: Variables, solver: pysat.solvers.Glucose4)
+
+.. py:function:: minimize_concept_assertions(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, solver: pysat.solvers.Glucose4, mapping: Variables, model: set[int]) -> set[int]
+
+.. py:function:: model2fitting_query(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, mapping: Variables, model: set[int]) -> ontolearn.learners.spell_kit.structures.Structure
+
+.. py:function:: create_variables(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, A: ontolearn.learners.spell_kit.structures.Structure) -> Variables
+
+.. py:function:: tree_query_constraints(size: int, sigma: ontolearn.learners.spell_kit.structures.Signature, v: Variables)
+
+.. py:function:: create_coverage_formula(P: list[int], N: list[int], coverage: int, mapping: Variables, all_pos: bool) -> list[list[int]]
+
+.. py:function:: non_empty_symbols(A: ontolearn.learners.spell_kit.structures.Structure) -> ontolearn.learners.spell_kit.structures.Signature
+
+.. py:function:: determine_relevant_symbols(A: ontolearn.learners.spell_kit.structures.Structure, P: list[int], minP: int, dist: int) -> ontolearn.learners.spell_kit.structures.Signature
+
+.. py:function:: restrict_nb(k: int, A: ontolearn.learners.spell_kit.structures.Structure, P: list[int], N: list[int]) -> tuple[ontolearn.learners.spell_kit.structures.Structure, list[int], list[int]]
+
+.. py:function:: solve(size: int, A: ontolearn.learners.spell_kit.structures.Structure, P: list[int], N: list[int], coverage_lb: int, all_pos: bool, timeout: float = -1) -> Union[tuple[int, ontolearn.learners.spell_kit.structures.Structure], None]
+
+.. py:function:: solve_incr(A: ontolearn.learners.spell_kit.structures.Structure, P: list[int], N: list[int], m: mode, timeout: float = -1, starting_size: int = 1, max_size: int = 19) -> tuple[int, ontolearn.learners.spell_kit.structures.Structure]
+

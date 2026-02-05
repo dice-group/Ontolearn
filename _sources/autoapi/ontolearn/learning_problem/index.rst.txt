@@ -1,0 +1,150 @@
+ontolearn.learning_problem
+==========================
+
+.. py:module:: ontolearn.learning_problem
+
+.. autoapi-nested-parse::
+
+   Learning problem in Ontolearn.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learning_problem.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learning_problem.EncodedPosNegLPStandard
+   ontolearn.learning_problem.PosNegLPStandard
+   ontolearn.learning_problem.EncodedPosNegUndLP
+   ontolearn.learning_problem.PosNegUndLP
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: EncodedPosNegLPStandard(kb_pos, kb_neg, kb_diff, kb_all)
+
+   Bases: :py:obj:`ontolearn.abstracts.EncodedPosNegLPStandardKind`
+
+
+   Encoded learning problem standard.
+
+   .. attribute:: kb_pos
+
+      Positive examples.
+
+      :type: set
+
+   .. attribute:: kb_neg
+
+      Negative examples.
+
+      :type: set
+
+   .. attribute:: kb_diff
+
+      kb_all - (kb_pos + kb_neg).
+
+      :type: set
+
+   .. attribute:: kb_all
+
+      All examples/ all individuals set.
+
+      :type: set
+
+
+   .. py:attribute:: __slots__
+      :value: ('kb_pos', 'kb_neg', 'kb_diff', 'kb_all')
+
+
+
+   .. py:attribute:: kb_pos
+      :type:  set
+
+
+   .. py:attribute:: kb_neg
+      :type:  set
+
+
+   .. py:attribute:: kb_diff
+      :type:  set
+
+
+   .. py:attribute:: kb_all
+      :type:  set
+
+
+.. py:class:: PosNegLPStandard(pos: Set[owlapy.owl_individual.OWLNamedIndividual], neg: Set[owlapy.owl_individual.OWLNamedIndividual], all_instances: Optional[Set[owlapy.owl_individual.OWLNamedIndividual]] = None)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractLearningProblem`
+
+
+   Positive-Negative learning problem standard.
+   .. attribute:: pos
+
+      Positive examples.
+
+   .. attribute:: neg
+
+      Negative examples.
+
+   .. attribute:: all
+
+      All examples.
+
+
+   .. py:attribute:: __slots__
+      :value: ('pos', 'neg', 'all')
+
+
+
+   .. py:attribute:: pos
+
+
+   .. py:attribute:: neg
+
+
+   .. py:method:: encode_kb(kb: ontolearn.abstracts.AbstractKnowledgeBase) -> EncodedPosNegLPStandard
+
+      Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
+      as follows:
+          kb_pos --> the positive examples set,
+          kb_neg --> the negative examples set,
+          kb_all --> all lp individuals / all individuals set,
+          kb_diff --> kb_all - (kb_pos + kb_neg).
+      :param kb: The knowledge base to encode the learning problem.
+      :type kb: PosNegLPStandard
+
+      :returns: The encoded learning problem.
+      :rtype: EncodedPosNegLPStandard
+
+
+
+.. py:class:: EncodedPosNegUndLP
+
+   Bases: :py:obj:`ontolearn.abstracts.EncodedLearningProblem`
+
+
+   To be implemented.
+
+
+.. py:class:: PosNegUndLP(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractLearningProblem`
+
+
+   To be implemented.
+
+

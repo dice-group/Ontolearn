@@ -1,0 +1,391 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concept Learning &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Further Resources" href="09_further_resources.html" />
+    <link rel="prev" title="Evaluate a class expression" href="05_evaluate_ce.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Concept Learning</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#expressiveness">Expressiveness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-input-parameters">Configuring Input Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#load-the-ontology">Load the ontology</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configure-the-learning-problem">Configure the Learning Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-executing-a-concept-learner">Configuring &amp; Executing a Concept Learner</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#quality-metrics">Quality metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-model">Create a model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#execute-and-fetch-the-results">Execute and fetch the results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#verbalization">Verbalization</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Concept Learning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/usage/06_concept_learners.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="concept-learning">
+<h1>Concept Learning<a class="headerlink" href="#concept-learning" title="Link to this heading"></a></h1>
+<p>This is a guide to show how to use a concept learner to generate hypotheses for a target
+concept in an ontology.
+In this guide we will show how to use the following concept learners
+of Ontolearn library:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.tree_learner.TDL" title="ontolearn.learners.tree_learner.TDL"><span class="xref myst py py-class">TDL</span></a></p></li>
+<li><p><a class="reference internal" href="#ontolearn.learners.concept_learner.EvoLearner"><span class="xref myst">EvoLearner</span></a></p></li>
+<li><p><a class="reference internal" href="../autoapi/ontolearn/learners/celoe/index.html#ontolearn.learners.celoe.CELOE" title="ontolearn.learners.celoe.CELOE"><span class="xref myst py py-class">CELOE</span></a></p></li>
+<li><p><a class="reference internal" href="../autoapi/ontolearn/learners/ocel/index.html#ontolearn.learners.ocel.OCEL" title="ontolearn.learners.ocel.OCEL"><span class="xref myst py py-class">OCEL</span></a></p></li>
+<li><p><a class="reference internal" href="../autoapi/ontolearn/learners/drill/index.html#ontolearn.learners.drill.Drill" title="ontolearn.learners.drill.Drill"><span class="xref myst py py-class">Drill</span></a></p></li>
+</ul>
+<p>It is worth mentioning that NERO is not yet implemented in Ontolearn, but it will be soon.</p>
+<section id="expressiveness">
+<h2>Expressiveness<a class="headerlink" href="#expressiveness" title="Link to this heading"></a></h2>
+<p>TDL → <strong><span class="math notranslate nohighlight">\(\mathcal{SHOIN}\)</span></strong></p>
+<p>Evolearner → <strong><span class="math notranslate nohighlight">\(\mathcal{ALCQ^{(D)}}\)</span></strong>.</p>
+<p>DRILL  → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>NCES  → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>NCES2 → <strong><span class="math notranslate nohighlight">\(\mathcal{ALCHIQ^{(D)}}\)</span></strong></p>
+<p>ROCES → <strong><span class="math notranslate nohighlight">\(\mathcal{ALCHIQ^{(D)}}\)</span></strong></p>
+<p>NERO → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>CLIP → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>CELOE → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>OCEL → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>ALCSAT → <strong><span class="math notranslate nohighlight">\(\mathcal{ALC}\)</span></strong></p>
+<p>SPELL → <strong><span class="math notranslate nohighlight">\(\mathcal{ELH^r}\)</span></strong></p>
+<hr class="docutils" />
+<p>The learning models that we mentioned in the beginning are similar to execute, for that reason, we are
+describing them in a general manner. Each algorithm has different available configuration. However, at
+minimum, they require a <a class="reference internal" href="04_knowledge_base.html"><span class="std std-doc">knowledge base</span></a> to initialize and a <a class="reference internal" href="04_knowledge_base.html#construct-a-learning-problem"><span class="std std-ref">learning problem</span></a> to learn predictions for.</p>
+<p>Let’s see the prerequisites needed to run the concept learners:</p>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<p>Before configuring and running an algorithm, we recommend you to store the dataset path
+that ends with <code class="docutils literal notranslate"><span class="pre">.owl</span></code> and the IRIs as string of the <strong>learning problem</strong> instances in a json file as shown below.
+The learning problem is further divided in positive and negative examples. We have saved ourselves some
+hardcoded lines which we can now simply access by loading the json file. Below is
+an example file that we are naming <code class="docutils literal notranslate"><span class="pre">synthetic_problems.json</span></code>  showing how should it look:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{  
+  &quot;data_path&quot;: &quot;../KGs/Family/family-benchmark_rich_background.owl&quot;,  
+  &quot;learning_problem&quot;: {
+    &quot;positive_examples&quot;: [  
+    &quot;http://www.benchmark.org/family#F2F28&quot;,  
+    &quot;http://www.benchmark.org/family#F2F36&quot;,  
+    &quot;http://www.benchmark.org/family#F3F52&quot;  
+    ],  
+    &quot;negative_examples&quot;: [  
+    &quot;http://www.benchmark.org/family#F6M69&quot;,  
+    &quot;http://www.benchmark.org/family#F6M100&quot;,  
+    &quot;http://www.benchmark.org/family#F2F30&quot;  
+    ]
+  }  
+}
+</pre></div>
+</div>
+<p>We are considering that you are trying this script inside <code class="docutils literal notranslate"><span class="pre">examples</span></code> folder, and
+therefore we have stored the ontology path like that.</p>
+<p>Note: The KGs directory contains datasets, and it’s not part of the project.
+They have to be downloaded first, see <a class="reference internal" href="02_installation.html#download-external-files"><span class="std std-ref">Download External Files</span></a>.
+There you will also find instructions to download LPs folder which contains learning problems for those KGs or you can
+just use the direct downloading links below:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://files.dice-research.org/projects/Ontolearn/KGs.zip">KGs.zip</a></p></li>
+<li><p><a class="reference external" href="https://files.dice-research.org/projects/Ontolearn/LPs.zip">LPs.zip</a></p></li>
+</ul>
+</section>
+<section id="configuring-input-parameters">
+<h2>Configuring Input Parameters<a class="headerlink" href="#configuring-input-parameters" title="Link to this heading"></a></h2>
+<p>Before starting with the configuration you can enable logging to see the logs
+which give insights about the main processes of the algorithm:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logging</span>
+
+<span class="n">setup_logging</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We then start by loading the <code class="docutils literal notranslate"><span class="pre">synthetic_problems.json</span></code> where we have
+stored the knowledge base path and the learning problems in the variable <code class="docutils literal notranslate"><span class="pre">settings</span></code>:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;synthetic_problems.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>    
+    <span class="n">settings</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="load-the-ontology">
+<h3>Load the ontology<a class="headerlink" href="#load-the-ontology" title="Link to this heading"></a></h3>
+<p>Load the ontology by simply creating an instance of the class
+<a class="reference internal" href="../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase" title="ontolearn.knowledge_base.KnowledgeBase"><span class="xref myst py py-class">KnowledgeBase</span></a> (or <a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStore" title="ontolearn.triple_store.TripleStore"><span class="xref myst py py-class">TripleStore</span></a> )
+and passing the ontology path stored
+under <code class="docutils literal notranslate"><span class="pre">data_path</span></code> property of <code class="docutils literal notranslate"><span class="pre">settings</span></code>:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configure-the-learning-problem">
+<h2>Configure the Learning Problem<a class="headerlink" href="#configure-the-learning-problem" title="Link to this heading"></a></h2>
+<p>The Structured Machine Learning implemented in our Ontolearn library
+is working with a type of <a class="reference external" href="https://en.wikipedia.org/wiki/Supervised_learning">supervised
+learning</a>. One of
+the first things to do after loading the Ontology to a <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code> object
+is thus to define the learning problem for which the
+learning algorithm is trying to generate hypothesis (class expressions).</p>
+<p>First and foremost, load the learning problem examples from the json file
+into sets as shown below:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">positive_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;learning_problem&#39;</span><span class="p">][</span><span class="s1">&#39;positive_examples&#39;</span><span class="p">])</span>  
+<span class="n">negative_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;learning_problem&#39;</span><span class="p">][</span><span class="s1">&#39;negative_examples&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>In Ontolearn you represent the learning problem as an object of the class
+<code class="docutils literal notranslate"><span class="pre">PosNegLPStandard</span></code> which has two parameters <code class="docutils literal notranslate"><span class="pre">pos</span></code> and <code class="docutils literal notranslate"><span class="pre">neg</span></code> respectively
+for the positive and negative examples.  These parameters are of
+type <code class="docutils literal notranslate"><span class="pre">set[OWLNamedIndividual]</span></code>.  We create these sets by mapping
+each individual (stored as <code class="docutils literal notranslate"><span class="pre">string</span></code>) from the set <code class="docutils literal notranslate"><span class="pre">positive_examples</span> </code>
+and <code class="docutils literal notranslate"><span class="pre">negative_examples</span></code> to <code class="docutils literal notranslate"><span class="pre">OWLNamedIndividual</span></code>:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span><span class="p">,</span> <span class="n">OWLNamedIndividual</span>
+
+<span class="n">typed_pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="n">positive_examples</span><span class="p">)))</span>
+<span class="n">typed_neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="n">negative_examples</span><span class="p">)))</span>
+<span class="n">lp</span> <span class="o">=</span> <span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">typed_pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">typed_neg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To construct an <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_individual/index.html#owlapy.owl_individual.OWLNamedIndividual">OWLNamedIndividual</a>
+object an <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/iri/index.html#owlapy.iri.IRI">IRI</a> is required as an input.
+You can simply create an <code class="docutils literal notranslate"><span class="pre">IRI</span></code> object by calling the static method <code class="docutils literal notranslate"><span class="pre">create</span></code>
+and passing the IRI as a <code class="docutils literal notranslate"><span class="pre">string</span></code>.</p>
+</section>
+<section id="configuring-executing-a-concept-learner">
+<h2>Configuring &amp; Executing a Concept Learner<a class="headerlink" href="#configuring-executing-a-concept-learner" title="Link to this heading"></a></h2>
+<p>To learn class expressions we need to build a model of the concept learner
+that we want to use. Depending on the model you chose there are
+different initialization parameters which you can check <a class="reference internal" href="../autoapi/ontolearn/learners/index.html#module-ontolearn.learners" title="ontolearn.learners"><span class="xref myst py py-mod">here</span></a>.
+With exception of TDL, for other models you can specify the quality function used during learning.
+Let’s see how you can do that.</p>
+<section id="quality-metrics">
+<h3>Quality metrics<a class="headerlink" href="#quality-metrics" title="Link to this heading"></a></h3>
+<p>There is a default quality function to evaluate the quality of the
+found expressions but different concept learners have different
+default quality function. Therefore, you may want to set it explicitly.
+There are the following quality function:<a class="reference internal" href="../autoapi/ontolearn/metrics/index.html#ontolearn.metrics.F1" title="ontolearn.metrics.F1"><span class="xref myst py py-class">F1 Score</span></a>,
+<a class="reference internal" href="../autoapi/ontolearn/metrics/index.html#ontolearn.metrics.Accuracy" title="ontolearn.metrics.Accuracy"><span class="xref myst py py-class">Predictive Accuracy</span></a>,
+<a class="reference internal" href="../autoapi/ontolearn/metrics/index.html#ontolearn.metrics.Precision" title="ontolearn.metrics.Precision"><span class="xref myst py py-class">Precision</span></a>, and
+<a class="reference internal" href="../autoapi/ontolearn/metrics/index.html#ontolearn.metrics.Recall" title="ontolearn.metrics.Recall"><span class="xref myst py py-class">Recall</span></a>. To use a quality function, first create an instance of its class:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">Accuracy</span>
+
+<span class="n">pred_acc</span> <span class="o">=</span> <span class="n">Accuracy</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In the following example we have built a model of <a class="reference internal" href="../autoapi/ontolearn/learners/ocel/index.html#ontolearn.learners.ocel.OCEL" title="ontolearn.learners.ocel.OCEL"><span class="xref myst py py-class">OCEL</span></a> and
+we have specified some of the parameters which can be set for OCEL.</p>
+<p><em>(Optional)</em> If you are using <code class="docutils literal notranslate"><span class="pre">KnowledeBase</span></code> and you want the learning model to ignore a target concepts see
+<a class="reference internal" href="04_knowledge_base.html#ignore-concepts"><span class="std std-ref"><em>how to ignore concepts</em></span></a>.</p>
+</section>
+<section id="create-a-model">
+<h3>Create a model<a class="headerlink" href="#create-a-model" title="Link to this heading"></a></h3>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learners</span><span class="w"> </span><span class="kn">import</span> <span class="n">OCEL</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">OCEL</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">kb</span><span class="p">,</span> 
+              <span class="n">quality_func</span> <span class="o">=</span> <span class="n">pred_acc</span><span class="p">,</span>
+              <span class="n">max_runtime</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>  
+              <span class="n">max_num_of_concepts_tested</span><span class="o">=</span><span class="mi">10_000_000_000</span><span class="p">,</span>  
+              <span class="n">iter_bound</span><span class="o">=</span><span class="mi">10_000_000_000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The parameter <code class="docutils literal notranslate"><span class="pre">knowledge_base</span></code> which is the only required parameter, specifies the
+knowledge base that is used to learn and test concepts.
+The following parameters are optional.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">quality_func</span></code> - function to evaluate the quality of solution concepts. (Default value = F1())</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_runtime</span></code> - runtime limit in seconds. (Default value = 5)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_num_of_concepts_tested</span></code> - limit to stop the algorithm after <em>n</em> concepts tested. (Default value = 10_000)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iter_bound</span></code> - limit to stop the algorithm after <em>n</em> refinement steps are done. (Default value = 10_000)</p></li>
+</ul>
+</section>
+<section id="execute-and-fetch-the-results">
+<h3>Execute and fetch the results<a class="headerlink" href="#execute-and-fetch-the-results" title="Link to this heading"></a></h3>
+<p>After creating the model you can <strong>fit</strong> the learning problem
+into this model, and it will generate a
+<strong>hypotheses</strong> that explain the positive and negative examples.
+You can do that by calling the method <code class="docutils literal notranslate"><span class="pre">fit</span></code> :</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">lp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can retrieve the hypotheses using
+the method <code class="docutils literal notranslate"><span class="pre">best_hypotheses</span></code> where <code class="docutils literal notranslate"><span class="pre">n</span></code> is the number of hypotheses you want to return.</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">hypotheses</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The class expressions can be rendered in DL syntax using <a class="reference internal" href="#"><span class="xref myst">DLSyntaxObjectRenderer</span></a> from owlapy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">DLSyntaxObjectRenderer</span>
+
+<span class="n">render</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hypotheses</span><span class="p">:</span>
+    <span class="n">dl_concept_as_str</span> <span class="o">=</span> <span class="n">render</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dl_concept_as_str</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The hypotheses can also be saved locally:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">save_best_hypothesis</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;Predictions&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">save_best_hypothesis</span></code> method creates a <code class="docutils literal notranslate"><span class="pre">.owl</span></code> file of the RDF/XML format
+containing the generated hypotheses.
+The number of hypotheses is specified by the parameter <code class="docutils literal notranslate"><span class="pre">n</span></code>.
+<code class="docutils literal notranslate"><span class="pre">path</span></code> parameter specifies the filepath where the predictions will be stored.</p>
+<p>Furthermore, you can create a binary classification for the specified individuals, given the hypotheses,
+by using the <code class="docutils literal notranslate"><span class="pre">predict</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">binary_classification</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">individuals</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">typed_pos</span> <span class="o">|</span> <span class="n">typed_neg</span><span class="p">),</span> <span class="n">hypotheses</span><span class="o">=</span><span class="n">hypotheses</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here we are classifying the positives and negatives individuals using the generated hypotheses.
+This will return a data frame where 1 means True (covered by the hypothesis) and 0 means False
+(not covered by the hypothesis).</p>
+</section>
+<section id="verbalization">
+<h3>Verbalization<a class="headerlink" href="#verbalization" title="Link to this heading"></a></h3>
+<p>You can as well verbalize or visualize the generated hypotheses into images by using the
+static function <code class="docutils literal notranslate"><span class="pre">verbalize</span></code>. This functionality requires an external package which
+is not part of the required packages for Ontolearn as well as <em><strong>graphviz</strong></em>.</p>
+<ol class="arabic simple">
+<li><p>Install deeponto. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">deeponto</span></code> + further requirements like JDK, etc.
+Check https://krr-oxford.github.io/DeepOnto/ for full instructions.</p></li>
+<li><p>Install graphviz at https://graphviz.org/download/.</p></li>
+</ol>
+<p>After you are done with that you can simply verbalize predictions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">verbalize</span>
+
+<span class="n">verbalize</span><span class="p">(</span><span class="s1">&#39;Predictions.owl&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will create for each class expression inside <code class="docutils literal notranslate"><span class="pre">Predictions.owl</span></code> a <code class="docutils literal notranslate"><span class="pre">.png</span></code>
+image that contain the tree representation of that class expression.</p>
+<hr class="docutils" />
+<p>We highly encourage you to check out the <a class="reference external" href="https://github.com/dice-group/Ontolearn/tree/develop/examples">examples</a> folder where you will find examples
+for each concept learner offered in Ontolearn.</p>
+<p>In the next guide you will find further resources about Ontolearn including papers to cite, further directions for
+examples inside the project, code coverage, etc.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="05_evaluate_ce.html" class="btn btn-neutral float-left" title="Evaluate a class expression" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="09_further_resources.html" class="btn btn-neutral float-right" title="Further Resources" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

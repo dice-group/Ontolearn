@@ -1,0 +1,811 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.drill &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="ontolearn.learners.evolearner" href="../evolearner/index.html" />
+    <link rel="prev" title="ontolearn.learners.clip" href="../clip/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">ontolearn.learners</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../alcsat/index.html">ontolearn.learners.alcsat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../base/index.html">ontolearn.learners.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../celoe/index.html">ontolearn.learners.celoe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clip/index.html">ontolearn.learners.clip</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">ontolearn.learners.drill</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../evolearner/index.html">ontolearn.learners.evolearner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces/index.html">ontolearn.learners.nces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces2/index.html">ontolearn.learners.nces2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nero/index.html">ontolearn.learners.nero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../ocel/index.html">ontolearn.learners.ocel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../roces/index.html">ontolearn.learners.roces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sat_base/index.html">ontolearn.learners.sat_base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sparql_query_learner/index.html">ontolearn.learners.sparql_query_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell/index.html">ontolearn.learners.spell</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell_kit/index.html">ontolearn.learners.spell_kit</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.learners</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.drill</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/ontolearn/learners/drill/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.learners.drill">
+<span id="ontolearn-learners-drill"></span><h1>ontolearn.learners.drill<a class="headerlink" href="#module-ontolearn.learners.drill" title="Link to this heading"></a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.drill.Drill" title="ontolearn.learners.drill.Drill"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Drill</span></code></a></p></td>
+<td><p>Neuro-Symbolic Class Expression Learning (<a class="reference external" href="https://www.ijcai.org/proceedings/2023/0403.pdf">https://www.ijcai.org/proceedings/2023/0403.pdf</a>)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.drill.DrillHeuristic" title="ontolearn.learners.drill.DrillHeuristic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DrillHeuristic</span></code></a></p></td>
+<td><p>Heuristic in Convolutional DQL concept learning.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.drill.DrillNet" title="ontolearn.learners.drill.DrillNet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DrillNet</span></code></a></p></td>
+<td><p>A neural model for Deep Q-Learning.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.drill.DepthAbstractDrill" title="ontolearn.learners.drill.DepthAbstractDrill"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthAbstractDrill</span></code></a></p></td>
+<td><p>Abstract class for Convolutional DQL concept learning.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.drill.</span></span><span class="sig-name descname"><span class="pre">Drill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_operator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../refinement_operators/index.html#ontolearn.refinement_operators.LengthBasedRefinement" title="ontolearn.refinement_operators.LengthBasedRefinement"><span class="pre">LengthBasedRefinement</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_inverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_data_properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_card_restrictions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_nominals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_cardinality_restriction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cardinality_restriction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_type_bias</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object" title="ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object"><span class="pre">object</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_of_concepts_tested</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_on_goal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len_replay_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs_per_replay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_episodes_per_replay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_of_sequential_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_at_goal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_episode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base/index.html#ontolearn.learners.base.RefinementBasedConceptLearner" title="ontolearn.learners.base.RefinementBasedConceptLearner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.learners.base.RefinementBasedConceptLearner</span></code></a></p>
+<p>Neuro-Symbolic Class Expression Learning (<a class="reference external" href="https://www.ijcai.org/proceedings/2023/0403.pdf">https://www.ijcai.org/proceedings/2023/0403.pdf</a>)</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DRILL'</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.verbose">
+<span class="sig-name descname"><span class="pre">verbose</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.verbose" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.learning_problem">
+<span class="sig-name descname"><span class="pre">learning_problem</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.learning_problem" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.num_workers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.001</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.learning_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.num_episode">
+<span class="sig-name descname"><span class="pre">num_episode</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.num_episode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.num_of_sequential_actions">
+<span class="sig-name descname"><span class="pre">num_of_sequential_actions</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.num_of_sequential_actions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.num_epochs_per_replay">
+<span class="sig-name descname"><span class="pre">num_epochs_per_replay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.num_epochs_per_replay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.max_len_replay_memory">
+<span class="sig-name descname"><span class="pre">max_len_replay_memory</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">256</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.max_len_replay_memory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.epsilon_decay">
+<span class="sig-name descname"><span class="pre">epsilon_decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.01</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.epsilon_decay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.epsilon_min">
+<span class="sig-name descname"><span class="pre">epsilon_min</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.epsilon_min" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.num_episodes_per_replay">
+<span class="sig-name descname"><span class="pre">num_episodes_per_replay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.num_episodes_per_replay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.seen_examples">
+<span class="sig-name descname"><span class="pre">seen_examples</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.seen_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.pos">
+<span class="sig-name descname"><span class="pre">pos</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.pos" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.neg">
+<span class="sig-name descname"><span class="pre">neg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.neg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.positive_type_bias">
+<span class="sig-name descname"><span class="pre">positive_type_bias</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.positive_type_bias" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.start_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.goal_found">
+<span class="sig-name descname"><span class="pre">goal_found</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.goal_found" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.search_tree">
+<span class="sig-name descname"><span class="pre">search_tree</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.search_tree" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.stop_at_goal">
+<span class="sig-name descname"><span class="pre">stop_at_goal</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.stop_at_goal" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.epsilon">
+<span class="sig-name descname"><span class="pre">epsilon</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.learners.drill.Drill.epsilon" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.initialize_training_class_expression_learning_problem">
+<span class="sig-name descname"><span class="pre">initialize_training_class_expression_learning_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.initialize_training_class_expression_learning_problem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.initialize_training_class_expression_learning_problem" title="Link to this definition"></a></dt>
+<dd><p>Initialize</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.rl_learning_loop">
+<span class="sig-name descname"><span class="pre">rl_learning_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.rl_learning_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.rl_learning_loop" title="Link to this definition"></a></dt>
+<dd><p>Reinforcement Learning Training Loop</p>
+<blockquote>
+<div><p>Initialize RL environment for a given learning problem (E^+ pos_iri and E^- neg_iri )</p>
+<dl class="simple">
+<dt>Training:</dt><dd><p>2.1 Obtain a trajectory: A sequence of RL states/DL concepts
+T, Person, (Female and</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="simple">
+<dt>orall hasSibling Female).</dt><dd><p>Rewards at each transition are also computed</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_of_target_concepts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_learning_problems</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.train" title="Link to this definition"></a></dt>
+<dd><p>Training RL agent
+(1) Generate Learning Problems
+(2) For each learning problem, perform the RL loop</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.save" title="Link to this definition"></a></dt>
+<dd><p>save weights of the deep Q-network</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.load" title="Link to this definition"></a></dt>
+<dd><p>load weights of the deep Q-network</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">learning_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../learning_problem/index.html#ontolearn.learning_problem.PosNegLPStandard" title="ontolearn.learning_problem.PosNegLPStandard"><span class="pre">PosNegLPStandard</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.fit" title="Link to this definition"></a></dt>
+<dd><p>Run the concept learning algorithm according to its configuration.</p>
+<p>Once finished, the results can be queried with the <cite>best_hypotheses</cite> function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.init_embeddings_of_examples">
+<span class="sig-name descname"><span class="pre">init_embeddings_of_examples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.init_embeddings_of_examples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.init_embeddings_of_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.create_rl_state">
+<span class="sig-name descname"><span class="pre">create_rl_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.create_rl_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.create_rl_state" title="Link to this definition"></a></dt>
+<dd><p>Create an RL_State instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.compute_quality_of_class_expression">
+<span class="sig-name descname"><span class="pre">compute_quality_of_class_expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.compute_quality_of_class_expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.compute_quality_of_class_expression" title="Link to this definition"></a></dt>
+<dd><p>Compute Quality of owl class expression.
+# (1) Perform concept retrieval
+# (2) Compute the quality w.r.t. (1), positive and negative examples
+# (3) Increment the number of tested concepts attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.apply_refinement">
+<span class="sig-name descname"><span class="pre">apply_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rl_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.apply_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.apply_refinement" title="Link to this definition"></a></dt>
+<dd><p>Downward refinements</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.select_next_state">
+<span class="sig-name descname"><span class="pre">select_next_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_rl_states</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.select_next_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.select_next_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.sequence_of_actions">
+<span class="sig-name descname"><span class="pre">sequence_of_actions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_rl_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">SupportsFloat</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.sequence_of_actions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.sequence_of_actions" title="Link to this definition"></a></dt>
+<dd><p>Performing sequence of actions in an RL env whose root state is ⊤</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.form_experiences">
+<span class="sig-name descname"><span class="pre">form_experiences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewards</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.form_experiences"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.form_experiences" title="Link to this definition"></a></dt>
+<dd><p>Form experiences from a sequence of concepts and corresponding rewards.</p>
+<p>state_pairs - A list of tuples containing two consecutive states.
+reward      - A list of reward.</p>
+<p>Gamma is 1.</p>
+<p>Return
+X - A list of embeddings of current concept, next concept, positive examples, negative examples.
+y - Argmax Q value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.learn_from_replay_memory">
+<span class="sig-name descname"><span class="pre">learn_from_replay_memory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.learn_from_replay_memory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.learn_from_replay_memory" title="Link to this definition"></a></dt>
+<dd><p>Learning by replaying memory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.update_search">
+<span class="sig-name descname"><span class="pre">update_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concepts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted_Q_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.update_search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.update_search" title="Link to this definition"></a></dt>
+<dd><p>&#64;param concepts:
+&#64;param predicted_Q_values:
+&#64;return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.get_embeddings_individuals">
+<span class="sig-name descname"><span class="pre">get_embeddings_individuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individuals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.get_embeddings_individuals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.get_embeddings_individuals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.get_individuals">
+<span class="sig-name descname"><span class="pre">get_individuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rl_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.get_individuals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.get_individuals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.assign_embeddings">
+<span class="sig-name descname"><span class="pre">assign_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rl_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.assign_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.assign_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Assign embeddings to a rl state. A rl state is represented with vector representation of
+all individuals belonging to a respective OWLClassExpression.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.save_weights">
+<span class="sig-name descname"><span class="pre">save_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.save_weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.save_weights" title="Link to this definition"></a></dt>
+<dd><p>Save weights DQL</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.exploration_exploitation_tradeoff">
+<span class="sig-name descname"><span class="pre">exploration_exploitation_tradeoff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><span class="pre">AbstractNode</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><span class="pre">AbstractNode</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><span class="pre">AbstractNode</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.exploration_exploitation_tradeoff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.exploration_exploitation_tradeoff" title="Link to this definition"></a></dt>
+<dd><p>Exploration vs Exploitation tradeoff at finding next state.
+(1) Exploration.
+(2) Exploitation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.exploitation">
+<span class="sig-name descname"><span class="pre">exploitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><span class="pre">AbstractNode</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractNode" title="ontolearn.abstracts.AbstractNode"><span class="pre">AbstractNode</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.exploitation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.exploitation" title="Link to this definition"></a></dt>
+<dd><p>Find next node that is assigned with highest predicted Q value.</p>
+<ol class="arabic simple">
+<li><p>Predict Q values : predictions.shape =&gt; torch.Size([n, 1]) where n = len(next_states).</p></li>
+<li><p>Find the index of max value in predictions.</p></li>
+<li><p>Use the index to obtain next state.</p></li>
+<li><p>Return next state.</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.predict_values">
+<span class="sig-name descname"><span class="pre">predict_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.predict_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.predict_values" title="Link to this definition"></a></dt>
+<dd><p>Predict promise of next states given current state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Predicted Q values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.retrieve_concept_chain">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">retrieve_concept_chain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rl_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.retrieve_concept_chain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.retrieve_concept_chain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.generate_learning_problems">
+<span class="sig-name descname"><span class="pre">generate_learning_problems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_of_target_concepts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_learning_problems</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.generate_learning_problems"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.generate_learning_problems" title="Link to this definition"></a></dt>
+<dd><p>Generate learning problems if none is provided.</p>
+<p>Time complexity: O(n^2) n = named concepts</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.learn_from_illustration">
+<span class="sig-name descname"><span class="pre">learn_from_illustration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence_of_goal_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.learn_from_illustration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.learn_from_illustration" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sequence_of_goal_path</strong> – ⊤,Parent,Parent ⊓ Daughter.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.best_hypotheses">
+<span class="sig-name descname"><span class="pre">best_hypotheses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.best_hypotheses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.best_hypotheses" title="Link to this definition"></a></dt>
+<dd><p>Get the current best found hypotheses according to the quality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> – Maximum number of results.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Iterable with hypotheses in form of search tree nodes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.clean" title="Link to this definition"></a></dt>
+<dd><p>Clear all states of the concept learner.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.next_node_to_expand">
+<span class="sig-name descname"><span class="pre">next_node_to_expand</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../search/index.html#ontolearn.search.RL_State" title="ontolearn.search.RL_State"><span class="pre">RL_State</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.next_node_to_expand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.next_node_to_expand" title="Link to this definition"></a></dt>
+<dd><p>Return a node that maximizes the heuristic function at time t.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.downward_refinement">
+<span class="sig-name descname"><span class="pre">downward_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.downward_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.downward_refinement" title="Link to this definition"></a></dt>
+<dd><p>Execute one refinement step of a refinement based learning algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>_N</em>) – the search tree node on which to refine.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Refinement results as new search tree nodes (they still need to be added to the tree).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Iterable</em>[_N]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.show_search_tree">
+<span class="sig-name descname"><span class="pre">show_search_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heading_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.show_search_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.show_search_tree" title="Link to this definition"></a></dt>
+<dd><p>A debugging function to print out the current search tree and the current n best found hypotheses to
+standard output.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>heading_step</strong> – A message to display at the beginning of the output.</p></li>
+<li><p><strong>top_n</strong> – The number of current best hypotheses to print out.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.Drill.terminate_training">
+<span class="sig-name descname"><span class="pre">terminate_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#Drill.terminate_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.Drill.terminate_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillHeuristic">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.drill.</span></span><span class="sig-name descname"><span class="pre">DrillHeuristic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillHeuristic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillHeuristic" title="Link to this definition"></a></dt>
+<dd><p>Heuristic in Convolutional DQL concept learning.
+Heuristic implements a convolutional neural network.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillHeuristic.device">
+<span class="sig-name descname"><span class="pre">device</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillHeuristic.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillHeuristic.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillHeuristic.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillHeuristic.score" title="Link to this definition"></a></dt>
+<dd><p>Compute heuristic value of root node only</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillHeuristic.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillHeuristic.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillHeuristic.apply" title="Link to this definition"></a></dt>
+<dd><p>Assign predicted Q-value to node object.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.drill.</span></span><span class="sig-name descname"><span class="pre">DrillNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillNet" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>A neural model for Deep Q-Learning.</p>
+<dl class="simple">
+<dt>An input Drill has the following form:</dt><dd><ol class="arabic simple">
+<li><p>Indexes of individuals belonging to current state (s).</p></li>
+<li><p>Indexes of individuals belonging to next state (s_prime).</p></li>
+<li><p>Indexes of individuals provided as positive examples.</p></li>
+<li><p>Indexes of individuals provided as negative examples.</p></li>
+</ol>
+</dd>
+</dl>
+<p>Given such input, we from a sparse 3D Tensor where  each slice is a <a href="#id1"><span class="problematic" id="id2">**</span></a>** N <strong>* by ***D*</strong>
+where N is the number of individuals and D is the number of dimension of embeddings.
+Given that N on the current benchmark datasets &lt; 10^3, we can get away with this computation. By doing so
+we do not need to subsample from given inputs.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.device" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.conv1">
+<span class="sig-name descname"><span class="pre">conv1</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.size_of_fc1">
+<span class="sig-name descname"><span class="pre">size_of_fc1</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.size_of_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.fc2">
+<span class="sig-name descname"><span class="pre">fc2</span></span><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.fc2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.init">
+<span class="sig-name descname"><span class="pre">init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillNet.init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DrillNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DrillNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DrillNet.forward" title="Link to this definition"></a></dt>
+<dd><p>X  n by 4 by d float tensor</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.drill.</span></span><span class="sig-name descname"><span class="pre">DepthAbstractDrill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_of_embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_episode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_episodes_per_replay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_of_sequential_actions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len_replay_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">representation_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs_per_replay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DepthAbstractDrill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill" title="Link to this definition"></a></dt>
+<dd><p>Abstract class for Convolutional DQL concept learning.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DRILL'</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.instance_embeddings">
+<span class="sig-name descname"><span class="pre">instance_embeddings</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.instance_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.reward_func">
+<span class="sig-name descname"><span class="pre">reward_func</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.reward_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.representation_mode">
+<span class="sig-name descname"><span class="pre">representation_mode</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.representation_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.heuristic_func">
+<span class="sig-name descname"><span class="pre">heuristic_func</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.heuristic_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.num_workers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.epsilon">
+<span class="sig-name descname"><span class="pre">epsilon</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.epsilon" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.learning_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.num_episode">
+<span class="sig-name descname"><span class="pre">num_episode</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.num_episode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.num_of_sequential_actions">
+<span class="sig-name descname"><span class="pre">num_of_sequential_actions</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.num_of_sequential_actions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.num_epochs_per_replay">
+<span class="sig-name descname"><span class="pre">num_epochs_per_replay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.num_epochs_per_replay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.max_len_replay_memory">
+<span class="sig-name descname"><span class="pre">max_len_replay_memory</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.max_len_replay_memory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.epsilon_decay">
+<span class="sig-name descname"><span class="pre">epsilon_decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.epsilon_decay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.epsilon_min">
+<span class="sig-name descname"><span class="pre">epsilon_min</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.epsilon_min" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.verbose">
+<span class="sig-name descname"><span class="pre">verbose</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.verbose" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.num_episodes_per_replay">
+<span class="sig-name descname"><span class="pre">num_episodes_per_replay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.num_episodes_per_replay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.seen_examples">
+<span class="sig-name descname"><span class="pre">seen_examples</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.seen_examples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.start_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.goal_found">
+<span class="sig-name descname"><span class="pre">goal_found</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.goal_found" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.experiences">
+<span class="sig-name descname"><span class="pre">experiences</span></span><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.experiences" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.attributes_sanity_checking_rl">
+<span class="sig-name descname"><span class="pre">attributes_sanity_checking_rl</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DepthAbstractDrill.attributes_sanity_checking_rl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.attributes_sanity_checking_rl" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.init_training">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">init_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DepthAbstractDrill.init_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.init_training" title="Link to this definition"></a></dt>
+<dd><p>Initialize training for a given E+,E- and K.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.drill.DepthAbstractDrill.terminate_training">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">terminate_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/drill.html#DepthAbstractDrill.terminate_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.drill.DepthAbstractDrill.terminate_training" title="Link to this definition"></a></dt>
+<dd><p>Save weights and training data after training phase.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../clip/index.html" class="btn btn-neutral float-left" title="ontolearn.learners.clip" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../evolearner/index.html" class="btn btn-neutral float-right" title="ontolearn.learners.evolearner" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

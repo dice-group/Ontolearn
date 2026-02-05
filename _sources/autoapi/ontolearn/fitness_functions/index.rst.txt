@@ -1,0 +1,59 @@
+ontolearn.fitness_functions
+===========================
+
+.. py:module:: ontolearn.fitness_functions
+
+.. autoapi-nested-parse::
+
+   Fitness functions.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.fitness_functions.LinearPressureFitness
+
+
+Module Contents
+---------------
+
+.. py:class:: LinearPressureFitness(gain: float = 2048.0, penalty: float = 1.0)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractFitness`
+
+
+   Linear parametric parsimony pressure.
+
+
+   .. py:attribute:: __slots__
+      :value: ('gain', 'penalty')
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'Linear_Pressure_Fitness'
+
+
+
+   .. py:attribute:: gain
+      :value: 2048.0
+
+
+
+   .. py:attribute:: penalty
+      :value: 1.0
+
+
+
+   .. py:method:: apply(individual: ontolearn.ea_utils.Tree)
+
+      Apply the fitness function on an individual and set its fitness attribute to the calculated value.
+
+      :param individual: Individual to set the fitness on.
+
+
+

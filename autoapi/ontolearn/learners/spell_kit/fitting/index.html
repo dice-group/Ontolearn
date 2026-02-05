@@ -1,0 +1,449 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.spell_kit.fitting &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../../_static/favicon.ico"/>
+      <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link rel="next" title="ontolearn.learners.spell_kit.fitting_alc" href="../fitting_alc/index.html" />
+    <link rel="prev" title="ontolearn.learners.spell_kit" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html">ontolearn.learners</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../../alcsat/index.html">ontolearn.learners.alcsat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../base/index.html">ontolearn.learners.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../celoe/index.html">ontolearn.learners.celoe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../clip/index.html">ontolearn.learners.clip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../drill/index.html">ontolearn.learners.drill</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../evolearner/index.html">ontolearn.learners.evolearner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nces/index.html">ontolearn.learners.nces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nces2/index.html">ontolearn.learners.nces2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nero/index.html">ontolearn.learners.nero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../ocel/index.html">ontolearn.learners.ocel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../roces/index.html">ontolearn.learners.roces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../sat_base/index.html">ontolearn.learners.sat_base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../sparql_query_learner/index.html">ontolearn.learners.sparql_query_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../spell/index.html">ontolearn.learners.spell</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="../index.html">ontolearn.learners.spell_kit</a><ul class="current">
+<li class="toctree-l6 current"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn.learners</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.learners.spell_kit</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.spell_kit.fitting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../../_sources/autoapi/ontolearn/learners/spell_kit/fitting/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.learners.spell_kit.fitting">
+<span id="ontolearn-learners-spell-kit-fitting"></span><h1>ontolearn.learners.spell_kit.fitting<a class="headerlink" href="#module-ontolearn.learners.spell_kit.fitting" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.mode" title="ontolearn.learners.spell_kit.fitting.mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mode</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.HC" title="ontolearn.learners.spell_kit.fitting.HC"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HC</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Simul" title="ontolearn.learners.spell_kit.fitting.Simul"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simul</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pi" title="ontolearn.learners.spell_kit.fitting.Pi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pi</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pr" title="ontolearn.learners.spell_kit.fitting.Pr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pr</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.var_counter" title="ontolearn.learners.spell_kit.fitting.var_counter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">var_counter</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Variables</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.compute_successors" title="ontolearn.learners.spell_kit.fitting.compute_successors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_successors</span></code></a>(sigma, A)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.fresh_var" title="ontolearn.learners.spell_kit.fitting.fresh_var"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fresh_var</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.constraint_conceptname" title="ontolearn.learners.spell_kit.fitting.constraint_conceptname"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraint_conceptname</span></code></a>(size, A, hc, ind_tp_idx, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.constraint_succ" title="ontolearn.learners.spell_kit.fitting.constraint_succ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">constraint_succ</span></code></a>(size, A, sigma, pi, pr, simul, DR)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.complement_type" title="ontolearn.learners.spell_kit.fitting.complement_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">complement_type</span></code></a>(tp, sigma)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.compute_types" title="ontolearn.learners.spell_kit.fitting.compute_types"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_types</span></code></a>(A, sigma)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.simulation_constraints" title="ontolearn.learners.spell_kit.fitting.simulation_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation_constraints</span></code></a>(size, sigma, A, mapping)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.real_coverage" title="ontolearn.learners.spell_kit.fitting.real_coverage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">real_coverage</span></code></a>(→ int)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.is_model" title="ontolearn.learners.spell_kit.fitting.is_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_model</span></code></a>(size, sigma, model, mapping, solver)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.minimize_concept_assertions" title="ontolearn.learners.spell_kit.fitting.minimize_concept_assertions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">minimize_concept_assertions</span></code></a>(→ set[int])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.model2fitting_query" title="ontolearn.learners.spell_kit.fitting.model2fitting_query"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model2fitting_query</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.create_variables" title="ontolearn.learners.spell_kit.fitting.create_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_variables</span></code></a>(→ Variables)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.tree_query_constraints" title="ontolearn.learners.spell_kit.fitting.tree_query_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tree_query_constraints</span></code></a>(size, sigma, v)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.create_coverage_formula" title="ontolearn.learners.spell_kit.fitting.create_coverage_formula"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_coverage_formula</span></code></a>(→ list[list[int]])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.non_empty_symbols" title="ontolearn.learners.spell_kit.fitting.non_empty_symbols"><code class="xref py py-obj docutils literal notranslate"><span class="pre">non_empty_symbols</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.determine_relevant_symbols" title="ontolearn.learners.spell_kit.fitting.determine_relevant_symbols"><code class="xref py py-obj docutils literal notranslate"><span class="pre">determine_relevant_symbols</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.restrict_nb" title="ontolearn.learners.spell_kit.fitting.restrict_nb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restrict_nb</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.solve" title="ontolearn.learners.spell_kit.fitting.solve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solve</span></code></a>(→ Union[tuple[int, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.solve_incr" title="ontolearn.learners.spell_kit.fitting.solve_incr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solve_incr</span></code></a>(→ tuple[int, ...)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.mode">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">mode</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.HC">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">HC</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.HC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Simul">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">Simul</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Simul" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Pi">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">Pi</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Pi" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Pr">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">Pr</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Pr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Variables">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">Variables</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#Variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Variables" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Variables.simul">
+<span class="sig-name descname"><span class="pre">simul</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Simul" title="ontolearn.learners.spell_kit.fitting.Simul"><span class="pre">Simul</span></a></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Variables.simul" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Variables.pi">
+<span class="sig-name descname"><span class="pre">pi</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pi" title="ontolearn.learners.spell_kit.fitting.Pi"><span class="pre">Pi</span></a></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Variables.pi" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Variables.pr">
+<span class="sig-name descname"><span class="pre">pr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pr" title="ontolearn.learners.spell_kit.fitting.Pr"><span class="pre">Pr</span></a></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Variables.pr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.Variables.hc">
+<span class="sig-name descname"><span class="pre">hc</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.HC" title="ontolearn.learners.spell_kit.fitting.HC"><span class="pre">HC</span></a></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.Variables.hc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.compute_successors">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">compute_successors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#compute_successors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.compute_successors" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.var_counter">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">var_counter</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.var_counter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.fresh_var">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">fresh_var</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#fresh_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.fresh_var" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.constraint_conceptname">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">constraint_conceptname</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">hc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.HC" title="ontolearn.learners.spell_kit.fitting.HC"><span class="pre">HC</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind_tp_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anti_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_var</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simul</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Simul" title="ontolearn.learners.spell_kit.fitting.Simul"><span class="pre">Simul</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#constraint_conceptname"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.constraint_conceptname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.constraint_succ">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">constraint_succ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pi" title="ontolearn.learners.spell_kit.fitting.Pi"><span class="pre">Pi</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Pr" title="ontolearn.learners.spell_kit.fitting.Pr"><span class="pre">Pr</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">simul</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Simul" title="ontolearn.learners.spell_kit.fitting.Simul"><span class="pre">Simul</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">DR</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#constraint_succ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.constraint_succ" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.complement_type">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">complement_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#complement_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.complement_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.compute_types">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">compute_types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#compute_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.compute_types" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.simulation_constraints">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">simulation_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#simulation_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.simulation_constraints" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.real_coverage">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">real_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#real_coverage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.real_coverage" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.is_model">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">is_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pysat.solvers.Glucose4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#is_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.is_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.minimize_concept_assertions">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">minimize_concept_assertions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pysat.solvers.Glucose4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#minimize_concept_assertions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.minimize_concept_assertions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.model2fitting_query">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">model2fitting_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#model2fitting_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.model2fitting_query" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.create_variables">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">create_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#create_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.create_variables" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.tree_query_constraints">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">tree_query_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#tree_query_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.tree_query_constraints" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.create_coverage_formula">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">create_coverage_formula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coverage</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.Variables" title="ontolearn.learners.spell_kit.fitting.Variables"><span class="pre">Variables</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#create_coverage_formula"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.create_coverage_formula" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.non_empty_symbols">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">non_empty_symbols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#non_empty_symbols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.non_empty_symbols" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.determine_relevant_symbols">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">determine_relevant_symbols</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><span class="pre">Signature</span></a></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#determine_relevant_symbols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.determine_relevant_symbols" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.restrict_nb">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">restrict_nb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#restrict_nb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.restrict_nb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.solve">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coverage_lb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.solve" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.fitting.solve_incr">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.fitting.</span></span><span class="sig-name descname"><span class="pre">solve_incr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.learners.spell_kit.fitting.mode" title="ontolearn.learners.spell_kit.fitting.mode"><span class="pre">mode</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starting_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">19</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../structures/index.html#ontolearn.learners.spell_kit.structures.Structure" title="ontolearn.learners.spell_kit.structures.Structure"><span class="pre">Structure</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/fitting.html#solve_incr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.fitting.solve_incr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="ontolearn.learners.spell_kit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../fitting_alc/index.html" class="btn btn-neutral float-right" title="ontolearn.learners.spell_kit.fitting_alc" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

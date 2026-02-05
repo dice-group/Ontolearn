@@ -1,0 +1,1118 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.search &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.search</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.search</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Node representation.&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">_weakref</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReferenceType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span><span class="p">,</span> <span class="n">ABCMeta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">total_ordering</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">PriorityQueue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_object</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectRenderer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">DLSyntaxObjectRenderer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">as_index</span><span class="p">,</span> <span class="n">OrderedOWLObject</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractNode</span><span class="p">,</span> <span class="n">AbstractHeuristic</span><span class="p">,</span> <span class="n">AbstractScorer</span><span class="p">,</span> <span class="n">AbstractOEHeuristicNode</span><span class="p">,</span> <span class="n">LBLSearchTree</span><span class="p">,</span> \
+    <span class="n">AbstractConceptNode</span><span class="p">,</span> <span class="n">EncodedLearningProblem</span><span class="p">,</span> <span class="n">DRILLAbstractTree</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_expression_to_dl</span>
+
+<span class="n">_N</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_N&#39;</span><span class="p">)</span>  <span class="c1">#:</span>
+
+
+<span class="c1"># Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also</span>
+<span class="c1"># invalid but there is nothing we can do. See https://mail.python.org/pipermail/python-list/2002-December/126637.html</span>
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeConcept</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">renderer</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">OWLObjectRenderer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+
+    <span class="n">_concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_concept</span> <span class="o">=</span> <span class="n">concept</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concept</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concept</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_NodeConcept</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeLen</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_len</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_len</span> <span class="o">=</span> <span class="n">length</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_len</span>
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeIndividualsCount</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_individuals_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_individuals_count</span> <span class="o">=</span> <span class="n">individuals_count</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_individuals_count</span>
+
+    <span class="nd">@individuals_count</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_individuals_count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Individuals already counted&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_individuals_count</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;|Indv.|:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">individuals_count</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeHeuristic</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_heuristic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heuristic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span> <span class="o">=</span> <span class="n">heuristic</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span>
+
+    <span class="nd">@heuristic</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heuristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Node heuristic already calculated&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Heuristic:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">heuristic</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeParentRef</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">],</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_parent_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ReferenceType</span><span class="p">]</span>  <span class="c1"># Optional[ReferenceType[OENode]]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_N</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_root</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">parent_node</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span> <span class="ow">is</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parent_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_N</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">parent_node</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">d</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Depth:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeQuality</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_quality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quality</span> <span class="o">=</span> <span class="n">quality</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">quality</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quality</span>
+
+    <span class="nd">@quality</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">quality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Node already evaluated&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quality</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Quality:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<div class="viewcode-block" id="Node">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.Node">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Node</span><span class="p">(</span><span class="n">_NodeConcept</span><span class="p">,</span> <span class="n">_NodeLen</span><span class="p">,</span> <span class="n">_NodeIndividualsCount</span><span class="p">,</span> <span class="n">AbstractNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Simple node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_concept&#39;</span><span class="p">,</span> <span class="s1">&#39;_len&#39;</span><span class="p">,</span> <span class="s1">&#39;_individuals_count&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">)</span>
+        <span class="n">_NodeLen</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Node.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.Node.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+            <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+        <span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OENode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.OENode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OENode</span><span class="p">(</span><span class="n">_NodeConcept</span><span class="p">,</span> <span class="n">_NodeLen</span><span class="p">,</span> <span class="n">_NodeIndividualsCount</span><span class="p">,</span> <span class="n">_NodeQuality</span><span class="p">,</span> <span class="n">_NodeHeuristic</span><span class="p">,</span>
+             <span class="n">_NodeParentRef</span><span class="p">[</span><span class="s1">&#39;OENode&#39;</span><span class="p">],</span> <span class="n">AbstractNode</span><span class="p">,</span> <span class="n">AbstractConceptNode</span><span class="p">,</span> <span class="n">AbstractOEHeuristicNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;OENode search tree node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_concept&#39;</span><span class="p">,</span> <span class="s1">&#39;_len&#39;</span><span class="p">,</span> <span class="s1">&#39;_individuals_count&#39;</span><span class="p">,</span> <span class="s1">&#39;_quality&#39;</span><span class="p">,</span> <span class="s1">&#39;_heuristic&#39;</span><span class="p">,</span> \
+        <span class="s1">&#39;_parent_ref&#39;</span><span class="p">,</span> <span class="s1">&#39;_horizontal_expansion&#39;</span><span class="p">,</span> \
+        <span class="s1">&#39;_refinement_count&#39;</span><span class="p">,</span> <span class="s1">&#39;__weakref__&#39;</span>
+
+    <span class="n">renderer</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">OWLObjectRenderer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+
+    <span class="n">_horizontal_expansion</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">_refinement_count</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;OENode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">)</span>
+        <span class="n">_NodeLen</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_NodeHeuristic</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_NodeParentRef</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">,</span> <span class="n">is_root</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_horizontal_expansion</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_refinement_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">h_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_horizontal_expansion</span>
+
+<div class="viewcode-block" id="OENode.increment_h_exp">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.OENode.increment_h_exp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">increment_h_exp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_horizontal_expansion</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refinement_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refinement_count</span>
+
+    <span class="nd">@refinement_count</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refinement_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_heuristic</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_refinement_count</span> <span class="o">=</span> <span class="n">v</span>
+
+<div class="viewcode-block" id="OENode.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.OENode.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+            <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeHeuristic</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeParentRef</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s1">&#39;H_exp:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">h_exp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">&#39;|RC|:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">refinement_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+        <span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EvoLearnerNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.EvoLearnerNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvoLearnerNode</span><span class="p">(</span><span class="n">_NodeConcept</span><span class="p">,</span> <span class="n">_NodeLen</span><span class="p">,</span> <span class="n">_NodeIndividualsCount</span><span class="p">,</span> <span class="n">_NodeQuality</span><span class="p">,</span> <span class="n">AbstractNode</span><span class="p">,</span> <span class="n">AbstractConceptNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    EvoLearner search tree node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_concept&#39;</span><span class="p">,</span> <span class="s1">&#39;_len&#39;</span><span class="p">,</span> <span class="s1">&#39;_individuals_count&#39;</span><span class="p">,</span> <span class="s1">&#39;_quality&#39;</span><span class="p">,</span> <span class="s1">&#39;_tree_length&#39;</span><span class="p">,</span> <span class="s1">&#39;_tree_depth&#39;</span>
+
+    <span class="n">_tree_length</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">_tree_depth</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                 <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">individuals_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">quality</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                 <span class="n">tree_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">tree_depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">)</span>
+        <span class="n">_NodeLen</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_count</span><span class="p">)</span>
+        <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span>
+        <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tree_length</span> <span class="o">=</span> <span class="n">tree_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tree_depth</span> <span class="o">=</span> <span class="n">tree_depth</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tree_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_length</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tree_depth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_depth</span>
+
+<div class="viewcode-block" id="EvoLearnerNode.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.EvoLearnerNode.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+            <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s1">&#39;Length:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_len</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">&#39;Tree Length:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tree_length</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">&#39;Tree Depth:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tree_depth</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+        <span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NCESNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.NCESNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NCESNode</span><span class="p">(</span><span class="n">_NodeConcept</span><span class="p">,</span> <span class="n">_NodeLen</span><span class="p">,</span> <span class="n">_NodeIndividualsCount</span><span class="p">,</span> <span class="n">_NodeQuality</span><span class="p">,</span> <span class="n">AbstractNode</span><span class="p">,</span> <span class="n">AbstractConceptNode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    EvoLearner search tree node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_concept&#39;</span><span class="p">,</span> <span class="s1">&#39;_len&#39;</span><span class="p">,</span> <span class="s1">&#39;_individuals_count&#39;</span><span class="p">,</span> <span class="s1">&#39;_quality&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
+                 <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">individuals_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">quality</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">)</span>
+        <span class="n">_NodeLen</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_count</span><span class="p">)</span>
+        <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span>
+        <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NCESNode.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.NCESNode.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+            <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s1">&#39;Length:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_len</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">_NodeIndividualsCount</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+        <span class="p">))</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RL_State">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.RL_State">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RL_State</span><span class="p">(</span><span class="n">_NodeConcept</span><span class="p">,</span> <span class="n">_NodeQuality</span><span class="p">,</span> <span class="n">_NodeHeuristic</span><span class="p">,</span> <span class="n">AbstractNode</span><span class="p">,</span> <span class="n">_NodeParentRef</span><span class="p">[</span><span class="s1">&#39;RL_State&#39;</span><span class="p">]):</span>
+    <span class="n">renderer</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">OWLObjectRenderer</span><span class="p">]</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RL_State node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_concept&#39;</span><span class="p">,</span> <span class="s1">&#39;embeddings&#39;</span><span class="p">,</span> <span class="s1">&#39;_quality&#39;</span><span class="p">,</span> <span class="s1">&#39;_heuristic&#39;</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">,</span> <span class="s1">&#39;parent_node&#39;</span><span class="p">,</span> <span class="s1">&#39;is_root&#39;</span><span class="p">,</span> <span class="s1">&#39;_parent_ref&#39;</span><span class="p">,</span> <span class="s1">&#39;__weakref__&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;RL_State&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">)</span>
+        <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_NodeHeuristic</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">_NodeParentRef</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_node</span><span class="o">=</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">is_root</span><span class="o">=</span><span class="n">is_root</span><span class="p">)</span>
+        <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent_node</span> <span class="o">=</span> <span class="n">parent_node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_root</span> <span class="o">=</span> <span class="n">is_root</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__sanity_checking</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__sanity_checking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">concept</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_root</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_node</span>
+
+<div class="viewcode-block" id="RL_State.__str__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.RL_State.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+                <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeHeuristic</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="sa">f</span><span class="s1">&#39;Length:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+                <span class="n">AbstractNode</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeConcept</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeQuality</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="n">_NodeHeuristic</span><span class="o">.</span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                <span class="sa">f</span><span class="s1">&#39;Length:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;Embeddings:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,))</span></div>
+
+
+<div class="viewcode-block" id="RL_State.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.RL_State.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="o">.</span><span class="n">heuristic</span></div>
+
+
+<div class="viewcode-block" id="RL_State.__gt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.RL_State.__gt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">heuristic</span></div>
+</div>
+
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<span class="c1"># noinspection PyDunderSlots</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_NodeIndividuals</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">_individuals</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">set</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_individuals</span> <span class="o">=</span> <span class="n">individuals</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_individuals</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">individuals_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_individuals</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LBLNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LBLNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LBLNode</span><span class="p">(</span><span class="n">_NodeIndividuals</span><span class="p">,</span> <span class="n">OENode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; LBL search tree node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;_children&#39;</span><span class="p">,</span> <span class="s1">&#39;_individuals&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">individuals</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;LBLNode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">OENode</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="o">=</span><span class="n">concept</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">length</span><span class="p">,</span> <span class="n">parent_node</span><span class="o">=</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">is_root</span><span class="o">=</span><span class="n">is_root</span><span class="p">)</span>
+        <span class="n">_NodeIndividuals</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="LBLNode.add_child">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LBLNode.add_child">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LBLNode.remove_child">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LBLNode.remove_child">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_children</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_children</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parent_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;LBLNode&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">SuperProp</span><span class="p">(</span><span class="nb">super</span><span class="p">())</span><span class="o">.</span><span class="n">parent_node</span>
+
+    <span class="nd">@parent_node</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parent_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;LBLNode&#39;</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent_ref</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">parent_node</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="LengthOrderedNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LengthOrderedNode">[docs]</a>
+<span class="nd">@total_ordering</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LengthOrderedNode</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">]):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;node&#39;</span><span class="p">,</span> <span class="s1">&#39;len&#39;</span>
+
+    <span class="n">node</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">_N</span><span class="p">]</span>
+    <span class="nb">len</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">=</span> <span class="n">length</span>
+
+<div class="viewcode-block" id="LengthOrderedNode.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LengthOrderedNode.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">len</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">other</span><span class="o">.</span><span class="n">len</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LengthOrderedNode.__eq__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.LengthOrderedNode.__eq__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">len</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="HeuristicOrderedNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.HeuristicOrderedNode">[docs]</a>
+<span class="nd">@total_ordering</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HeuristicOrderedNode</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A comparator that orders the Nodes based on Heuristic, then OrderedOWLObject of the concept&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;node&#39;</span>
+
+    <span class="n">node</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">_N</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+
+<div class="viewcode-block" id="HeuristicOrderedNode.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.HeuristicOrderedNode.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_N</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;node heuristic not calculated&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;other node heuristic not calculcated&quot;</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="HeuristicOrderedNode.__eq__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.HeuristicOrderedNode.__eq__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">_N</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="QualityOrderedNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.QualityOrderedNode">[docs]</a>
+<span class="nd">@total_ordering</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">QualityOrderedNode</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;QualityOrderedNode search tree node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;node&#39;</span>
+
+    <span class="n">node</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">OENode</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">OENode</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+
+<div class="viewcode-block" id="QualityOrderedNode.__lt__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.QualityOrderedNode.__lt__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;node not evaluated&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;other node not evaluated&quot;</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">len</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">len</span><span class="p">:</span>  <span class="c1"># shorter is better, ie. greater</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">len</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">len</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">OrderedOWLObject</span><span class="p">(</span><span class="n">as_index</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="QualityOrderedNode.__eq__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.QualityOrderedNode.__eq__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_node_and_all_children</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">_N</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">_N</span><span class="p">]:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a node and all of its children (recursively) in an iterable&quot;&quot;&quot;</span>
+    <span class="k">yield</span> <span class="n">n</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+        <span class="k">yield from</span> <span class="n">_node_and_all_children</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SearchTreePriorityQueue</span><span class="p">(</span><span class="n">LBLSearchTree</span><span class="p">[</span><span class="n">LBLNode</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Search tree based on priority queue.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.</span>
+<span class="sd">        heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.</span>
+<span class="sd">        heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.</span>
+<span class="sd">        items_in_queue: An instance of PriorityQueue Class.</span>
+<span class="sd">        .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.</span>
+<span class="sd">        nodes: A property method for ._nodes.</span>
+<span class="sd">        expressionTests: not being used .</span>
+<span class="sd">        str_to_obj_instance_mapping: not being used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">quality_func</span><span class="p">:</span> <span class="n">AbstractScorer</span>
+    <span class="n">heuristic_func</span><span class="p">:</span> <span class="n">AbstractHeuristic</span>
+    <span class="n">nodes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">LBLNode</span><span class="p">]</span>
+    <span class="n">items_in_queue</span><span class="p">:</span> <span class="s1">&#39;PriorityQueue[Tuple[float, HeuristicOrderedNode[LBLNode]]]&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality_func</span><span class="p">,</span> <span class="n">heuristic_func</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="o">=</span> <span class="n">quality_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span> <span class="o">=</span> <span class="n">heuristic_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.add">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.add">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append a node into the search tree.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: A Node object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="o">-</span><span class="n">n</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">(</span><span class="n">n</span><span class="p">)))</span>  <span class="c1"># gets the smallest one.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.add_root">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.add_root">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">assert</span> <span class="n">node</span><span class="o">.</span><span class="n">is_root</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="o">-</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>  <span class="c1"># gets the smallest one.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.add_node">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.add_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add a node into the search tree after calculating heuristic value given its parent.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node: A Node object</span>
+<span class="sd">            parent_node: A Node object</span>
+<span class="sd">            kb_learning_problem: the encoded learning problem to compare the quality on</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if node is a &quot;goal node&quot;, i.e. quality_metric(node)=1.0</span>
+<span class="sd">            False if node is a &quot;weak node&quot;, i.e. quality_metric(node)=0.0</span>
+<span class="sd">            None otherwise</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            node is a refinement of refined_node</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">concept</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span> <span class="o">!=</span> <span class="n">parent_node</span><span class="p">:</span>
+            <span class="n">old_heuristic</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">)</span>
+            <span class="n">new_heuristic</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span>
+            <span class="k">if</span> <span class="n">new_heuristic</span> <span class="o">&gt;</span> <span class="n">old_heuristic</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span><span class="o">.</span><span class="n">remove_child</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span> <span class="o">=</span> <span class="n">parent_node</span>
+                <span class="n">parent_node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="o">-</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>  <span class="c1"># gets the smallest one.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># @todos reconsider it.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">kb_learning_problem</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="o">-</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>  <span class="c1"># gets the smallest one.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
+            <span class="n">parent_node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.get_most_promising">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.get_most_promising">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_most_promising</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LBLNode</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the current most promising node from Queue.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            node: A node object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">most_promising_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>  <span class="c1"># get</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">most_promising_str</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="o">-</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>  <span class="c1"># put again into queue.</span>
+            <span class="k">return</span> <span class="n">node</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">most_promising_str</span><span class="p">,</span> <span class="s1">&#39;is not found&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;####&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.get_top_n">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.get_top_n">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_top_n</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;quality&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LBLNode</span><span class="p">]:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the top n nodes determined by key from the search tree.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            top_n_predictions: A list of node objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;quality&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;heuristic&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Wrong Key:</span><span class="si">{0}</span><span class="se">\t</span><span class="s1">Program exist.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span>
+        <span class="k">return</span> <span class="n">top_n_predictions</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.clean">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SearchTreePriorityQueue.show_search_tree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SearchTreePriorityQueue.show_search_tree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">rdr</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;######## &#39;</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">,</span> <span class="s1">&#39;step Search Tree ###########&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">node_as_length_ordered_concept</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">LengthOrderedNode</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">len</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">print_partial_tree_recursive</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">render_str</span> <span class="o">=</span> <span class="n">rdr</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
+
+            <span class="n">depths</span> <span class="o">=</span> <span class="s2">&quot;`&quot;</span> <span class="o">*</span> <span class="n">depth</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="se">\t</span><span class="s2"> Q:</span><span class="si">%f</span><span class="s2"> Heur:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">depths</span><span class="p">,</span> <span class="n">render_str</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">node_as_length_ordered_concept</span><span class="p">):</span>
+                <span class="n">print_partial_tree_recursive</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">print_partial_tree_recursive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">root_concept</span><span class="p">])</span></div>
+</div>
+
+
+
+<span class="n">_TN</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_TN&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;TreeNode&#39;</span><span class="p">)</span>  <span class="c1">#:</span>
+
+
+<div class="viewcode-block" id="TreeNode">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.TreeNode">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TreeNode</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">_N</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Simple search tree node.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;children&#39;</span><span class="p">,</span> <span class="s1">&#39;node&#39;</span>
+
+    <span class="n">node</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">_N</span><span class="p">]</span>
+    <span class="n">children</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="s1">&#39;TreeNode[_N]&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">_TN</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">_N</span><span class="p">,</span> <span class="n">parent_tree_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_TN</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_root</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_tree_node</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">)</span>
+            <span class="n">parent_tree_node</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DRILLSearchTreePriorityQueue</span><span class="p">(</span><span class="n">DRILLAbstractTree</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    #@TODO Move to learners/drill.py</span>
+
+<span class="sd">    Search tree based on priority queue.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.</span>
+<span class="sd">    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.</span>
+<span class="sd">    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.</span>
+<span class="sd">    items_in_queue: An instance of PriorityQueue Class.</span>
+<span class="sd">    .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.</span>
+<span class="sd">    nodes: A property method for ._nodes.</span>
+<span class="sd">    expressionTests: not being used .</span>
+<span class="sd">    str_to_obj_instance_mapping: not being used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue.add">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue.add">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">RL_State</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Append a node into the search tree.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : A RL_State object</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">RL_State</span><span class="o">.</span><span class="n">concept</span><span class="si">}</span><span class="s2"> cannot be added into the search tree&quot;</span>
+        <span class="k">assert</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">dl_representation</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">get_nnf</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">dl_representation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Do nothing&quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+                <span class="p">(</span><span class="o">-</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">)),</span> <span class="n">dl_representation</span><span class="p">))</span>  <span class="c1"># gets the smallest one.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">dl_representation</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue.show_current_search_tree">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue.show_current_search_tree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_current_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Show search tree.&quot;&quot;&quot;</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="p">[(</span><span class="n">neg_heuristic</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">dl_representation</span><span class="p">])</span> <span class="k">for</span> <span class="n">neg_heuristic</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">dl_representation</span> <span class="ow">in</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">])[:</span><span class="n">top_n</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">######## Most Promising </span><span class="si">{</span><span class="n">top_n</span><span class="si">}</span><span class="s2"> Concepts out of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span><span class="si">}</span><span class="s2"> Concepts ###########</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">__</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictions</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ith</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">-</span><span class="se">\t</span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span><span class="si">}</span><span class="s2"> | Quality:</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">| Heuristic:</span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&#39;\n######## Current Search Tree ###########\n&#39;)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">predictions</span></div>
+
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue.get_most_promising">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue.get_most_promising">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_most_promising</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RL_State</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the current most promising node from Queue.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        node: A node object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">,(</span><span class="s2">&quot;Search tree is empty. &quot;</span>
+                                                    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Ensure that there is at least one &quot;</span>
+                                                    <span class="s2">&quot;owl:Class or&quot;</span>
+                                                    <span class="s2">&quot;owl:ObjectProperty definitions&quot;</span><span class="p">)</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">__</span><span class="p">,</span> <span class="n">dl_representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="c1"># R</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">dl_representation</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue.get_top_n">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue.get_top_n">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_top_n</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;quality&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Node</span><span class="p">]:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the top n nodes determined by key from the search tree.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        top_n_predictions: A list of node objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refined_nodes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="n">all_nodes</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;quality&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_nodes</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;heuristic&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_nodes</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span>
+            <span class="n">top_n_predictions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">node</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Wrong Key:</span><span class="si">{0}</span><span class="se">\t</span><span class="s1">Program exist.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span>
+        <span class="k">return</span> <span class="n">top_n_predictions</span></div>
+
+
+<div class="viewcode-block" id="DRILLSearchTreePriorityQueue.clean">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.DRILLSearchTreePriorityQueue.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items_in_queue</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EvaluatedConcept">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.EvaluatedConcept">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvaluatedConcept</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Explicitly declare the attributes that should be returned by the evaluate_concept method of a</span>
+<span class="sd">       AbstractKnowledgeBase.</span>
+
+<span class="sd">    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the</span>
+<span class="sd">    memory usage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;inds&#39;</span><span class="p">,</span> <span class="s1">&#39;ic&#39;</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="SuperProp">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SuperProp">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SuperProp</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Super wrapper which allows property setting &amp; deletion. Super can&#39;t be subclassed with empty __init__ arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">super_obj</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;super_obj&#39;</span><span class="p">,</span> <span class="n">super_obj</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_find_desc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">super_obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;super_obj&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">&#39;__class__&#39;</span><span class="p">:</span>
+            <span class="n">mro</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">super_obj</span><span class="o">.</span><span class="n">__thisclass__</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">)</span>
+            <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">mro</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="n">super_obj</span><span class="o">.</span><span class="n">__thisclass__</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">mro</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c1"># don&#39;t lookup further up the chain</span>
+                        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SuperProp.__getattr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SuperProp.__getattr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;super_obj&#39;</span><span class="p">),</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SuperProp.__setattr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SuperProp.__setattr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">super_obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;super_obj&#39;</span><span class="p">)</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_find_desc&#39;</span><span class="p">)(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="s1">&#39;__set__&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">desc</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="n">super_obj</span><span class="o">.</span><span class="vm">__self__</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">setattr</span><span class="p">(</span><span class="n">super_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SuperProp.__delattr__">
+<a class="viewcode-back" href="../../autoapi/ontolearn/search/index.html#ontolearn.search.SuperProp.__delattr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">super_obj</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;super_obj&#39;</span><span class="p">)</span>
+        <span class="n">desc</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_find_desc&#39;</span><span class="p">)(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="s1">&#39;__delete__&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">desc</span><span class="o">.</span><span class="fm">__delete__</span><span class="p">(</span><span class="n">super_obj</span><span class="o">.</span><span class="vm">__self__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">delattr</span><span class="p">(</span><span class="n">super_obj</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

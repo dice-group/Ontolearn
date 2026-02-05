@@ -1,0 +1,45 @@
+ontolearn.utils.log_config
+==========================
+
+.. py:module:: ontolearn.utils.log_config
+
+.. autoapi-nested-parse::
+
+   Logger configuration.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.utils.log_config.logger
+   ontolearn.utils.log_config.log_dirs
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.utils.log_config.setup_logging
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: log_dirs
+   :value: []
+
+
+.. py:function:: setup_logging(config_file='ontolearn/logging.conf')
+
+   Setup logging.
+
+   :param config_file: Filepath for logs.
+   :type config_file: str
+
+

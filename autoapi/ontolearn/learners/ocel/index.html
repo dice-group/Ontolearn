@@ -1,0 +1,477 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.ocel &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="ontolearn.learners.roces" href="../roces/index.html" />
+    <link rel="prev" title="ontolearn.learners.nero" href="../nero/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">ontolearn.learners</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../alcsat/index.html">ontolearn.learners.alcsat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../base/index.html">ontolearn.learners.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../celoe/index.html">ontolearn.learners.celoe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clip/index.html">ontolearn.learners.clip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../drill/index.html">ontolearn.learners.drill</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../evolearner/index.html">ontolearn.learners.evolearner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces/index.html">ontolearn.learners.nces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nces2/index.html">ontolearn.learners.nces2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../nero/index.html">ontolearn.learners.nero</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">ontolearn.learners.ocel</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../roces/index.html">ontolearn.learners.roces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sat_base/index.html">ontolearn.learners.sat_base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sparql_query_learner/index.html">ontolearn.learners.sparql_query_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell/index.html">ontolearn.learners.spell</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../spell_kit/index.html">ontolearn.learners.spell_kit</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.learners</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.ocel</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/ontolearn/learners/ocel/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.learners.ocel">
+<span id="ontolearn-learners-ocel"></span><h1>ontolearn.learners.ocel<a class="headerlink" href="#module-ontolearn.learners.ocel" title="Link to this heading"></a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.ocel.OCEL" title="ontolearn.learners.ocel.OCEL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCEL</span></code></a></p></td>
+<td><p>A limited version of CELOE.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.ocel.</span></span><span class="sig-name descname"><span class="pre">OCEL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.abstracts.AbstractOWLReasoner</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_operator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><span class="pre">BaseRefinement</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristic_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractHeuristic" title="ontolearn.abstracts.AbstractHeuristic"><span class="pre">AbstractHeuristic</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_on_goal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_bound</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_of_concepts_tested</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_runtime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_min_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/ocel.html#OCEL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.ocel.OCEL" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../celoe/index.html#ontolearn.learners.celoe.CELOE" title="ontolearn.learners.celoe.CELOE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.learners.celoe.CELOE</span></code></a></p>
+<p>A limited version of CELOE.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.best_descriptions">
+<span class="sig-name descname"><span class="pre">best_descriptions</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.best_descriptions" title="Link to this definition"></a></dt>
+<dd><p>Best hypotheses ordered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>EvaluatedDescriptionSet[<a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><em>OENode</em></a>, <a class="reference internal" href="../../search/index.html#ontolearn.search.QualityOrderedNode" title="ontolearn.search.QualityOrderedNode"><em>QualityOrderedNode</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.best_only">
+<span class="sig-name descname"><span class="pre">best_only</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.best_only" title="Link to this definition"></a></dt>
+<dd><p>If False pick only nodes with quality &lt; 1.0, else pick without quality restrictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>bool</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.calculate_min_max">
+<span class="sig-name descname"><span class="pre">calculate_min_max</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.calculate_min_max" title="Link to this definition"></a></dt>
+<dd><p>Calculate minimum and maximum horizontal expansion? Statistical purpose only.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>bool</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.heuristic_func">
+<span class="sig-name descname"><span class="pre">heuristic_func</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.heuristic_func" title="Link to this definition"></a></dt>
+<dd><p>Function to guide the search heuristic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractHeuristic" title="ontolearn.abstracts.AbstractHeuristic"><em>AbstractHeuristic</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.heuristic_queue">
+<span class="sig-name descname"><span class="pre">heuristic_queue</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.heuristic_queue" title="Link to this definition"></a></dt>
+<dd><p>A sorted set that compares the nodes based on Heuristic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SortedSet[<a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><em>OENode</em></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.iter_bound">
+<span class="sig-name descname"><span class="pre">iter_bound</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.iter_bound" title="Link to this definition"></a></dt>
+<dd><p>Limit to stop the algorithm after n refinement steps are done.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.kb">
+<span class="sig-name descname"><span class="pre">kb</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.kb" title="Link to this definition"></a></dt>
+<dd><p>The knowledge base that the concept learner is using.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><em>AbstractKnowledgeBase</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.max_child_length">
+<span class="sig-name descname"><span class="pre">max_child_length</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.max_child_length" title="Link to this definition"></a></dt>
+<dd><p>Limit the length of concepts generated by the refinement operator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.max_he">
+<span class="sig-name descname"><span class="pre">max_he</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.max_he" title="Link to this definition"></a></dt>
+<dd><p>Maximal value of horizontal expansion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.max_num_of_concepts_tested">
+<span class="sig-name descname"><span class="pre">max_num_of_concepts_tested</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.max_num_of_concepts_tested" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.max_runtime">
+<span class="sig-name descname"><span class="pre">max_runtime</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.max_runtime" title="Link to this definition"></a></dt>
+<dd><p>Limit to stop the algorithm after n seconds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.min_he">
+<span class="sig-name descname"><span class="pre">min_he</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.min_he" title="Link to this definition"></a></dt>
+<dd><p>Minimal value of horizontal expansion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.name" title="Link to this definition"></a></dt>
+<dd><p>Name of the model = ‘ocel_python’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>str</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL._number_of_tested_concepts">
+<span class="sig-name descname"><span class="pre">_number_of_tested_concepts</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL._number_of_tested_concepts" title="Link to this definition"></a></dt>
+<dd><p>Yes, you got it. This stores the number of tested concepts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>int</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.operator">
+<span class="sig-name descname"><span class="pre">operator</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.operator" title="Link to this definition"></a></dt>
+<dd><p>Operator used to generate refinements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><em>BaseRefinement</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.quality_func">
+<span class="sig-name descname"><span class="pre">quality_func</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.quality_func" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><em>AbstractScorer</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.reasoner">
+<span class="sig-name descname"><span class="pre">reasoner</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.reasoner" title="Link to this definition"></a></dt>
+<dd><p>The reasoner that this model is using.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>AbstractOWLReasoner</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.search_tree">
+<span class="sig-name descname"><span class="pre">search_tree</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.search_tree" title="Link to this definition"></a></dt>
+<dd><p>Dict to store the TreeNode for a class expression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Dict</em>[OWLClassExpression, <a class="reference internal" href="../../search/index.html#ontolearn.search.TreeNode" title="ontolearn.search.TreeNode"><em>TreeNode</em></a>[<a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><em>OENode</em></a>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.start_class">
+<span class="sig-name descname"><span class="pre">start_class</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.start_class" title="Link to this definition"></a></dt>
+<dd><p>The starting class expression for the refinement operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>OWLClassExpression</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.start_time" title="Link to this definition"></a></dt>
+<dd><p>The time when <code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code> starts the execution. Used to calculate the total time <code class="xref py py-meth docutils literal notranslate"><span class="pre">fit()</span></code>
+takes to execute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>float</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.terminate_on_goal">
+<span class="sig-name descname"><span class="pre">terminate_on_goal</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.terminate_on_goal" title="Link to this definition"></a></dt>
+<dd><p>Whether to stop the algorithm if a perfect solution is found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>bool</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ocel_python'</span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.ocel.OCEL.make_node">
+<span class="sig-name descname"><span class="pre">make_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a></span></span><a class="reference internal" href="../../../../_modules/ontolearn/learners/ocel.html#OCEL.make_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.ocel.OCEL.make_node" title="Link to this definition"></a></dt>
+<dd><p>Create a node for OCEL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>c</strong> – The class expression of this node.</p></li>
+<li><p><strong>parent_node</strong> – Parent node.</p></li>
+<li><p><strong>is_root</strong> – Is this the root node?</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The node.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><em>OENode</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../nero/index.html" class="btn btn-neutral float-left" title="ontolearn.learners.nero" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../roces/index.html" class="btn btn-neutral float-right" title="ontolearn.learners.roces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

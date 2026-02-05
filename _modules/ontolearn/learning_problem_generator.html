@@ -1,0 +1,596 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learning_problem_generator &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learning_problem_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learning_problem_generator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Learning problem generator.&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Generator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_axiom</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLEquivalentClassesAxiom</span><span class="p">,</span> <span class="n">OWLAnnotationAssertionAxiom</span><span class="p">,</span> <span class="n">OWLAnnotation</span><span class="p">,</span> \
+    <span class="n">OWLAnnotationProperty</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLLiteral</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_ontology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ontology</span><span class="p">,</span> <span class="n">SyncOntology</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.refinement_operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">LengthBasedRefinement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.search</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span><span class="p">,</span> <span class="n">RL_State</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">balanced_sets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">concept_len</span>
+
+<span class="n">SearchAlgos</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dfs&#39;</span><span class="p">,</span> <span class="s1">&#39;strict-dfs&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LearningProblemGenerator</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Learning problem generator.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">KnowledgeBase</span><span class="p">,</span> <span class="n">refinement_operator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_problems</span><span class="o">=</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">num_diff_runs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                 <span class="n">min_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_num_instances</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                 <span class="n">search_algo</span><span class="o">=</span><span class="s1">&#39;strict-dfs&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate concepts via search algorithm to satisfy constraints.</span>
+<span class="sd">         &#39;strict-dfs&#39; considers (min_length, max_length, min_num_ind, num_problems) as hard constraints.</span>
+<span class="sd">         &#39;dfs&#39; considers (min_length, max_length, min_num_ind) as hard constraints and soft (&gt;=num_problems).</span>
+
+<span class="sd">         Trade-off between num_diff_runs and num_problems.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">refinement_operator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">refinement_operator</span> <span class="o">=</span> <span class="n">LengthBasedRefinement</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">knowledge_base</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">max_num_instances</span> <span class="ow">and</span> <span class="n">min_num_instances</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">max_num_instances</span> <span class="o">&gt;=</span> <span class="n">min_num_instances</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;max_num_instances should be greater or equal than &#39;</span> \
+                                                           <span class="sa">f</span><span class="s1">&#39;min_num_instances but &#39;</span> \
+                                                           <span class="sa">f</span><span class="s1">&#39;min_num_instances=</span><span class="si">{</span><span class="n">min_num_instances</span><span class="si">}</span><span class="s1">, &#39;</span> \
+                                                           <span class="sa">f</span><span class="s1">&#39;min_num_instances=</span><span class="si">{</span><span class="n">min_num_instances</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="k">if</span> <span class="n">max_length</span> <span class="ow">and</span> <span class="n">min_length</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">max_length</span> <span class="o">&gt;=</span> <span class="n">min_length</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;max_length should be greater or equal than min_num_instances &#39;</span> \
+                                             <span class="sa">f</span><span class="s1">&#39;but max_length=</span><span class="si">{</span><span class="n">max_length</span><span class="si">}</span><span class="s1">, min_length=</span><span class="si">{</span><span class="n">min_length</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">refinement_operator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_algo</span> <span class="o">=</span> <span class="n">search_algo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="o">=</span> <span class="n">min_num_instances</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span> <span class="o">=</span> <span class="n">max_num_instances</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_learning_problems</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="n">depth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span> <span class="o">=</span> <span class="n">num_diff_runs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">=</span> <span class="n">num_problems</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span>
+
+<div class="viewcode-block" id="LearningProblemGenerator.export_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.export_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Node</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialise the given concepts to a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            concepts (list): Node objects.</span>
+<span class="sd">            path (str): Filename base (extension will be added automatically).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">SNS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;https://dice-research.org/predictions-schema/&#39;</span>
+        <span class="n">NS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;https://dice-research.org/predictions/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;#&#39;</span>
+        <span class="c1"># NS: Final = &#39;https://dice-research.org/problems/&#39; + str(time.time()) + &#39;#&#39;</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span> <span class="n">KnowledgeBase</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">Ontology</span><span class="p">):</span>
+            <span class="n">ontology</span> <span class="o">=</span> <span class="n">Ontology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">SyncOntology</span><span class="p">):</span>
+            <span class="n">ontology</span> <span class="o">=</span> <span class="n">SyncOntology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">concepts</span><span class="p">):</span>
+            <span class="n">cls_a</span><span class="p">:</span> <span class="n">OWLClass</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s2">&quot;Pred_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ith</span><span class="p">)))</span>
+            <span class="n">equivalent_classes_axiom</span> <span class="o">=</span> <span class="n">OWLEquivalentClassesAxiom</span><span class="p">([</span><span class="n">cls_a</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">concept</span><span class="p">])</span>
+            <span class="n">ontology</span><span class="o">.</span><span class="n">add_axiom</span><span class="p">(</span><span class="n">equivalent_classes_axiom</span><span class="p">)</span>
+
+            <span class="n">count</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">individuals_count</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">RL_State</span><span class="p">):</span>
+                    <span class="n">inst</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">instances</span>
+                    <span class="k">if</span> <span class="n">inst</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">num_inds</span> <span class="o">=</span> <span class="n">OWLAnnotationAssertionAxiom</span><span class="p">(</span><span class="n">cls_a</span><span class="o">.</span><span class="n">iri</span><span class="p">,</span> <span class="n">OWLAnnotation</span><span class="p">(</span>
+                    <span class="n">OWLAnnotationProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">SNS</span><span class="p">,</span> <span class="s2">&quot;covered_inds&quot;</span><span class="p">)),</span> <span class="n">OWLLiteral</span><span class="p">(</span><span class="n">count</span><span class="p">)))</span>
+                <span class="n">ontology</span><span class="o">.</span><span class="n">add_axiom</span><span class="p">(</span><span class="n">num_inds</span><span class="p">)</span>
+
+        <span class="n">ontology</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;.owl&#39;</span><span class="p">,</span> <span class="n">is_file_path</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.concept_individuals_to_string_balanced_examples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.concept_individuals_to_string_balanced_examples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concept_individuals_to_string_balanced_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">]:</span>
+
+        <span class="n">string_all_pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">concept</span><span class="p">))</span>
+
+        <span class="n">string_all_neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">individuals_in_signature</span><span class="p">())</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">string_all_pos</span><span class="p">)</span>
+
+        <span class="n">string_balanced_pos</span><span class="p">,</span> <span class="n">string_balanced_neg</span> <span class="o">=</span> <span class="n">balanced_sets</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string_all_pos</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">string_all_neg</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_pos</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;String Representation &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;of all positive individuals should be greater &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;than min_num_instances: &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;|string_all_pos|=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_pos</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;and |min_num_instances| = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_neg</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;String Representation &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;of all positive individuals should be greater &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;than min_num_instances: &quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;|string_balanced_neg|=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_neg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span> \
+                                                                   <span class="sa">f</span><span class="s2">&quot;and |min_num_instances| = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;string_balanced_pos&#39;</span><span class="p">:</span> <span class="n">string_balanced_pos</span><span class="p">,</span> <span class="s1">&#39;string_balanced_neg&#39;</span><span class="p">:</span> <span class="n">string_balanced_neg</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.get_balanced_n_samples_per_examples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.get_balanced_n_samples_per_examples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_balanced_n_samples_per_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_num_problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                            <span class="n">num_diff_runs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                            <span class="n">search_algo</span><span class="o">=</span><span class="s1">&#39;strict-dfs&#39;</span><span class="p">)</span> \
+            <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">RL_State</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        1. We generate min_num_problems number of concepts.</span>
+<span class="sd">        2. For each concept, we generate n number of positive and negative examples.</span>
+<span class="sd">        3. Each example contains n samples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">max_length</span> <span class="o">&gt;=</span> <span class="n">min_length</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">class_expression_sanity_checking</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">instances</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Expected </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1"> has at least one instance </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">instances</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="n">min_length</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Expected length &gt;= </span><span class="si">{</span><span class="n">min_length</span><span class="si">}</span><span class="s1"> but got at least one instance </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="n">max_length</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Expected length &lt;= </span><span class="si">{</span><span class="n">max_length</span><span class="si">}</span><span class="s1"> but got at least one instance </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">length</span><span class="si">}</span><span class="s1">&#39;</span>
+
+            <span class="c1"># Can we Reach T</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">is_owl_thing</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                    <span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">parent_node</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="ow">or</span> <span class="n">min_num_instances</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">valid_rl_state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_examples</span><span class="p">(</span><span class="n">num_problems</span><span class="o">=</span><span class="n">min_num_problems</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span>
+                                                     <span class="n">min_length</span><span class="o">=</span><span class="n">min_length</span><span class="p">,</span> <span class="n">num_diff_runs</span><span class="o">=</span><span class="n">num_diff_runs</span><span class="p">,</span>
+                                                     <span class="n">min_num_instances</span><span class="o">=</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="n">search_algo</span><span class="o">=</span><span class="n">search_algo</span><span class="p">):</span>
+            <span class="n">class_expression_sanity_checking</span><span class="p">(</span><span class="n">valid_rl_state</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">balanced_n_sampled_lp</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">valid_rl_state</span><span class="o">.</span><span class="n">instances</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_pos&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_neg&#39;</span><span class="p">]),</span> \
+                    <span class="sa">f</span><span class="s1">&#39; Lengths of examples must match. &#39;</span> \
+                    <span class="sa">f</span><span class="s1">&#39;|E^+|=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;string_balanced_pos&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1"> |E^-|=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;string_balanced_neg&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">valid_rl_state</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_pos&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_neg&#39;</span><span class="p">]))</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">min_num_problems</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> \
+            <span class="sa">f</span><span class="s1">&#39;No examples *** </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="si">}</span><span class="s1"> ***are created. &#39;</span> \
+            <span class="sa">f</span><span class="s1">&#39;Please update the configurations for learning problem generator****&#39;</span>
+
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">instances</span><span class="p">)]</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">__</span><span class="p">)</span> <span class="ow">in</span> <span class="n">res</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of generated concepts:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of generated learning problems via sampling: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Average length of generated concepts:</span><span class="si">{</span><span class="n">stats</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Average number of individuals belong to a generated example:</span><span class="si">{</span><span class="n">stats</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.balanced_n_sampled_lp">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.balanced_n_sampled_lp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">balanced_n_sampled_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">string_all_pos</span><span class="p">:</span> <span class="nb">set</span><span class="p">):</span>
+
+        <span class="n">string_all_neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">string_all_pos</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">string_balanced_pos</span><span class="p">,</span> <span class="n">string_balanced_neg</span> <span class="o">=</span> <span class="n">balanced_sets</span><span class="p">(</span><span class="n">string_all_pos</span><span class="p">,</span> <span class="n">string_all_neg</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_pos</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">string_balanced_neg</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span>
+            <span class="k">yield</span> <span class="p">{</span><span class="s1">&#39;string_balanced_pos&#39;</span><span class="p">:</span> <span class="n">string_balanced_pos</span><span class="p">,</span> <span class="s1">&#39;string_balanced_neg&#39;</span><span class="p">:</span> <span class="n">string_balanced_neg</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.get_balanced_examples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.get_balanced_examples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_balanced_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_num_problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">num_diff_runs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">search_algo</span><span class="o">=</span><span class="s1">&#39;strict-dfs&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (1) Generate valid examples with input search algorithm.</span>
+<span class="sd">        (2) Balance valid examples.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of balanced tuples (s,p,n) where s denotes the string representation of a concept, p and n denote</span>
+<span class="sd">            a set of URIs of individuals indicating positive and negative examples.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># @param search_algo: &#39;dfs&#39; or &#39;strict-dfs&#39;=&gt; strict-dfs considers num_problems as a hard constraint.</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">output_sanity_check</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_num_problems</span>
+            <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Not enough number of problems are generated&#39;</span><span class="p">)</span>
+                <span class="k">raise</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="ow">or</span> <span class="n">min_num_instances</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">gen_examples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">example_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_examples</span><span class="p">(</span><span class="n">num_problems</span><span class="o">=</span><span class="n">min_num_problems</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span>
+                                                   <span class="n">min_length</span><span class="o">=</span><span class="n">min_length</span><span class="p">,</span> <span class="n">num_diff_runs</span><span class="o">=</span><span class="n">num_diff_runs</span><span class="p">,</span>
+                                                   <span class="n">min_num_instances</span><span class="o">=</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="n">search_algo</span><span class="o">=</span><span class="n">search_algo</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">concept_individuals_to_string_balanced_examples</span><span class="p">(</span><span class="n">example_node</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">example_node</span><span class="p">),</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_pos&#39;</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;string_balanced_neg&#39;</span><span class="p">]))</span>
+            <span class="n">gen_examples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">example_node</span><span class="p">)</span>
+
+        <span class="n">output_sanity_check</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">x</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">instances</span><span class="p">)]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">gen_examples</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Average length of generated examples </span><span class="si">{</span><span class="n">stats</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Average number of individuals belong to a generated example </span><span class="si">{</span><span class="n">stats</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.get_examples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.get_examples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">num_diff_runs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_num_ind</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">search_algo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (1) Get valid examples with input search algorithm.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of tuples (s,p,n) where s denotes the string representation of a concept, p and n denote</span>
+<span class="sd">            a set of URIs of individuals indicating positive and negative examples.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">example_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_examples</span><span class="p">(</span><span class="n">num_problems</span><span class="o">=</span><span class="n">num_problems</span><span class="p">,</span>
+                                                   <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="n">min_length</span><span class="p">,</span>
+                                                   <span class="n">num_diff_runs</span><span class="o">=</span><span class="n">num_diff_runs</span><span class="p">,</span> <span class="n">min_num_instances</span><span class="o">=</span><span class="n">min_num_ind</span><span class="p">,</span>
+                                                   <span class="n">search_algo</span><span class="o">=</span><span class="n">search_algo</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">example_node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">instances</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">example_node</span><span class="si">}</span><span class="se">\n</span><span class="s1">Does not contain any instances. &#39;</span> \
+                                                        <span class="sa">f</span><span class="s1">&#39;No instance to balance. Exiting.&#39;</span>
+            <span class="c1"># TODO: convert_owlready2_individuals_to_uri_from_iterable() and difference() are outdated.</span>
+            <span class="n">string_all_pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">convert_owlready2_individuals_to_uri_from_iterable</span><span class="p">(</span><span class="n">example_node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">instances</span><span class="p">))</span>
+            <span class="n">string_all_neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">convert_owlready2_individuals_to_uri_from_iterable</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">()</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">example_node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">instances</span><span class="p">)))</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">example_node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="n">string_all_pos</span><span class="p">,</span> <span class="n">string_all_neg</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.get_concepts">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.get_concepts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_concepts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">max_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_diff_runs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">search_algo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calls `generate_examples` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_examples</span><span class="p">(</span><span class="n">num_problems</span><span class="o">=</span><span class="n">num_problems</span><span class="p">,</span>
+                                      <span class="n">max_length</span><span class="o">=</span><span class="n">max_length</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="n">min_length</span><span class="p">,</span>
+                                      <span class="n">num_diff_runs</span><span class="o">=</span><span class="n">num_diff_runs</span><span class="p">,</span>
+                                      <span class="n">max_num_instances</span><span class="o">=</span><span class="n">max_num_instances</span><span class="p">,</span>
+                                      <span class="n">min_num_instances</span><span class="o">=</span><span class="n">min_num_instances</span><span class="p">,</span>
+                                      <span class="n">search_algo</span><span class="o">=</span><span class="n">search_algo</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LearningProblemGenerator.generate_examples">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.generate_examples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_problems</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">num_diff_runs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_num_instances</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">search_algo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate examples via search algorithm that are valid examples w.r.t. given constraints.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Valid examples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">num_problems</span> <span class="ow">and</span> <span class="n">num_diff_runs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_problems</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_diff_runs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">=</span> <span class="n">num_problems</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span> <span class="o">=</span> <span class="n">num_diff_runs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">//=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span>
+        <span class="k">elif</span> <span class="n">num_diff_runs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_diff_runs</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span> <span class="o">=</span> <span class="n">num_diff_runs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">//=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span>
+        <span class="k">elif</span> <span class="n">num_problems</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_problems</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">=</span> <span class="n">num_problems</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">max_length</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+        <span class="k">if</span> <span class="n">min_length</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span> <span class="o">=</span> <span class="n">min_length</span>
+        <span class="k">if</span> <span class="n">min_num_instances</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="o">=</span> <span class="n">min_num_instances</span>
+            <span class="c1"># Do not generate concepts that do not define enough individuals.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span>
+
+        <span class="k">if</span> <span class="n">max_num_instances</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_num_instances</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span> <span class="o">=</span> <span class="n">max_num_instances</span>
+        <span class="k">if</span> <span class="n">search_algo</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_algo</span> <span class="o">=</span> <span class="n">search_algo</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span> <span class="o">==</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_count</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_algo</span> <span class="o">==</span> <span class="s1">&#39;dfs&#39;</span><span class="p">:</span>
+            <span class="n">valid_concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_dfs</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_algo</span> <span class="o">==</span> <span class="s1">&#39;strict-dfs&#39;</span><span class="p">:</span>
+            <span class="n">valid_concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_dfs</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid input: search_algo:</span><span class="si">{</span><span class="n">search_algo</span><span class="si">}</span><span class="s1"> must be in [dfs,strict-dfs]&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">yield from</span> <span class="n">valid_concepts</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_dfs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply depth first search with backtracking to generate concepts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">f1</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">&gt;=</span> <span class="n">x</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">a</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">a</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">instances</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span>
+            <span class="k">return</span> <span class="n">b</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">f2</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">length</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_length</span>
+
+        <span class="n">rl_state</span> <span class="o">=</span> <span class="n">RL_State</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">,</span> <span class="n">parent_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_root</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">rl_state</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">concept_len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
+        <span class="n">rl_state</span><span class="o">.</span><span class="n">instances</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">rl_state</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span>
+
+        <span class="n">refinements_rl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_rho_on_rl_state</span><span class="p">(</span><span class="n">rl_state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="p">:</span>
+            <span class="n">constrain_func</span> <span class="o">=</span> <span class="n">f1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">constrain_func</span> <span class="o">=</span> <span class="n">f2</span>
+
+        <span class="n">valid_states_gate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rl_state</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">refinements_rl</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All top concepts are refined.&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">rl_state</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">is_owl_nothing</span><span class="p">():</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">constrain_func</span><span class="p">(</span><span class="n">rl_state</span><span class="p">):</span>
+                <span class="n">valid_states_gate</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rl_state</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">rl_state</span>
+                <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;|Valid Expressions|=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+            <span class="n">temp_gate</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">ref_rl_state</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_dfs_on_state</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">rl_state</span><span class="p">,</span>
+                                                         <span class="n">apply_rho</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_rho_on_rl_state</span><span class="p">,</span>
+                                                         <span class="n">constrain_func</span><span class="o">=</span><span class="n">constrain_func</span><span class="p">,</span>
+                                                         <span class="n">depth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span>
+                                                         <span class="n">patience_per_depth</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">ref_rl_state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_states_gate</span><span class="p">:</span>
+                    <span class="n">valid_states_gate</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref_rl_state</span><span class="p">)</span>
+                    <span class="n">temp_gate</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref_rl_state</span><span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">ref_rl_state</span>
+                    <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp_gate</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="ow">or</span> <span class="p">(</span>
+                                <span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span><span class="p">):</span>
+                            <span class="k">break</span>
+            <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span><span class="p">:</span>
+                    <span class="k">break</span>
+        <span class="c1"># sanity checking after the search.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of valid concepts generated:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_states_gate</span><span class="p">)</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Required number of concepts: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_diff_runs</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">num_problems</span><span class="si">}</span><span class="s1">.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Please update the given constraints:&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Increase the max length (Currently </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="si">}</span><span class="s1">).</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Increase the max number of instances for concepts (Currently </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_instances</span><span class="si">}</span><span class="s1">).</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Decrease the min length (Currently </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_length</span><span class="si">}</span><span class="s1">).</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;Decrease the max number of instances for concepts (Currently </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_num_instances</span><span class="si">}</span><span class="s1">).</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="c1"># @performance_debugger(&#39;_apply_dfs_on_state&#39;)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_dfs_on_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">apply_rho</span><span class="p">,</span> <span class="n">constrain_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">patience_per_depth</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
+
+        <span class="n">valid_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">invalid_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; (1) Iterate over refinements of input state &quot;&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">apply_rho</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot; (1.1.1) Check whether a refinement is a valid example &quot;&quot;&quot;</span>
+                <span class="k">if</span> <span class="n">constrain_func</span><span class="p">(</span><span class="n">ref</span><span class="p">):</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot; (1.1.2) Remember a valid refinement &quot;&quot;&quot;</span>
+                    <span class="n">valid_examples</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot; (1.1.3) Yield a valid refinement &quot;&quot;&quot;</span>
+                    <span class="k">yield</span> <span class="n">ref</span>
+                <span class="k">else</span><span class="p">:</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot; (1.1.2) Remember invalid refinement &quot;&quot;&quot;</span>
+                    <span class="n">invalid_examples</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; (2) Select next state to be refined from valid examples &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_examples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">state</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">valid_examples</span><span class="p">))</span>
+                    <span class="n">valid_examples</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalid_examples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">state</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">valid_examples</span><span class="p">))</span>
+                    <span class="n">invalid_examples</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">continue</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Constraints are not fulfilled&#39;</span><span class="p">)</span>
+            <span class="c1"># raise ValueError(&#39;We could not find &#39;)</span>
+
+<div class="viewcode-block" id="LearningProblemGenerator.apply_rho_on_rl_state">
+<a class="viewcode-back" href="../../autoapi/ontolearn/learning_problem_generator/index.html#ontolearn.learning_problem_generator.LearningProblemGenerator.apply_rho_on_rl_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_rho_on_rl_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rl_state</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span><span class="o">.</span><span class="n">refine</span><span class="p">(</span><span class="n">rl_state</span><span class="o">.</span><span class="n">concept</span><span class="p">):</span>
+            <span class="n">next_rl_state</span> <span class="o">=</span> <span class="n">RL_State</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">parent_node</span><span class="o">=</span><span class="n">rl_state</span><span class="p">)</span>
+            <span class="n">next_rl_state</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">next_rl_state</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
+            <span class="n">next_rl_state</span><span class="o">.</span><span class="n">instances</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">next_rl_state</span><span class="o">.</span><span class="n">concept</span><span class="p">))</span>
+            <span class="k">yield</span> <span class="n">next_rl_state</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

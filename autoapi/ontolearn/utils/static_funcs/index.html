@@ -1,0 +1,488 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.utils.static_funcs &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="ontolearn.value_splitter" href="../../value_splitter/index.html" />
+    <link rel="prev" title="ontolearn.utils.oplogging" href="../oplogging/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">ontolearn.utils</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../log_config/index.html">ontolearn.utils.log_config</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../oplogging/index.html">ontolearn.utils.oplogging</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">ontolearn.utils.static_funcs</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.utils</a></li>
+      <li class="breadcrumb-item active">ontolearn.utils.static_funcs</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/ontolearn/utils/static_funcs/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.utils.static_funcs">
+<span id="ontolearn-utils-static-funcs"></span><h1>ontolearn.utils.static_funcs<a class="headerlink" href="#module-ontolearn.utils.static_funcs" title="Link to this heading"></a></h1>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.f1_set_similarity" title="ontolearn.utils.static_funcs.f1_set_similarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">f1_set_similarity</span></code></a>(→ float)</p></td>
+<td><p>Compute F1 score for two set</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.concept_reducer" title="ontolearn.utils.static_funcs.concept_reducer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_reducer</span></code></a>(concepts, opt)</p></td>
+<td><p>Reduces a set of concepts by applying a binary operation to each pair of concepts.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.concept_reducer_properties" title="ontolearn.utils.static_funcs.concept_reducer_properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_reducer_properties</span></code></a>(...)</p></td>
+<td><p>Map a set of owl concepts and a set of properties into OWL Restrictions</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.make_iterable_verbose" title="ontolearn.utils.static_funcs.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.init_length_metric" title="ontolearn.utils.static_funcs.init_length_metric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_length_metric</span></code></a>([length_metric, length_metric_factory])</p></td>
+<td><p>Initialize the technique on computing length of a concept</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.concept_len" title="ontolearn.utils.static_funcs.concept_len"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_len</span></code></a>(ce[, length_metric, length_metric_factory])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.init_hierarchy_instances" title="ontolearn.utils.static_funcs.init_hierarchy_instances"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_hierarchy_instances</span></code></a>(...)</p></td>
+<td><p>Initialize class, object property, and data property hierarchies</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.init_named_individuals" title="ontolearn.utils.static_funcs.init_named_individuals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_named_individuals</span></code></a>(individuals_cache_size)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.init_individuals_from_concepts" title="ontolearn.utils.static_funcs.init_individuals_from_concepts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_individuals_from_concepts</span></code></a>([...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.compute_tp_fn_fp_tn" title="ontolearn.utils.static_funcs.compute_tp_fn_fp_tn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_tp_fn_fp_tn</span></code></a>(individuals, pos, neg)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.compute_f1_score" title="ontolearn.utils.static_funcs.compute_f1_score"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_f1_score</span></code></a>(→ float)</p></td>
+<td><p>Compute F1-score of a concept</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.compute_f1_score_from_confusion_matrix" title="ontolearn.utils.static_funcs.compute_f1_score_from_confusion_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_f1_score_from_confusion_matrix</span></code></a>(→ float)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.plot_umap_reduced_embeddings" title="ontolearn.utils.static_funcs.plot_umap_reduced_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_umap_reduced_embeddings</span></code></a>(→ None)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.plot_decision_tree_of_expressions" title="ontolearn.utils.static_funcs.plot_decision_tree_of_expressions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_decision_tree_of_expressions</span></code></a>(→ None)</p></td>
+<td><p>Plot the built CART Decision Tree and feature importance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.plot_topk_feature_importance" title="ontolearn.utils.static_funcs.plot_topk_feature_importance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_topk_feature_importance</span></code></a>(→ None)</p></td>
+<td><p>Plot the feature importance of the CART Decision Tree.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.save_owl_class_expressions" title="ontolearn.utils.static_funcs.save_owl_class_expressions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_owl_class_expressions</span></code></a>(→ None)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.verbalize" title="ontolearn.utils.static_funcs.verbalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">verbalize</span></code></a>(predictions_file_path)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.get_file_base_name" title="ontolearn.utils.static_funcs.get_file_base_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_file_base_name</span></code></a>(→ str)</p></td>
+<td><p>Extract the base name of a file from a given file path, excluding its extension.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.prepare_output_path" title="ontolearn.utils.static_funcs.prepare_output_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_output_path</span></code></a>(→ str)</p></td>
+<td><p>Create the output directory if it doesn't exist and return the full path for an output file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.static_funcs.assert_class_expression_type" title="ontolearn.utils.static_funcs.assert_class_expression_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assert_class_expression_type</span></code></a>(→ bool)</p></td>
+<td><p>Check whether the given object is a valid OWL class expression.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.f1_set_similarity">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">f1_set_similarity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yhat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#f1_set_similarity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.f1_set_similarity" title="Link to this definition"></a></dt>
+<dd><p>Compute F1 score for two set
+:param y: A set of URIs
+:param yhat: A set of URIs
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.concept_reducer">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">concept_reducer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concepts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#concept_reducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.concept_reducer" title="Link to this definition"></a></dt>
+<dd><p>Reduces a set of concepts by applying a binary operation to each pair of concepts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>concepts</strong> (<em>set</em>) – A set of concepts to be reduced.</p></li>
+<li><p><strong>opt</strong> (<em>function</em>) – A binary function that takes a pair of concepts and returns a single concept.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A set containing the results of applying the binary operation to each pair of concepts.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>set</em></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">concepts</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opt</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">concept_reducer</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+<span class="go">{2, 3, 4, 5, 6}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The operation <cite>opt</cite> should be commutative and associative to ensure meaningful reduction in the context of set operations.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.concept_reducer_properties">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">concept_reducer_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concepts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cardinality</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLQuantifiedObjectRestriction</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">owlapy.class_expression.OWLObjectCardinalityRestriction</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#concept_reducer_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.concept_reducer_properties" title="Link to this definition"></a></dt>
+<dd><p>Map a set of owl concepts and a set of properties into OWL Restrictions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>concepts</strong></p></li>
+<li><p><strong>properties</strong></p></li>
+<li><p><strong>cls</strong> (<em>Callable</em>) – An owl Restriction class</p></li>
+<li><p><strong>cardinality</strong> – A positive Integer</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: List of OWL Restrictions</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.make_iterable_verbose">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">make_iterable_verbose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#make_iterable_verbose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.make_iterable_verbose" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.init_length_metric">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">init_length_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.utils.OWLClassExpressionLengthMetric</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_metric_factory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">owlapy.utils.OWLClassExpressionLengthMetric</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#init_length_metric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.init_length_metric" title="Link to this definition"></a></dt>
+<dd><p>Initialize the technique on computing length of a concept</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.concept_len">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">concept_len</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.utils.OWLClassExpressionLengthMetric</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_metric_factory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">owlapy.utils.OWLClassExpressionLengthMetric</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#concept_len"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.concept_len" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.init_hierarchy_instances">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">init_hierarchy_instances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reasoner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_hierarchy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_property_hierarchy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_property_hierarchy</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_hierarchy.ClassHierarchy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">owlapy.owl_hierarchy.ObjectPropertyHierarchy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">owlapy.owl_hierarchy.DatatypePropertyHierarchy</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#init_hierarchy_instances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.init_hierarchy_instances" title="Link to this definition"></a></dt>
+<dd><p>Initialize class, object property, and data property hierarchies</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.init_named_individuals">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">init_named_individuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individuals_cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#init_named_individuals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.init_named_individuals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.init_individuals_from_concepts">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">init_individuals_from_concepts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_implicit_individuals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoner</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individuals_per_concept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#init_individuals_from_concepts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.init_individuals_from_concepts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.compute_tp_fn_fp_tn">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">compute_tp_fn_fp_tn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#compute_tp_fn_fp_tn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.compute_tp_fn_fp_tn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.compute_f1_score">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">compute_f1_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#compute_f1_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.compute_f1_score" title="Link to this definition"></a></dt>
+<dd><p>Compute F1-score of a concept</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.compute_f1_score_from_confusion_matrix">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">compute_f1_score_from_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">confusion_matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#compute_f1_score_from_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.compute_f1_score_from_confusion_matrix" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.plot_umap_reduced_embeddings">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">plot_umap_reduced_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'umap_visualization.pdf'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#plot_umap_reduced_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.plot_umap_reduced_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.plot_decision_tree_of_expressions">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">plot_decision_tree_of_expressions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cart_tree</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#plot_decision_tree_of_expressions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.plot_decision_tree_of_expressions" title="Link to this definition"></a></dt>
+<dd><p>Plot the built CART Decision Tree and feature importance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_names</strong> (<em>list</em>) – A list of feature names used in the decision tree.</p></li>
+<li><p><strong>cart_tree</strong> – The trained CART Decision Tree model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function plots the decision tree using matplotlib and saves it to a PDF file named ‘cart_decision_tree.pdf’.
+It also displays the plot.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.plot_topk_feature_importance">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">plot_topk_feature_importance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cart_tree</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topk</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#plot_topk_feature_importance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.plot_topk_feature_importance" title="Link to this definition"></a></dt>
+<dd><p>Plot the feature importance of the CART Decision Tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature_names</strong> (<em>list</em>) – A list of feature names used in the decision tree.</p></li>
+<li><p><strong>cart_tree</strong> – The trained CART Decision Tree model.</p></li>
+<li><p><strong>topk</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of top features to display. Defaults to 10.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function plots a bar chart showing the importance of each feature in the decision tree,
+with the top k features displayed. The importance is measured by the normalized total reduction.
+The plot is displayed using matplotlib.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.save_owl_class_expressions">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">save_owl_class_expressions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expressions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./Predictions'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdf_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rdfxml'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#save_owl_class_expressions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.save_owl_class_expressions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.verbalize">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">verbalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictions_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#verbalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.verbalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.get_file_base_name">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_file_base_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#get_file_base_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.get_file_base_name" title="Link to this definition"></a></dt>
+<dd><p>Extract the base name of a file from a given file path, excluding its extension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The full path to the file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The base name of the file without its extension.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>str</em></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_file_base_name</span><span class="p">(</span><span class="s2">&quot;/path/to/file.txt&quot;</span><span class="p">)</span>
+<span class="go">&#39;file&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.prepare_output_path">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">prepare_output_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'results'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csv'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#prepare_output_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.prepare_output_path" title="Link to this definition"></a></dt>
+<dd><p>Create the output directory if it doesn’t exist and return the full path for an output file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_name</strong> (<em>str</em>) – The base name of the output file (without extension).</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – Directory where the output file will be saved. Defaults to “results”.</p></li>
+<li><p><strong>extension</strong> (<em>str</em><em>, </em><em>optional</em>) – File extension to use. Defaults to “.csv”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full path to the output file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>str</em></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">prepare_output_path</span><span class="p">(</span><span class="s2">&quot;summary&quot;</span><span class="p">)</span>
+<span class="go">&#39;results/summary.csv&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.static_funcs.assert_class_expression_type">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.static_funcs.</span></span><span class="sig-name descname"><span class="pre">assert_class_expression_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_expr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../../_modules/ontolearn/utils/static_funcs.html#assert_class_expression_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.static_funcs.assert_class_expression_type" title="Link to this definition"></a></dt>
+<dd><p>Check whether the given object is a valid OWL class expression.</p>
+<p>This function verifies if the input object is an instance of any recognized OWL class
+expression types (e.g., union, intersection, cardinality restrictions, value restrictions, etc.).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_expr</strong> (<em>Any</em>) – The object to check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the object is a valid OWL class expression; False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>bool</em></p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assert_class_expression_type</span><span class="p">(</span><span class="n">some_owl_expression</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../oplogging/index.html" class="btn btn-neutral float-left" title="ontolearn.utils.oplogging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../value_splitter/index.html" class="btn btn-neutral float-right" title="ontolearn.value_splitter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

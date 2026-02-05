@@ -1,0 +1,644 @@
+ontolearn.learners.spell_kit.o2p_ontology
+=========================================
+
+.. py:module:: ontolearn.learners.spell_kit.o2p_ontology
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.o2p_ontology.SPECIAL_CHARS
+
+
+Exceptions
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.o2p_ontology.FeatureNotSupported
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.o2p_ontology.Ontology
+   ontolearn.learners.spell_kit.o2p_ontology.NameFactory
+   ontolearn.learners.spell_kit.o2p_ontology.OntologyObject
+   ontolearn.learners.spell_kit.o2p_ontology.SubProperty
+   ontolearn.learners.spell_kit.o2p_ontology.Property
+   ontolearn.learners.spell_kit.o2p_ontology.PropertyReference
+   ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty
+   ontolearn.learners.spell_kit.o2p_ontology.Expression
+   ontolearn.learners.spell_kit.o2p_ontology.Rule
+   ontolearn.learners.spell_kit.o2p_ontology.SubClassOf
+   ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass
+   ontolearn.learners.spell_kit.o2p_ontology.DisjointWith
+   ontolearn.learners.spell_kit.o2p_ontology.Thing
+   ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier
+   ontolearn.learners.spell_kit.o2p_ontology.TopClass
+   ontolearn.learners.spell_kit.o2p_ontology.Restriction
+   ontolearn.learners.spell_kit.o2p_ontology.Intersection
+   ontolearn.learners.spell_kit.o2p_ontology.Union
+   ontolearn.learners.spell_kit.o2p_ontology.Complement
+   ontolearn.learners.spell_kit.o2p_ontology.OneOf
+   ontolearn.learners.spell_kit.o2p_ontology.Quantifier
+   ontolearn.learners.spell_kit.o2p_ontology.HasSelf
+   ontolearn.learners.spell_kit.o2p_ontology.SomeValues
+   ontolearn.learners.spell_kit.o2p_ontology.AllValues
+   ontolearn.learners.spell_kit.o2p_ontology.Cardinality
+   ontolearn.learners.spell_kit.o2p_ontology.MinCardinality
+   ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality
+   ontolearn.learners.spell_kit.o2p_ontology.HasValue
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell_kit.o2p_ontology.issimple
+
+
+Module Contents
+---------------
+
+.. py:data:: SPECIAL_CHARS
+
+.. py:exception:: FeatureNotSupported(*args)
+
+   Bases: :py:obj:`Exception`
+
+
+   Common base class for all non-exit exceptions.
+
+
+.. py:class:: Ontology
+
+   Bases: :py:obj:`object`
+
+
+   .. py:method:: add_rule(rule)
+
+
+   .. py:method:: normalize()
+
+
+   .. py:method:: add_property(prop)
+
+
+   .. py:method:: check_implicit_cycle()
+
+
+   .. py:property:: properties
+
+
+   .. py:property:: rules
+
+
+   .. py:property:: subproperties
+
+
+   .. py:property:: property_ranges
+
+
+   .. py:property:: property_domains
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
+.. py:class:: NameFactory
+
+   Bases: :py:obj:`object`
+
+
+   .. py:attribute:: created_names
+
+
+   .. py:method:: next_name()
+      :classmethod:
+
+
+
+.. py:class:: OntologyObject
+
+   Bases: :py:obj:`object`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:method:: to_latex()
+      :abstractmethod:
+
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:property:: is_rule
+
+
+.. py:class:: SubProperty(subject, object_)
+
+   Bases: :py:obj:`object`
+
+
+   .. py:attribute:: subject
+
+
+   .. py:attribute:: object
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Property
+
+   Bases: :py:obj:`object`
+
+
+.. py:class:: PropertyReference(identifier)
+
+   Bases: :py:obj:`Property`
+
+
+   .. py:attribute:: identifier
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: ObjectProperty(identifier, parent=None, is_functional=False, is_reflexive=False, is_inverse_functional=False, is_transitive=False, is_symmetric=False, domain=None, range=None, inverse_of=None)
+
+   Bases: :py:obj:`Property`
+
+
+   .. py:attribute:: identifier
+
+
+   .. py:attribute:: parent
+      :value: None
+
+
+
+   .. py:attribute:: is_functional
+      :value: False
+
+
+
+   .. py:attribute:: is_inverse_functional
+      :value: False
+
+
+
+   .. py:attribute:: is_transitive
+      :value: False
+
+
+
+   .. py:attribute:: is_symmetric
+      :value: False
+
+
+
+   .. py:attribute:: is_reflexive
+      :value: False
+
+
+
+   .. py:attribute:: domain
+      :value: None
+
+
+
+   .. py:attribute:: range
+      :value: None
+
+
+
+   .. py:attribute:: inverse_of
+      :value: None
+
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Expression(identifier=None)
+
+   Bases: :py:obj:`OntologyObject`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: varcount
+      :value: 0
+
+
+
+   .. py:method:: get_safe_varname()
+      :classmethod:
+
+
+
+   .. py:attribute:: expression_types
+
+
+   .. py:method:: register_type(tagname, factory)
+      :classmethod:
+
+
+
+   .. py:method:: get_factory(tagname)
+      :classmethod:
+
+
+
+   .. py:attribute:: identifier
+      :value: None
+
+
+
+   .. py:method:: normalize_rhs()
+      :abstractmethod:
+
+
+
+   .. py:method:: normalize_lhs()
+
+
+   .. py:method:: __and__(other)
+
+
+   .. py:method:: __lshift__(other)
+
+
+.. py:class:: Rule(subject, object_)
+
+   Bases: :py:obj:`OntologyObject`
+
+
+   A ontology expression of the form A \sqsubseteq B.
+
+
+   .. py:property:: subject
+
+
+   .. py:property:: object
+
+
+   .. py:property:: is_rule
+
+
+   .. py:method:: normalize()
+
+      Return a normalization of this rule.
+
+      :return: list of new rules
+
+
+
+.. py:function:: issimple(expr)
+
+.. py:class:: SubClassOf(subject, object_)
+
+   Bases: :py:obj:`Rule`
+
+
+   A ontology expression of the form A \sqsubseteq B.
+
+
+   .. py:method:: normalize()
+
+      Return a normalization of this rule.
+
+      :return: list of new rules
+
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: to_latex()
+
+
+.. py:class:: EquivalentClass(subject, object_)
+
+   Bases: :py:obj:`Rule`
+
+
+   A ontology expression of the form A \sqsubseteq B.
+
+
+   .. py:method:: normalize()
+
+      Return a normalization of this rule.
+
+      :return: list of new rules
+
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: DisjointWith(subject, object_)
+
+   Bases: :py:obj:`Rule`
+
+
+   A ontology expression of the form A \sqsubseteq B.
+
+
+   .. py:method:: normalize()
+
+      Return a normalization of this rule.
+
+      :return: list of new rules
+
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Thing(identifier)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: ClassIdentifier(identifier)
+
+   Bases: :py:obj:`Expression`
+
+
+   A class in the ontology.
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: to_latex()
+
+
+.. py:class:: TopClass
+
+   Bases: :py:obj:`Expression`
+
+
+   A class in the ontology.
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: to_latex()
+
+
+.. py:class:: Restriction(quantifier, prop)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: quantifier
+
+
+   .. py:attribute:: prop
+
+
+   .. py:method:: normalize_lhs()
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: to_latex()
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Intersection(children)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: children
+
+
+   .. py:method:: normalize_lhs()
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: to_latex()
+
+
+   .. py:method:: __and__(other)
+
+
+.. py:class:: Union(children)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: children
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Complement(child)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: child
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: OneOf(children)
+
+   Bases: :py:obj:`Expression`
+
+
+   The base class for all entities in the ontology.
+
+
+   .. py:attribute:: children
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: __str__()
+
+
+.. py:class:: Quantifier
+
+   Bases: :py:obj:`object`
+
+
+   .. py:method:: to_string(prop)
+      :abstractmethod:
+
+
+
+   .. py:method:: normalize_rhs()
+      :abstractmethod:
+
+
+
+.. py:class:: HasSelf
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: normalize_lhs()
+
+
+.. py:class:: SomeValues(from_class)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: from_class
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: to_latex(prop)
+
+
+   .. py:method:: normalize_lhs()
+
+
+   .. py:method:: normalize_rhs()
+
+
+.. py:class:: AllValues(from_class)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: from_class
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+.. py:class:: Cardinality(count)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: count
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+.. py:class:: MinCardinality(count)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: count
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+.. py:class:: MaxCardinality(count)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: count
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+.. py:class:: HasValue(value)
+
+   Bases: :py:obj:`Quantifier`
+
+
+   .. py:attribute:: value
+
+
+   .. py:method:: to_string(prop)
+
+
+   .. py:method:: normalize_rhs()
+
+
+   .. py:method:: normalize_lhs()
+
+

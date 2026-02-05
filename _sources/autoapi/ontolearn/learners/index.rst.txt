@@ -1,0 +1,2700 @@
+ontolearn.learners
+==================
+
+.. py:module:: ontolearn.learners
+
+.. autoapi-nested-parse::
+
+   Concept Learning Algorithms Module
+   ===================================
+
+   This module provides various concept learning algorithms for ontology engineering and OWL class expression learning.
+
+   Available Learners:
+
+       Refinement-Based Learners:
+       - CELOE: A refinement-operator based learner (originating from DL-Learner).
+         It performs heuristic-guided search over class expression refinements to
+         find compact OWL class expressions that fit positive/negative examples.
+         Suitable when symbolic search with ontological reasoning is required.
+       - OCEL: A lightweight / constrained variant of CELOE. It uses a smaller set
+         of refinements or simplified search heuristics to trade expressivity for
+         speed and lower computational cost.
+
+       SAT-Based Learners:
+       - ALCSAT: A SAT-based learner that encodes the ALC concept learning problem
+         as a SAT problem. It uses incremental SAT solving to find concepts of
+         increasing size that maximize accuracy on positive/negative examples.
+         Particularly effective for finding compact, exact solutions.
+       - SPELL: A SAT-based learner using the general SPELL fitting framework.
+         Supports different search modes (exact, neg_approx, full_approx) and can
+         find separating queries of bounded size using SAT encoding.
+
+       Neural / Hybrid Learners:
+       - Drill: A neuro-symbolic learner that combines neural scoring or guidance
+         with symbolic refinement/search. Typically, uses learned models to rank
+         candidates while keeping final outputs in an interpretable DL form.
+       - CLIP: A hybrid approach that leverages pretrained embeddings to assist
+         candidate generation or scoring (e.g., using semantic similarity signals).
+         Useful when distributional signals complement logical reasoning.
+       - NCES, NCES2: Neural concept-expression search variants. These rely on
+         neural encoders or learned scorers to propose and rank candidate
+         class expressions; NCES2 represents an improved/iterated version.
+       - NERO: A neural embedding model that learns permutation-invariant
+         embeddings for sets of examples tailored towards predicting F1
+         scores of pre-selected description logic concepts.
+       - ROCES: A hybrid/refinement-based approach that combines ranking,
+         coverage estimation, and refinement operators to discover candidate
+         expressions efficiently. Extension of NCES2.
+
+       -Evolutionary:
+       - EvoLearner: Evolutionary search-based learner that evolves candidate
+         descriptions (e.g., via genetic operators) using fitness functions
+         derived from coverage and other objectives.
+
+       Query-Based Learners:
+       - SPARQLQueryLearner: Learns query patterns expressed as SPARQL queries
+         that capture the target concept. Useful when working directly with
+         SPARQL endpoints or large RDF datasets where query-based retrieval is
+         preferable to reasoning-heavy symbolic search.
+
+       Tree / Rule-Based Learners:
+       - TDL: Tree-based Description Logic Learner. Adapts decision-tree style
+         induction to construct DL class expressions from attribute-like splits
+         or tests, producing interpretable, rule-like descriptions.
+
+   .. rubric:: Example
+
+   >>> from ontolearn.learners import CELOE, Drill
+   >>> from ontolearn.knowledge_base import KnowledgeBase
+   >>>
+   >>> kb = KnowledgeBase(path="example.owl")
+   >>> model = CELOE(knowledge_base=kb)
+   >>> model.fit(pos_examples, neg_examples)
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/learners/alcsat/index
+   /autoapi/ontolearn/learners/base/index
+   /autoapi/ontolearn/learners/celoe/index
+   /autoapi/ontolearn/learners/clip/index
+   /autoapi/ontolearn/learners/drill/index
+   /autoapi/ontolearn/learners/evolearner/index
+   /autoapi/ontolearn/learners/nces/index
+   /autoapi/ontolearn/learners/nces2/index
+   /autoapi/ontolearn/learners/nero/index
+   /autoapi/ontolearn/learners/ocel/index
+   /autoapi/ontolearn/learners/roces/index
+   /autoapi/ontolearn/learners/sat_base/index
+   /autoapi/ontolearn/learners/sparql_query_learner/index
+   /autoapi/ontolearn/learners/spell/index
+   /autoapi/ontolearn/learners/spell_kit/index
+   /autoapi/ontolearn/learners/tree_learner/index
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.BaseConceptLearner
+   ontolearn.learners.RefinementBasedConceptLearner
+   ontolearn.learners.ALCSAT
+   ontolearn.learners.CELOE
+   ontolearn.learners.CLIP
+   ontolearn.learners.Drill
+   ontolearn.learners.EvoLearner
+   ontolearn.learners.NCES
+   ontolearn.learners.NCES2
+   ontolearn.learners.NERO
+   ontolearn.learners.OCEL
+   ontolearn.learners.ROCES
+   ontolearn.learners.SPARQLQueryLearner
+   ontolearn.learners.SPELL
+   ontolearn.learners.TDL
+
+
+Package Contents
+----------------
+
+.. py:class:: BaseConceptLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None)
+
+   @TODO: CD: Why should this class inherit from AbstractConceptNode ?
+   @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.
+
+   Base class for Concept Learning approaches.
+
+   Learning problem definition, Let
+       * K = (TBOX, ABOX) be a knowledge base.
+       * \ALCConcepts be a set of all ALC concepts.
+       * \hypotheses be a set of ALC concepts : \hypotheses \subseteq \ALCConcepts.
+
+       * K_N be a set of all instances.
+       * K_C be a set of concepts defined in TBOX: K_C \subseteq \ALCConcepts
+       * K_R be a set of properties/relations.
+
+       * E^+, E^- be a set of positive and negative instances and the followings hold
+           ** E^+ \cup E^- \subseteq K_N
+           ** E^+ \cap E^- = \emptyset
+
+   The goal is to learn a set of concepts $\hypotheses \subseteq \ALCConcepts$ such that
+         ∀  H \in \hypotheses: { (K \wedge H \models E^+) \wedge  \neg( K \wedge H \models E^-) }.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+
+   .. py:attribute:: __slots__
+      :value: ('kb', 'reasoner', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal',...
+
+
+
+   .. py:attribute:: name
+      :type:  ClassVar[str]
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:attribute:: quality_func
+      :type:  Optional[ontolearn.abstracts.AbstractScorer]
+
+
+   .. py:attribute:: max_num_of_concepts_tested
+      :type:  Optional[int]
+
+
+   .. py:attribute:: terminate_on_goal
+      :type:  Optional[bool]
+
+
+   .. py:attribute:: max_runtime
+      :type:  Optional[int]
+
+
+   .. py:attribute:: start_time
+      :type:  Optional[float]
+
+
+   .. py:attribute:: reasoner
+      :value: None
+
+
+
+   .. py:method:: clean()
+      :abstractmethod:
+
+
+      Clear all states of the concept learner.
+
+
+
+   .. py:method:: train(*args, **kwargs)
+
+      Train RL agent on learning problems.
+
+      :returns: self.
+
+
+
+   .. py:method:: terminate()
+
+      This method is called when the search algorithm terminates.
+
+      If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.
+
+      :returns: The concept learner object itself.
+
+
+
+   .. py:method:: construct_learning_problem(type_: Type[_X], xargs: Tuple, xkwargs: Dict) -> _X
+
+      Construct learning problem of given type based on args and kwargs. If a learning problem is contained in
+      args or the learning_problem kwarg, it is used. otherwise, a new learning problem of type type_ is created
+      with args and kwargs as parameters.
+
+      :param type_: Type of the learning problem.
+      :param xargs: The positional arguments.
+      :param xkwargs: The keyword arguments.
+
+      :returns: The learning problem.
+
+
+
+   .. py:method:: fit(*args, **kwargs)
+      :abstractmethod:
+
+
+      Run the concept learning algorithm according to its configuration.
+
+      Once finished, the results can be queried with the `best_hypotheses` function.
+
+
+
+   .. py:method:: best_hypotheses(n=10) -> Iterable[owlapy.class_expression.OWLClassExpression]
+      :abstractmethod:
+
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: predict(individuals: List[owlapy.owl_individual.OWLNamedIndividual], hypotheses: Optional[Union[owlapy.class_expression.OWLClassExpression, List[Union[_N, owlapy.class_expression.OWLClassExpression]]]] = None, axioms: Optional[List[owlapy.owl_axiom.OWLAxiom]] = None, n: int = 10) -> pandas.DataFrame
+
+      @TODO: CD: Predicting an individual can be done by a retrieval function not a concept learner
+      @TODO: A concept learner learns an owl class expression.
+      @TODO: This learned expression can be used as a binary predictor.
+
+
+      Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+      (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+      axioms describing these individuals must be provided.
+
+      The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
+
+      :param individuals: A list of individuals/instances.
+      :param hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                         current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+      :param axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                     If the individual list contains individuals that are not in the ontology yet, axioms
+                     describing these individuals must be provided. The argument can also be used to add
+                     arbitrary axioms to the ontology for the prediction.
+      :param n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+
+      :returns: Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+                hypothesis whether the individual is entailed in the hypothesis.
+
+
+
+   .. py:property:: number_of_tested_concepts
+
+
+   .. py:method:: save_best_hypothesis(n: int = 10, path: str = './Predictions', rdf_format: str = 'rdfxml') -> None
+
+      Serialise the best hypotheses to a file.
+      @TODO: CD: This function should be deprecated.
+      @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
+      @TODO:CD: owlapy 1.3.3, we will use save_owl_class_expressions
+      :param n: Maximum number of hypotheses to save.
+      :param path: Filename base (extension will be added automatically).
+      :param rdf_format: Serialisation format. currently supported: "rdfxml".
+
+
+
+   .. py:method:: load_hypotheses(path: str) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      @TODO: CD: This function should be deprecated.
+      @TODO: CD: Loading owl class expressions from disk should be disentangled from a concept earner
+
+
+      Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`.
+
+      :param path: Path to the file containing hypotheses.
+
+
+
+.. py:class:: RefinementBasedConceptLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_child_length: Optional[int] = None, root_concept: Optional[owlapy.class_expression.OWLClassExpression] = None)
+
+   Bases: :py:obj:`BaseConceptLearner`
+
+
+   Base class for refinement based Concept Learning approaches.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: iter_bound
+
+      Limit to stop the algorithm after n refinement steps are done.
+
+      :type: int
+
+   .. attribute:: heuristic_func
+
+      Function to guide the search heuristic.
+
+      :type: AbstractHeuristic
+
+   .. attribute:: operator
+
+      Operator used to generate refinements.
+
+      :type: BaseRefinement
+
+   .. attribute:: start_class
+
+      The starting class expression for the refinement operation.
+
+      :type: OWLClassExpression
+
+   .. attribute:: max_child_length
+
+      Limit the length of concepts generated by the refinement operator.
+
+      :type: int
+
+
+   .. py:attribute:: __slots__
+      :value: ('operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound')
+
+
+
+   .. py:attribute:: operator
+      :type:  Optional[ontolearn.abstracts.BaseRefinement]
+
+
+   .. py:attribute:: heuristic_func
+      :type:  Optional[ontolearn.abstracts.AbstractHeuristic]
+
+
+   .. py:attribute:: max_child_length
+      :type:  Optional[int]
+
+
+   .. py:attribute:: start_class
+      :type:  Optional[owlapy.class_expression.OWLClassExpression]
+
+
+   .. py:attribute:: iter_bound
+      :type:  Optional[int]
+
+
+   .. py:method:: terminate()
+
+      This method is called when the search algorithm terminates.
+
+      If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.
+
+      :returns: The concept learner object itself.
+
+
+
+   .. py:method:: next_node_to_expand(*args, **kwargs)
+      :abstractmethod:
+
+
+      Return from the search tree the most promising search tree node to use for the next refinement step.
+
+      :returns: Next search tree node to refine.
+      :rtype: _N
+
+
+
+   .. py:method:: downward_refinement(*args, **kwargs)
+      :abstractmethod:
+
+
+      Execute one refinement step of a refinement based learning algorithm.
+
+      :param node: the search tree node on which to refine.
+      :type node: _N
+
+      :returns: Refinement results as new search tree nodes (they still need to be added to the tree).
+      :rtype: Iterable[_N]
+
+
+
+   .. py:method:: show_search_tree(heading_step: str, top_n: int = 10) -> None
+      :abstractmethod:
+
+
+      A debugging function to print out the current search tree and the current n best found hypotheses to
+      standard output.
+
+      :param heading_step: A message to display at the beginning of the output.
+      :param top_n: The number of current best hypotheses to print out.
+
+
+
+.. py:class:: ALCSAT(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, max_runtime: Optional[int] = 60, max_concept_size: int = 10, start_concept_size: int = 1, operators: Optional[Set] = None, tree_templates: bool = True, type_encoding: bool = True)
+
+   Bases: :py:obj:`ontolearn.learners.sat_base.SATBaseLearner`
+
+
+   ALCSAT: SAT-based ALC concept learner.
+
+   This learner uses SAT solvers to find ALC concept expressions that fit positive and negative examples.
+   It encodes the concept learning problem as a SAT problem and uses a Glucose SAT solver to find solutions.
+
+   The algorithm incrementally searches for concepts of increasing size (tree depth k) that maximize
+   the accuracy on the given examples.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_concept_size
+
+      Maximum size (depth) of concepts to search for.
+
+      :type: int
+
+   .. attribute:: start_concept_size
+
+      Starting size for incremental search.
+
+      :type: int
+
+   .. attribute:: operators
+
+      Set of ALC operators to use (NEG, AND, OR, EX, ALL).
+
+      :type: Set
+
+   .. attribute:: tree_templates
+
+      Whether to use tree templates for symmetry breaking.
+
+      :type: bool
+
+   .. attribute:: type_encoding
+
+      Whether to use type encoding optimization.
+
+      :type: bool
+
+   .. attribute:: timeout
+
+      Timeout in seconds for the SAT solver (-1 for no timeout).
+
+      :type: float
+
+   .. attribute:: _best_hypothesis
+
+      Best found hypothesis.
+
+      :type: OWLClassExpression
+
+   .. attribute:: _best_hypothesis_accuracy
+
+      Accuracy of the best hypothesis.
+
+      :type: float
+
+   .. attribute:: _structure
+
+      Internal structure representation of the knowledge base.
+
+      :type: Structure
+
+   .. attribute:: _ind_to_owl
+
+      Mapping from internal individual indices to OWL individuals.
+
+      :type: dict
+
+   .. attribute:: _owl_to_ind
+
+      Mapping from OWL individuals to internal indices.
+
+      :type: dict
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_concept_size', 'start_concept_size', 'operators', 'tree_templates', 'type_encoding')
+
+
+
+   .. py:attribute:: name
+      :value: 'alcsat'
+
+
+
+   .. py:attribute:: max_concept_size
+      :value: 10
+
+
+
+   .. py:attribute:: start_concept_size
+      :value: 1
+
+
+
+   .. py:attribute:: operators
+      :value: None
+
+
+
+   .. py:attribute:: tree_templates
+      :value: True
+
+
+
+   .. py:attribute:: type_encoding
+      :value: True
+
+
+
+   .. py:method:: fit(lp: ontolearn.learning_problem.PosNegLPStandard)
+
+      Find ALC concept expressions that explain positive and negative examples.
+
+      :param lp: Learning problem with positive and negative examples.
+
+      :returns: self
+
+
+
+.. py:class:: CELOE(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase = None, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement[ontolearn.search.OENode]] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True)
+
+   Bases: :py:obj:`ontolearn.learners.base.RefinementBasedConceptLearner`
+
+
+   Class Expression Learning for Ontology Engineering.
+   .. attribute:: best_descriptions
+
+      Best hypotheses ordered.
+
+      :type: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
+
+   .. attribute:: best_only
+
+      If False pick only nodes with quality < 1.0, else pick without quality restrictions.
+
+      :type: bool
+
+   .. attribute:: calculate_min_max
+
+      Calculate minimum and maximum horizontal expansion? Statistical purpose only.
+
+      :type: bool
+
+   .. attribute:: heuristic_func
+
+      Function to guide the search heuristic.
+
+      :type: AbstractHeuristic
+
+   .. attribute:: heuristic_queue
+
+      A sorted set that compares the nodes based on Heuristic.
+
+      :type: SortedSet[OENode]
+
+   .. attribute:: iter_bound
+
+      Limit to stop the algorithm after n refinement steps are done.
+
+      :type: int
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_child_length
+
+      Limit the length of concepts generated by the refinement operator.
+
+      :type: int
+
+   .. attribute:: max_he
+
+      Maximal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: min_he
+
+      Minimal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: name
+
+      Name of the model = 'celoe_python'.
+
+      :type: str
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: operator
+
+      Operator used to generate refinements.
+
+      :type: BaseRefinement
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: search_tree
+
+      Dict to store the TreeNode for a class expression.
+
+      :type: Dict[OWLClassExpression, TreeNode[OENode]]
+
+   .. attribute:: start_class
+
+      The starting class expression for the refinement operation.
+
+      :type: OWLClassExpression
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+
+   .. py:attribute:: __slots__
+      :value: ('best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue',...
+
+
+
+   .. py:attribute:: name
+      :value: 'celoe_python'
+
+
+
+   .. py:attribute:: search_tree
+      :type:  Dict[owlapy.class_expression.OWLClassExpression, ontolearn.search.TreeNode[ontolearn.search.OENode]]
+
+
+   .. py:attribute:: heuristic_queue
+
+
+   .. py:attribute:: best_descriptions
+
+
+   .. py:attribute:: best_only
+      :value: False
+
+
+
+   .. py:attribute:: calculate_min_max
+      :value: True
+
+
+
+   .. py:attribute:: max_he
+      :value: 0
+
+
+
+   .. py:attribute:: min_he
+      :value: 1
+
+
+
+   .. py:method:: next_node_to_expand(step: int) -> ontolearn.search.OENode
+
+      Return from the search tree the most promising search tree node to use for the next refinement step.
+
+      :returns: Next search tree node to refine.
+      :rtype: _N
+
+
+
+   .. py:method:: best_hypotheses(n: int = 1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression | Iterable[owlapy.class_expression.OWLClassExpression], ontolearn.search.OENode | Iterable[ontolearn.search.OENode]]
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: make_node(c: owlapy.class_expression.OWLClassExpression, parent_node: Optional[ontolearn.search.OENode] = None, is_root: bool = False) -> ontolearn.search.OENode
+
+
+   .. py:method:: updating_node(node: ontolearn.search.OENode)
+
+      Removes the node from the heuristic sorted set and inserts it again.
+
+      :param Node to update.:
+
+      :Yields: The node itself.
+
+
+
+   .. py:method:: downward_refinement(node: ontolearn.search.OENode) -> Iterable[ontolearn.search.OENode]
+
+      Execute one refinement step of a refinement based learning algorithm.
+
+      :param node: the search tree node on which to refine.
+      :type node: _N
+
+      :returns: Refinement results as new search tree nodes (they still need to be added to the tree).
+      :rtype: Iterable[_N]
+
+
+
+   .. py:method:: fit(*args, **kwargs)
+
+      Find hypotheses that explain pos and neg.
+
+
+
+   .. py:method:: encoded_learning_problem() -> Optional[ontolearn.abstracts.EncodedPosNegLPStandardKind]
+
+      Fetch the most recently used learning problem from the fit method.
+
+
+
+   .. py:method:: tree_node(node: ontolearn.search.OENode) -> ontolearn.search.TreeNode[ontolearn.search.OENode]
+
+      Get the TreeNode of the given node.
+
+      :param node: The node.
+
+      :returns: TreeNode of the given node.
+
+
+
+   .. py:method:: show_search_tree(heading_step: str, top_n: int = 10) -> None
+
+      Show search tree.
+
+
+
+   .. py:method:: update_min_max_horiz_exp(node: ontolearn.search.OENode)
+
+
+   .. py:method:: clean()
+
+      Clear all states of the concept learner.
+
+
+
+.. py:class:: CLIP(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement[ontolearn.search.OENode]] = ExpressRefinement, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True, path_of_embeddings='', predictor_name=None, pretrained_predictor_name=['SetTransformer', 'LSTM', 'GRU', 'CNN'], load_pretrained=False, num_workers=4, num_examples=1000, output_size=15)
+
+   Bases: :py:obj:`ontolearn.learners.CELOE`
+
+
+   Concept Learner with Integrated Length Prediction.
+   This algorithm extends the CELOE algorithm by using concept length predictors and a different refinement operator,
+   i.e., ExpressRefinement
+
+   .. attribute:: best_descriptions
+
+      Best hypotheses ordered.
+
+      :type: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
+
+   .. attribute:: best_only
+
+      If False pick only nodes with quality < 1.0, else pick without quality restrictions.
+
+      :type: bool
+
+   .. attribute:: calculate_min_max
+
+      Calculate minimum and maximum horizontal expansion? Statistical purpose only.
+
+      :type: bool
+
+   .. attribute:: heuristic_func
+
+      Function to guide the search heuristic.
+
+      :type: AbstractHeuristic
+
+   .. attribute:: heuristic_queue
+
+      A sorted set that compares the nodes based on Heuristic.
+
+      :type: SortedSet[OENode]
+
+   .. attribute:: iter_bound
+
+      Limit to stop the algorithm after n refinement steps are done.
+
+      :type: int
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_child_length
+
+      Limit the length of concepts generated by the refinement operator.
+
+      :type: int
+
+   .. attribute:: max_he
+
+      Maximal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: min_he
+
+      Minimal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: name
+
+      Name of the model = 'celoe_python'.
+
+      :type: str
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: operator
+
+      Operator used to generate refinements.
+
+      :type: BaseRefinement
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: search_tree
+
+      Dict to store the TreeNode for a class expression.
+
+      :type: Dict[OWLClassExpression, TreeNode[OENode]]
+
+   .. attribute:: start_class
+
+      The starting class expression for the refinement operation.
+
+      :type: OWLClassExpression
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+
+   .. py:attribute:: __slots__
+      :value: ('best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue',...
+
+
+
+   .. py:attribute:: name
+      :value: 'CLIP'
+
+
+
+   .. py:attribute:: predictor_name
+      :value: None
+
+
+
+   .. py:attribute:: pretrained_predictor_name
+      :value: ['SetTransformer', 'LSTM', 'GRU', 'CNN']
+
+
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: load_pretrained
+      :value: False
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: output_size
+      :value: 15
+
+
+
+   .. py:attribute:: num_examples
+      :value: 1000
+
+
+
+   .. py:attribute:: path_of_embeddings
+      :value: ''
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: length_predictor
+
+
+   .. py:method:: get_length_predictor()
+
+
+   .. py:method:: refresh()
+
+
+   .. py:method:: collate_batch(batch)
+
+
+   .. py:method:: collate_batch_inference(batch)
+
+
+   .. py:method:: pos_neg_to_tensor(pos: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]], neg: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]])
+
+
+   .. py:method:: predict_length(models, x_pos, x_neg)
+
+
+   .. py:method:: fit(*args, **kwargs)
+
+      Find hypotheses that explain pos and neg.
+
+
+
+   .. py:method:: train(data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=0.001, decay_rate=0.0, clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False)
+
+      Train RL agent on learning problems.
+
+      :returns: self.
+
+
+
+.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10)
+
+   Bases: :py:obj:`ontolearn.learners.base.RefinementBasedConceptLearner`
+
+
+   Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)
+
+
+   .. py:attribute:: name
+      :value: 'DRILL'
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: learning_problem
+      :value: None
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: num_workers
+      :value: 1
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.001
+
+
+
+   .. py:attribute:: num_episode
+      :value: 10
+
+
+
+   .. py:attribute:: num_of_sequential_actions
+      :value: 3
+
+
+
+   .. py:attribute:: num_epochs_per_replay
+      :value: 2
+
+
+
+   .. py:attribute:: max_len_replay_memory
+      :value: 256
+
+
+
+   .. py:attribute:: epsilon_decay
+      :value: 0.01
+
+
+
+   .. py:attribute:: epsilon_min
+      :value: 0.0
+
+
+
+   .. py:attribute:: batch_size
+      :value: None
+
+
+
+   .. py:attribute:: num_episodes_per_replay
+      :value: 2
+
+
+
+   .. py:attribute:: seen_examples
+
+
+   .. py:attribute:: pos
+      :type:  FrozenSet[owlapy.owl_individual.OWLNamedIndividual]
+      :value: None
+
+
+
+   .. py:attribute:: neg
+      :type:  FrozenSet[owlapy.owl_individual.OWLNamedIndividual]
+      :value: None
+
+
+
+   .. py:attribute:: positive_type_bias
+      :value: 1
+
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
+   .. py:attribute:: goal_found
+      :value: False
+
+
+
+   .. py:attribute:: search_tree
+
+
+   .. py:attribute:: stop_at_goal
+      :value: True
+
+
+
+   .. py:attribute:: epsilon
+      :value: 1
+
+
+
+   .. py:method:: initialize_training_class_expression_learning_problem(pos: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg: FrozenSet[owlapy.owl_individual.OWLNamedIndividual]) -> ontolearn.search.RL_State
+
+      Initialize
+
+
+
+   .. py:method:: rl_learning_loop(pos_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual]) -> List[float]
+
+      Reinforcement Learning Training Loop
+
+              Initialize RL environment for a given learning problem (E^+ pos_iri and E^- neg_iri )
+
+              Training:
+                          2.1 Obtain a trajectory: A sequence of RL states/DL concepts
+                          T, Person, (Female and
+      orall hasSibling Female).
+                          Rewards at each transition are also computed
+
+
+
+
+   .. py:method:: train(dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None, num_of_target_concepts: int = 1, num_learning_problems: int = 1)
+
+      Training RL agent
+      (1) Generate Learning Problems
+      (2) For each learning problem, perform the RL loop
+
+
+
+
+   .. py:method:: save(directory: str = None) -> None
+
+      save weights of the deep Q-network
+
+
+
+   .. py:method:: load(directory: str = None) -> None
+
+      load weights of the deep Q-network
+
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, max_runtime=None)
+
+      Run the concept learning algorithm according to its configuration.
+
+      Once finished, the results can be queried with the `best_hypotheses` function.
+
+
+
+   .. py:method:: init_embeddings_of_examples(pos_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual], neg_uri: FrozenSet[owlapy.owl_individual.OWLNamedIndividual])
+
+
+   .. py:method:: create_rl_state(c: owlapy.class_expression.OWLClassExpression, parent_node: Optional[ontolearn.search.RL_State] = None, is_root: bool = False) -> ontolearn.search.RL_State
+
+      Create an RL_State instance.
+
+
+
+   .. py:method:: compute_quality_of_class_expression(state: ontolearn.search.RL_State) -> None
+
+      Compute Quality of owl class expression.
+      # (1) Perform concept retrieval
+      # (2) Compute the quality w.r.t. (1), positive and negative examples
+      # (3) Increment the number of tested concepts attribute.
+
+
+
+
+   .. py:method:: apply_refinement(rl_state: ontolearn.search.RL_State) -> Generator
+
+      Downward refinements
+
+
+
+   .. py:method:: select_next_state(current_state, next_rl_states) -> Tuple[ontolearn.search.RL_State, float]
+
+
+   .. py:method:: sequence_of_actions(root_rl_state: ontolearn.search.RL_State) -> Tuple[List[Tuple[ontolearn.search.RL_State, ontolearn.search.RL_State]], List[SupportsFloat]]
+
+      Performing sequence of actions in an RL env whose root state is ⊤
+
+
+
+   .. py:method:: form_experiences(state_pairs: List, rewards: List) -> None
+
+      Form experiences from a sequence of concepts and corresponding rewards.
+
+      state_pairs - A list of tuples containing two consecutive states.
+      reward      - A list of reward.
+
+      Gamma is 1.
+
+      Return
+      X - A list of embeddings of current concept, next concept, positive examples, negative examples.
+      y - Argmax Q value.
+
+
+
+   .. py:method:: learn_from_replay_memory() -> None
+
+      Learning by replaying memory.
+
+
+
+   .. py:method:: update_search(concepts, predicted_Q_values=None)
+
+      @param concepts:
+      @param predicted_Q_values:
+      @return:
+
+
+
+   .. py:method:: get_embeddings_individuals(individuals: List[str]) -> torch.FloatTensor
+
+
+   .. py:method:: get_individuals(rl_state: ontolearn.search.RL_State) -> List[str]
+
+
+   .. py:method:: assign_embeddings(rl_state: ontolearn.search.RL_State) -> None
+
+      Assign embeddings to a rl state. A rl state is represented with vector representation of
+      all individuals belonging to a respective OWLClassExpression.
+
+
+
+   .. py:method:: save_weights(path: str = None) -> None
+
+      Save weights DQL
+
+
+
+   .. py:method:: exploration_exploitation_tradeoff(current_state: ontolearn.abstracts.AbstractNode, next_states: List[ontolearn.abstracts.AbstractNode]) -> ontolearn.abstracts.AbstractNode
+
+      Exploration vs Exploitation tradeoff at finding next state.
+      (1) Exploration.
+      (2) Exploitation.
+
+
+
+   .. py:method:: exploitation(current_state: ontolearn.abstracts.AbstractNode, next_states: List[ontolearn.abstracts.AbstractNode]) -> ontolearn.search.RL_State
+
+      Find next node that is assigned with highest predicted Q value.
+
+      (1) Predict Q values : predictions.shape => torch.Size([n, 1]) where n = len(next_states).
+
+      (2) Find the index of max value in predictions.
+
+      (3) Use the index to obtain next state.
+
+      (4) Return next state.
+
+
+
+   .. py:method:: predict_values(current_state: ontolearn.search.RL_State, next_states: List[ontolearn.search.RL_State]) -> torch.Tensor
+
+      Predict promise of next states given current state.
+
+      :returns: Predicted Q values.
+
+
+
+   .. py:method:: retrieve_concept_chain(rl_state: ontolearn.search.RL_State) -> List[ontolearn.search.RL_State]
+      :staticmethod:
+
+
+
+   .. py:method:: generate_learning_problems(num_of_target_concepts, num_learning_problems) -> List[Tuple[str, Set, Set]]
+
+      Generate learning problems if none is provided.
+
+      Time complexity: O(n^2) n = named concepts
+
+
+
+   .. py:method:: learn_from_illustration(sequence_of_goal_path: List[ontolearn.search.RL_State])
+
+      :param sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter.
+
+
+
+   .. py:method:: best_hypotheses(n=1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, List[owlapy.class_expression.OWLClassExpression]]
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: clean()
+
+      Clear all states of the concept learner.
+
+
+
+   .. py:method:: next_node_to_expand() -> ontolearn.search.RL_State
+
+      Return a node that maximizes the heuristic function at time t.
+
+
+
+   .. py:method:: downward_refinement(*args, **kwargs)
+
+      Execute one refinement step of a refinement based learning algorithm.
+
+      :param node: the search tree node on which to refine.
+      :type node: _N
+
+      :returns: Refinement results as new search tree nodes (they still need to be added to the tree).
+      :rtype: Iterable[_N]
+
+
+
+   .. py:method:: show_search_tree(heading_step: str, top_n: int = 10) -> None
+
+      A debugging function to print out the current search tree and the current n best found hypotheses to
+      standard output.
+
+      :param heading_step: A message to display at the beginning of the output.
+      :param top_n: The number of current best hypotheses to print out.
+
+
+
+   .. py:method:: terminate_training()
+
+
+.. py:class:: EvoLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, fitness_func: Optional[ontolearn.abstracts.AbstractFitness] = None, init_method: Optional[ontolearn.ea_initialization.AbstractEAInitialization] = None, algorithm: Optional[ontolearn.ea_algorithms.AbstractEvolutionaryAlgorithm] = None, mut_uniform_gen: Optional[ontolearn.ea_initialization.AbstractEAInitialization] = None, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, terminate_on_goal: Optional[bool] = None, max_runtime: Optional[int] = None, use_data_properties: bool = True, use_card_restrictions: bool = True, use_inverse: bool = False, tournament_size: int = 7, card_limit: int = 10, population_size: int = 800, num_generations: int = 200, height_limit: int = 17)
+
+   Bases: :py:obj:`ontolearn.learners.base.BaseConceptLearner`
+
+
+   An evolutionary approach to learn concepts in ALCQ(D).
+
+   .. attribute:: algorithm
+
+      The evolutionary algorithm.
+
+      :type: AbstractEvolutionaryAlgorithm
+
+   .. attribute:: card_limit
+
+      The upper cardinality limit if using cardinality restriction on object properties.
+
+      :type: int
+
+   .. attribute:: fitness_func
+
+      Fitness function.
+
+      :type: AbstractFitness
+
+   .. attribute:: height_limit
+
+      The maximum value allowed for the height of the Crossover and Mutation operations.
+
+      :type: int
+
+   .. attribute:: init_method
+
+      The evolutionary algorithm initialization method.
+
+      :type: AbstractEAInitialization
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_num_of_concepts_tested
+
+      Limit to stop the algorithm after n concepts tested.
+
+      :type: int
+
+   .. attribute:: max_runtime
+
+      max_runtime: Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: mut_uniform_gen
+
+      The initialization method to create the tree for mutation operation.
+
+      :type: AbstractEAInitialization
+
+   .. attribute:: name
+
+      Name of the model = 'evolearner'.
+
+      :type: str
+
+   .. attribute:: num_generations
+
+      Number of generation for the evolutionary algorithm.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: population_size
+
+      Population size for the evolutionary algorithm.
+
+      :type: int
+
+   .. attribute:: pset
+
+      Contains the primitives that can be used to solve a Strongly Typed GP problem.
+
+      :type: gp.PrimitiveSetTyped
+
+   .. attribute:: quality_func
+
+      Function to evaluate the quality of solution concepts.
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: toolbox
+
+      A toolbox for evolution that contains the evolutionary operators.
+
+      :type: base.Toolbox
+
+   .. attribute:: tournament_size
+
+      The number of evolutionary individuals participating in each tournament.
+
+      :type: int
+
+   .. attribute:: use_card_restrictions
+
+      Use cardinality restriction for object properties?
+
+      :type: bool
+
+   .. attribute:: use_data_properties
+
+      Consider data properties?
+
+      :type: bool
+
+   .. attribute:: use_inverse
+
+      Consider inversed concepts?
+
+      :type: bool
+
+   .. attribute:: value_splitter
+
+      Used to calculate the splits for data properties values.
+
+      :type: AbstractValueSplitter
+
+
+   .. py:attribute:: __slots__
+      :value: ('fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',...
+
+
+
+   .. py:attribute:: name
+      :value: 'evolearner'
+
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:attribute:: fitness_func
+      :type:  ontolearn.abstracts.AbstractFitness
+
+
+   .. py:attribute:: init_method
+      :type:  ontolearn.ea_initialization.AbstractEAInitialization
+
+
+   .. py:attribute:: algorithm
+      :type:  ontolearn.ea_algorithms.AbstractEvolutionaryAlgorithm
+
+
+   .. py:attribute:: mut_uniform_gen
+      :type:  ontolearn.ea_initialization.AbstractEAInitialization
+
+
+   .. py:attribute:: value_splitter
+      :type:  ontolearn.value_splitter.AbstractValueSplitter
+
+
+   .. py:attribute:: use_data_properties
+      :type:  bool
+
+
+   .. py:attribute:: use_card_restrictions
+      :type:  bool
+
+
+   .. py:attribute:: use_inverse
+      :type:  bool
+
+
+   .. py:attribute:: tournament_size
+      :type:  int
+
+
+   .. py:attribute:: card_limit
+      :type:  int
+
+
+   .. py:attribute:: population_size
+      :type:  int
+
+
+   .. py:attribute:: num_generations
+      :type:  int
+
+
+   .. py:attribute:: height_limit
+      :type:  int
+
+
+   .. py:attribute:: generator
+      :type:  ontolearn.concept_generator.ConceptGenerator
+
+
+   .. py:attribute:: pset
+      :type:  deap.gp.PrimitiveSetTyped
+
+
+   .. py:attribute:: toolbox
+      :type:  deap.base.Toolbox
+
+
+   .. py:attribute:: reasoner
+      :value: None
+
+
+
+   .. py:attribute:: total_fits
+      :value: 0
+
+
+
+   .. py:method:: register_op(alias: str, function: Callable, *args, **kargs)
+
+      Register a *function* in the toolbox under the name *alias*.
+      You may provide default arguments that will be passed automatically when
+      calling the registered function. Fixed arguments can then be overriden
+      at function call time.
+
+      :param alias: The name the operator will take in the toolbox. If the
+                    alias already exist it will overwrite the operator
+                    already present.
+      :param function: The function to which refer the alias.
+      :param args: One or more argument (and keyword argument) to pass
+                   automatically to the registered function when called,
+                   optional.
+
+
+
+   .. py:method:: fit(*args, **kwargs) -> EvoLearner
+
+      Find hypotheses that explain pos and neg.
+
+
+
+   .. py:method:: best_hypotheses(n: int = 1, key: str = 'fitness', return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, Iterable[owlapy.class_expression.OWLClassExpression]]
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: clean(partial: bool = False)
+
+      Clear all states of the concept learner.
+
+
+
+.. py:class:: NCES(knowledge_base, nces2_or_roces=False, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, num_predictions=5, learner_names=['SetTransformer', 'LSTM', 'GRU'], path_of_embeddings=None, path_temp_embeddings=None, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, dicee_model='DeCaL', dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0, enforce_validity: Optional[bool] = None)
+
+   Bases: :py:obj:`ontolearn.base_nces.BaseNCES`
+
+
+   Neural Class Expression Synthesis.
+
+
+   .. py:attribute:: name
+      :value: 'NCES'
+
+
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: learner_names
+      :value: ['SetTransformer', 'LSTM', 'GRU']
+
+
+
+   .. py:attribute:: path_of_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: path_temp_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: path_of_trained_models
+      :value: None
+
+
+
+   .. py:attribute:: dicee_model
+      :value: 'DeCaL'
+
+
+
+   .. py:attribute:: dicee_emb_dim
+      :value: 128
+
+
+
+   .. py:attribute:: dicee_epochs
+      :value: 5
+
+
+
+   .. py:attribute:: dicee_lr
+      :value: 0.01
+
+
+
+   .. py:attribute:: rnn_n_layers
+      :value: 2
+
+
+
+   .. py:attribute:: sorted_examples
+      :value: False
+
+
+
+   .. py:attribute:: has_renamed_inds
+      :value: False
+
+
+
+   .. py:attribute:: enforce_validity
+      :value: None
+
+
+
+   .. py:method:: get_synthesizer(path=None)
+
+
+   .. py:method:: refresh(path=None)
+
+
+   .. py:method:: get_prediction(x_pos, x_neg)
+
+
+   .. py:method:: fit_one(pos: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]], neg: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]])
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, **kwargs)
+
+
+   .. py:method:: best_hypotheses(n=1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, Iterable[owlapy.class_expression.OWLClassExpression], ontolearn.abstracts.AbstractNode, Iterable[ontolearn.abstracts.AbstractNode], None]
+
+
+   .. py:method:: convert_to_list_str_from_iterable(data)
+
+
+   .. py:method:: fit_from_iterable(dataset: Union[List[Tuple[str, Set[owlapy.owl_individual.OWLNamedIndividual], Set[owlapy.owl_individual.OWLNamedIndividual]]], List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List
+
+      - Dataset is a list of tuples where the first items are strings corresponding to target concepts.
+
+      - This function returns predictions as owl class expressions, not nodes as in fit
+
+
+
+   .. py:method:: train(data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False)
+
+
+.. py:class:: NCES2(knowledge_base, nces2_or_roces=True, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, num_predictions=5, path_of_trained_models=None, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy='nces2', input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity: Optional[bool] = None)
+
+   Bases: :py:obj:`ontolearn.base_nces.BaseNCES`
+
+
+   Neural Class Expression Synthesis in ALCHIQ(D).
+
+
+   .. py:attribute:: name
+      :value: 'NCES2'
+
+
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: knowledge_base_path
+
+
+   .. py:attribute:: triples_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: path_of_trained_models
+      :value: None
+
+
+
+   .. py:attribute:: embedding_dim
+      :value: 128
+
+
+
+   .. py:attribute:: sampling_strategy
+      :value: 'nces2'
+
+
+
+   .. py:attribute:: input_dropout
+      :value: 0.0
+
+
+
+   .. py:attribute:: feature_map_dropout
+      :value: 0.1
+
+
+
+   .. py:attribute:: kernel_size
+      :value: 4
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: 32
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: enforce_validity
+      :value: None
+
+
+
+   .. py:method:: get_synthesizer(path=None, verbose=True)
+
+
+   .. py:method:: refresh(path=None)
+
+
+   .. py:method:: get_prediction(dataloaders, return_normalize_scores=False)
+
+
+   .. py:method:: fit_one(pos: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]], neg: Union[List[owlapy.owl_individual.OWLNamedIndividual], List[str]])
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, **kwargs)
+
+
+   .. py:method:: best_hypotheses(n=1, return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, Iterable[owlapy.class_expression.OWLClassExpression], ontolearn.abstracts.AbstractNode, Iterable[ontolearn.abstracts.AbstractNode], None]
+
+
+   .. py:method:: convert_to_list_str_from_iterable(data)
+
+
+   .. py:method:: fit_from_iterable(data: Union[List[Tuple[str, Set[owlapy.owl_individual.OWLNamedIndividual], Set[owlapy.owl_individual.OWLNamedIndividual]]], List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List
+
+      - data is a list of tuples where the first items are strings corresponding to target concepts.
+
+      - This function returns predictions as owl class expressions, not nodes as in fit
+
+
+
+   .. py:method:: train(data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False)
+
+
+.. py:class:: NERO(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, namespace=None, num_embedding_dim: int = 50, neural_architecture: str = 'DeepSet', learning_rate: float = 0.001, num_epochs: int = 100, batch_size: int = 32, num_workers: int = 4, quality_func=None, max_runtime: Optional[int] = 10, verbose: int = 0)
+
+   NERO - Neural Class Expression Learning with Reinforcement.
+
+   NERO combines neural networks with symbolic reasoning for learning OWL class expressions.
+   It uses set-based neural architectures (DeepSet or SetTransformer) to predict quality scores
+   for candidate class expressions.
+
+   :param knowledge_base: The knowledge base to learn from
+   :param num_embedding_dim: Dimensionality of entity embeddings (default: 50)
+   :param neural_architecture: Neural architecture to use ('DeepSet' or 'SetTransformer', default: 'DeepSet')
+   :param learning_rate: Learning rate for training (default: 0.001)
+   :param num_epochs: Number of training epochs (default: 100)
+   :param batch_size: Batch size for training (default: 32)
+   :param num_workers: Number of workers for data loading (default: 4)
+   :param quality_func: Quality function for evaluating expressions (default: F1-score)
+   :param max_runtime: Maximum runtime in seconds (default: None)
+   :param verbose: Verbosity level (default: 0)
+
+
+   .. py:attribute:: name
+      :value: 'NERO'
+
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: ns
+      :value: None
+
+
+
+   .. py:attribute:: num_embedding_dim
+      :value: 50
+
+
+
+   .. py:attribute:: neural_architecture
+      :value: 'DeepSet'
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.001
+
+
+
+   .. py:attribute:: num_epochs
+      :value: 100
+
+
+
+   .. py:attribute:: batch_size
+      :value: 32
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: max_runtime
+      :value: 10
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: search_tree
+
+
+   .. py:attribute:: refinement_op
+      :value: None
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: model
+      :value: None
+
+
+
+   .. py:attribute:: instance_idx_mapping
+      :value: None
+
+
+
+   .. py:attribute:: idx_to_instance_mapping
+      :value: None
+
+
+
+   .. py:attribute:: target_class_expressions
+      :value: None
+
+
+
+   .. py:attribute:: expression
+
+
+   .. py:method:: train(learning_problems: List[Tuple[List[str], List[str]]])
+
+      Train the NERO model on learning problems.
+
+      :param learning_problems: List of (positive_examples, negative_examples) tuples
+
+
+
+   .. py:method:: search(pos: Set[str], neg: Set[str], top_k: int = 10, max_child_length: int = 10, max_queue_size: int = 10000) -> Dict
+
+      Perform reinforcement learning-based search for complex class expressions.
+      Uses neural predictions to initialize and guide the search.
+
+
+
+   .. py:method:: search_with_smart_init(pos: Set[str], neg: Set[str], top_k: int = 10) -> Dict
+
+      Search with smart initialization from neural predictions (model.py compatible).
+      This uses neural model predictions to guide the symbolic refinement search.
+
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, max_runtime: Optional[int] = None)
+
+      Fit the model to a learning problem (Ontolearn-compatible interface).
+      This now includes training the neural model and performing the search.
+
+
+
+   .. py:method:: best_hypothesis() -> Optional[str]
+
+      Return the best hypothesis (Ontolearn-compatible interface).
+
+      :returns: The best predicted class expression as a string
+
+
+
+   .. py:method:: best_hypothesis_quality() -> float
+
+      Return the quality of the best hypothesis.
+
+      :returns: The F-measure/quality of the best prediction
+
+
+
+   .. py:method:: forward(xpos: torch.Tensor, xneg: torch.Tensor) -> torch.Tensor
+
+      Forward pass through the neural model.
+
+      :param xpos: Tensor of positive example indices
+      :param xneg: Tensor of negative example indices
+
+      :returns: Predictions for target class expressions
+
+
+
+   .. py:method:: positive_expression_embeddings(individuals: List[str]) -> torch.Tensor
+
+      Get embeddings for positive individuals.
+
+      :param individuals: List of individual URIs
+
+      :returns: Tensor of embeddings
+
+
+
+   .. py:method:: negative_expression_embeddings(individuals: List[str]) -> torch.Tensor
+
+      Get embeddings for negative individuals.
+
+      :param individuals: List of individual URIs
+
+      :returns: Tensor of embeddings
+
+
+
+   .. py:method:: downward_refine(expression, max_length: Optional[int] = None) -> Set
+
+      Top-down/downward refinement operator from original NERO.
+
+      This implements the refinement logic from model.py:
+      ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s^i ⊑ s}
+
+      :param expression: Expression to refine
+      :param max_length: Maximum length constraint for refinements
+
+      :returns: Set of refined expressions
+
+
+
+   .. py:method:: upward_refine(expression) -> Set
+
+      Bottom-up/upward refinement operator from original NERO.
+
+      This implements the generalization logic:
+      ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s ⊑ s^i}
+
+      :param expression: Expression to generalize
+
+      :returns: Set of generalized expressions
+
+
+
+   .. py:method:: search_with_init(top_prediction_queue: ontolearn.nero_utils.SearchTree, set_pos: Set[str], set_neg: Set[str]) -> ontolearn.nero_utils.SearchTree
+
+      Standard search with smart initialization (from original model.py).
+
+      This is the key search method that combines neural predictions with symbolic refinement.
+
+      :param top_prediction_queue: Priority queue initialized with neural predictions
+      :param set_pos: Set of positive examples
+      :param set_neg: Set of negative examples
+
+      :returns: SearchTree with explored and refined expressions
+
+
+
+   .. py:method:: fit_from_iterable(pos: List[str], neg: List[str], top_k: int = 10, use_search: str = 'SmartInit') -> Dict
+
+      Fit method compatible with original NERO's model.py interface.
+
+      This implements the complete prediction pipeline from the original NERO:
+      1. Neural prediction to get top-k candidates
+      2. Quality evaluation
+      3. Optional symbolic search for refinement
+
+      :param pos: List of positive example URIs
+      :param neg: List of negative example URIs
+      :param top_k: Number of top neural predictions to consider
+      :param use_search: Search strategy ('SmartInit', 'None', or None)
+
+      :returns: Dictionary with prediction results
+
+
+
+   .. py:method:: predict(pos: Set[owlapy.owl_individual.OWLNamedIndividual], neg: Set[owlapy.owl_individual.OWLNamedIndividual], top_k: int = 10) -> Dict
+
+      Predict class expressions for given positive and negative examples.
+      This now uses the search mechanism.
+
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __repr__()
+
+
+.. py:class:: OCEL(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement[ontolearn.search.OENode]] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True)
+
+   Bases: :py:obj:`ontolearn.learners.celoe.CELOE`
+
+
+   A limited version of CELOE.
+
+   .. attribute:: best_descriptions
+
+      Best hypotheses ordered.
+
+      :type: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
+
+   .. attribute:: best_only
+
+      If False pick only nodes with quality < 1.0, else pick without quality restrictions.
+
+      :type: bool
+
+   .. attribute:: calculate_min_max
+
+      Calculate minimum and maximum horizontal expansion? Statistical purpose only.
+
+      :type: bool
+
+   .. attribute:: heuristic_func
+
+      Function to guide the search heuristic.
+
+      :type: AbstractHeuristic
+
+   .. attribute:: heuristic_queue
+
+      A sorted set that compares the nodes based on Heuristic.
+
+      :type: SortedSet[OENode]
+
+   .. attribute:: iter_bound
+
+      Limit to stop the algorithm after n refinement steps are done.
+
+      :type: int
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_child_length
+
+      Limit the length of concepts generated by the refinement operator.
+
+      :type: int
+
+   .. attribute:: max_he
+
+      Maximal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: min_he
+
+      Minimal value of horizontal expansion.
+
+      :type: int
+
+   .. attribute:: name
+
+      Name of the model = 'ocel_python'.
+
+      :type: str
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: operator
+
+      Operator used to generate refinements.
+
+      :type: BaseRefinement
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: search_tree
+
+      Dict to store the TreeNode for a class expression.
+
+      :type: Dict[OWLClassExpression, TreeNode[OENode]]
+
+   .. attribute:: start_class
+
+      The starting class expression for the refinement operation.
+
+      :type: OWLClassExpression
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :value: 'ocel_python'
+
+
+
+   .. py:method:: make_node(c: owlapy.class_expression.OWLClassExpression, parent_node: Optional[ontolearn.search.OENode] = None, is_root: bool = False) -> ontolearn.search.OENode
+
+      Create a node for OCEL.
+
+      :param c: The class expression of this node.
+      :param parent_node: Parent node.
+      :param is_root: Is this the root node?
+
+      :returns: The node.
+      :rtype: OENode
+
+
+
+.. py:class:: ROCES(knowledge_base, nces2_or_roces=True, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, num_predictions=5, k=5, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy='p', input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity: Optional[bool] = None)
+
+   Bases: :py:obj:`ontolearn.learners.nces2.NCES2`
+
+
+   Robust Class Expression Synthesis in Description Logics via Iterative Sampling.
+
+
+   .. py:attribute:: name
+      :value: 'ROCES'
+
+
+
+   .. py:attribute:: k
+      :value: 5
+
+
+
+   .. py:attribute:: enforce_validity
+      :value: None
+
+
+
+.. py:class:: SPARQLQueryLearner(learning_problem: ontolearn.learning_problem.PosNegLPStandard, endpoint_url: str, max_number_of_filters: int = 3, use_complex_filters: bool = True)
+
+   Learning SPARQL queries: Given a description logic concept (potentially generated by a concept learner),
+   try to improve the fittness (e.g., F1) of the corresponding SPARQL query.
+
+       Attributes:
+           name (str): Name of the model = 'SPARQL Query Learner'
+           endpoint_url (string): The URL of the SPARQL endpoint to use
+           max_number_of_filters (int): Limit the number of filters combined during the improvement process
+           learning_problem (PosNegLPStandard): the learning problem (sets of positive and negative examples)
+           uses_complex_filters (bool): Denotes whether the learner uses complex filters
+                                       (i.e., makes use of the values of data properties) to improve the quality
+           _root_var (str): The root variable to be used in the OWL2SPARQL conversion
+           _possible_filters (List[str]): A list of possible FILTERs to use to improve the quality
+
+
+   .. py:attribute:: __slots__
+      :value: ('endpoint_url', 'max_number_of_filters', 'uses_complex_filters', 'learning_problem',...
+
+
+
+   .. py:attribute:: name
+      :value: 'SPARQL Query Learner'
+
+
+
+   .. py:attribute:: endpoint_url
+      :type:  str
+
+
+   .. py:attribute:: max_number_of_filters
+      :type:  int
+
+
+   .. py:attribute:: learning_problem
+      :type:  ontolearn.learning_problem.PosNegLPStandard
+
+
+   .. py:attribute:: uses_complex_filters
+      :type:  bool
+
+
+   .. py:method:: learn_sparql_query(ce: owlapy.class_expression.OWLClassExpression)
+
+
+.. py:class:: SPELL(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, max_runtime: Optional[int] = 60, max_query_size: int = 10, starting_query_size: int = 1, search_mode: str = 'full_approx')
+
+   Bases: :py:obj:`ontolearn.learners.sat_base.SATBaseLearner`
+
+
+   SPELL: SAT-based concept learner using general SPELL fitting.
+
+   This learner uses SAT solvers to find concept expressions that fit positive and negative examples.
+   Unlike ALCSAT which is specialized for ALC, SPELL uses the more general fitting.py module
+   which supports different modes of operation.
+
+   The algorithm incrementally searches for queries of increasing size that maximize
+   the coverage on the given examples.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_query_size
+
+      Maximum size of queries to search for.
+
+      :type: int
+
+   .. attribute:: search_mode
+
+      Search mode - exact, neg_approx, or full_approx.
+
+   .. attribute:: _best_hypothesis
+
+      Best found hypothesis.
+
+      :type: OWLClassExpression
+
+   .. attribute:: _best_hypothesis_accuracy
+
+      Accuracy of the best hypothesis.
+
+      :type: float
+
+   .. attribute:: _structure
+
+      Internal structure representation of the knowledge base.
+
+      :type: Structure
+
+   .. attribute:: _ind_to_owl
+
+      Mapping from internal individual indices to OWL individuals.
+
+      :type: dict
+
+   .. attribute:: _owl_to_ind
+
+      Mapping from OWL individuals to internal indices.
+
+      :type: dict
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_query_size', 'starting_query_size', 'search_mode')
+
+
+
+   .. py:attribute:: name
+      :value: 'spell'
+
+
+
+   .. py:attribute:: max_query_size
+      :value: 10
+
+
+
+   .. py:attribute:: starting_query_size
+      :value: 1
+
+
+
+   .. py:attribute:: search_mode
+
+
+   .. py:method:: fit(lp: ontolearn.learning_problem.PosNegLPStandard)
+
+      Find concept expressions that explain positive and negative examples.
+
+      :param lp: Learning problem with positive and negative examples.
+
+      :returns: self
+
+
+
+.. py:class:: TDL(knowledge_base, use_inverse: bool = True, use_data_properties: bool = True, use_nominals: bool = True, use_card_restrictions: bool = True, kwargs_classifier: dict = None, max_runtime: int = 1, grid_search_over: dict = None, grid_search_apply: bool = False, kwargs_grid_search: dict = {}, report_classification: bool = True, plot_tree: bool = False, plot_embeddings: bool = False, plot_feature_importance: bool = False, verbose: int = 10, verbalize: bool = False)
+
+   Tree-based Description Logic Concept Learner
+
+
+   .. py:attribute:: use_inverse
+      :value: True
+
+
+
+   .. py:attribute:: use_data_properties
+      :value: True
+
+
+
+   .. py:attribute:: use_nominals
+      :value: True
+
+
+
+   .. py:attribute:: use_card_restrictions
+      :value: True
+
+
+
+   .. py:attribute:: verbose
+      :value: 10
+
+
+
+   .. py:attribute:: grid_search_over
+      :value: None
+
+
+
+   .. py:attribute:: kwargs_grid_search
+
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: report_classification
+      :value: True
+
+
+
+   .. py:attribute:: plot_tree
+      :value: False
+
+
+
+   .. py:attribute:: plot_embeddings
+      :value: False
+
+
+
+   .. py:attribute:: plot_feature_importance
+      :value: False
+
+
+
+   .. py:attribute:: clf
+      :value: None
+
+
+
+   .. py:attribute:: kwargs_classifier
+
+
+   .. py:attribute:: max_runtime
+      :value: 1
+
+
+
+   .. py:attribute:: features
+      :value: None
+
+
+
+   .. py:attribute:: disjunction_of_conjunctive_concepts
+      :value: None
+
+
+
+   .. py:attribute:: conjunctive_concepts
+      :value: None
+
+
+
+   .. py:attribute:: owl_class_expressions
+
+
+   .. py:attribute:: cbd_mapping
+      :type:  Dict[str, Set[Tuple[str, str]]]
+
+
+   .. py:attribute:: types_of_individuals
+
+
+   .. py:attribute:: verbalize
+      :value: False
+
+
+
+   .. py:attribute:: data_property_cast
+
+
+   .. py:attribute:: X
+      :value: None
+
+
+
+   .. py:attribute:: y
+      :value: None
+
+
+
+   .. py:method:: extract_expressions_from_owl_individuals(individuals: List[owlapy.owl_individual.OWLNamedIndividual]) -> Tuple[numpy.ndarray, List[owlapy.class_expression.OWLClassExpression]]
+
+
+   .. py:method:: create_training_data(learning_problem: ontolearn.learning_problem.PosNegLPStandard) -> Tuple[pandas.DataFrame, pandas.DataFrame]
+
+
+   .. py:method:: construct_owl_expression_from_tree(X: pandas.DataFrame, y: pandas.DataFrame) -> List[owlapy.class_expression.OWLObjectIntersectionOf]
+
+      Construct an OWL class expression from a decision tree
+
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard = None, max_runtime: int = None)
+
+      Fit the learner to the given learning problem
+
+      (1) Extract multi-hop information about E^+ and E^-.
+      (2) Create OWL Class Expressions from (1)
+      (3) Build a binary sparse training data X where
+          first |E+| rows denote the binary representations of positives
+          Remaining rows denote the binary representations of E⁻
+      (4) Create binary labels.
+      (4) Construct a set of DL concept for each e \in E^+
+      (5) Union (4)
+
+      :param learning_problem: The learning problem
+      :param max_runtime:total runtime of the learning
+
+
+
+
+   .. py:property:: classification_report
+      :type: str
+
+
+
+   .. py:method:: best_hypotheses(n=1) -> Tuple[owlapy.class_expression.OWLClassExpression, List[owlapy.class_expression.OWLClassExpression]]
+
+      Return the prediction
+
+
+
+   .. py:method:: predict(X: List[owlapy.owl_individual.OWLNamedIndividual], proba=True) -> numpy.ndarray
+      :abstractmethod:
+
+
+      Predict the likelihoods of individuals belonging to the classes
+
+
+

@@ -1,0 +1,555 @@
+ontolearn.refinement_operators
+==============================
+
+.. py:module:: ontolearn.refinement_operators
+
+.. autoapi-nested-parse::
+
+   Refinement Operators for refinement-based concept learners.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.refinement_operators.LengthBasedRefinement
+   ontolearn.refinement_operators.ModifiedCELOERefinement
+   ontolearn.refinement_operators.ExpressRefinement
+   ontolearn.refinement_operators.NERORefinement
+
+
+Module Contents
+---------------
+
+.. py:class:: LengthBasedRefinement(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, use_inverse: bool = True, use_data_properties: bool = False, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5)
+
+   Bases: :py:obj:`ontolearn.abstracts.BaseRefinement`
+
+
+   A top-down length based ("no semantic information leveraged) refinement operator in ALC.
+
+
+   .. py:attribute:: use_inverse
+      :value: True
+
+
+
+   .. py:attribute:: use_data_properties
+      :value: False
+
+
+
+   .. py:attribute:: use_card_restrictions
+      :value: True
+
+
+
+   .. py:attribute:: use_nominals
+      :value: True
+
+
+
+   .. py:attribute:: top_refinements
+      :type:  set
+      :value: None
+
+
+
+   .. py:attribute:: pos
+      :value: None
+
+
+
+   .. py:attribute:: neg
+      :value: None
+
+
+
+   .. py:method:: set_input_examples(pos: frozenset, neg: frozenset)
+
+
+   .. py:method:: refine_top() -> Iterable
+
+      Refine Top Class Expression
+
+      rho(T)
+
+      1. Most General OWL Named Concepts
+      2. Complement of Least General OWL Named Concepts General
+      3- Intersection and Union of (1) and (2)
+      4. Restriction: SomeValuesFrom and AllValuesFrom
+      4.1. For each object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+      4.2. For each inverse of object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+      4.3. For each object property, return OWLObjectMinCardinality
+      4.4. For each inverse of object property, return OWLObjectMinCardinality
+
+
+
+
+
+
+
+
+   .. py:method:: refine_atomic_concept(class_expression: owlapy.class_expression.OWLClass) -> Generator[owlapy.class_expression.OWLObjectIntersectionOf, None, None]
+
+
+   .. py:method:: refine_complement_of(class_expression: owlapy.class_expression.OWLObjectComplementOf) -> Generator[owlapy.class_expression.OWLObjectComplementOf, None, None]
+
+
+   .. py:method:: refine_object_some_values_from(class_expression: owlapy.class_expression.OWLObjectSomeValuesFrom) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+
+   .. py:method:: refine_object_all_values_from(class_expression: owlapy.class_expression.OWLObjectAllValuesFrom) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+
+   .. py:method:: refine_object_union_of(class_expression: owlapy.class_expression.OWLObjectUnionOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine OWLObjectUnionof by refining each operands:
+
+
+
+   .. py:method:: refine_object_intersection_of(class_expression: owlapy.class_expression.OWLObjectIntersectionOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine OWLObjectIntersectionOf by refining each operands:
+
+
+
+   .. py:method:: refine(class_expression) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine a given concept.
+
+      :param ce: Concept to refine.
+      :type ce: OWLClassExpression
+
+      :returns: New refined concepts.
+
+
+
+   .. py:method:: from_iterables(cls, a_operands, b_operands)
+      :staticmethod:
+
+
+
+.. py:class:: ModifiedCELOERefinement(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, max_child_length: int = 10, use_negation: bool = True, use_all_constructor: bool = True, use_inverse: bool = True, use_card_restrictions: bool = True, use_numeric_datatypes: bool = True, use_time_datatypes: bool = True, use_boolean_datatype: bool = True, card_limit: int = 10)
+
+   Bases: :py:obj:`ontolearn.abstracts.BaseRefinement`\ [\ :py:obj:`ontolearn.search.OENode`\ ]
+
+
+   A top down/downward refinement operator in SHIQ(D).
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse',...
+
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:attribute:: value_splitter
+      :type:  Optional[ontolearn.value_splitter.AbstractValueSplitter]
+
+
+   .. py:attribute:: max_child_length
+      :type:  int
+
+
+   .. py:attribute:: use_negation
+      :type:  bool
+
+
+   .. py:attribute:: use_all_constructor
+      :type:  bool
+
+
+   .. py:attribute:: use_card_restrictions
+      :type:  bool
+
+
+   .. py:attribute:: use_numeric_datatypes
+      :type:  bool
+
+
+   .. py:attribute:: use_time_datatypes
+      :type:  bool
+
+
+   .. py:attribute:: use_boolean_datatype
+      :type:  bool
+
+
+   .. py:attribute:: card_limit
+      :type:  int
+
+
+   .. py:attribute:: max_nr_fillers
+      :type:  DefaultDict[owlapy.owl_property.OWLObjectPropertyExpression, int]
+
+
+   .. py:attribute:: dp_splits
+      :type:  Dict[owlapy.owl_property.OWLDataPropertyExpression, List[owlapy.owl_literal.OWLLiteral]]
+
+
+   .. py:attribute:: generator
+      :type:  ontolearn.concept_generator.ConceptGenerator
+
+
+   .. py:attribute:: use_inverse
+      :value: True
+
+
+
+   .. py:method:: refine_atomic_concept(ce: owlapy.class_expression.OWLClass, max_length: int, current_domain: Optional[owlapy.class_expression.OWLClassExpression] = None) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refinement operator implementation in CELOE-DL-learner,
+      distinguishes the refinement of atomic concepts and start concept(they called Top concept).
+      [1] Concept learning, Lehmann et. al
+
+          (1) Generate all subconcepts given C, Denoted by (SH_down(C)),
+          (2) Generate {A AND C | A \in SH_down(C)},
+          (2) Generate {A OR C | A \in SH_down(C)},
+          (3) Generate {\not A | A \in SH_down(C) AND_logical \not \exist B in T : B \sqsubset A},
+          (4) Generate restrictions,
+          (5) Intersect and union (1),(2),(3),(4),
+          (6) Create negation of all leaf_concepts.
+
+                      (***) The most general relation is not available.
+
+      :param ce: Atomic concept to refine.
+      :param max_length: Refine up to this concept length.
+      :param current_domain: Domain.
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_complement_of(ce: owlapy.class_expression.OWLObjectComplementOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:complementOf.
+
+      :param ce: owl:complementOf - class expression.
+      :type ce: OWLObjectComplementOf
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_some_values_from(ce: owlapy.class_expression.OWLObjectSomeValuesFrom, max_length: int) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:someValuesFrom.
+
+      :param ce: owl:someValuesFrom class expression.
+      :type ce: OWLObjectSomeValuesFrom
+      :param max_length: Refine up to this concept length.
+      :type max_length: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_all_values_from(ce: owlapy.class_expression.OWLObjectAllValuesFrom, max_length: int) -> Iterable[owlapy.class_expression.OWLObjectAllValuesFrom]
+
+      Refine owl:allValuesFrom.
+
+      :param ce: owl:allValuesFrom - class expression.
+      :type ce: OWLObjectAllValuesFrom
+      :param max_length: Refine up to this concept length.
+      :type max_length: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_min_card_restriction(ce: owlapy.class_expression.OWLObjectMinCardinality, max_length: int) -> Iterable[owlapy.class_expression.OWLObjectMinCardinality]
+
+      Refine owl:minCardinality.
+
+      :param ce: owl:minCardinality - class expression.
+      :type ce: OWLObjectMinCardinality
+      :param max_length: Refine up to this concept length.
+      :type max_length: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_max_card_restriction(ce: owlapy.class_expression.OWLObjectMaxCardinality, max_length: int) -> Iterable[owlapy.class_expression.OWLObjectMaxCardinality]
+
+      Refine owl:maxCardinality.
+
+      :param ce: owl:maxCardinality - class expression.
+      :type ce: OWLObjectMaxCardinality
+      :param max_length: Refine up to this concept length.
+      :type max_length: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_union_of(ce: owlapy.class_expression.OWLObjectUnionOf, max_length: int, current_domain: Optional[owlapy.class_expression.OWLClassExpression]) -> Iterable[owlapy.class_expression.OWLObjectUnionOf]
+
+      Refine owl:unionOf.
+
+      Given a node corresponding a concepts that comprises union operation:
+      1) Obtain two concepts A, B,
+      2) Refine A and union refinements with B,
+      3) Repeat (2) for B.
+
+      :param ce: owl:unionOf - class expression.
+      :type ce: OWLObjectUnionOf
+      :param current_domain: Domain.
+      :type current_domain: OWLClassExpression
+      :param max_length: Refine up to this concept length.
+      :type max_length: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_intersection_of(ce: owlapy.class_expression.OWLObjectIntersectionOf, max_length: int, current_domain: Optional[owlapy.class_expression.OWLClassExpression]) -> Iterable[owlapy.class_expression.OWLObjectIntersectionOf]
+
+      Refine owl:intersectionOf.
+
+      :param ce: owl:intersectionOf - class expression.
+      :type ce: OWLObjectIntersectionOf
+      :param current_domain: Domain.
+      :type current_domain: int
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_data_some_values_from(ce: owlapy.class_expression.OWLDataSomeValuesFrom) -> Iterable[owlapy.class_expression.OWLDataSomeValuesFrom]
+
+      Refine owl:someValuesFrom for data properties.
+
+      :param ce: owl:someValuesFrom - class expression.
+      :type ce: OWLDataSomeValuesFrom
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_data_has_value(ce: owlapy.class_expression.OWLDataHasValue) -> Iterable[owlapy.class_expression.OWLDataHasValue]
+
+      Refine owl:hasValue.
+
+      :param ce: owl:hasValue - class expression.
+      :type ce: OWLDataHasValue
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine(ce: owlapy.class_expression.OWLClassExpression, max_length: int, current_domain: Optional[owlapy.class_expression.OWLClassExpression] = None) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine a given concept.
+
+      :param ce: Concept to refine.
+      :param max_length: Refine up to this concept length.
+      :param current_domain: Domain.
+
+      :returns: Iterable of refined concepts.
+
+
+
+.. py:class:: ExpressRefinement(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, downsample: bool = True, expressivity: float = 0.8, sample_fillers_count: int = 5, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, max_child_length: int = 10, use_inverse: bool = True, use_card_restrictions: bool = True, use_numeric_datatypes: bool = True, use_time_datatypes: bool = True, use_boolean_datatype: bool = True, card_limit: int = 10)
+
+   Bases: :py:obj:`ModifiedCELOERefinement`
+
+
+   A top-down refinement operator in ALCHIQ(D).
+
+
+   .. py:attribute:: __slots__
+      :value: ('expressivity', 'downsample', 'sample_fillers_count', 'generator')
+
+
+
+   .. py:attribute:: expressivity
+      :type:  float
+
+
+   .. py:attribute:: downsample
+      :type:  bool
+
+
+   .. py:attribute:: sample_fillers_count
+      :type:  int
+
+
+   .. py:attribute:: generator
+      :type:  ontolearn.concept_generator.ConceptGenerator
+
+
+   .. py:method:: refine_atomic_concept(ce: owlapy.class_expression.OWLClass) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine atomic concept.
+      :param ce: Atomic concept to refine.
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_complement_of(ce: owlapy.class_expression.OWLObjectComplementOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:complementOf.
+
+      :param ce: owl:complementOf - class expression.
+      :type ce: OWLObjectComplementOf
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_some_values_from(ce: owlapy.class_expression.OWLObjectSomeValuesFrom) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:someValuesFrom.
+
+      :param ce: owl:someValuesFrom class expression.
+      :type ce: OWLObjectSomeValuesFrom
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_all_values_from(ce: owlapy.class_expression.OWLObjectAllValuesFrom) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:allValuesFrom.
+
+      :param ce: owl:allValuesFrom - class expression.
+      :type ce: OWLObjectAllValuesFrom
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_min_card_restriction(ce: owlapy.class_expression.OWLObjectMinCardinality) -> Iterable[owlapy.class_expression.OWLObjectMinCardinality]
+
+      Refine owl:allValuesFrom.
+
+      :param ce: owl:allValuesFrom - class expression.
+      :type ce: OWLObjectAllValuesFrom
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_max_card_restriction(ce: owlapy.class_expression.OWLObjectMaxCardinality) -> Iterable[owlapy.class_expression.OWLObjectMaxCardinality]
+
+      Refine owl:maxCardinality.
+
+      :param ce: owl:maxCardinality - class expression.
+      :type ce: OWLObjectMaxCardinality
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_union_of(ce: owlapy.class_expression.OWLObjectUnionOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:unionOf.
+
+      :param ce: owl:unionOf - class expression.
+      :type ce: OWLObjectUnionOf
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_object_intersection_of(ce: owlapy.class_expression.OWLObjectIntersectionOf) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine owl:intersectionOf.
+
+      :param ce: owl:intersectionOf - class expression.
+      :type ce: OWLObjectIntersectionOf
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_data_some_values_from(ce: owlapy.class_expression.OWLDataSomeValuesFrom) -> Iterable[owlapy.class_expression.OWLDataSomeValuesFrom]
+
+      Refine owl:someValuesFrom for data properties.
+
+      :param ce: owl:someValuesFrom - class expression.
+      :type ce: OWLDataSomeValuesFrom
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine_data_has_value(ce: owlapy.class_expression.OWLDataHasValue) -> Iterable[owlapy.class_expression.OWLDataHasValue]
+
+      Refine owl:hasValue.
+
+      :param ce: owl:hasValue - class expression.
+      :type ce: OWLDataHasValue
+
+      :returns: Iterable of refined concepts.
+
+
+
+   .. py:method:: refine(ce, **kwargs) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      Refine a given concept.
+
+      :param ce: Concept to refine
+
+      :returns: Iterable of refined concepts.
+
+
+
+.. py:class:: NERORefinement(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, fast_init=False)
+
+   Bases: :py:obj:`ontolearn.abstracts.BaseRefinement`
+
+
+   A custom refinement operator for NERO that generates candidate class expressions.
+   This is a faithful implementation of SimpleRefinement from the original NERO.
+
+
+   .. py:attribute:: renderer
+
+
+   .. py:attribute:: N_I
+
+
+   .. py:attribute:: expressions
+
+
+   .. py:attribute:: str_nc_star
+      :value: None
+
+
+
+   .. py:attribute:: dict_sh_direct_down
+
+
+   .. py:attribute:: dict_sh_direct_up
+
+
+   .. py:attribute:: fast_init
+      :value: False
+
+
+
+   .. py:attribute:: length_to_expression_str
+
+
+   .. py:attribute:: str_ae_to_neg_ae
+
+
+   .. py:attribute:: top_refinements
+
+
+   .. py:method:: refine(class_expression: ontolearn.nero_utils.ClassExpression) -> List[ontolearn.nero_utils.ClassExpression]
+
+      Generate refinements for a given class expression.
+      This implements the full refinement logic from the original NERO.
+
+
+

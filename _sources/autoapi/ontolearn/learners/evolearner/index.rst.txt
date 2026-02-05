@@ -1,0 +1,300 @@
+ontolearn.learners.evolearner
+=============================
+
+.. py:module:: ontolearn.learners.evolearner
+
+.. autoapi-nested-parse::
+
+   EvoLearner: An evolutionary approach to learn concepts in ALCQ(D).
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.evolearner.EvoLearner
+
+
+Module Contents
+---------------
+
+.. py:class:: EvoLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, fitness_func: Optional[ontolearn.abstracts.AbstractFitness] = None, init_method: Optional[ontolearn.ea_initialization.AbstractEAInitialization] = None, algorithm: Optional[ontolearn.ea_algorithms.AbstractEvolutionaryAlgorithm] = None, mut_uniform_gen: Optional[ontolearn.ea_initialization.AbstractEAInitialization] = None, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, terminate_on_goal: Optional[bool] = None, max_runtime: Optional[int] = None, use_data_properties: bool = True, use_card_restrictions: bool = True, use_inverse: bool = False, tournament_size: int = 7, card_limit: int = 10, population_size: int = 800, num_generations: int = 200, height_limit: int = 17)
+
+   Bases: :py:obj:`ontolearn.learners.base.BaseConceptLearner`
+
+
+   An evolutionary approach to learn concepts in ALCQ(D).
+
+   .. attribute:: algorithm
+
+      The evolutionary algorithm.
+
+      :type: AbstractEvolutionaryAlgorithm
+
+   .. attribute:: card_limit
+
+      The upper cardinality limit if using cardinality restriction on object properties.
+
+      :type: int
+
+   .. attribute:: fitness_func
+
+      Fitness function.
+
+      :type: AbstractFitness
+
+   .. attribute:: height_limit
+
+      The maximum value allowed for the height of the Crossover and Mutation operations.
+
+      :type: int
+
+   .. attribute:: init_method
+
+      The evolutionary algorithm initialization method.
+
+      :type: AbstractEAInitialization
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_num_of_concepts_tested
+
+      Limit to stop the algorithm after n concepts tested.
+
+      :type: int
+
+   .. attribute:: max_runtime
+
+      max_runtime: Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: mut_uniform_gen
+
+      The initialization method to create the tree for mutation operation.
+
+      :type: AbstractEAInitialization
+
+   .. attribute:: name
+
+      Name of the model = 'evolearner'.
+
+      :type: str
+
+   .. attribute:: num_generations
+
+      Number of generation for the evolutionary algorithm.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: population_size
+
+      Population size for the evolutionary algorithm.
+
+      :type: int
+
+   .. attribute:: pset
+
+      Contains the primitives that can be used to solve a Strongly Typed GP problem.
+
+      :type: gp.PrimitiveSetTyped
+
+   .. attribute:: quality_func
+
+      Function to evaluate the quality of solution concepts.
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: toolbox
+
+      A toolbox for evolution that contains the evolutionary operators.
+
+      :type: base.Toolbox
+
+   .. attribute:: tournament_size
+
+      The number of evolutionary individuals participating in each tournament.
+
+      :type: int
+
+   .. attribute:: use_card_restrictions
+
+      Use cardinality restriction for object properties?
+
+      :type: bool
+
+   .. attribute:: use_data_properties
+
+      Consider data properties?
+
+      :type: bool
+
+   .. attribute:: use_inverse
+
+      Consider inversed concepts?
+
+      :type: bool
+
+   .. attribute:: value_splitter
+
+      Used to calculate the splits for data properties values.
+
+      :type: AbstractValueSplitter
+
+
+   .. py:attribute:: __slots__
+      :value: ('fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',...
+
+
+
+   .. py:attribute:: name
+      :value: 'evolearner'
+
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:attribute:: fitness_func
+      :type:  ontolearn.abstracts.AbstractFitness
+
+
+   .. py:attribute:: init_method
+      :type:  ontolearn.ea_initialization.AbstractEAInitialization
+
+
+   .. py:attribute:: algorithm
+      :type:  ontolearn.ea_algorithms.AbstractEvolutionaryAlgorithm
+
+
+   .. py:attribute:: mut_uniform_gen
+      :type:  ontolearn.ea_initialization.AbstractEAInitialization
+
+
+   .. py:attribute:: value_splitter
+      :type:  ontolearn.value_splitter.AbstractValueSplitter
+
+
+   .. py:attribute:: use_data_properties
+      :type:  bool
+
+
+   .. py:attribute:: use_card_restrictions
+      :type:  bool
+
+
+   .. py:attribute:: use_inverse
+      :type:  bool
+
+
+   .. py:attribute:: tournament_size
+      :type:  int
+
+
+   .. py:attribute:: card_limit
+      :type:  int
+
+
+   .. py:attribute:: population_size
+      :type:  int
+
+
+   .. py:attribute:: num_generations
+      :type:  int
+
+
+   .. py:attribute:: height_limit
+      :type:  int
+
+
+   .. py:attribute:: generator
+      :type:  ontolearn.concept_generator.ConceptGenerator
+
+
+   .. py:attribute:: pset
+      :type:  deap.gp.PrimitiveSetTyped
+
+
+   .. py:attribute:: toolbox
+      :type:  deap.base.Toolbox
+
+
+   .. py:attribute:: reasoner
+      :value: None
+
+
+
+   .. py:attribute:: total_fits
+      :value: 0
+
+
+
+   .. py:method:: register_op(alias: str, function: Callable, *args, **kargs)
+
+      Register a *function* in the toolbox under the name *alias*.
+      You may provide default arguments that will be passed automatically when
+      calling the registered function. Fixed arguments can then be overriden
+      at function call time.
+
+      :param alias: The name the operator will take in the toolbox. If the
+                    alias already exist it will overwrite the operator
+                    already present.
+      :param function: The function to which refer the alias.
+      :param args: One or more argument (and keyword argument) to pass
+                   automatically to the registered function when called,
+                   optional.
+
+
+
+   .. py:method:: fit(*args, **kwargs) -> EvoLearner
+
+      Find hypotheses that explain pos and neg.
+
+
+
+   .. py:method:: best_hypotheses(n: int = 1, key: str = 'fitness', return_node: bool = False) -> Union[owlapy.class_expression.OWLClassExpression, Iterable[owlapy.class_expression.OWLClassExpression]]
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: clean(partial: bool = False)
+
+      Clear all states of the concept learner.
+
+
+

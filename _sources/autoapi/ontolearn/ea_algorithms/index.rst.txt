@@ -1,0 +1,178 @@
+ontolearn.ea_algorithms
+=======================
+
+.. py:module:: ontolearn.ea_algorithms
+
+.. autoapi-nested-parse::
+
+   Evolutionary algorithms (for Evolearner).
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.ea_algorithms.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.ea_algorithms.AbstractEvolutionaryAlgorithm
+   ontolearn.ea_algorithms.BaseEvolutionaryAlgorithm
+   ontolearn.ea_algorithms.EASimple
+   ontolearn.ea_algorithms.RegularizedEvolution
+   ontolearn.ea_algorithms.MultiPopulation
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: AbstractEvolutionaryAlgorithm
+
+   An abstract class for evolutionary algorithms.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  ClassVar[str]
+
+
+   .. py:method:: evolve(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_generations: int, start_time: float, verbose: bool = False) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+      :abstractmethod:
+
+
+
+.. py:class:: BaseEvolutionaryAlgorithm
+
+   Bases: :py:obj:`AbstractEvolutionaryAlgorithm`
+
+
+   An abstract class for evolutionary algorithms.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:method:: evolve(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_generations: int, start_time: float, verbose: int = 0) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+
+
+   .. py:method:: generation(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_selections: int = 0) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+      :abstractmethod:
+
+
+
+.. py:class:: EASimple(crossover_pr: float = 0.9, mutation_pr: float = 0.1, elitism: bool = False, elite_size: float = 0.1)
+
+   Bases: :py:obj:`BaseEvolutionaryAlgorithm`
+
+
+   An abstract class for evolutionary algorithms.
+
+
+   .. py:attribute:: __slots__
+      :value: ('crossover_pr', 'mutation_pr', 'elitism', 'elite_size')
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'EASimple'
+
+
+
+   .. py:attribute:: crossover_pr
+      :type:  float
+
+
+   .. py:attribute:: mutation_pr
+      :type:  float
+
+
+   .. py:attribute:: elitism
+      :type:  bool
+
+
+   .. py:attribute:: elite_size
+      :type:  float
+
+
+   .. py:method:: generation(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_selections: int = 0) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+
+
+.. py:class:: RegularizedEvolution
+
+   Bases: :py:obj:`BaseEvolutionaryAlgorithm`
+
+
+   An abstract class for evolutionary algorithms.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'RegularizedEvolution'
+
+
+
+   .. py:method:: generation(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_selections: int = 0) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+
+
+.. py:class:: MultiPopulation(base_algorithm: Optional[BaseEvolutionaryAlgorithm] = None, migration_size: float = 0.1, num_populations: int = 4, iso_generations: float = 0.1, boost: float = 0.0)
+
+   Bases: :py:obj:`AbstractEvolutionaryAlgorithm`
+
+
+   An abstract class for evolutionary algorithms.
+
+
+   .. py:attribute:: __slots__
+      :value: ('base_algorithm', 'migration_size', 'num_populations', 'iso_generations', 'boost')
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'MultiPopulation'
+
+
+
+   .. py:attribute:: base_algorithm
+      :type:  BaseEvolutionaryAlgorithm
+
+
+   .. py:attribute:: migration_size
+      :type:  float
+
+
+   .. py:attribute:: num_populations
+      :type:  int
+
+
+   .. py:attribute:: iso_generations
+      :type:  float
+
+
+   .. py:attribute:: boost
+      :type:  float
+
+
+   .. py:method:: evolve(toolbox: deap.base.Toolbox, population: List[ontolearn.ea_utils.Tree], num_generations: int, start_time: float, verbose: int = 0) -> Tuple[bool, List[ontolearn.ea_utils.Tree]]
+
+

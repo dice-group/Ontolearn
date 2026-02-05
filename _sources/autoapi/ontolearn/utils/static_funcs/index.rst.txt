@@ -1,0 +1,204 @@
+ontolearn.utils.static_funcs
+============================
+
+.. py:module:: ontolearn.utils.static_funcs
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.utils.static_funcs.f1_set_similarity
+   ontolearn.utils.static_funcs.concept_reducer
+   ontolearn.utils.static_funcs.concept_reducer_properties
+   ontolearn.utils.static_funcs.make_iterable_verbose
+   ontolearn.utils.static_funcs.init_length_metric
+   ontolearn.utils.static_funcs.concept_len
+   ontolearn.utils.static_funcs.init_hierarchy_instances
+   ontolearn.utils.static_funcs.init_named_individuals
+   ontolearn.utils.static_funcs.init_individuals_from_concepts
+   ontolearn.utils.static_funcs.compute_tp_fn_fp_tn
+   ontolearn.utils.static_funcs.compute_f1_score
+   ontolearn.utils.static_funcs.compute_f1_score_from_confusion_matrix
+   ontolearn.utils.static_funcs.plot_umap_reduced_embeddings
+   ontolearn.utils.static_funcs.plot_decision_tree_of_expressions
+   ontolearn.utils.static_funcs.plot_topk_feature_importance
+   ontolearn.utils.static_funcs.save_owl_class_expressions
+   ontolearn.utils.static_funcs.verbalize
+   ontolearn.utils.static_funcs.get_file_base_name
+   ontolearn.utils.static_funcs.prepare_output_path
+   ontolearn.utils.static_funcs.assert_class_expression_type
+
+
+Module Contents
+---------------
+
+.. py:function:: f1_set_similarity(y: Set[str], yhat: Set[str]) -> float
+
+   Compute F1 score for two set
+   :param y: A set of URIs
+   :param yhat: A set of URIs
+   :return:
+
+
+.. py:function:: concept_reducer(concepts, opt)
+
+   Reduces a set of concepts by applying a binary operation to each pair of concepts.
+
+   :param concepts: A set of concepts to be reduced.
+   :type concepts: set
+   :param opt: A binary function that takes a pair of concepts and returns a single concept.
+   :type opt: function
+
+   :returns: A set containing the results of applying the binary operation to each pair of concepts.
+   :rtype: set
+
+   .. rubric:: Example
+
+   >>> concepts = {1, 2, 3}
+   >>> opt = lambda x: x[0] + x[1]
+   >>> concept_reducer(concepts, opt)
+   {2, 3, 4, 5, 6}
+
+   .. note:: The operation `opt` should be commutative and associative to ensure meaningful reduction in the context of set operations.
+
+
+.. py:function:: concept_reducer_properties(concepts: Set, properties, cls: Callable = None, cardinality: int = 2) -> Set[Union[owlapy.class_expression.OWLQuantifiedObjectRestriction, owlapy.class_expression.OWLObjectCardinalityRestriction]]
+
+   Map a set of owl concepts and a set of properties into OWL Restrictions
+
+   :param concepts:
+   :param properties:
+   :param cls: An owl Restriction class
+   :type cls: Callable
+   :param cardinality: A positive Integer
+
+   Returns: List of OWL Restrictions
+
+
+
+.. py:function:: make_iterable_verbose(iterable_object, verbose, desc='Default', position=None, leave=True) -> Iterable
+
+.. py:function:: init_length_metric(length_metric: Optional[owlapy.utils.OWLClassExpressionLengthMetric] = None, length_metric_factory: Optional[Callable[[], owlapy.utils.OWLClassExpressionLengthMetric]] = None)
+
+   Initialize the technique on computing length of a concept
+
+
+.. py:function:: concept_len(ce: owlapy.class_expression.OWLClassExpression, length_metric: Optional[owlapy.utils.OWLClassExpressionLengthMetric] = None, length_metric_factory: Optional[Callable[[], owlapy.utils.OWLClassExpressionLengthMetric]] = None)
+
+.. py:function:: init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarchy, data_property_hierarchy) -> Tuple[owlapy.owl_hierarchy.ClassHierarchy, owlapy.owl_hierarchy.ObjectPropertyHierarchy, owlapy.owl_hierarchy.DatatypePropertyHierarchy]
+
+   Initialize class, object property, and data property hierarchies
+
+
+.. py:function:: init_named_individuals(individuals_cache_size)
+
+.. py:function:: init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None, individuals_per_concept=None)
+
+.. py:function:: compute_tp_fn_fp_tn(individuals, pos, neg)
+
+.. py:function:: compute_f1_score(individuals, pos, neg) -> float
+
+   Compute F1-score of a concept
+
+
+
+.. py:function:: compute_f1_score_from_confusion_matrix(confusion_matrix: dict) -> float
+
+.. py:function:: plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = 'umap_visualization.pdf') -> None
+
+.. py:function:: plot_decision_tree_of_expressions(feature_names, cart_tree) -> None
+
+   Plot the built CART Decision Tree and feature importance.
+
+   :param feature_names: A list of feature names used in the decision tree.
+   :type feature_names: list
+   :param cart_tree: The trained CART Decision Tree model.
+
+   :returns: None
+
+   .. rubric:: Notes
+
+   This function plots the decision tree using matplotlib and saves it to a PDF file named 'cart_decision_tree.pdf'.
+   It also displays the plot.
+
+
+.. py:function:: plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10) -> None
+
+   Plot the feature importance of the CART Decision Tree.
+
+   :param feature_names: A list of feature names used in the decision tree.
+   :type feature_names: list
+   :param cart_tree: The trained CART Decision Tree model.
+   :param topk: The number of top features to display. Defaults to 10.
+   :type topk: int, optional
+
+   :returns: None
+
+   .. rubric:: Notes
+
+   This function plots a bar chart showing the importance of each feature in the decision tree,
+   with the top k features displayed. The importance is measured by the normalized total reduction.
+   The plot is displayed using matplotlib.
+
+
+.. py:function:: save_owl_class_expressions(expressions: Union[owlapy.class_expression.OWLClassExpression, List[owlapy.class_expression.OWLClassExpression]], path: str = './Predictions', rdf_format: str = 'rdfxml') -> None
+
+.. py:function:: verbalize(predictions_file_path: str)
+
+.. py:function:: get_file_base_name(file_path: str) -> str
+
+   Extract the base name of a file from a given file path, excluding its extension.
+
+   :param file_path: The full path to the file.
+   :type file_path: str
+
+   :returns: The base name of the file without its extension.
+   :rtype: str
+
+   .. rubric:: Example
+
+   >>> get_file_base_name("/path/to/file.txt")
+   'file'
+
+
+.. py:function:: prepare_output_path(base_name: str, output_dir: str = 'results', extension: str = 'csv') -> str
+
+   Create the output directory if it doesn't exist and return the full path for an output file.
+
+   :param base_name: The base name of the output file (without extension).
+   :type base_name: str
+   :param output_dir: Directory where the output file will be saved. Defaults to "results".
+   :type output_dir: str, optional
+   :param extension: File extension to use. Defaults to ".csv".
+   :type extension: str, optional
+
+   :returns: The full path to the output file.
+   :rtype: str
+
+   .. rubric:: Example
+
+   >>> prepare_output_path("summary")
+   'results/summary.csv'
+
+
+.. py:function:: assert_class_expression_type(class_expr: Any) -> bool
+
+   Check whether the given object is a valid OWL class expression.
+
+   This function verifies if the input object is an instance of any recognized OWL class
+   expression types (e.g., union, intersection, cardinality restrictions, value restrictions, etc.).
+
+   :param class_expr: The object to check.
+   :type class_expr: Any
+
+   :returns: True if the object is a valid OWL class expression; False otherwise.
+   :rtype: bool
+
+   .. rubric:: Example
+
+   >>> assert_class_expression_type(some_owl_expression)
+   True
+
+

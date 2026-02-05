@@ -1,0 +1,266 @@
+ontolearn.concept_abstract_syntax_tree
+======================================
+
+.. py:module:: ontolearn.concept_abstract_syntax_tree
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.concept_abstract_syntax_tree.Expr
+   ontolearn.concept_abstract_syntax_tree.Atoms
+   ontolearn.concept_abstract_syntax_tree.Not
+   ontolearn.concept_abstract_syntax_tree.And
+   ontolearn.concept_abstract_syntax_tree.Or
+   ontolearn.concept_abstract_syntax_tree.Exists
+   ontolearn.concept_abstract_syntax_tree.Forall
+   ontolearn.concept_abstract_syntax_tree.Cardinality
+   ontolearn.concept_abstract_syntax_tree.ConceptAbstractSyntaxTreeBuilder
+
+
+Module Contents
+---------------
+
+.. py:class:: Expr
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:method:: to_string()
+      :abstractmethod:
+
+
+
+   .. py:method:: to_dict()
+      :abstractmethod:
+
+
+
+.. py:class:: Atoms(name)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: name
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: Not(expr: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: expr
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: And(left: Expr, right: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: left
+
+
+   .. py:attribute:: right
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: Or(left: Expr, right: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: left
+
+
+   .. py:attribute:: right
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: Exists(role: str, filler: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: role
+
+
+   .. py:attribute:: filler
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: Forall(role: str, filler: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: role
+
+
+   .. py:attribute:: filler
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: Cardinality(kind: str, n: int, role: str, filler: Expr)
+
+   Bases: :py:obj:`Expr`
+
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+
+   .. py:attribute:: kind
+
+
+   .. py:attribute:: n
+
+
+   .. py:attribute:: role
+
+
+   .. py:attribute:: filler
+
+
+   .. py:method:: to_string()
+
+
+   .. py:method:: __repr__()
+
+
+   .. py:method:: to_dict()
+
+
+.. py:class:: ConceptAbstractSyntaxTreeBuilder(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, max_length: Optional[int] = None)
+
+   .. py:attribute:: knowledge_base
+
+
+   .. py:attribute:: max_length
+      :value: None
+
+
+
+   .. py:attribute:: unique_atom_concept_names
+
+
+   .. py:attribute:: unique_roles
+
+
+   .. py:attribute:: negation
+
+
+   .. py:attribute:: binary_ops
+
+
+   .. py:attribute:: quantifiers
+
+
+   .. py:attribute:: cardinals
+
+
+   .. py:attribute:: parenthesis
+
+
+   .. py:attribute:: dot
+
+
+   .. py:attribute:: digits
+
+
+   .. py:attribute:: vocabs
+
+
+   .. py:attribute:: atom_concepts_with_negation
+      :value: None
+
+
+
+   .. py:method:: balance_flatten_parentheses(sequences: list[str], max_length: int = None) -> list[str]
+
+
+   .. py:method:: parse(token_sequence: List[str], relax_parentheses: bool = False, enforce_validity: Optional[bool] = False, replace_with_negation: bool = False)
+
+
+   .. py:method:: render_tokens_as_class_expr(_tokens)
+
+

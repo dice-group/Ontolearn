@@ -1,0 +1,280 @@
+ontolearn.learners.nero
+=======================
+
+.. py:module:: ontolearn.learners.nero
+
+.. autoapi-nested-parse::
+
+   NERO - Neural Class Expression Learning with Reinforcement.
+
+   This module implements NERO, a neural-symbolic concept learner that combines
+   neural networks with symbolic reasoning for OWL class expression learning.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.nero.NERO
+
+
+Module Contents
+---------------
+
+.. py:class:: NERO(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, namespace=None, num_embedding_dim: int = 50, neural_architecture: str = 'DeepSet', learning_rate: float = 0.001, num_epochs: int = 100, batch_size: int = 32, num_workers: int = 4, quality_func=None, max_runtime: Optional[int] = 10, verbose: int = 0)
+
+   NERO - Neural Class Expression Learning with Reinforcement.
+
+   NERO combines neural networks with symbolic reasoning for learning OWL class expressions.
+   It uses set-based neural architectures (DeepSet or SetTransformer) to predict quality scores
+   for candidate class expressions.
+
+   :param knowledge_base: The knowledge base to learn from
+   :param num_embedding_dim: Dimensionality of entity embeddings (default: 50)
+   :param neural_architecture: Neural architecture to use ('DeepSet' or 'SetTransformer', default: 'DeepSet')
+   :param learning_rate: Learning rate for training (default: 0.001)
+   :param num_epochs: Number of training epochs (default: 100)
+   :param batch_size: Batch size for training (default: 32)
+   :param num_workers: Number of workers for data loading (default: 4)
+   :param quality_func: Quality function for evaluating expressions (default: F1-score)
+   :param max_runtime: Maximum runtime in seconds (default: None)
+   :param verbose: Verbosity level (default: 0)
+
+
+   .. py:attribute:: name
+      :value: 'NERO'
+
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: ns
+      :value: None
+
+
+
+   .. py:attribute:: num_embedding_dim
+      :value: 50
+
+
+
+   .. py:attribute:: neural_architecture
+      :value: 'DeepSet'
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.001
+
+
+
+   .. py:attribute:: num_epochs
+      :value: 100
+
+
+
+   .. py:attribute:: batch_size
+      :value: 32
+
+
+
+   .. py:attribute:: num_workers
+      :value: 4
+
+
+
+   .. py:attribute:: max_runtime
+      :value: 10
+
+
+
+   .. py:attribute:: verbose
+      :value: 0
+
+
+
+   .. py:attribute:: search_tree
+
+
+   .. py:attribute:: refinement_op
+      :value: None
+
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: model
+      :value: None
+
+
+
+   .. py:attribute:: instance_idx_mapping
+      :value: None
+
+
+
+   .. py:attribute:: idx_to_instance_mapping
+      :value: None
+
+
+
+   .. py:attribute:: target_class_expressions
+      :value: None
+
+
+
+   .. py:attribute:: expression
+
+
+   .. py:method:: train(learning_problems: List[Tuple[List[str], List[str]]])
+
+      Train the NERO model on learning problems.
+
+      :param learning_problems: List of (positive_examples, negative_examples) tuples
+
+
+
+   .. py:method:: search(pos: Set[str], neg: Set[str], top_k: int = 10, max_child_length: int = 10, max_queue_size: int = 10000) -> Dict
+
+      Perform reinforcement learning-based search for complex class expressions.
+      Uses neural predictions to initialize and guide the search.
+
+
+
+   .. py:method:: search_with_smart_init(pos: Set[str], neg: Set[str], top_k: int = 10) -> Dict
+
+      Search with smart initialization from neural predictions (model.py compatible).
+      This uses neural model predictions to guide the symbolic refinement search.
+
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard, max_runtime: Optional[int] = None)
+
+      Fit the model to a learning problem (Ontolearn-compatible interface).
+      This now includes training the neural model and performing the search.
+
+
+
+   .. py:method:: best_hypothesis() -> Optional[str]
+
+      Return the best hypothesis (Ontolearn-compatible interface).
+
+      :returns: The best predicted class expression as a string
+
+
+
+   .. py:method:: best_hypothesis_quality() -> float
+
+      Return the quality of the best hypothesis.
+
+      :returns: The F-measure/quality of the best prediction
+
+
+
+   .. py:method:: forward(xpos: torch.Tensor, xneg: torch.Tensor) -> torch.Tensor
+
+      Forward pass through the neural model.
+
+      :param xpos: Tensor of positive example indices
+      :param xneg: Tensor of negative example indices
+
+      :returns: Predictions for target class expressions
+
+
+
+   .. py:method:: positive_expression_embeddings(individuals: List[str]) -> torch.Tensor
+
+      Get embeddings for positive individuals.
+
+      :param individuals: List of individual URIs
+
+      :returns: Tensor of embeddings
+
+
+
+   .. py:method:: negative_expression_embeddings(individuals: List[str]) -> torch.Tensor
+
+      Get embeddings for negative individuals.
+
+      :param individuals: List of individual URIs
+
+      :returns: Tensor of embeddings
+
+
+
+   .. py:method:: downward_refine(expression, max_length: Optional[int] = None) -> Set
+
+      Top-down/downward refinement operator from original NERO.
+
+      This implements the refinement logic from model.py:
+      ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s^i ⊑ s}
+
+      :param expression: Expression to refine
+      :param max_length: Maximum length constraint for refinements
+
+      :returns: Set of refined expressions
+
+
+
+   .. py:method:: upward_refine(expression) -> Set
+
+      Bottom-up/upward refinement operator from original NERO.
+
+      This implements the generalization logic:
+      ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s ⊑ s^i}
+
+      :param expression: Expression to generalize
+
+      :returns: Set of generalized expressions
+
+
+
+   .. py:method:: search_with_init(top_prediction_queue: ontolearn.nero_utils.SearchTree, set_pos: Set[str], set_neg: Set[str]) -> ontolearn.nero_utils.SearchTree
+
+      Standard search with smart initialization (from original model.py).
+
+      This is the key search method that combines neural predictions with symbolic refinement.
+
+      :param top_prediction_queue: Priority queue initialized with neural predictions
+      :param set_pos: Set of positive examples
+      :param set_neg: Set of negative examples
+
+      :returns: SearchTree with explored and refined expressions
+
+
+
+   .. py:method:: fit_from_iterable(pos: List[str], neg: List[str], top_k: int = 10, use_search: str = 'SmartInit') -> Dict
+
+      Fit method compatible with original NERO's model.py interface.
+
+      This implements the complete prediction pipeline from the original NERO:
+      1. Neural prediction to get top-k candidates
+      2. Quality evaluation
+      3. Optional symbolic search for refinement
+
+      :param pos: List of positive example URIs
+      :param neg: List of negative example URIs
+      :param top_k: Number of top neural predictions to consider
+      :param use_search: Search strategy ('SmartInit', 'None', or None)
+
+      :returns: Dictionary with prediction results
+
+
+
+   .. py:method:: predict(pos: Set[owlapy.owl_individual.OWLNamedIndividual], neg: Set[owlapy.owl_individual.OWLNamedIndividual], top_k: int = 10) -> Dict
+
+      Predict class expressions for given positive and negative examples.
+      This now uses the search mechanism.
+
+
+
+   .. py:method:: __str__()
+
+
+   .. py:method:: __repr__()
+
+

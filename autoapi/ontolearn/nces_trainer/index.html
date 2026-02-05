@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.nces_trainer &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.nces_utils" href="../nces_utils/index.html" />
+    <link rel="prev" title="ontolearn.nces_modules" href="../nces_modules/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.nces_trainer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_trainer.before_pad"><code class="docutils literal notranslate"><span class="pre">before_pad()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer"><code class="docutils literal notranslate"><span class="pre">NCESTrainer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.synthesizer"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.synthesizer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.epochs"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.epochs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.batch_size"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.batch_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.learning_rate"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.learning_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.tmax"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.tmax</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.eta_min"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.eta_min</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.clip_value"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.clip_value</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.num_workers"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.num_workers</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.storage_path"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.storage_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.compute_accuracy"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.compute_accuracy()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.get_optimizer"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.get_optimizer()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.get_data_idxs"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.get_data_idxs()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.get_er_vocab"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.get_er_vocab()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.show_num_trainable_params"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.show_num_trainable_params()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.collate_batch"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.collate_batch()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.map_to_token"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.map_to_token()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.train_step"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.train_step()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer.train"><code class="docutils literal notranslate"><span class="pre">NCESTrainer.train()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.nces_trainer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/nces_trainer/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.nces_trainer">
+<span id="ontolearn-nces-trainer"></span><h1>ontolearn.nces_trainer<a class="headerlink" href="#module-ontolearn.nces_trainer" title="Link to this heading"></a></h1>
+<p>Trainer for NCES instances</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nces_trainer.NCESTrainer" title="ontolearn.nces_trainer.NCESTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NCESTrainer</span></code></a></p></td>
+<td><p>Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.nces_trainer.before_pad" title="ontolearn.nces_trainer.before_pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">before_pad</span></code></a>(arg)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.before_pad">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.nces_trainer.</span></span><span class="sig-name descname"><span class="pre">before_pad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#before_pad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.before_pad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.nces_trainer.</span></span><span class="sig-name descname"><span class="pre">NCESTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthesizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eta_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer" title="Link to this definition"></a></dt>
+<dd><p>Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.synthesizer">
+<span class="sig-name descname"><span class="pre">synthesizer</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.synthesizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.epochs">
+<span class="sig-name descname"><span class="pre">epochs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">300</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0001</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.learning_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.tmax">
+<span class="sig-name descname"><span class="pre">tmax</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.tmax" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.eta_min">
+<span class="sig-name descname"><span class="pre">eta_min</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-05</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.eta_min" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.clip_value">
+<span class="sig-name descname"><span class="pre">clip_value</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.clip_value" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.num_workers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.storage_path">
+<span class="sig-name descname"><span class="pre">storage_path</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'./'</span></span><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.storage_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.compute_accuracy">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compute_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prediction</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.compute_accuracy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.compute_accuracy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.get_optimizer">
+<span class="sig-name descname"><span class="pre">get_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Adam'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.get_optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.get_optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.get_data_idxs">
+<span class="sig-name descname"><span class="pre">get_data_idxs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.get_data_idxs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.get_data_idxs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.get_er_vocab">
+<span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.get_er_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.get_er_vocab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.show_num_trainable_params">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">show_num_trainable_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">synthesizer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.show_num_trainable_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.show_num_trainable_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.collate_batch">
+<span class="sig-name descname"><span class="pre">collate_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.collate_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.collate_batch" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.map_to_token">
+<span class="sig-name descname"><span class="pre">map_to_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.map_to_token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.map_to_token" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.train_step">
+<span class="sig-name descname"><span class="pre">train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples_dataloader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.train_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.train_step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.nces_trainer.NCESTrainer.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Adam'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/nces_trainer.html#NCESTrainer.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.nces_trainer.NCESTrainer.train" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../nces_modules/index.html" class="btn btn-neutral float-left" title="ontolearn.nces_modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../nces_utils/index.html" class="btn btn-neutral float-right" title="ontolearn.nces_utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

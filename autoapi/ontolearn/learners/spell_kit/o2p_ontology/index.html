@@ -1,0 +1,1083 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.spell_kit.o2p_ontology &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../../_static/favicon.ico"/>
+      <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link rel="next" title="ontolearn.learners.spell_kit.o2p_owl_parser" href="../o2p_owl_parser/index.html" />
+    <link rel="prev" title="ontolearn.learners.spell_kit.fitting_alc" href="../fitting_alc/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../../index.html">ontolearn.learners</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../../alcsat/index.html">ontolearn.learners.alcsat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../base/index.html">ontolearn.learners.base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../celoe/index.html">ontolearn.learners.celoe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../clip/index.html">ontolearn.learners.clip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../drill/index.html">ontolearn.learners.drill</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../evolearner/index.html">ontolearn.learners.evolearner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nces/index.html">ontolearn.learners.nces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nces2/index.html">ontolearn.learners.nces2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../nero/index.html">ontolearn.learners.nero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../ocel/index.html">ontolearn.learners.ocel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../roces/index.html">ontolearn.learners.roces</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../sat_base/index.html">ontolearn.learners.sat_base</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../sparql_query_learner/index.html">ontolearn.learners.sparql_query_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../spell/index.html">ontolearn.learners.spell</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="../index.html">ontolearn.learners.spell_kit</a><ul class="current">
+<li class="toctree-l6 current"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">ontolearn</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">ontolearn.learners</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn.learners.spell_kit</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.spell_kit.o2p_ontology</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../../_sources/autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.learners.spell_kit.o2p_ontology">
+<span id="ontolearn-learners-spell-kit-o2p-ontology"></span><h1>ontolearn.learners.spell_kit.o2p_ontology<a class="headerlink" href="#module-ontolearn.learners.spell_kit.o2p_ontology" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.SPECIAL_CHARS" title="ontolearn.learners.spell_kit.o2p_ontology.SPECIAL_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SPECIAL_CHARS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.FeatureNotSupported" title="ontolearn.learners.spell_kit.o2p_ontology.FeatureNotSupported"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FeatureNotSupported</span></code></a></p></td>
+<td><p>Common base class for all non-exit exceptions.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology" title="ontolearn.learners.spell_kit.o2p_ontology.Ontology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ontology</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.NameFactory" title="ontolearn.learners.spell_kit.o2p_ontology.NameFactory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NameFactory</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject" title="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyObject</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty" title="ontolearn.learners.spell_kit.o2p_ontology.SubProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubProperty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Property" title="ontolearn.learners.spell_kit.o2p_ontology.Property"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Property</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.PropertyReference" title="ontolearn.learners.spell_kit.o2p_ontology.PropertyReference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PropertyReference</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty" title="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectProperty</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule" title="ontolearn.learners.spell_kit.o2p_ontology.Rule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rule</span></code></a></p></td>
+<td><p>A ontology expression of the form A sqsubseteq B.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf" title="ontolearn.learners.spell_kit.o2p_ontology.SubClassOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubClassOf</span></code></a></p></td>
+<td><p>A ontology expression of the form A sqsubseteq B.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass" title="ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EquivalentClass</span></code></a></p></td>
+<td><p>A ontology expression of the form A sqsubseteq B.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.DisjointWith" title="ontolearn.learners.spell_kit.o2p_ontology.DisjointWith"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DisjointWith</span></code></a></p></td>
+<td><p>A ontology expression of the form A sqsubseteq B.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Thing" title="ontolearn.learners.spell_kit.o2p_ontology.Thing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Thing</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier" title="ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClassIdentifier</span></code></a></p></td>
+<td><p>A class in the ontology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.TopClass" title="ontolearn.learners.spell_kit.o2p_ontology.TopClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopClass</span></code></a></p></td>
+<td><p>A class in the ontology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction" title="ontolearn.learners.spell_kit.o2p_ontology.Restriction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Restriction</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection" title="ontolearn.learners.spell_kit.o2p_ontology.Intersection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersection</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Union" title="ontolearn.learners.spell_kit.o2p_ontology.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Complement" title="ontolearn.learners.spell_kit.o2p_ontology.Complement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complement</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.OneOf" title="ontolearn.learners.spell_kit.o2p_ontology.OneOf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OneOf</span></code></a></p></td>
+<td><p>The base class for all entities in the ontology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.HasSelf" title="ontolearn.learners.spell_kit.o2p_ontology.HasSelf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasSelf</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues" title="ontolearn.learners.spell_kit.o2p_ontology.SomeValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SomeValues</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.AllValues" title="ontolearn.learners.spell_kit.o2p_ontology.AllValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllValues</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Cardinality" title="ontolearn.learners.spell_kit.o2p_ontology.Cardinality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cardinality</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality" title="ontolearn.learners.spell_kit.o2p_ontology.MinCardinality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinCardinality</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality" title="ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxCardinality</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue" title="ontolearn.learners.spell_kit.o2p_ontology.HasValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasValue</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.issimple" title="ontolearn.learners.spell_kit.o2p_ontology.issimple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">issimple</span></code></a>(expr)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SPECIAL_CHARS">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">SPECIAL_CHARS</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SPECIAL_CHARS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.FeatureNotSupported">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">FeatureNotSupported</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#FeatureNotSupported"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.FeatureNotSupported" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Common base class for all non-exit exceptions.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Ontology</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.add_rule">
+<span class="sig-name descname"><span class="pre">add_rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.add_rule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.add_rule" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.normalize" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.add_property">
+<span class="sig-name descname"><span class="pre">add_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.add_property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.add_property" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.check_implicit_cycle">
+<span class="sig-name descname"><span class="pre">check_implicit_cycle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.check_implicit_cycle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.check_implicit_cycle" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.properties">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">properties</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.properties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.rules">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">rules</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.rules" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.subproperties">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">subproperties</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.subproperties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.property_ranges">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">property_ranges</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.property_ranges" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.property_domains">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">property_domains</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.property_domains" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.__iter__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Ontology.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Ontology.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Ontology.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.NameFactory">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">NameFactory</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#NameFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.NameFactory" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.NameFactory.created_names">
+<span class="sig-name descname"><span class="pre">created_names</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.NameFactory.created_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.NameFactory.next_name">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">next_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#NameFactory.next_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.NameFactory.next_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">OntologyObject</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OntologyObject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.to_latex">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OntologyObject.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OntologyObject.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.__repr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.is_rule">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_rule</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.is_rule" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubProperty">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">SubProperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubProperty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object" title="ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubProperty.subject">
+<span class="sig-name descname"><span class="pre">subject</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.subject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object">
+<span class="sig-name descname"><span class="pre">object</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubProperty.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubProperty.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Property">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Property</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Property" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.PropertyReference">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">PropertyReference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#PropertyReference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.PropertyReference" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Property" title="ontolearn.learners.spell_kit.o2p_ontology.Property"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Property</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.PropertyReference.identifier">
+<span class="sig-name descname"><span class="pre">identifier</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.PropertyReference.identifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.PropertyReference.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#PropertyReference.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.PropertyReference.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">ObjectProperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_functional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_reflexive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_inverse_functional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_transitive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse_of</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ObjectProperty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Property" title="ontolearn.learners.spell_kit.o2p_ontology.Property"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Property</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.identifier">
+<span class="sig-name descname"><span class="pre">identifier</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.identifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.parent">
+<span class="sig-name descname"><span class="pre">parent</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.parent" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_functional">
+<span class="sig-name descname"><span class="pre">is_functional</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_functional" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_inverse_functional">
+<span class="sig-name descname"><span class="pre">is_inverse_functional</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_inverse_functional" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_transitive">
+<span class="sig-name descname"><span class="pre">is_transitive</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_transitive" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_symmetric">
+<span class="sig-name descname"><span class="pre">is_symmetric</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_symmetric" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_reflexive">
+<span class="sig-name descname"><span class="pre">is_reflexive</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.is_reflexive" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.domain">
+<span class="sig-name descname"><span class="pre">domain</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.domain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.range">
+<span class="sig-name descname"><span class="pre">range</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.range" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.inverse_of">
+<span class="sig-name descname"><span class="pre">inverse_of</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.inverse_of" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ObjectProperty.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject" title="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyObject</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.varcount">
+<span class="sig-name descname"><span class="pre">varcount</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.varcount" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.get_safe_varname">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_safe_varname</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.get_safe_varname"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.get_safe_varname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.expression_types">
+<span class="sig-name descname"><span class="pre">expression_types</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.expression_types" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.register_type">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">register_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tagname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factory</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.register_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.register_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.get_factory">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tagname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.get_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.get_factory" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.identifier">
+<span class="sig-name descname"><span class="pre">identifier</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.identifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.normalize_rhs">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.__and__">
+<span class="sig-name descname"><span class="pre">__and__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.__and__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.__and__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Expression.__lshift__">
+<span class="sig-name descname"><span class="pre">__lshift__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Expression.__lshift__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression.__lshift__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Rule">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Rule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject" title="ontolearn.learners.spell_kit.o2p_ontology.OntologyObject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyObject</span></code></a></p>
+<p>A ontology expression of the form A sqsubseteq B.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Rule.subject">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">subject</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule.subject" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Rule.object">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">object</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule.object" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Rule.is_rule">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_rule</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule.is_rule" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Rule.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Rule.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule.normalize" title="Link to this definition"></a></dt>
+<dd><p>Return a normalization of this rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of new rules</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.issimple">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">issimple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#issimple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.issimple" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubClassOf">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">SubClassOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubClassOf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule" title="ontolearn.learners.spell_kit.o2p_ontology.Rule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rule</span></code></a></p>
+<p>A ontology expression of the form A sqsubseteq B.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubClassOf.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.normalize" title="Link to this definition"></a></dt>
+<dd><p>Return a normalization of this rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of new rules</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubClassOf.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SubClassOf.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">EquivalentClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#EquivalentClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule" title="ontolearn.learners.spell_kit.o2p_ontology.Rule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rule</span></code></a></p>
+<p>A ontology expression of the form A sqsubseteq B.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#EquivalentClass.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass.normalize" title="Link to this definition"></a></dt>
+<dd><p>Return a normalization of this rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of new rules</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#EquivalentClass.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.DisjointWith">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">DisjointWith</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#DisjointWith"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.DisjointWith" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Rule" title="ontolearn.learners.spell_kit.o2p_ontology.Rule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rule</span></code></a></p>
+<p>A ontology expression of the form A sqsubseteq B.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.DisjointWith.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#DisjointWith.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.DisjointWith.normalize" title="Link to this definition"></a></dt>
+<dd><p>Return a normalization of this rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of new rules</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.DisjointWith.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#DisjointWith.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.DisjointWith.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Thing">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Thing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Thing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Thing" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Thing.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Thing.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Thing.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Thing.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Thing.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Thing.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">ClassIdentifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ClassIdentifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>A class in the ontology.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ClassIdentifier.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ClassIdentifier.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#ClassIdentifier.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.TopClass">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">TopClass</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#TopClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.TopClass" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>A class in the ontology.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.TopClass.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#TopClass.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.TopClass.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.TopClass.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#TopClass.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.TopClass.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.TopClass.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#TopClass.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.TopClass.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Restriction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Restriction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.quantifier">
+<span class="sig-name descname"><span class="pre">quantifier</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.quantifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.prop">
+<span class="sig-name descname"><span class="pre">prop</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.prop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Restriction.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Restriction.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Restriction.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Restriction.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Restriction.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Restriction.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Intersection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">children</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.children">
+<span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Intersection.__and__">
+<span class="sig-name descname"><span class="pre">__and__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Intersection.__and__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Intersection.__and__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Union">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">children</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Union"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Union" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Union.children">
+<span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Union.children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Union.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Union.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Union.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Union.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Union.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Union.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Complement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Complement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Complement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Complement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Complement.child">
+<span class="sig-name descname"><span class="pre">child</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Complement.child" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Complement.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Complement.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Complement.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Complement.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Complement.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Complement.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OneOf">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">OneOf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">children</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OneOf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OneOf" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Expression" title="ontolearn.learners.spell_kit.o2p_ontology.Expression"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Expression</span></code></a></p>
+<p>The base class for all entities in the ontology.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OneOf.children">
+<span class="sig-name descname"><span class="pre">children</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OneOf.children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OneOf.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OneOf.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OneOf.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.OneOf.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#OneOf.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.OneOf.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Quantifier">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Quantifier</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Quantifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Quantifier.to_string">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Quantifier.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Quantifier.normalize_rhs">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Quantifier.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasSelf">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">HasSelf</span></span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasSelf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasSelf" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasSelf.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasSelf.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasSelf.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasSelf.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasSelf.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasSelf.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasSelf.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasSelf.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasSelf.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">SomeValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_class</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SomeValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues.from_class">
+<span class="sig-name descname"><span class="pre">from_class</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.from_class" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SomeValues.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_latex">
+<span class="sig-name descname"><span class="pre">to_latex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SomeValues.to_latex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_latex" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SomeValues.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.SomeValues.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#SomeValues.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.AllValues">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">AllValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_class</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#AllValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.AllValues" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.AllValues.from_class">
+<span class="sig-name descname"><span class="pre">from_class</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.AllValues.from_class" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.AllValues.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#AllValues.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.AllValues.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.AllValues.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#AllValues.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.AllValues.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Cardinality">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">Cardinality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Cardinality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Cardinality" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Cardinality.count">
+<span class="sig-name descname"><span class="pre">count</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Cardinality.count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Cardinality.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Cardinality.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Cardinality.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.Cardinality.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#Cardinality.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.Cardinality.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MinCardinality">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">MinCardinality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MinCardinality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.count">
+<span class="sig-name descname"><span class="pre">count</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MinCardinality.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MinCardinality.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">MaxCardinality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MaxCardinality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.count">
+<span class="sig-name descname"><span class="pre">count</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MaxCardinality.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#MaxCardinality.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasValue">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.o2p_ontology.</span></span><span class="sig-name descname"><span class="pre">HasValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ontolearn.learners.spell_kit.o2p_ontology.Quantifier" title="ontolearn.learners.spell_kit.o2p_ontology.Quantifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantifier</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasValue.value">
+<span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue.value" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasValue.to_string">
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasValue.to_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue.to_string" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasValue.normalize_rhs">
+<span class="sig-name descname"><span class="pre">normalize_rhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasValue.normalize_rhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue.normalize_rhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.o2p_ontology.HasValue.normalize_lhs">
+<span class="sig-name descname"><span class="pre">normalize_lhs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/ontolearn/learners/spell_kit/o2p_ontology.html#HasValue.normalize_lhs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.spell_kit.o2p_ontology.HasValue.normalize_lhs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../fitting_alc/index.html" class="btn btn-neutral float-left" title="ontolearn.learners.spell_kit.fitting_alc" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../o2p_owl_parser/index.html" class="btn btn-neutral float-right" title="ontolearn.learners.spell_kit.o2p_owl_parser" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

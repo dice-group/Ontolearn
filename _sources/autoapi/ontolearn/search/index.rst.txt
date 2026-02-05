@@ -1,0 +1,586 @@
+ontolearn.search
+================
+
+.. py:module:: ontolearn.search
+
+.. autoapi-nested-parse::
+
+   Node representation.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.search.Node
+   ontolearn.search.OENode
+   ontolearn.search.EvoLearnerNode
+   ontolearn.search.NCESNode
+   ontolearn.search.RL_State
+   ontolearn.search.LBLNode
+   ontolearn.search.LengthOrderedNode
+   ontolearn.search.HeuristicOrderedNode
+   ontolearn.search.QualityOrderedNode
+   ontolearn.search.SearchTreePriorityQueue
+   ontolearn.search.TreeNode
+   ontolearn.search.DRILLSearchTreePriorityQueue
+   ontolearn.search.EvaluatedConcept
+   ontolearn.search.SuperProp
+
+
+Module Contents
+---------------
+
+.. py:class:: Node(concept: owlapy.class_expression.OWLClassExpression, length: int)
+
+   Bases: :py:obj:`_NodeConcept`, :py:obj:`_NodeLen`, :py:obj:`_NodeIndividualsCount`, :py:obj:`ontolearn.abstracts.AbstractNode`
+
+
+   Simple node.
+
+
+
+   .. py:attribute:: __slots__
+      :value: ('_concept', '_len', '_individuals_count')
+
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+.. py:class:: OENode(concept: owlapy.class_expression.OWLClassExpression, length: int, parent_node: Optional[OENode] = None, is_root: bool = False)
+
+   Bases: :py:obj:`_NodeConcept`, :py:obj:`_NodeLen`, :py:obj:`_NodeIndividualsCount`, :py:obj:`_NodeQuality`, :py:obj:`_NodeHeuristic`, :py:obj:`_NodeParentRef`\ [\ :py:obj:`OENode`\ ], :py:obj:`ontolearn.abstracts.AbstractNode`, :py:obj:`ontolearn.abstracts.AbstractConceptNode`, :py:obj:`ontolearn.abstracts.AbstractOEHeuristicNode`
+
+
+   OENode search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('_concept', '_len', '_individuals_count', '_quality', '_heuristic', '_parent_ref',...
+
+
+
+   .. py:attribute:: renderer
+      :type:  ClassVar[owlapy.owl_object.OWLObjectRenderer]
+
+
+   .. py:property:: h_exp
+      :type: int
+
+
+      Get horizontal expansion.
+
+      :returns: Horizontal expansion.
+
+
+   .. py:method:: increment_h_exp()
+
+
+   .. py:property:: refinement_count
+      :type: int
+
+
+      Get the refinement count for this node.
+
+      :returns: Refinement count.
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+.. py:class:: EvoLearnerNode(concept: owlapy.class_expression.OWLClassExpression, length: int, individuals_count: int, quality: float, tree_length: int, tree_depth: int)
+
+   Bases: :py:obj:`_NodeConcept`, :py:obj:`_NodeLen`, :py:obj:`_NodeIndividualsCount`, :py:obj:`_NodeQuality`, :py:obj:`ontolearn.abstracts.AbstractNode`, :py:obj:`ontolearn.abstracts.AbstractConceptNode`
+
+
+   EvoLearner search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('_concept', '_len', '_individuals_count', '_quality', '_tree_length', '_tree_depth')
+
+
+
+   .. py:property:: tree_length
+
+
+   .. py:property:: tree_depth
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+.. py:class:: NCESNode(concept: owlapy.class_expression.OWLClassExpression, length: int, individuals_count: int, quality: float)
+
+   Bases: :py:obj:`_NodeConcept`, :py:obj:`_NodeLen`, :py:obj:`_NodeIndividualsCount`, :py:obj:`_NodeQuality`, :py:obj:`ontolearn.abstracts.AbstractNode`, :py:obj:`ontolearn.abstracts.AbstractConceptNode`
+
+
+   EvoLearner search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('_concept', '_len', '_individuals_count', '_quality')
+
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+.. py:class:: RL_State(concept: owlapy.class_expression.OWLClassExpression, parent_node: Optional[RL_State] = None, embeddings=None, is_root: bool = False, length=None)
+
+   Bases: :py:obj:`_NodeConcept`, :py:obj:`_NodeQuality`, :py:obj:`_NodeHeuristic`, :py:obj:`ontolearn.abstracts.AbstractNode`, :py:obj:`_NodeParentRef`\ [\ :py:obj:`RL_State`\ ]
+
+
+   Abstract search tree node.
+
+
+   .. py:attribute:: renderer
+      :type:  ClassVar[owlapy.owl_object.OWLObjectRenderer]
+
+      RL_State node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root',...
+
+
+
+   .. py:attribute:: parent_node
+      :value: None
+
+
+
+   .. py:attribute:: is_root
+      :value: False
+
+
+
+   .. py:attribute:: length
+      :value: None
+
+
+
+   .. py:attribute:: embeddings
+      :value: None
+
+
+
+   .. py:method:: __str__()
+
+      String representation of node, by default its internal memory address.
+
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __gt__(other)
+
+
+.. py:class:: LBLNode(concept: owlapy.class_expression.OWLClassExpression, length: int, individuals, parent_node: Optional[LBLNode] = None, is_root: bool = False)
+
+   Bases: :py:obj:`_NodeIndividuals`, :py:obj:`OENode`
+
+
+   LBL search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('_children', '_individuals')
+
+
+
+   .. py:method:: add_child(n)
+
+
+   .. py:method:: remove_child(n)
+
+
+   .. py:property:: children
+
+
+   .. py:property:: parent_node
+      :type: Optional[LBLNode]
+
+
+      Get the parent node.
+
+      :returns: Parent node.
+
+
+.. py:class:: LengthOrderedNode(node: _N, length: int)
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   Abstract base class for generic types.
+
+   A generic type is typically declared by inheriting from
+   this class parameterized with one or more type variables.
+   For example, a generic mapping type might be defined as::
+
+     class Mapping(Generic[KT, VT]):
+         def __getitem__(self, key: KT) -> VT:
+             ...
+         # Etc.
+
+   This class can then be used as follows::
+
+     def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:
+         try:
+             return mapping[key]
+         except KeyError:
+             return default
+
+
+   .. py:attribute:: __slots__
+      :value: ('node', 'len')
+
+
+
+   .. py:attribute:: node
+      :type:  Final[_N]
+
+
+   .. py:attribute:: len
+      :type:  Final[int]
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __eq__(other)
+
+
+.. py:class:: HeuristicOrderedNode(node: _N)
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   A comparator that orders the Nodes based on Heuristic, then OrderedOWLObject of the concept
+
+
+   .. py:attribute:: __slots__
+      :value: 'node'
+
+
+
+   .. py:attribute:: node
+      :type:  Final[_N]
+
+
+   .. py:method:: __lt__(other: _N)
+
+
+   .. py:method:: __eq__(other: _N)
+
+
+.. py:class:: QualityOrderedNode(node: OENode)
+
+   QualityOrderedNode search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: 'node'
+
+
+
+   .. py:attribute:: node
+      :type:  Final[OENode]
+
+
+   .. py:method:: __lt__(other)
+
+
+   .. py:method:: __eq__(other)
+
+
+.. py:class:: SearchTreePriorityQueue(quality_func, heuristic_func)
+
+   Bases: :py:obj:`ontolearn.abstracts.LBLSearchTree`\ [\ :py:obj:`LBLNode`\ ]
+
+
+   Search tree based on priority queue.
+
+   :param quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.
+   :param heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+   .. attribute:: quality_func
+
+      An instance of a subclass of AbstractScorer that measures the quality of a node.
+
+   .. attribute:: heuristic_func
+
+      An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+   .. attribute:: items_in_queue
+
+      An instance of PriorityQueue Class.
+
+   .. attribute:: .nodes
+
+      A dictionary where keys are string representation of nodes and values are corresponding node objects.
+
+   .. attribute:: nodes
+
+      A property method for ._nodes.
+
+   .. attribute:: expressionTests
+
+      not being used .
+
+   .. attribute:: str_to_obj_instance_mapping
+
+      not being used.
+
+
+   .. py:attribute:: quality_func
+      :type:  ontolearn.abstracts.AbstractScorer
+
+
+   .. py:attribute:: heuristic_func
+      :type:  ontolearn.abstracts.AbstractHeuristic
+
+
+   .. py:attribute:: nodes
+      :type:  Dict[owlapy.class_expression.OWLClassExpression, LBLNode]
+
+
+   .. py:attribute:: items_in_queue
+      :type:  PriorityQueue[Tuple[float, HeuristicOrderedNode[LBLNode]]]
+
+
+   .. py:method:: add(n: LBLNode)
+
+      Append a node into the search tree.
+
+      :param n: A Node object
+
+      :returns: None
+
+
+
+   .. py:method:: add_root(node, kb_learning_problem)
+
+      Add the root node to the search tree.
+
+      :param node: Root node to add.
+      :param kb_learning_problem: Underlying learning problem to compare the quality to.
+
+
+
+   .. py:method:: add_node(*, node: LBLNode, parent_node: LBLNode, kb_learning_problem: ontolearn.abstracts.EncodedLearningProblem) -> Optional[bool]
+
+      Add a node into the search tree after calculating heuristic value given its parent.
+
+      :param node: A Node object
+      :param parent_node: A Node object
+      :param kb_learning_problem: the encoded learning problem to compare the quality on
+
+      :returns: True if node is a "goal node", i.e. quality_metric(node)=1.0
+                False if node is a "weak node", i.e. quality_metric(node)=0.0
+                None otherwise
+
+      .. rubric:: Notes
+
+      node is a refinement of refined_node
+
+
+
+   .. py:method:: get_most_promising() -> LBLNode
+
+      Gets the current most promising node from Queue.
+
+      :returns: A node object
+      :rtype: node
+
+
+
+   .. py:method:: get_top_n(n: int, key='quality') -> List[LBLNode]
+
+      Gets the top n nodes determined by key from the search tree.
+
+      :returns: A list of node objects
+      :rtype: top_n_predictions
+
+
+
+   .. py:method:: clean()
+
+      Reset the search tree state.
+
+
+
+   .. py:method:: show_search_tree(root_concept: owlapy.class_expression.OWLClassExpression, heading_step: str)
+
+      Debugging function to print the search tree to standard output.
+
+      :param root_concept: The tree is printed starting from this search tree node.
+      :param heading_step: Message to print at top of the output.
+
+
+
+.. py:class:: TreeNode(node: _N, parent_tree_node: Optional[_TN] = None, is_root: bool = False)
+
+   Bases: :py:obj:`Generic`\ [\ :py:obj:`_N`\ ]
+
+
+   Simple search tree node.
+
+
+   .. py:attribute:: __slots__
+      :value: ('children', 'node')
+
+
+
+   .. py:attribute:: node
+      :type:  Final[_N]
+
+
+   .. py:attribute:: children
+      :type:  Set[TreeNode[_N]]
+
+
+.. py:class:: DRILLSearchTreePriorityQueue(verbose)
+
+   Bases: :py:obj:`ontolearn.abstracts.DRILLAbstractTree`
+
+
+   #@TODO Move to learners/drill.py
+
+   Search tree based on priority queue.
+
+   :param quality_func:
+   :type quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.
+   :param heuristic_func:
+   :type heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+   .. attribute:: quality_func
+
+
+
+      :type: An instance of a subclass of AbstractScorer that measures the quality of a node.
+
+   .. attribute:: heuristic_func
+
+
+
+      :type: An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+   .. attribute:: items_in_queue
+
+
+
+      :type: An instance of PriorityQueue Class.
+
+   .. attribute:: .nodes
+
+
+
+      :type: A dictionary where keys are string representation of nodes and values are corresponding node objects.
+
+   .. attribute:: nodes
+
+
+
+      :type: A property method for ._nodes.
+
+   .. attribute:: expressionTests
+
+
+
+      :type: not being used .
+
+   .. attribute:: str_to_obj_instance_mapping
+
+
+
+      :type: not being used.
+
+
+   .. py:attribute:: verbose
+
+
+   .. py:attribute:: items_in_queue
+
+
+   .. py:method:: add(node: RL_State)
+
+      Append a node into the search tree.
+      :param node:
+      :type node: A RL_State object
+
+      :rtype: None
+
+
+
+   .. py:method:: show_current_search_tree(top_n=10)
+
+      Show search tree.
+
+
+
+   .. py:method:: get_most_promising() -> RL_State
+
+      Gets the current most promising node from Queue.
+
+      :returns: **node**
+      :rtype: A node object
+
+
+
+   .. py:method:: get_top_n(n: int, key='quality') -> List[Node]
+
+      Gets the top n nodes determined by key from the search tree.
+
+      :returns: **top_n_predictions**
+      :rtype: A list of node objects
+
+
+
+   .. py:method:: clean()
+
+
+.. py:class:: EvaluatedConcept
+
+   Explicitly declare the attributes that should be returned by the evaluate_concept method of a
+      AbstractKnowledgeBase.
+
+   This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+   memory usage.
+
+
+   .. py:attribute:: __slots__
+      :value: ('q', 'inds', 'ic')
+
+
+
+.. py:class:: SuperProp(super_obj)
+
+   Super wrapper which allows property setting & deletion. Super can't be subclassed with empty __init__ arguments.
+
+
+   .. py:method:: __getattr__(name)
+
+
+   .. py:method:: __setattr__(name, value)
+
+
+   .. py:method:: __delattr__(name)
+
+

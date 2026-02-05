@@ -1,0 +1,316 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.heuristics &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.heuristics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.heuristics</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;Heuristic functions.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Final</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractHeuristic</span><span class="p">,</span> <span class="n">AbstractOEHeuristicNode</span><span class="p">,</span> <span class="n">EncodedLearningProblem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncodedPosNegUndLP</span><span class="p">,</span> <span class="n">EncodedPosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">Accuracy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.search</span><span class="w"> </span><span class="kn">import</span> <span class="n">LBLNode</span><span class="p">,</span> <span class="n">RL_State</span>
+
+
+<div class="viewcode-block" id="CELOEHeuristic">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.CELOEHeuristic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CELOEHeuristic</span><span class="p">(</span><span class="n">AbstractHeuristic</span><span class="p">[</span><span class="n">AbstractOEHeuristicNode</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Heuristic like the CELOE Heuristic in DL-Learner.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;gainBonusFactor&#39;</span><span class="p">,</span> <span class="s1">&#39;startNodeBonus&#39;</span><span class="p">,</span> <span class="s1">&#39;nodeRefinementPenalty&#39;</span><span class="p">,</span> <span class="s1">&#39;expansionPenaltyFactor&#39;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;CELOE_Heuristic&#39;</span>
+
+    <span class="n">gainBonusFactor</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">startNodeBonus</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">nodeRefinementPenalty</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">expansionPenaltyFactor</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">gainBonusFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+                 <span class="n">startNodeBonus</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">nodeRefinementPenalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
+                 <span class="n">expansionPenaltyFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new CELOE Heuristic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            gainBonusFactor: Factor that weighs the increase in quality compared to the parent node.</span>
+<span class="sd">            startNodeBonus: Special value added to the root node.</span>
+<span class="sd">            nodeRefinementPenalty: Value that is subtracted from the heuristic for each refinement attempt of this node.</span>
+<span class="sd">            expansionPenaltyFactor: Value that is subtracted from the heuristic for each horizontal expansion of this</span>
+<span class="sd">                node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gainBonusFactor</span> <span class="o">=</span> <span class="n">gainBonusFactor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startNodeBonus</span> <span class="o">=</span> <span class="n">startNodeBonus</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodeRefinementPenalty</span> <span class="o">=</span> <span class="n">nodeRefinementPenalty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expansionPenaltyFactor</span> <span class="o">=</span> <span class="n">expansionPenaltyFactor</span>
+
+<div class="viewcode-block" id="CELOEHeuristic.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.CELOEHeuristic.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">AbstractOEHeuristicNode</span><span class="p">,</span> <span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">):</span>
+        <span class="n">heuristic_val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">heuristic_val</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span>
+
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">is_root</span><span class="p">:</span>
+            <span class="n">heuristic_val</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startNodeBonus</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">heuristic_val</span> <span class="o">+=</span> <span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gainBonusFactor</span>
+
+        <span class="c1"># penalty for horizontal expansion</span>
+        <span class="n">heuristic_val</span> <span class="o">-=</span> <span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">h_exp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansionPenaltyFactor</span>
+        <span class="c1"># // penalty for having many child nodes (stuck prevention)</span>
+        <span class="n">heuristic_val</span> <span class="o">-=</span> <span class="n">node</span><span class="o">.</span><span class="n">refinement_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodeRefinementPenalty</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DLFOILHeuristic">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.DLFOILHeuristic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DLFOILHeuristic</span><span class="p">(</span><span class="n">AbstractHeuristic</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DLFOIL Heuristic.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;custom_dl_foil&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># @todo Needs to be tested.</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DLFOILHeuristic.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.DLFOILHeuristic.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedPosNegUndLP</span><span class="p">):</span>
+
+        <span class="n">instances</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="o">.</span><span class="n">instances</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">instances</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">p_1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>  <span class="c1"># number of positive examples covered by the concept</span>
+        <span class="n">n_1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>  <span class="c1"># number of negative examples covered by the concept</span>
+        <span class="n">u_1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_unlabelled</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">instances</span><span class="p">))</span>
+        <span class="n">term1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_1</span> <span class="o">/</span> <span class="p">(</span><span class="n">p_1</span> <span class="o">+</span> <span class="n">n_1</span> <span class="o">+</span> <span class="n">u_1</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span><span class="p">:</span>
+            <span class="n">parent_inst</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span><span class="o">.</span><span class="n">individuals</span>
+            <span class="n">p_0</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">parent_inst</span><span class="p">))</span>  <span class="c1"># number of positive examples covered by the concept</span>
+            <span class="n">n_0</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
+                <span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">parent_inst</span><span class="p">))</span>  <span class="c1"># number of negative examples covered by the concept</span>
+            <span class="n">u_0</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">kb_unlabelled</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">parent_inst</span><span class="p">))</span>
+            <span class="n">term2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_0</span> <span class="o">/</span> <span class="p">(</span><span class="n">p_0</span> <span class="o">+</span> <span class="n">n_0</span> <span class="o">+</span> <span class="n">u_0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">term2</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">gain</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">p_1</span> <span class="o">*</span> <span class="p">(</span><span class="n">term1</span> <span class="o">-</span> <span class="n">term2</span><span class="p">),</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">=</span> <span class="n">gain</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OCELHeuristic">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.OCELHeuristic">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OCELHeuristic</span><span class="p">(</span><span class="n">AbstractHeuristic</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;OCEL Heuristic.&quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;accuracy_method&#39;</span><span class="p">,</span> <span class="s1">&#39;gainBonusFactor&#39;</span><span class="p">,</span> <span class="s1">&#39;expansionPenaltyFactor&#39;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;OCEL_Heuristic&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">gainBonusFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">expansionPenaltyFactor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_method</span> <span class="o">=</span> <span class="n">Accuracy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gainBonusFactor</span> <span class="o">=</span> <span class="n">gainBonusFactor</span>  <span class="c1"># called alpha in the paper and gainBonusFactor in the original code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expansionPenaltyFactor</span> <span class="o">=</span> <span class="n">expansionPenaltyFactor</span>  <span class="c1"># called beta in the paper</span>
+
+<div class="viewcode-block" id="OCELHeuristic.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.OCELHeuristic.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">LBLNode</span><span class="p">,</span> <span class="n">instances</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">EncodedPosNegLPStandard</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">LBLNode</span><span class="p">),</span> <span class="s2">&quot;OCEL Heuristic requires instances information of a node&quot;</span>
+
+        <span class="n">heuristic_val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">accuracy_gain</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">accuracy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_method</span><span class="o">.</span><span class="n">score_elp</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">parent_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">parent_accuracy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">accuracy_method</span><span class="o">.</span><span class="n">score_elp</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">parent_node</span><span class="o">.</span><span class="n">individuals</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">)</span>
+            <span class="n">accuracy_gain</span> <span class="o">=</span> <span class="n">accuracy</span> <span class="o">-</span> <span class="n">parent_accuracy</span>
+
+        <span class="n">heuristic_val</span> <span class="o">+=</span> <span class="n">accuracy</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">gainBonusFactor</span> <span class="o">*</span> <span class="n">accuracy_gain</span> <span class="o">-</span> <span class="n">node</span><span class="o">.</span><span class="n">h_exp</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">expansionPenaltyFactor</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">heuristic_val</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CeloeBasedReward">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.CeloeBasedReward">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CeloeBasedReward</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reward function for DRILL.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_of_goal</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">.04</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DRILL_Reward&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reward_of_goal</span> <span class="o">=</span> <span class="n">reward_of_goal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">learning_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lp</span>
+
+    <span class="nd">@learning_problem</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">learning_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">EncodedLearningProblem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lp</span> <span class="o">=</span> <span class="n">x</span>
+
+<div class="viewcode-block" id="CeloeBasedReward.apply">
+<a class="viewcode-back" href="../../autoapi/ontolearn/heuristics/index.html#ontolearn.heuristics.CeloeBasedReward.apply">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rl_state</span><span class="p">:</span> <span class="n">RL_State</span><span class="p">,</span> <span class="n">next_rl_state</span><span class="p">:</span> <span class="n">RL_State</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">next_rl_state</span><span class="o">.</span><span class="n">quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">rl_state</span><span class="o">.</span><span class="n">quality</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">reward</span> <span class="o">=</span> <span class="n">next_rl_state</span><span class="o">.</span><span class="n">quality</span>
+        <span class="k">if</span> <span class="n">next_rl_state</span><span class="o">.</span><span class="n">quality</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">reward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_of_goal</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Reward =&gt; being better than parent.</span>
+            <span class="n">reward</span> <span class="o">+=</span> <span class="p">(</span><span class="n">next_rl_state</span><span class="o">.</span><span class="n">quality</span> <span class="o">-</span> <span class="n">rl_state</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="c1"># Regret =&gt; Length penalization.</span>
+        <span class="n">reward</span> <span class="o">-=</span> <span class="n">next_rl_state</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

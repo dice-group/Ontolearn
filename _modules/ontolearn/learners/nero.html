@@ -1,0 +1,968 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.learners.nero &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.learners.nero</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.learners.nero</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">NERO - Neural Class Expression Learning with Reinforcement.</span>
+
+<span class="sd">This module implements NERO, a neural-symbolic concept learner that combines</span>
+<span class="sd">neural networks with symbolic reasoning for OWL class expression learning.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">dl_to_owl_expression</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLThing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">DLSyntaxObjectRenderer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.nero_architectures</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeepSet</span><span class="p">,</span> <span class="n">SetTransformerNet</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.nero_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">SearchTree</span><span class="p">,</span> <span class="n">TargetClassExpression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.refinement_operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">NERORefinement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_f1_score</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># NERO Main Class</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="NERO">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NERO</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    NERO - Neural Class Expression Learning with Reinforcement.</span>
+
+<span class="sd">    NERO combines neural networks with symbolic reasoning for learning OWL class expressions.</span>
+<span class="sd">    It uses set-based neural architectures (DeepSet or SetTransformer) to predict quality scores</span>
+<span class="sd">    for candidate class expressions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        knowledge_base: The knowledge base to learn from</span>
+<span class="sd">        num_embedding_dim: Dimensionality of entity embeddings (default: 50)</span>
+<span class="sd">        neural_architecture: Neural architecture to use (&#39;DeepSet&#39; or &#39;SetTransformer&#39;, default: &#39;DeepSet&#39;)</span>
+<span class="sd">        learning_rate: Learning rate for training (default: 0.001)</span>
+<span class="sd">        num_epochs: Number of training epochs (default: 100)</span>
+<span class="sd">        batch_size: Batch size for training (default: 32)</span>
+<span class="sd">        num_workers: Number of workers for data loading (default: 4)</span>
+<span class="sd">        quality_func: Quality function for evaluating expressions (default: F1-score)</span>
+<span class="sd">        max_runtime: Maximum runtime in seconds (default: None)</span>
+<span class="sd">        verbose: Verbosity level (default: 0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;NERO&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">KnowledgeBase</span><span class="p">,</span>
+                 <span class="n">namespace</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">num_embedding_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+                 <span class="n">neural_architecture</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;DeepSet&#39;</span><span class="p">,</span>
+                 <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
+                 <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+                 <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+                 <span class="n">quality_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ns</span> <span class="o">=</span> <span class="n">namespace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_embedding_dim</span> <span class="o">=</span> <span class="n">num_embedding_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span> <span class="o">=</span> <span class="n">neural_architecture</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">learning_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="n">num_epochs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">num_workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Quality function</span>
+        <span class="k">if</span> <span class="n">quality_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="o">=</span> <span class="n">compute_f1_score</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="o">=</span> <span class="n">quality_func</span>
+
+        <span class="c1"># Device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Model components (initialized during training)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_instance_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Training state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;NERO initialized with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span><span class="si">}</span><span class="s2"> architecture&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Device: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_instance_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize mapping from individuals to indices.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="p">:</span> <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">())</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_instance_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_refinement_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the refinement operator.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing refinement operator...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span> <span class="o">=</span> <span class="n">NERORefinement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">expressions</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_target_expressions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TargetClassExpression</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract target class expressions from the knowledge base.&quot;&quot;&quot;</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
+        <span class="n">target_expressions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Get all named classes</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">owl_class</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">()):</span>
+            <span class="n">individuals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="n">ind</span><span class="o">.</span><span class="n">str</span>
+                <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">owl_class</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">idx_individuals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">iri</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">iri</span> <span class="ow">in</span> <span class="n">individuals</span>
+            <span class="p">)</span>
+
+            <span class="n">target_exp</span> <span class="o">=</span> <span class="n">TargetClassExpression</span><span class="p">(</span>
+                <span class="n">label_id</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">owl_class</span><span class="p">),</span>
+                <span class="n">str_individuals</span><span class="o">=</span><span class="n">individuals</span><span class="p">,</span>
+                <span class="n">idx_individuals</span><span class="o">=</span><span class="n">idx_individuals</span><span class="p">,</span>
+                <span class="n">expression_chain</span><span class="o">=</span><span class="p">[</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">OWLThing</span><span class="p">)],</span>
+                <span class="n">length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">_type</span><span class="o">=</span><span class="s1">&#39;atomic_expression&#39;</span>
+            <span class="p">)</span>
+            <span class="n">target_expressions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">target_exp</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">target_expressions</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_outputs</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the neural model based on architecture choice.&quot;&quot;&quot;</span>
+        <span class="n">num_instances</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span> <span class="o">==</span> <span class="s1">&#39;DeepSet&#39;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">DeepSet</span><span class="p">(</span>
+                <span class="n">num_instances</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span>
+                <span class="n">num_embedding_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_embedding_dim</span><span class="p">,</span>
+                <span class="n">num_outputs</span><span class="o">=</span><span class="n">num_outputs</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span> <span class="o">==</span> <span class="s1">&#39;SetTransformer&#39;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">SetTransformerNet</span><span class="p">(</span>
+                <span class="n">num_instances</span><span class="o">=</span><span class="n">num_instances</span><span class="p">,</span>
+                <span class="n">num_embedding_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_embedding_dim</span><span class="p">,</span>
+                <span class="n">num_outputs</span><span class="o">=</span><span class="n">num_outputs</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown architecture: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">model</span>
+
+<div class="viewcode-block" id="NERO.train">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.train">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_problems</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train the NERO model on learning problems.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            learning_problems: List of (positive_examples, negative_examples) tuples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training NERO model...&quot;</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Initialize mappings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_instance_mapping</span><span class="p">()</span>
+
+        <span class="c1"># Extract target expressions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_target_expressions</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No target class expressions found in knowledge base&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create model</span>
+        <span class="n">num_outputs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_model</span><span class="p">(</span><span class="n">num_outputs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+        <span class="c1"># Setup optimizer and loss</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">)</span>
+        <span class="n">loss_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
+
+        <span class="c1"># Convert learning problems to tensors</span>
+        <span class="n">X_pos_list</span><span class="p">,</span> <span class="n">X_neg_list</span><span class="p">,</span> <span class="n">Y_list</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">pos_examples</span><span class="p">,</span> <span class="n">neg_examples</span> <span class="ow">in</span> <span class="n">learning_problems</span><span class="p">:</span>
+            <span class="n">pos_idx</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">uri</span><span class="p">]</span> <span class="k">for</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">pos_examples</span><span class="p">]</span>
+            <span class="n">neg_idx</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">uri</span><span class="p">]</span> <span class="k">for</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">neg_examples</span><span class="p">]</span>
+
+            <span class="c1"># Compute labels (F1 scores for each target expression)</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">target_exp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">:</span>
+                <span class="n">f1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                    <span class="n">individuals</span><span class="o">=</span><span class="n">target_exp</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span>
+                    <span class="n">pos</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">pos_examples</span><span class="p">),</span>
+                    <span class="n">neg</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">neg_examples</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+
+            <span class="n">X_pos_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos_idx</span><span class="p">)</span>
+            <span class="n">X_neg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">neg_idx</span><span class="p">)</span>
+            <span class="n">Y_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+
+        <span class="c1"># Pad sequences to same length</span>
+        <span class="n">max_pos_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X_pos_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">X_pos_list</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">max_neg_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">X_neg_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">X_neg_list</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="n">X_pos_padded</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_pos_list</span><span class="p">),</span> <span class="n">max_pos_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="n">X_neg_padded</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_neg_list</span><span class="p">),</span> <span class="n">max_neg_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X_pos_list</span><span class="p">,</span> <span class="n">X_neg_list</span><span class="p">)):</span>
+            <span class="n">X_pos_padded</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+            <span class="n">X_neg_padded</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span>
+
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">Y_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># Training loop</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">TensorDataset</span><span class="p">(</span><span class="n">X_pos_padded</span><span class="p">,</span> <span class="n">X_neg_padded</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">xpos</span><span class="p">,</span> <span class="n">xneg</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+                <span class="n">xpos</span> <span class="o">=</span> <span class="n">xpos</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">xneg</span> <span class="o">=</span> <span class="n">xneg</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">xpos</span><span class="p">,</span> <span class="n">xneg</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_func</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">epoch_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">training_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training completed in </span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NERO.search">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.search">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">max_child_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">max_queue_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform reinforcement learning-based search for complex class expressions.</span>
+<span class="sd">        Uses neural predictions to initialize and guide the search.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting reinforcement learning search...&quot;</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+
+        <span class="c1"># Initialize with neural predictions OR top refinements</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">idx_pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]])</span>
+            <span class="n">idx_neg</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">]])</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">sort_scores</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">idx_pos</span><span class="p">,</span> <span class="n">idx_neg</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                    <span class="nb">min</span><span class="p">(</span><span class="n">top_k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)),</span>
+                    <span class="n">largest</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Initialize queue with top neural predictions</span>
+            <span class="k">for</span> <span class="n">idx_target</span> <span class="ow">in</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">():</span>
+                <span class="n">target_ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">[</span><span class="n">idx_target</span><span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">target_ce</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                        <span class="n">individuals</span><span class="o">=</span><span class="n">target_ce</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">target_ce</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+        <span class="c1"># Always add top refinements to initial queue for diversity</span>
+        <span class="c1"># This ensures we explore complex expressions, not just atomic ones</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">top_refinements</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">length</span><span class="p">,</span> <span class="n">refinement_set</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">top_refinements</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">refinement_set</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">concept</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="p">:</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">concept</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                                <span class="n">individuals</span><span class="o">=</span><span class="n">concept</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span>
+                            <span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Failed to initialize search tree with any concepts&quot;</span><span class="p">)</span>
+
+        <span class="n">best_hypothesis</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">best_quality</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+
+        <span class="c1"># Find initial best</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">expr</span><span class="o">.</span><span class="n">quality</span> <span class="o">&gt;</span> <span class="n">best_quality</span><span class="p">:</span>
+                <span class="n">best_quality</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">quality</span>
+                <span class="n">best_hypothesis</span> <span class="o">=</span> <span class="n">expr</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial best hypothesis: </span><span class="si">{</span><span class="n">best_hypothesis</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Quality: </span><span class="si">{</span><span class="n">best_quality</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initial queue size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Iterative refinement-based search</span>
+        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">max_iterations</span> <span class="o">=</span> <span class="mi">100000</span>
+        <span class="n">num_explored</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="p">)</span>
+        <span class="c1"># More generous exploration: explore up to 50% more concepts, not just 10%</span>
+        <span class="n">exploration_limit</span> <span class="o">=</span> <span class="n">num_explored</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">num_explored</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">()</span> <span class="ow">and</span>
+               <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="ow">and</span>
+               <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iterations</span> <span class="ow">and</span>
+               <span class="n">num_explored</span> <span class="o">&lt;</span> <span class="n">exploration_limit</span><span class="p">):</span>
+            <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">queue_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">items_in_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">queue_size</span> <span class="o">&gt;</span> <span class="n">max_queue_size</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WARNING: Queue size (</span><span class="si">{</span><span class="n">queue_size</span><span class="si">}</span><span class="s2">) exceeded max. Stopping search.&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">current_concept</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">current_concept</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="n">max_child_length</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Generate refinements</span>
+            <span class="n">refined_concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">refine</span><span class="p">(</span><span class="n">current_concept</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">refined_concepts</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Limit refinements</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">refined_concepts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">refined_concepts</span> <span class="o">=</span> <span class="n">refined_concepts</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span>
+
+            <span class="c1"># Evaluate refinements</span>
+            <span class="k">for</span> <span class="n">next_concept</span> <span class="ow">in</span> <span class="n">refined_concepts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">next_concept</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">gate</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                            <span class="n">individuals</span><span class="o">=</span><span class="n">next_concept</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span>
+                        <span class="p">)</span>
+                        <span class="n">next_concept</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span>
+
+                        <span class="k">if</span> <span class="n">next_concept</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="n">max_child_length</span> <span class="ow">and</span> <span class="n">queue_size</span> <span class="o">&lt;</span> <span class="n">max_queue_size</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">next_concept</span><span class="p">)</span>
+                            <span class="n">num_explored</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                        <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="n">best_quality</span><span class="p">:</span>
+                            <span class="n">best_quality</span> <span class="o">=</span> <span class="n">quality</span>
+                            <span class="n">best_hypothesis</span> <span class="o">=</span> <span class="n">next_concept</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New best at iter </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">best_hypothesis</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Quality: </span><span class="si">{</span><span class="n">best_quality</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+                        <span class="c1"># Early stopping if perfect solution found</span>
+                        <span class="k">if</span> <span class="n">quality</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Perfect solution found at iteration </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+                            <span class="k">return</span> <span class="p">{</span>
+                                <span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_hypothesis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="n">best_quality</span><span class="p">,</span>
+                                <span class="s1">&#39;Runtime&#39;</span><span class="p">:</span> <span class="n">runtime</span><span class="p">,</span>
+                                <span class="s1">&#39;Quality&#39;</span><span class="p">:</span> <span class="n">best_quality</span>
+                            <span class="p">}</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="c1"># Skip concepts that cause errors during evaluation</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping concept due to error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iter </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">, Queue: </span><span class="si">{</span><span class="n">queue_size</span><span class="si">}</span><span class="s2">, Best: </span><span class="si">{</span><span class="n">best_quality</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, Time: </span><span class="si">{</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+
+        <span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Search finished in </span><span class="si">{</span><span class="n">runtime</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s after </span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> iterations.&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Best: </span><span class="si">{</span><span class="n">best_hypothesis</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Quality: </span><span class="si">{</span><span class="n">best_quality</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_hypothesis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="n">best_quality</span><span class="p">,</span>
+            <span class="s1">&#39;Runtime&#39;</span><span class="p">:</span> <span class="n">runtime</span><span class="p">,</span>
+            <span class="s1">&#39;Quality&#39;</span><span class="p">:</span> <span class="n">best_quality</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="NERO.search_with_smart_init">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.search_with_smart_init">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_with_smart_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Search with smart initialization from neural predictions (model.py compatible).</span>
+<span class="sd">        This uses neural model predictions to guide the symbolic refinement search.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="n">top_k</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Get neural predictions</span>
+        <span class="n">idx_pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]])</span>
+        <span class="n">idx_neg</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">]])</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">sort_scores</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">idx_pos</span><span class="p">,</span> <span class="n">idx_neg</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                <span class="nb">min</span><span class="p">(</span><span class="n">top_k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)),</span>
+                <span class="n">largest</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Initialize priority queue with top predictions</span>
+        <span class="n">top_predictions</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">idx_target</span> <span class="ow">in</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">():</span>
+            <span class="n">target_ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">[</span><span class="n">idx_target</span><span class="p">]</span>
+            <span class="n">target_ce</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                <span class="n">individuals</span><span class="o">=</span><span class="n">target_ce</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span>
+            <span class="p">)</span>
+            <span class="n">top_predictions</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">target_ce</span><span class="p">)</span>
+
+        <span class="c1"># Refine top predictions</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_predictions</span><span class="p">)</span>
+        <span class="n">exploration_budget</span> <span class="o">=</span> <span class="n">n</span>  <span class="c1"># Explore same amount as initial predictions</span>
+        <span class="n">refinements_explored</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_predictions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">)</span> <span class="ow">and</span> <span class="n">exploration_budget</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">top_predictions</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">refined</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">refine</span><span class="p">(</span><span class="n">current</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">refined</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">refinements_explored</span><span class="o">.</span><span class="n">gate</span> <span class="ow">or</span> <span class="n">refined</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">top_predictions</span><span class="o">.</span><span class="n">gate</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">refined</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                    <span class="n">individuals</span><span class="o">=</span><span class="n">refined</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span>
+                <span class="p">)</span>
+
+                <span class="n">exploration_budget</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">refinements_explored</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">refined</span><span class="p">)</span>
+                <span class="n">top_predictions</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">refined</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">exploration_budget</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">exploration_budget</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="n">best_pred</span> <span class="o">=</span> <span class="n">top_predictions</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
+            <span class="s1">&#39;Runtime&#39;</span><span class="p">:</span> <span class="n">runtime</span><span class="p">,</span>
+            <span class="s1">&#39;Quality&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="NERO.fit">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the model to a learning problem (Ontolearn-compatible interface).</span>
+<span class="sd">        This now includes training the neural model and performing the search.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">max_runtime</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span>
+
+        <span class="c1"># 1. Initialize components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_instance_mapping</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_refinement_operator</span><span class="p">()</span>
+
+        <span class="c1"># 2. Train the neural model (as a policy guide, though not fully used in this search impl)</span>
+        <span class="n">pos_examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
+        <span class="n">neg_examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">([(</span><span class="n">pos_examples</span><span class="p">,</span> <span class="n">neg_examples</span><span class="p">)])</span>
+
+        <span class="c1"># 3. Perform the search to find the best complex expression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">pos_examples</span><span class="p">),</span> <span class="n">neg</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">neg_examples</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="NERO.best_hypothesis">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.best_hypothesis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the best hypothesis (Ontolearn-compatible interface).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The best predicted class expression as a string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Namespace must be set for OWL expression conversion&quot;</span>
+
+        <span class="k">return</span> <span class="n">dl_to_owl_expression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span><span class="p">[</span><span class="s1">&#39;Prediction&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NERO.best_hypothesis_quality">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.best_hypothesis_quality">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypothesis_quality</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the quality of the best hypothesis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The F-measure/quality of the best prediction</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span><span class="p">[</span><span class="s1">&#39;Quality&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="NERO.forward">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xpos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">xneg</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass through the neural model.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xpos: Tensor of positive example indices</span>
+<span class="sd">            xneg: Tensor of negative example indices</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Predictions for target class expressions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">xpos</span><span class="p">,</span> <span class="n">xneg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NERO.positive_expression_embeddings">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.positive_expression_embeddings">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">positive_expression_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get embeddings for positive individuals.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            individuals: List of individual URIs</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor of embeddings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">individuals</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">positive_expression_embeddings</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NERO.negative_expression_embeddings">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.negative_expression_embeddings">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">negative_expression_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get embeddings for negative individuals.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            individuals: List of individual URIs</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor of embeddings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">individuals</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">negative_expression_embeddings</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NERO.downward_refine">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.downward_refine">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">downward_refine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Top-down/downward refinement operator from original NERO.</span>
+
+<span class="sd">        This implements the refinement logic from model.py:</span>
+<span class="sd">        ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s^i ⊑ s}</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expression: Expression to refine</span>
+<span class="sd">            max_length: Maximum length constraint for refinements</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Set of refined expressions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">expression</span> <span class="o">==</span> <span class="s1">&#39;⊤&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># Can return top_refinements if needed</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="n">refinements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># Get expression from refinement operator&#39;s expressions dict</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">expression</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">expressions</span><span class="p">:</span>
+            <span class="n">expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">expressions</span><span class="p">[</span><span class="n">expression</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+        <span class="c1"># Get all refinements from the refinement operator</span>
+        <span class="n">refined_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">refinement_op</span><span class="o">.</span><span class="n">refine</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">refined_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">max_length</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ref</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="n">max_length</span><span class="p">:</span>
+                <span class="n">refinements</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">refinements</span></div>
+
+
+<div class="viewcode-block" id="NERO.upward_refine">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.upward_refine">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upward_refine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Bottom-up/upward refinement operator from original NERO.</span>
+
+<span class="sd">        This implements the generalization logic:</span>
+<span class="sd">        ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s ⊑ s^i}</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            expression: Expression to generalize</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Set of generalized expressions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Note: Upward refinement is less commonly used in NERO&#39;s main search</span>
+        <span class="c1"># It&#39;s included for completeness but the main search uses downward refinement</span>
+        <span class="n">refinements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># This would require implementing upward refinement in the refinement operator</span>
+        <span class="c1"># For now, return empty set as it&#39;s not critical for the main search functionality</span>
+        <span class="k">return</span> <span class="n">refinements</span></div>
+
+
+<div class="viewcode-block" id="NERO.search_with_init">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.search_with_init">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_with_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">top_prediction_queue</span><span class="p">:</span> <span class="n">SearchTree</span><span class="p">,</span> <span class="n">set_pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">set_neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SearchTree</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Standard search with smart initialization (from original model.py).</span>
+
+<span class="sd">        This is the key search method that combines neural predictions with symbolic refinement.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            top_prediction_queue: Priority queue initialized with neural predictions</span>
+<span class="sd">            set_pos: Set of positive examples</span>
+<span class="sd">            set_neg: Set of negative examples</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SearchTree with explored and refined expressions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize final predictions</span>
+        <span class="n">top_predictions</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+        <span class="n">top_predictions</span><span class="o">.</span><span class="n">extend_queue</span><span class="p">(</span><span class="n">top_prediction_queue</span><span class="p">)</span>
+        <span class="n">refinements_of_top_predictions</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_prediction_queue</span><span class="p">)</span>
+        <span class="n">exploration_counter</span> <span class="o">=</span> <span class="n">n</span>
+
+        <span class="c1"># Iterate over advantageous states</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_prediction_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">):</span>  <span class="c1"># explore only 1 percent</span>
+            <span class="c1"># Get top ranked Description Logic Expression</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="c1"># Refine with length constraint</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">downward_refine</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="mi">3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">refinements_of_top_predictions</span><span class="o">.</span><span class="n">gate</span> <span class="ow">or</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">top_predictions</span><span class="o">.</span><span class="n">gate</span><span class="p">:</span>
+                    <span class="c1"># Already seen</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                        <span class="n">individuals</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span>
+                        <span class="n">pos</span><span class="o">=</span><span class="n">set_pos</span><span class="p">,</span>
+                        <span class="n">neg</span><span class="o">=</span><span class="n">set_neg</span>
+                    <span class="p">)</span>
+                    <span class="c1"># Add refinements</span>
+                    <span class="n">exploration_counter</span> <span class="o">-=</span> <span class="mi">1</span>
+                    <span class="n">refinements_of_top_predictions</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">key</span><span class="o">=-</span><span class="n">a</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+                    <span class="n">top_predictions</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">key</span><span class="o">=-</span><span class="n">a</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">exploration_counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">exploration_counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">top_predictions</span></div>
+
+
+<div class="viewcode-block" id="NERO.fit_from_iterable">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.fit_from_iterable">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">use_search</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;SmartInit&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit method compatible with original NERO&#39;s model.py interface.</span>
+
+<span class="sd">        This implements the complete prediction pipeline from the original NERO:</span>
+<span class="sd">        1. Neural prediction to get top-k candidates</span>
+<span class="sd">        2. Quality evaluation</span>
+<span class="sd">        3. Optional symbolic search for refinement</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pos: List of positive example URIs</span>
+<span class="sd">            neg: List of negative example URIs</span>
+<span class="sd">            top_k: Number of top neural predictions to consider</span>
+<span class="sd">            use_search: Search strategy (&#39;SmartInit&#39;, &#39;None&#39;, or None)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dictionary with prediction results</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be trained before calling fit_from_iterable&quot;</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">set_pos</span><span class="p">,</span> <span class="n">set_neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pos</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span>
+
+        <span class="c1"># Get neural predictions</span>
+        <span class="n">idx_pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]])</span>
+        <span class="n">idx_neg</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">instance_idx_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">]])</span>
+
+        <span class="n">goal_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">top_prediction_queue</span> <span class="o">=</span> <span class="n">SearchTree</span><span class="p">()</span>
+
+        <span class="c1"># Get top-k predictions from neural model</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">sort_scores</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">xpos</span><span class="o">=</span><span class="n">idx_pos</span><span class="p">,</span> <span class="n">xneg</span><span class="o">=</span><span class="n">idx_neg</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                <span class="nb">min</span><span class="p">(</span><span class="n">top_k</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">)),</span>
+                <span class="n">largest</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Evaluate predictions</span>
+        <span class="k">for</span> <span class="n">idx_target</span> <span class="ow">in</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">():</span>
+            <span class="n">target_ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_class_expressions</span><span class="p">[</span><span class="n">idx_target</span><span class="p">]</span>
+            <span class="n">target_ce</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">(</span>
+                <span class="n">individuals</span><span class="o">=</span><span class="n">target_ce</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span>
+                <span class="n">pos</span><span class="o">=</span><span class="n">set_pos</span><span class="p">,</span>
+                <span class="n">neg</span><span class="o">=</span><span class="n">set_neg</span>
+            <span class="p">)</span>
+            <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">target_ce</span><span class="p">,</span> <span class="n">key</span><span class="o">=-</span><span class="n">target_ce</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">target_ce</span><span class="o">.</span><span class="n">quality</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">goal_found</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">top_prediction_queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># If goal not found, perform search</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">goal_found</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_search</span> <span class="o">==</span> <span class="s1">&#39;SmartInit&#39;</span><span class="p">:</span>
+                <span class="n">best_pred</span> <span class="o">=</span> <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">best_pred</span><span class="p">,</span> <span class="n">key</span><span class="o">=-</span><span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+                <span class="n">top_prediction_queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_with_init</span><span class="p">(</span>
+                    <span class="n">top_prediction_queue</span><span class="p">,</span> <span class="n">set_pos</span><span class="p">,</span> <span class="n">set_neg</span>
+                <span class="p">)</span>
+                <span class="n">best_constructed_expression</span> <span class="o">=</span> <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">best_constructed_expression</span><span class="o">.</span><span class="n">quality</span> <span class="o">&gt;</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span><span class="p">:</span>
+                    <span class="n">best_pred</span> <span class="o">=</span> <span class="n">best_constructed_expression</span>
+            <span class="k">elif</span> <span class="n">use_search</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span> <span class="ow">or</span> <span class="n">use_search</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">best_pred</span> <span class="o">=</span> <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown search strategy: </span><span class="si">{</span><span class="n">use_search</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">best_pred</span> <span class="o">=</span> <span class="n">top_prediction_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+        <span class="n">runtime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+        <span class="n">report</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;Instances&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">str_individuals</span><span class="p">,</span>
+            <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s1">&#39;Runtime&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">runtime</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+            <span class="s1">&#39;Quality&#39;</span><span class="p">:</span> <span class="n">best_pred</span><span class="o">.</span><span class="n">quality</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">report</span></div>
+
+
+<div class="viewcode-block" id="NERO.predict">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict class expressions for given positive and negative examples.</span>
+<span class="sd">        This now uses the search mechanism.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_trained</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="o">=</span><span class="n">neg</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_predictions</span></div>
+
+
+
+<div class="viewcode-block" id="NERO.__str__">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.__str__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;NERO(architecture=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">neural_architecture</span><span class="si">}</span><span class="s2">, embedding_dim=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_embedding_dim</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="NERO.__repr__">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/nero/index.html#ontolearn.learners.NERO.__repr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

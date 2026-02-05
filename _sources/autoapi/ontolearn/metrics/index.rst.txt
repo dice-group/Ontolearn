@@ -1,0 +1,229 @@
+ontolearn.metrics
+=================
+
+.. py:module:: ontolearn.metrics
+
+.. autoapi-nested-parse::
+
+   Quality metrics for concept learners.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.metrics.Recall
+   ontolearn.metrics.Precision
+   ontolearn.metrics.F1
+   ontolearn.metrics.Accuracy
+   ontolearn.metrics.WeightedAccuracy
+
+
+Module Contents
+---------------
+
+.. py:class:: Recall(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractScorer`
+
+
+   Recall quality function.
+
+   Attribute:
+       name: name of the metric = 'Recall'.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'Recall'
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+.. py:class:: Precision(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractScorer`
+
+
+   Precision quality function.
+
+   Attribute:
+       name: name of the metric = 'Precision'.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'Precision'
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+.. py:class:: F1(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractScorer`
+
+
+   F1-score quality function.
+
+   Attribute:
+       name: name of the metric = 'F1'.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'F1'
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+.. py:class:: Accuracy(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractScorer`
+
+
+   Accuracy quality function.
+   Accuracy is acc = (tp + tn) / (tp + tn + fp+ fn).
+   However, Concept learning papers (e.g. Learning OWL Class expression) appear to invent their own accuracy metrics.
+
+   In OCEL =>    Accuracy of a concept = 1 - ( \|E^+ \ R(C)\|+ \|E^- AND R(C)\|) / \|E\|).
+
+
+   In CELOE  =>    Accuracy of a concept C = 1 - ( \|R(A) \ R(C)\| + \|R(C) \ R(A)\|)/n.
+
+
+
+   1) R(.) is the retrieval function, A is the class to describe and C in CELOE.
+
+   2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
+
+   Attribute:
+       name: name of the metric = 'Accuracy'.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'Accuracy'
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+
+.. py:class:: WeightedAccuracy(*args, **kwargs)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractScorer`
+
+
+   WeightedAccuracy quality function.
+
+   Attribute:
+       name: name of the metric = 'WeightedAccuracy'.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'WeightedAccuracy'
+
+
+
+   .. py:method:: score2(tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]
+
+      Quality score for a coverage count.
+
+      :param tp: True positive count.
+      :param fn: False negative count.
+      :param fp: False positive count.
+      :param tn: True negative count.
+
+      :returns:
+
+                Tuple, first position indicating if the function could be applied, second position the quality value
+                   in the range 0.0--1.0.
+
+
+

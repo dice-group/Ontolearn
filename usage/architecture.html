@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/usage/architecture.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h1>
+<p>Here we present the class hierarchies of Ontolearn.</p>
+<section id="knowledge-base-organisation">
+<h2>Knowledge Base organisation<a class="headerlink" href="#knowledge-base-organisation" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-40b4bf234d8aa30f8b747926d03bbf4f93bc4bbc.svg" alt="package ontolearn.abstracts {
+abstract AbstractKnowledgeBase
+}
+package ontolearn.concept_generator {
+class ConceptGenerator
+}
+package ontolearn.knowledge_base {
+class KnowledgeBase
+}
+
+AbstractKnowledgeBase &lt;|-- KnowledgeBase
+ConceptGenerator --o KnowledgeBase"/></p>
+<p>The Knowledge Base keeps the OWL Ontology and Reasoner together and
+manages the OWL Hierarchies. It is also responsible for delegating
+and caching instance queries and encoding instances.</p>
+</section>
+<section id="learning-algorithms">
+<h2>Learning Algorithms<a class="headerlink" href="#learning-algorithms" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-a7c0f6f0d145751db9dd873657267bf486912889.svg" alt="package ontolearn.learners.base {
+abstract BaseConceptLearner
+}
+package ontolearn.learners {
+class CELOE
+}
+
+BaseConceptLearner &lt;|-- CELOE"/></p>
+<p>There may be several Concept Learning Algorithms to choose from. Each
+may be better suited for a specific kind of Learning Problem or desired
+result.</p>
+</section>
+<section id="heuristics">
+<h2>Heuristics<a class="headerlink" href="#heuristics" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-ef864695ca2386168d86cd0934d5c0f3e01ec642.svg" alt="package ontolearn.abstracts {
+abstract AbstractHeuristic
+}
+package ontolearn.heuristics {
+class CELOEHeuristic
+}
+
+AbstractHeuristic &lt;|-- CELOEHeuristic"/></p>
+<p>Heuristics are an abstraction to guide the concept search process. The
+included CELOE Heuristic takes as basis the <a class="reference internal" href="#quality-functions">Quality
+function</a> and then adds some weights, like
+penalties for extending the length of a concept or for repeatedly
+searching the same position in the search space. Other heuristics can be
+invented and tested.</p>
+</section>
+<section id="refinement-operators">
+<h2>Refinement Operators<a class="headerlink" href="#refinement-operators" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-eb7af2c70273771d36aa47bc21dc02f22c5cf621.svg" alt="package ontolearn.abstracts {
+abstract BaseRefinement
+}
+package ontolearn.refinement_operators {
+class ModifiedCELOERefinement
+}
+package ontolearn.refinement_operators {
+class LengthBasedRefinement
+}
+
+BaseRefinement &lt;|-- ModifiedCELOERefinement
+BaseRefinement &lt;|-- LengthBasedRefinement"/></p>
+<p>Refinement operators suggest new concepts to evaluate based on a given
+concept. Ultimately, the refinement operator decides what
+Description Logics language family the learning algorithm will be able
+to cover. The included modified CELOE refinement will iteratively
+generate ALC concepts by generating all available atomic classes and
+properties, and combine them with ⊓, ⊔, ¬, ∀ and ∃, and successively
+increase their length. The length based refinement will intuitively do
+the same but immediately go to a specific length instead of searching
+the concepts by increasing length.</p>
+</section>
+<section id="learning-problem-types">
+<h2>Learning Problem types<a class="headerlink" href="#learning-problem-types" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-73c6a9e6a763ca7913a69491f5e2de1da7a9a263.svg" alt="package ontolearn.abstracts {
+abstract AbstractLearningProblem
+}
+package ontolearn.learning_problem {
+class PosNegLPStandard
+}
+
+AbstractLearningProblem &lt;|-- PosNegLPStandard"/></p>
+<p>Learning Problems encode all information pertaining to the
+classification task, i.e. the positive examples (that should be
+covered by the learning result) and the negative examples (that should
+not be covered by the learning result).</p>
+</section>
+<section id="search-trees-and-nodes">
+<h2>Search trees and nodes<a class="headerlink" href="#search-trees-and-nodes" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-18df5cfca514b77d3bf7ec3b9b598f10409e7927.svg" alt="package ontolearn.abstracts {
+abstract AbstractNode
+}
+package ontolearn.abstracts {
+abstract AbstractOEHeuristicNode
+}
+package ontolearn.search {
+class Node
+}
+package ontolearn.search {
+class OENode
+}
+package ontolearn.search {
+class LBLNode
+}
+package ontolearn.abstract {
+abstract LBLSearchTree
+}
+package ontolearn.search {
+class SearchTreePriorityQueue
+}
+
+OENode &lt;|-- LBLNode
+AbstractNode &lt;|-- Node
+AbstractNode &lt;|-- OENode
+AbstractOEHeuristicNode &lt;|-- OENode
+
+LBLSearchTree &lt;|-- SearchTreePriorityQueue"/></p>
+<p>Nodes are tuples of concept and (typically) quality and other related
+measures or information, and are used in the search process or
+possibly to present the algorithm results.</p>
+</section>
+<section id="owl-hierarchies">
+<h2>OWL Hierarchies<a class="headerlink" href="#owl-hierarchies" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-6f22c0bd8ce01e8ed6790031677d73a4868336e4.svg" alt="package ontolearn.core.owl.hierarchy {
+abstract AbstractHierarchy
+}
+package ontolearn.core.owl.hierarchy {
+class ClassHierarchy
+}
+package ontolearn.core.owl.hierarchy {
+class ObjectPropertyHierarchy
+}
+package ontolearn.core.owl.hierarchy {
+class DatatypePropertyHierarchy
+}
+
+AbstractHierarchy &lt;|-- ClassHierarchy
+AbstractHierarchy &lt;|-- ObjectPropertyHierarchy
+AbstractHierarchy &lt;|-- DatatypePropertyHierarchy"/></p>
+<p>Hierarchies order their taxonomies into a sub- and super-kind
+relation, for example sub-classes and super-classes.</p>
+</section>
+<section id="quality-functions">
+<h2>Quality Functions<a class="headerlink" href="#quality-functions" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-e12c76dc0827df4e8dee103b1e0ec4725d11a7cb.svg" alt="package ontolearn.abstracts {
+abstract AbstractScorer
+}
+package ontolearn.metrics {
+class F1
+}
+package ontolearn.metrics {
+class Accuracy
+}
+package ontolearn.metrics {
+class Recall
+}
+package ontolearn.metrics {
+class Precision
+}
+
+AbstractScorer &lt;|-- Precision
+AbstractScorer &lt;|-- F1
+AbstractScorer &lt;|-- Accuracy
+AbstractScorer &lt;|-- Recall"/></p>
+<p>You can choose one quality function which will be the quality of a
+Node in the search process. The way the quality is measured typically
+influences the heuristic and thus the direction of the search process.</p>
+</section>
+<section id="component-architecture">
+<h2>Component architecture<a class="headerlink" href="#component-architecture" title="Link to this heading"></a></h2>
+<p class="plantuml">
+<img src="../_images/plantuml-82b19300669ca7faece796dfc4e00f4cf6c3e12c.svg" alt="package ontolearn.base_concept_learner {
+abstract BaseConceptLearner &lt;&lt; AbstractNode &gt;&gt;
+}
+package ontolearn.concept_generator {
+class ConceptGenerator
+}
+package ontolearn.abstracts {
+abstract AbstractKnowledgeBase
+}
+package ontolearn.abstracts {
+abstract AbstractLearningProblem
+}
+package ontolearn.abstracts {
+abstract BaseRefinement &lt;&lt; AbstractNode &gt;&gt;
+}
+package ontolearn.abstracts {
+abstract AbstractScorer
+}
+package ontolearn.abstracts {
+abstract AbstractHeuristic &lt;&lt; AbstractHeuristicNode &gt;&gt;
+}
+package owlapy.model {
+abstract OWLOntology
+}
+package owlapy.model {
+abstract OWLReasoner
+}
+
+OWLReasoner *-- OWLOntology
+
+AbstractKnowledgeBase *-- OWLOntology
+AbstractKnowledgeBase *-- OWLReasoner
+AbstractKnowledgeBase *-- ConceptGenerator
+
+OWLReasoner -* ConceptGenerator
+
+BaseRefinement *-- AbstractKnowledgeBase
+
+BaseConceptLearner *-- AbstractKnowledgeBase
+BaseConceptLearner *-- BaseRefinement : refinement_operator
+BaseConceptLearner *-- AbstractScorer : quality_func
+BaseConceptLearner *-- AbstractHeuristic : heuristic_func"/></p>
+<p>Here you can see how the components depend on each other. All of these
+components are required in order to run the concept learning algorithm.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

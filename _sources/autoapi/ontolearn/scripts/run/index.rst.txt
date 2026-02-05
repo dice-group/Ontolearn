@@ -1,0 +1,70 @@
+ontolearn.scripts.run
+=====================
+
+.. py:module:: ontolearn.scripts.run
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.scripts.run.app
+   ontolearn.scripts.run.args
+   ontolearn.scripts.run.kb
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.scripts.run.get_default_arguments
+   ontolearn.scripts.run.root
+   ontolearn.scripts.run.get_drill
+   ontolearn.scripts.run.get_nces
+   ontolearn.scripts.run.get_tdl
+   ontolearn.scripts.run.get_learner
+   ontolearn.scripts.run.cel
+   ontolearn.scripts.run.main
+
+
+Module Contents
+---------------
+
+.. py:data:: app
+
+.. py:data:: args
+   :value: None
+
+
+.. py:data:: kb
+   :value: None
+
+
+.. py:function:: get_default_arguments()
+
+.. py:function:: root()
+   :async:
+
+
+.. py:function:: get_drill(data: dict)
+
+   Initialize DRILL
+
+
+.. py:function:: get_nces(data: dict) -> ontolearn.learners.NCES
+
+   Load NCES
+
+
+.. py:function:: get_tdl(data) -> ontolearn.learners.TDL
+
+.. py:function:: get_learner(data: dict) -> Union[ontolearn.learners.Drill, ontolearn.learners.TDL, ontolearn.learners.NCES, None]
+
+.. py:function:: cel(data: dict) -> Dict
+   :async:
+
+
+.. py:function:: main()
+

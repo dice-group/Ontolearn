@@ -1,0 +1,467 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Bases &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Evaluate a class expression" href="05_evaluate_ce.html" />
+    <link rel="prev" title="Examples" href="03_examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="03_examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Knowledge Bases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#knowledge-base-vs-ontology">Knowledge Base vs Ontology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-an-instance-of-knowledgebase">Create an Instance of KnowledgeBase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ignore-concepts">Ignore Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#accessing-individuals">Accessing Individuals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sampling-the-knowledge-base">Sampling the Knowledge Base</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sampling-steps">Sampling steps:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#triplesore-knowledge-base">TripleSore Knowledge Base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-and-launching-a-triplestore">Loading and Launching a Triplestore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#obtaining-axioms">Obtaining axioms</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Knowledge Bases</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/usage/04_knowledge_base.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="knowledge-bases">
+<h1>Knowledge Bases<a class="headerlink" href="#knowledge-bases" title="Link to this heading"></a></h1>
+<p>In Ontolearn a knowledge base is represented
+by an implementor of <a class="reference internal" href="../autoapi/ontolearn/abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="xref myst py py-class">AbstractKnowledgeBase</span></a> which contains two main
+attributes, an ontology of type <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology">AbstractOWLOntology</a>
+and a reasoner of type <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.AbstractOWLReasoner">AbstractOWLReasoner</a>. Be careful, different implementations of these abstract classes
+are not compatible with each other. For example, you can not use <a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStore" title="ontolearn.triple_store.TripleStore"><span class="xref myst py py-class">TripleStore</span></a>
+knowledge base with
+<a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.StructuralReasoner">StructuralReasoner</a>,
+but you can use <a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStore" title="ontolearn.triple_store.TripleStore"><span class="xref myst py py-class">TripleStore</span></a> knowledge base with <a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStoreReasoner" title="ontolearn.triple_store.TripleStoreReasoner"><span class="xref myst py py-class">TripleStoreReasoner</span></a>.
+<em>AbstractKnowledgeBase</em> contains the necessary methods to facilitate <em>Structured Machine Learning</em>.</p>
+<p>Currently, there are two implementation of <em>AbstractKnowledgeBase</em>:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../autoapi/ontolearn/knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase" title="ontolearn.knowledge_base.KnowledgeBase"><span class="xref myst py py-class">KnowledgeBase</span></a> → used for local datasets.</p></li>
+<li><p><a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStore" title="ontolearn.triple_store.TripleStore"><span class="xref myst py py-class">TripleStore</span></a> → used for datasets hosted on a server.</p></li>
+</ul>
+<section id="knowledge-base-vs-ontology">
+<h2>Knowledge Base vs Ontology<a class="headerlink" href="#knowledge-base-vs-ontology" title="Link to this heading"></a></h2>
+<p>These terms may be used interchangeably sometimes but in Ontolearn they are not the same thing,
+although they share a lot of similarities. An ontology in owlapy, as explained
+<a class="reference external" href="https://dice-group.github.io/owlapy/usage/ontologies.html">here</a> is the object where we load
+the OWL 2.0 ontologies (supporting different formats OWL/XML, RDF/XML, Triples etc.)
+On the other side a knowledge base combines an ontology and a reasoner together and is main purpose
+is to ease the process of concept learning serving as both a storing entity and a data retrieval entity.
+Therefore, differently from the ontology object you can use reasoning methods. You can check
+the methods for each in the links below:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#ontolearn.knowledge_base.AbstractKnowledgeBase"><span class="xref myst">AbstractKnowledgeBase</span></a></p></li>
+<li><p><a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology">AbstractOWLOntology</a></p></li>
+</ul>
+<p>In summary:</p>
+<ul class="simple">
+<li><p>An implementation of <code class="docutils literal notranslate"><span class="pre">AbstractKnowledgeBase</span></code> contains an ontology and a reasoner and
+is required to run a learning algorithm.</p></li>
+<li><p>An ontology represents the OWL 2 ontology you have locally or hosted on triplestore server. Using class methods you
+can retrieve information from signature of this ontology. In case of a local the ontology, it can be modified and
+saved.</p></li>
+</ul>
+</section>
+<section id="create-an-instance-of-knowledgebase">
+<h2>Create an Instance of KnowledgeBase<a class="headerlink" href="#create-an-instance-of-knowledgebase" title="Link to this heading"></a></h2>
+<p>Let us show how you can initialize an instance of <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code>.
+We consider that you have already an OWL 2.0 ontology locally (for example a file ending with <em>.owl</em>).</p>
+<p>The simplest way is to use the path of your local ontology as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;file://KGs/Family/father.owl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>What happens in the background is that the ontology located in this path will be loaded
+in the <code class="docutils literal notranslate"><span class="pre">AbstractOWLOntology</span></code> object of <code class="docutils literal notranslate"><span class="pre">kb</span></code> as well as a reasoner will be created using that
+ontology during initialisation. You may as well initialise an instance of <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code> using
+an instance of an ontology and reasoner. For this example we are using a minimalistic ontology
+called the <em>father</em> ontology which you can download as instructed <a class="reference internal" href="02_installation.html#download-external-files"><span class="std std-ref">here</span></a>.</p>
+</section>
+<section id="ignore-concepts">
+<h2>Ignore Concepts<a class="headerlink" href="#ignore-concepts" title="Link to this heading"></a></h2>
+<p>During concept learning which we describe later, you may need to
+avoid trivial solutions from being learned. So in Ontolearn you
+have the opportunity to ignore specific concepts. Since we pass a <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code>
+object to the concept learner, we set this ignored concept using the method
+<code class="docutils literal notranslate"><span class="pre">ignore_and_copy</span></code> of the <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code> class.</p>
+<p>We don’t have such concept in our example ontology <code class="docutils literal notranslate"><span class="pre">KGs/Family/father.owl</span></code> but suppose that
+there is a class(concept) “Father” that we want to ignore, because we are trying
+to learn this a meaningful class expression for ‘Father’ using other classes(e.g. male, female, ∃ hasChild.⊤… ).
+So we need to ignore this concept before fitting a model (model fitting is covered in <a class="reference internal" href="06_concept_learners.html"><span class="std std-doc">concept learning</span></a>).
+It can be done as follows:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
+
+<span class="n">iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="p">(</span><span class="s1">&#39;http://example.com/father#&#39;</span><span class="p">,</span> <span class="s1">&#39;Father&#39;</span><span class="p">)</span>
+<span class="n">father_concept</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">iri</span><span class="p">)</span>
+<span class="n">concepts_to_ignore</span> <span class="o">=</span> <span class="p">{</span><span class="n">father_concept</span><span class="p">}</span>  <span class="c1"># you can add more than 1</span>
+
+<span class="n">new_kb</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">ignore_and_copy</span><span class="p">(</span><span class="n">ignored_classes</span><span class="o">=</span><span class="n">concepts_to_ignore</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this example, we have created an instance of
+<a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/owl_class/index.html#owlapy.class_expression.owl_class.OWLClass">OWLClass</a>
+by using an <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/iri/index.html#owlapy.iri.IRI">IRI</a>.
+On the other side, an instance of <code class="docutils literal notranslate"><span class="pre">IRI</span></code> is created by passing two parameters which are
+the namespace of the ontology and the remainder ‘Father’.</p>
+</section>
+<section id="accessing-individuals">
+<h2>Accessing Individuals<a class="headerlink" href="#accessing-individuals" title="Link to this heading"></a></h2>
+<p>You may need to work with individuals of a knowledge base.
+We cover different ways of accessing them.</p>
+<p>Let us give a  simple example of how to get the individuals that
+are classified by an <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/class_expression/index.html#owlapy.class_expression.class_expression.OWLClassExpression">OWLClassExpression</a>. As a class expression, we will simply use the
+concept ‘male’.</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">NS</span> <span class="o">=</span> <span class="s1">&#39;http://example.com/father#&#39;</span>
+<span class="n">male_concept</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span><span class="s1">&#39;male&#39;</span><span class="p">))</span>
+
+<span class="n">male_individuals</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">male_concept</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the namespace has to match the Namespace/IRI that is defined
+in the Ontology.</p>
+<p><code class="docutils literal notranslate"><span class="pre">male_individuals</span></code> will contain all the individuals of type ‘male’.
+Keep in mind that <code class="docutils literal notranslate"><span class="pre">OWLClass</span></code> inherit from <code class="docutils literal notranslate"><span class="pre">OWLClassExpression</span></code>. Depending on
+the reasoner that the <code class="docutils literal notranslate"><span class="pre">kb</span></code> object is using the results may differ slightly but in
+case of a small dataset like the one we are using for this example, the results do not change.</p>
+<p>If you don’t give any argument than this method returns all the individuals in the ontology:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">all_individuals</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can as well get all the individuals using:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLThing</span>
+
+<span class="n">all_individuals_set</span>  <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">OWLThing</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The difference is that <code class="docutils literal notranslate"><span class="pre">individuals()</span></code> return type is generator.
+and <code class="docutils literal notranslate"><span class="pre">individuals_set()</span></code> return type is frozenset.</p>
+<p>For large amount of data <code class="docutils literal notranslate"><span class="pre">individuals()</span></code> is more computationally efficient:</p>
+<!--pytest-codeblocks:cont-->
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">male_individuals</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">male_concept</span><span class="p">)</span>
+
+<span class="p">[</span><span class="nb">print</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">male_individuals</span><span class="p">]</span> <span class="c1"># print male individuals</span>
+</pre></div>
+</div>
+</section>
+<section id="sampling-the-knowledge-base">
+<h2>Sampling the Knowledge Base<a class="headerlink" href="#sampling-the-knowledge-base" title="Link to this heading"></a></h2>
+<p>Sometimes ontologies and therefore knowledge bases can get very large and our
+concept learners become inefficient in terms of runtime. Sampling is an approach
+to extract a portion of the whole knowledge base without changing its semantic and
+still being expressive enough to yield results (in the learning task) with as little
+loss of quality as possible. <a class="reference external" href="https://github.com/alkidbaci/OntoSample/tree/main">OntoSample</a> is
+a library that we use to perform the sampling process. It offers different sampling
+techniques which fall into the following categories:</p>
+<ul class="simple">
+<li><p>Node-based samplers</p></li>
+<li><p>Edge-based samplers</p></li>
+<li><p>Exploration-based samplers</p></li>
+</ul>
+<p>and almost each sampler is offered in 3 modes:</p>
+<ul class="simple">
+<li><p>Classic</p></li>
+<li><p>Learning problem first (LPF)</p></li>
+<li><p>Learning problem centered (LPC)</p></li>
+</ul>
+<p>You can check them <a class="reference external" href="https://github.com/alkidbaci/OntoSample/tree/main">here</a>.</p>
+<p>When operated on its own, Ontosample uses a light version of Ontolearn (<code class="docutils literal notranslate"><span class="pre">ontolearn_light</span></code>)
+to reason over ontologies, but when both packages are installed in the same environment
+it will use <code class="docutils literal notranslate"><span class="pre">ontolearn</span></code> module instead. This is made for compatibility reasons. However, since
+the libraries are managed separately, you may encounter potential errors when installing them
+in the same environment. In this case we recommend using Ontosample in another environment
+to perform sampling.</p>
+<p>Ontosample treats the knowledge base as a graph where nodes are individuals
+and edges are object properties. However, Ontosample also offers support for
+data properties sampling, although they are not considered as <em>“edges”</em>.</p>
+<section id="sampling-steps">
+<h3>Sampling steps:<a class="headerlink" href="#sampling-steps" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Initialize the sample using a <code class="docutils literal notranslate"><span class="pre">KnowledgeBase</span></code> object. If you are using an LPF or LPC
+sampler than you also need to pass the set of learning problem individuals (<code class="docutils literal notranslate"><span class="pre">lp_nodes</span></code>).</p></li>
+<li><p>To perform the sampling use the <code class="docutils literal notranslate"><span class="pre">sample</span></code> method where you pass the number
+of nodes (<code class="docutils literal notranslate"><span class="pre">nodes_number</span></code>) that you want to sample, the amount of data properties in percentage
+(<code class="docutils literal notranslate"><span class="pre">data_properties_percentage</span></code>) that you want to sample which is represented by float values
+form 0 to 1 and jump probability (<code class="docutils literal notranslate"><span class="pre">jump_prob</span></code>) for samplers that
+use “jumping”, a technique to avoid infinite loops during sampling.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">sample</span></code> method returns the sampled knowledge which you can store to a
+variable, use directly in the code or save locally by using the static method
+<code class="docutils literal notranslate"><span class="pre">save_sample</span></code>.</p></li>
+</ol>
+<p>Let’s see an example where we use <a class="reference external" href="https://github.com/alkidbaci/OntoSample/blob/bc0e65a3bcbf778575fe0a365ea94250ea7910a1/ontosample/classic_samplers.py#L17C7-L17C24">RandomNodeSampler</a> to sample a
+knowledge base:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontosample.classic_samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomNodeSampler</span>
+
+<span class="c1"># 1. Initialize KnowledgeBase object using the path of the ontology</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2. Initialize the sampler and generate the sample</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">RandomNodeSampler</span><span class="p">(</span><span class="n">kb</span><span class="p">)</span>
+<span class="n">sampled_kb</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="c1"># will generate a sample with 30 nodes</span>
+
+<span class="c1"># 3. Save the sampled ontology</span>
+<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;some_name&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here is another example where this time we use an LPC sampler:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontosample.lpc_samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomWalkerJumpsSamplerLPCentralized</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span><span class="n">IRI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="c1"># 0. Load json that stores the learning problem</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/uncle_lp2.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
+    <span class="n">examples</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
+
+<span class="c1"># 1. Initialize KnowledgeBase object using the path of the ontology</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2. Initialize learning problem (required only for LPF and LPC samplers)</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">&#39;positive_examples&#39;</span><span class="p">]))))</span>
+<span class="n">neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">&#39;negative_examples&#39;</span><span class="p">]))))</span>
+<span class="n">lp</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span>
+
+<span class="c1"># 3. Initialize the sampler and generate the sample</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">RandomWalkerJumpsSamplerLPCentralized</span><span class="p">(</span><span class="n">graph</span><span class="o">=</span><span class="n">kb</span><span class="p">,</span> <span class="n">lp_nodes</span><span class="o">=</span><span class="n">lp</span><span class="p">)</span>
+<span class="n">sampled_kb</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">nodes_number</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span><span class="n">jump_prob</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
+
+<span class="c1"># 4. Save the sampled ontology</span>
+<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;some_other_name&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p>WARNING! Random walker and Random Walker with Prioritization are two samplers that suffer
+from non-termination in case that the ontology contains nodes that point to each other and
+form an inescapable loop for the “walker”. In this scenario you can use their “jumping”
+version to make the “walker” escape these loops and ensure termination.</p>
+</div></blockquote>
+<p>To see how to use a sampled knowledge base for the task of concept learning check
+the <code class="docutils literal notranslate"><span class="pre">sampling_example.py</span></code> in <a class="reference external" href="https://github.com/dice-group/Ontolearn/tree/develop/examples">examples</a>
+folder. You will find descriptive comments in that script that will help you understand it better.</p>
+<p>For more details about OntoSample you can see <a class="reference external" href="https://dl.acm.org/doi/10.1145/3583780.3615158">this paper</a>.</p>
+<p>Note: You cannot use sampling on a <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code> knowledge base.</p>
+</section>
+</section>
+<section id="triplesore-knowledge-base">
+<h2>TripleSore Knowledge Base<a class="headerlink" href="#triplesore-knowledge-base" title="Link to this heading"></a></h2>
+<p>Instead of querying knowledge graphs loaded locally using expensive computation resources why not just make use of the
+efficient approach of querying a triplestore using SPARQL queries. We have brought this
+functionality to Ontolearn for our learning algorithms.
+Let’s see what it takes to make use of it.</p>
+<p>First of all you need a server which should host the triplestore for your ontology. If you don’t
+already have one and just want to try things out, see <a class="reference internal" href="#loading-and-launching-a-triplestore">Loading and Launching a Triplestore</a> below.</p>
+<p>Now you can simply initialize an instance of <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code> class that will serve as an input for your desired
+concept learner:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.triple_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TripleStore</span>
+
+<span class="n">kb</span> <span class="o">=</span> <span class="n">TripleStore</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://your_domain/some_path/sparql&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice that the triplestore endpoint is enough to initialize an object of <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code>.
+Also keep in mind that this knowledge base can be initialized by using either one of
+<a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStoreOntology" title="ontolearn.triple_store.TripleStoreOntology"><span class="xref myst py py-class">TripleStoreOntology</span></a> or <a class="reference internal" href="../autoapi/ontolearn/triple_store/index.html#ontolearn.triple_store.TripleStoreReasoner" title="ontolearn.triple_store.TripleStoreReasoner"><span class="xref myst py py-class">TripleStoreReasoner</span></a>. Using the <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code> KB means that
+every querying process taking place during concept learning is now done using SPARQL queries.</p>
+<blockquote>
+<div><p><strong>Important notice:</strong> The performance of a concept learner may differentiate when using TripleStore instead of
+KnowledgeBase for the same ontology. This happens because some SPARQL queries may not yield the exact same results
+as the local querying methods.</p>
+</div></blockquote>
+</section>
+<section id="loading-and-launching-a-triplestore">
+<h2>Loading and Launching a Triplestore<a class="headerlink" href="#loading-and-launching-a-triplestore" title="Link to this heading"></a></h2>
+<p>We will provide a simple approach to load and launch a triplestore in a local server. For this,
+we will be using <em>apache-jena</em> and <em>apache-jena-fuseki</em>. As a prerequisite you need
+JDK 11 or higher and if you are on Windows, you need <a class="reference external" href="https://www.cygwin.com/">Cygwin</a>. In case of
+issues or any further reference please visit the official page of <a class="reference external" href="https://jena.apache.org/index.html">Apache Jena</a>
+and check the documentation under “Triple Store”.</p>
+<p>Having that said, let us now load and launch a triplestore on the “Father” ontology:</p>
+<p>Open a terminal window and make sure you are in the root directory. Create a directory to
+store the files for Fuseki server:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>Fuseki<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>Fuseki
+</pre></div>
+</div>
+<p>Install <em>apache-jena</em> and <em>apache-jena-fuseki</em>. We will use version 4.7.0.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># install Jena</span>
+wget<span class="w"> </span>https://archive.apache.org/dist/jena/binaries/apache-jena-4.7.0.tar.gz
+<span class="c1">#install Jena-Fuseki</span>
+wget<span class="w"> </span>https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-4.7.0.tar.gz
+</pre></div>
+</div>
+<p>Unzip the files:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tar<span class="w"> </span>-xzf<span class="w"> </span>apache-jena-fuseki-4.7.0.tar.gz
+tar<span class="w"> </span>-xzf<span class="w"> </span>apache-jena-4.7.0.tar.gz
+</pre></div>
+</div>
+<p>Make a directory for our ‘father’ database inside jena-fuseki:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>apache-jena-fuseki-4.7.0/databases/father/
+</pre></div>
+</div>
+<p>Now just load the ‘father’ ontology using the following commands:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>..
+
+Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader<span class="w"> </span>--loader<span class="o">=</span>parallel<span class="w"> </span>--loc<span class="w"> </span>Fuseki/apache-jena-fuseki-4.7.0/databases/father/<span class="w"> </span>KGs/Family/father.owl
+</pre></div>
+</div>
+<p>Launch the server, and it will be waiting eagerly for your queries.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>Fuseki/apache-jena-fuseki-4.7.0<span class="w"> </span>
+
+java<span class="w"> </span>-Xmx4G<span class="w"> </span>-jar<span class="w"> </span>fuseki-server.jar<span class="w"> </span>--tdb2<span class="w"> </span>--loc<span class="o">=</span>databases/father<span class="w"> </span>/father
+</pre></div>
+</div>
+<p>Notice that we launched the database found in <code class="docutils literal notranslate"><span class="pre">Fuseki/apache-jena-fuseki-4.7.0/databases/father</span></code> to the path <code class="docutils literal notranslate"><span class="pre">/father</span></code>.
+By default, jena-fuseki runs on port 3030 so the full URL would be: <code class="docutils literal notranslate"><span class="pre">http://localhost:3030/father</span></code>. When
+you pass this url to <code class="docutils literal notranslate"><span class="pre">triplestore_address</span></code> argument, you have to add the
+<code class="docutils literal notranslate"><span class="pre">/sparql</span></code> sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
+<code class="docutils literal notranslate"><span class="pre">http://localhost:3030/father/sparql</span></code>.</p>
+<p>You can now create a triplestore knowledge base, a reasoner or an ontology that uses this URL for their
+operations.</p>
+</section>
+<section id="obtaining-axioms">
+<h2>Obtaining axioms<a class="headerlink" href="#obtaining-axioms" title="Link to this heading"></a></h2>
+<p>You can retrieve Tbox and Abox axioms by using <code class="docutils literal notranslate"><span class="pre">tbox</span></code> and <code class="docutils literal notranslate"><span class="pre">abox</span></code> methods respectively.
+Let us take them one at a time. The <code class="docutils literal notranslate"><span class="pre">tbox</span></code> method has 2 parameters, <code class="docutils literal notranslate"><span class="pre">entities</span></code> and <code class="docutils literal notranslate"><span class="pre">mode</span></code>.
+<code class="docutils literal notranslate"><span class="pre">entities</span></code> specifies the owl entity from which we want to obtain the Tbox axioms. It can be
+a single entity, a <code class="docutils literal notranslate"><span class="pre">Iterable</span></code> of entities, or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>The allowed types of entities are:</p>
+<ul class="simple">
+<li><p>OWLClass</p></li>
+<li><p>OWLObjectProperty</p></li>
+<li><p>OWLDataProperty</p></li>
+</ul>
+<p>Only the Tbox axioms related to the given entit-y/ies will be returned. If no entities are
+passed, then it returns all the Tbox axioms.
+The second parameter <code class="docutils literal notranslate"><span class="pre">mode</span></code> <em>(str)</em> sets the return format type. It can have the
+following values:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'native'</span></code> -&gt; triples are represented as tuples of owlapy objects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'iri'</span></code> -&gt; triples are represented as tuples of IRIs as strings.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'axiom'</span></code> -&gt; triples are represented as owlapy axioms.</p></li>
+</ol>
+<p>For the <code class="docutils literal notranslate"><span class="pre">abox</span></code> method the idea is similar. Instead of the parameter <code class="docutils literal notranslate"><span class="pre">entities</span></code>, there is the parameter
+<code class="docutils literal notranslate"><span class="pre">individuals</span></code> which accepts an object of type OWLNamedIndividuals or Iterable[OWLNamedIndividuals].</p>
+<p>If you want to obtain all the axioms (Tbox + Abox) of the knowledge base, you can use the method <code class="docutils literal notranslate"><span class="pre">triples</span></code>. It
+requires only the <code class="docutils literal notranslate"><span class="pre">mode</span></code> parameter.</p>
+<blockquote>
+<div><p><strong>NOTE</strong>: The results of these methods are limited only to named and direct entities.
+That means that especially the axioms that contain anonymous owl objects (objects that don’t have an IRI)
+will not be part of the result set. For example, if there is a Tbox T={ C ⊑ (A ⊓ B), C ⊑ D },
+only the latter subsumption axiom will be returned.</p>
+</div></blockquote>
+<hr class="docutils" />
+<p>Since we cannot cover everything here in details, check the API docs for knowledge base related classes
+to see all the methods that these classes have to offer.</p>
+<p>In the next guide we will show and explain a basic example on how to evaluate a class expression on a given
+knowledge base.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="03_examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="05_evaluate_ce.html" class="btn btn-neutral float-right" title="Evaluate a class expression" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

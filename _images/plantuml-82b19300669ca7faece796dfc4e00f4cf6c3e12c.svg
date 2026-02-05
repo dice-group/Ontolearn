@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="206px" preserveAspectRatio="none" style="width:303px;height:206px;background:#FFFFFF;" version="1.1" viewBox="0 0 303 206" width="303px" zoomAndPan="magnify"><defs/><g><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="261" x="5" y="19">Dot Executable: /opt/local/bin/dot</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="145" x="5" y="35.2969">File does not exist</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="291" x="5" y="51.5938">Cannot find Graphviz. You should try</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="5" x="5" y="67.8906"> </text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="79" x="5" y="84.1875">@startuml</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="57" x="5" y="100.4844">testdot</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="72" x="5" y="116.7813">@enduml</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="5" x="5" y="133.0781"> </text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="17" x="10" y="149.375">or</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="5" x="5" y="165.6719"> </text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="227" x="5" y="181.9688">java -jar plantuml.jar -testdot</text><text fill="#33FF02" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="5" x="5" y="198.2656"> </text><!--MD5=[9b26df18a4b9084cc2786311521d5b75]
+@startuml
+package ontolearn.base_concept_learner {
+abstract BaseConceptLearner << AbstractNode >>
+}
+package ontolearn.concept_generator {
+class ConceptGenerator
+}
+package ontolearn.abstracts {
+abstract AbstractKnowledgeBase
+}
+package ontolearn.abstracts {
+abstract AbstractLearningProblem
+}
+package ontolearn.abstracts {
+abstract BaseRefinement << AbstractNode >>
+}
+package ontolearn.abstracts {
+abstract AbstractScorer
+}
+package ontolearn.abstracts {
+abstract AbstractHeuristic << AbstractHeuristicNode >>
+}
+package owlapy.model {
+abstract OWLOntology
+}
+package owlapy.model {
+abstract OWLReasoner
+}
+
+OWLReasoner *- - OWLOntology
+
+AbstractKnowledgeBase *- - OWLOntology
+AbstractKnowledgeBase *- - OWLReasoner
+AbstractKnowledgeBase *- - ConceptGenerator
+
+OWLReasoner -* ConceptGenerator
+
+BaseRefinement *- - AbstractKnowledgeBase
+
+BaseConceptLearner *- - AbstractKnowledgeBase
+BaseConceptLearner *- - BaseRefinement : refinement_operator
+BaseConceptLearner *- - AbstractScorer : quality_func
+BaseConceptLearner *- - AbstractHeuristic : heuristic_func
+@enduml
+
+PlantUML version 1.2022.6(Tue Jun 21 17:34:49 UTC 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: null
+--></g></svg>

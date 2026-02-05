@@ -1,0 +1,118 @@
+ontolearn.executor
+==================
+
+.. py:module:: ontolearn.executor
+
+.. autoapi-nested-parse::
+
+   Model adapters.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.executor.logger
+   ontolearn.executor.metrics
+   ontolearn.executor.models
+   ontolearn.executor.heuristics
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.executor.Trainer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.executor.transform_string
+   ontolearn.executor.compute_quality
+   ontolearn.executor.execute
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:data:: metrics
+
+.. py:data:: models
+
+.. py:data:: heuristics
+
+.. py:function:: transform_string(input_string)
+
+   Used to turn camelCase arguments to snake_case
+
+
+.. py:function:: compute_quality(KB, solution, pos, neg, qulaity_func='f1')
+
+.. py:class:: Trainer(learner: ontolearn.learners.base.BaseConceptLearner, reasoner: owlapy.abstracts.AbstractOWLReasoner)
+
+   .. py:attribute:: learner
+
+
+   .. py:attribute:: reasoner
+
+
+   .. py:method:: fit(*args, **kwargs)
+
+      Run the concept learning algorithm according to its configuration.
+
+      Once finished, the results can be queried with the `best_hypotheses` function.
+
+
+
+   .. py:method:: best_hypotheses(n)
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: predict(individuals: List[owlapy.owl_individual.OWLNamedIndividual], hypotheses: Optional[List[Union[_N, owlapy.class_expression.OWLClassExpression]]] = None, axioms: Optional[List[owlapy.owl_axiom.OWLAxiom]] = None, n: int = 10)
+
+      Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+              (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+              axioms describing these individuals must be provided.
+
+      The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
+
+      :param individuals: A list of individuals/instances.
+      :param hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                         current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+      :param axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                     If the individual list contains individuals that are not in the ontology yet, axioms
+                     describing these individuals must be provided. The argument can also be used to add
+                     arbitrary axioms to the ontology for the prediction.
+      :param n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+
+      :returns: Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+                hypothesis whether the individual is entailed in the hypothesis.
+
+
+
+   .. py:method:: save_best_hypothesis(n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None
+
+      Serialise the best hypotheses to a file.
+
+      :param n: Maximum number of hypotheses to save.
+      :param path: Filename base (extension will be added automatically).
+      :param rdf_format: Serialisation format. currently supported: "rdfxml".
+
+
+
+.. py:function:: execute(args)
+

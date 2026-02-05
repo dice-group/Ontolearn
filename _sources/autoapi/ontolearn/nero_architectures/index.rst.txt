@@ -1,0 +1,194 @@
+ontolearn.nero_architectures
+============================
+
+.. py:module:: ontolearn.nero_architectures
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nero_architectures.MAB
+   ontolearn.nero_architectures.SAB
+   ontolearn.nero_architectures.ISAB
+   ontolearn.nero_architectures.PMA
+   ontolearn.nero_architectures.SetTransformer
+   ontolearn.nero_architectures.DeepSet
+   ontolearn.nero_architectures.SetTransformerNet
+
+
+Module Contents
+---------------
+
+.. py:class:: MAB(dim_Q, dim_K, dim_V, num_heads, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Multi-head Attention Block.
+
+
+   .. py:attribute:: dim_V
+
+
+   .. py:attribute:: num_heads
+
+
+   .. py:attribute:: fc_q
+
+
+   .. py:attribute:: fc_k
+
+
+   .. py:attribute:: fc_v
+
+
+   .. py:attribute:: fc_o
+
+
+   .. py:method:: forward(Q, K)
+
+
+.. py:class:: SAB(dim_in, dim_out, num_heads, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Self-Attention Block.
+
+
+   .. py:attribute:: mab
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: ISAB(dim_in, dim_out, num_heads, num_inds, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Induced Self-Attention Block.
+
+
+   .. py:attribute:: I
+
+
+   .. py:attribute:: mab0
+
+
+   .. py:attribute:: mab1
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: PMA(dim, num_heads, num_seeds, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Pooling by Multihead Attention.
+
+
+   .. py:attribute:: S
+
+
+   .. py:attribute:: mab
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: SetTransformer(dim_input, num_outputs, dim_output, num_inds=32, dim_hidden=128, num_heads=4, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Set Transformer architecture.
+
+
+   .. py:attribute:: enc
+
+
+   .. py:attribute:: dec
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: DeepSet(num_instances: int, num_embedding_dim: int, num_outputs: int)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   DeepSet neural architecture for set-based learning.
+
+
+   .. py:attribute:: name
+      :value: 'DeepSet'
+
+
+
+   .. py:attribute:: num_instances
+
+
+   .. py:attribute:: num_embedding_dim
+
+
+   .. py:attribute:: num_outputs
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: fc0
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:method:: forward(xpos, xneg)
+
+
+   .. py:method:: positive_expression_embeddings(tensor_idx_individuals: torch.LongTensor)
+
+
+   .. py:method:: negative_expression_embeddings(tensor_idx_individuals: torch.LongTensor)
+
+
+.. py:class:: SetTransformerNet(num_instances: int, num_embedding_dim: int, num_outputs: int)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Set Transformer based architecture.
+
+
+   .. py:attribute:: name
+      :value: 'ST'
+
+
+
+   .. py:attribute:: num_instances
+
+
+   .. py:attribute:: num_embedding_dim
+
+
+   .. py:attribute:: num_outputs
+
+
+   .. py:attribute:: embeddings
+
+
+   .. py:attribute:: set_transformer_negative
+
+
+   .. py:attribute:: set_transformer_positive
+
+
+   .. py:method:: forward(xpos, xneg)
+
+

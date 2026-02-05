@@ -1,0 +1,64 @@
+ontolearn.verbalizer
+====================
+
+.. py:module:: ontolearn.verbalizer
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.verbalizer.LLMVerbalizer
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.verbalizer.verbalize_learner_prediction
+
+
+Module Contents
+---------------
+
+.. py:class:: LLMVerbalizer(model: str = 'mixtral:8x7b', url: str = 'http://tentris-ml.cs.upb.de:8000/api/generate', api_key: Optional[str] = None)
+
+   .. py:attribute:: model
+      :value: 'mixtral:8x7b'
+
+
+
+   .. py:attribute:: url
+      :value: 'http://tentris-ml.cs.upb.de:8000/api/generate'
+
+
+
+   .. py:attribute:: api_key
+      :value: None
+
+
+
+   .. py:method:: __call__(text: str)
+
+      :param text: String representation of an OWL Class Expression
+
+
+
+.. py:function:: verbalize_learner_prediction(prediction: Union[str, object] = None, num_predictions: int = 3) -> None
+
+   Generate and print multiple verbalized versions of a learner's prediction using an LLM verbalizer.
+
+   This function takes a prediction (either a string or object), uses an LLMVerbalizer to generate
+   three verbalized responses, and prints them. This is useful for inspecting how the model might
+   rephrase or interpret a given prediction.
+
+   :param prediction: The learner's prediction to verbalize. Must not be None.
+   :type prediction: Union[str, object]
+   :param num_predictions: Number of prediction ouputs from the verbalizer with default value of 3
+   :type num_predictions: int
+
+   :raises AssertionError: If the prediction is None.
+
+

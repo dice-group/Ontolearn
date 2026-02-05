@@ -1,0 +1,223 @@
+ontolearn.nces_modules
+======================
+
+.. py:module:: ontolearn.nces_modules
+
+.. autoapi-nested-parse::
+
+   NCES modules.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nces_modules.MAB
+   ontolearn.nces_modules.SAB
+   ontolearn.nces_modules.ISAB
+   ontolearn.nces_modules.PMA
+   ontolearn.nces_modules.ConEx
+
+
+Module Contents
+---------------
+
+.. py:class:: MAB(dim_Q, dim_K, dim_V, num_heads, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   MAB module.
+
+
+   .. py:attribute:: dim_V
+
+
+   .. py:attribute:: num_heads
+
+
+   .. py:attribute:: fc_q
+
+
+   .. py:attribute:: fc_k
+
+
+   .. py:attribute:: fc_v
+
+
+   .. py:attribute:: fc_o
+
+
+   .. py:method:: forward(Q, K)
+
+
+.. py:class:: SAB(dim_in, dim_out, num_heads, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   SAB module.
+
+
+   .. py:attribute:: mab
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: ISAB(dim_in, dim_out, num_heads, m, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   ISAB module.
+
+
+   .. py:attribute:: I
+
+
+   .. py:attribute:: mab0
+
+
+   .. py:attribute:: mab1
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: PMA(dim, num_heads, num_seeds, ln=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   PMA module.
+
+
+   .. py:attribute:: S
+
+
+   .. py:attribute:: mab
+
+
+   .. py:method:: forward(X)
+
+
+.. py:class:: ConEx(embedding_dim, num_entities, num_relations, input_dropout, feature_map_dropout, kernel_size, num_of_output_channels)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Convolutional Complex Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'ConEx'
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: embedding_dim
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: input_dropout
+
+
+   .. py:attribute:: feature_map_dropout
+
+
+   .. py:attribute:: kernel_size
+
+
+   .. py:attribute:: num_of_output_channels
+
+
+   .. py:attribute:: emb_ent_real
+
+
+   .. py:attribute:: emb_ent_i
+
+
+   .. py:attribute:: emb_rel_real
+
+
+   .. py:attribute:: emb_rel_i
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_ent_i
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: input_dp_rel_i
+
+
+   .. py:attribute:: bn_ent_real
+
+
+   .. py:attribute:: bn_ent_i
+
+
+   .. py:attribute:: bn_rel_real
+
+
+   .. py:attribute:: bn_rel_i
+
+
+   .. py:attribute:: conv1
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_dropout
+
+
+   .. py:method:: residual_convolution(C_1, C_2)
+
+
+   .. py:method:: forward_head_batch(*, e1_idx, rel_idx)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+   .. py:method:: forward_head_and_loss(e1_idx, rel_idx, targets)
+
+
+   .. py:method:: init()
+
+
+   .. py:method:: get_embeddings()
+
+
+   .. py:method:: forward_triples(*, e1_idx, rel_idx, e2_idx)
+
+
+   .. py:method:: forward_triples_and_loss(e1_idx, rel_idx, e2_idx, targets)
+
+

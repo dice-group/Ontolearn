@@ -1,0 +1,422 @@
+ontolearn.learners.base
+=======================
+
+.. py:module:: ontolearn.learners.base
+
+.. autoapi-nested-parse::
+
+   Base classes of concept learners.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.base.Factory
+   ontolearn.learners.base.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.base.BaseConceptLearner
+   ontolearn.learners.base.RefinementBasedConceptLearner
+
+
+Module Contents
+---------------
+
+.. py:data:: Factory
+
+.. py:data:: logger
+
+.. py:class:: BaseConceptLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None)
+
+   @TODO: CD: Why should this class inherit from AbstractConceptNode ?
+   @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.
+
+   Base class for Concept Learning approaches.
+
+   Learning problem definition, Let
+       * K = (TBOX, ABOX) be a knowledge base.
+       * \ALCConcepts be a set of all ALC concepts.
+       * \hypotheses be a set of ALC concepts : \hypotheses \subseteq \ALCConcepts.
+
+       * K_N be a set of all instances.
+       * K_C be a set of concepts defined in TBOX: K_C \subseteq \ALCConcepts
+       * K_R be a set of properties/relations.
+
+       * E^+, E^- be a set of positive and negative instances and the followings hold
+           ** E^+ \cup E^- \subseteq K_N
+           ** E^+ \cap E^- = \emptyset
+
+   The goal is to learn a set of concepts $\hypotheses \subseteq \ALCConcepts$ such that
+         ∀  H \in \hypotheses: { (K \wedge H \models E^+) \wedge  \neg( K \wedge H \models E^-) }.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+
+   .. py:attribute:: __slots__
+      :value: ('kb', 'reasoner', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal',...
+
+
+
+   .. py:attribute:: name
+      :type:  ClassVar[str]
+
+
+   .. py:attribute:: kb
+      :type:  ontolearn.abstracts.AbstractKnowledgeBase
+
+
+   .. py:attribute:: quality_func
+      :type:  Optional[ontolearn.abstracts.AbstractScorer]
+
+
+   .. py:attribute:: max_num_of_concepts_tested
+      :type:  Optional[int]
+
+
+   .. py:attribute:: terminate_on_goal
+      :type:  Optional[bool]
+
+
+   .. py:attribute:: max_runtime
+      :type:  Optional[int]
+
+
+   .. py:attribute:: start_time
+      :type:  Optional[float]
+
+
+   .. py:attribute:: reasoner
+      :value: None
+
+
+
+   .. py:method:: clean()
+      :abstractmethod:
+
+
+      Clear all states of the concept learner.
+
+
+
+   .. py:method:: train(*args, **kwargs)
+
+      Train RL agent on learning problems.
+
+      :returns: self.
+
+
+
+   .. py:method:: terminate()
+
+      This method is called when the search algorithm terminates.
+
+      If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.
+
+      :returns: The concept learner object itself.
+
+
+
+   .. py:method:: construct_learning_problem(type_: Type[_X], xargs: Tuple, xkwargs: Dict) -> _X
+
+      Construct learning problem of given type based on args and kwargs. If a learning problem is contained in
+      args or the learning_problem kwarg, it is used. otherwise, a new learning problem of type type_ is created
+      with args and kwargs as parameters.
+
+      :param type_: Type of the learning problem.
+      :param xargs: The positional arguments.
+      :param xkwargs: The keyword arguments.
+
+      :returns: The learning problem.
+
+
+
+   .. py:method:: fit(*args, **kwargs)
+      :abstractmethod:
+
+
+      Run the concept learning algorithm according to its configuration.
+
+      Once finished, the results can be queried with the `best_hypotheses` function.
+
+
+
+   .. py:method:: best_hypotheses(n=10) -> Iterable[owlapy.class_expression.OWLClassExpression]
+      :abstractmethod:
+
+
+      Get the current best found hypotheses according to the quality.
+
+      :param n: Maximum number of results.
+
+      :returns: Iterable with hypotheses in form of search tree nodes.
+
+
+
+   .. py:method:: predict(individuals: List[owlapy.owl_individual.OWLNamedIndividual], hypotheses: Optional[Union[owlapy.class_expression.OWLClassExpression, List[Union[_N, owlapy.class_expression.OWLClassExpression]]]] = None, axioms: Optional[List[owlapy.owl_axiom.OWLAxiom]] = None, n: int = 10) -> pandas.DataFrame
+
+      @TODO: CD: Predicting an individual can be done by a retrieval function not a concept learner
+      @TODO: A concept learner learns an owl class expression.
+      @TODO: This learned expression can be used as a binary predictor.
+
+
+      Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+      (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+      axioms describing these individuals must be provided.
+
+      The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
+
+      :param individuals: A list of individuals/instances.
+      :param hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                         current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+      :param axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                     If the individual list contains individuals that are not in the ontology yet, axioms
+                     describing these individuals must be provided. The argument can also be used to add
+                     arbitrary axioms to the ontology for the prediction.
+      :param n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+
+      :returns: Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+                hypothesis whether the individual is entailed in the hypothesis.
+
+
+
+   .. py:property:: number_of_tested_concepts
+
+
+   .. py:method:: save_best_hypothesis(n: int = 10, path: str = './Predictions', rdf_format: str = 'rdfxml') -> None
+
+      Serialise the best hypotheses to a file.
+      @TODO: CD: This function should be deprecated.
+      @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
+      @TODO:CD: owlapy 1.3.3, we will use save_owl_class_expressions
+      :param n: Maximum number of hypotheses to save.
+      :param path: Filename base (extension will be added automatically).
+      :param rdf_format: Serialisation format. currently supported: "rdfxml".
+
+
+
+   .. py:method:: load_hypotheses(path: str) -> Iterable[owlapy.class_expression.OWLClassExpression]
+
+      @TODO: CD: This function should be deprecated.
+      @TODO: CD: Loading owl class expressions from disk should be disentangled from a concept earner
+
+
+      Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`.
+
+      :param path: Path to the file containing hypotheses.
+
+
+
+.. py:class:: RefinementBasedConceptLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_child_length: Optional[int] = None, root_concept: Optional[owlapy.class_expression.OWLClassExpression] = None)
+
+   Bases: :py:obj:`BaseConceptLearner`
+
+
+   Base class for refinement based Concept Learning approaches.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: quality_func
+
+      
+
+      :type: AbstractScorer
+
+   .. attribute:: max_num_of_concepts_tested
+
+      
+
+      :type: int
+
+   .. attribute:: terminate_on_goal
+
+      Whether to stop the algorithm if a perfect solution is found.
+
+      :type: bool
+
+   .. attribute:: max_runtime
+
+      Limit to stop the algorithm after n seconds.
+
+      :type: int
+
+   .. attribute:: _number_of_tested_concepts
+
+      Yes, you got it. This stores the number of tested concepts.
+
+      :type: int
+
+   .. attribute:: reasoner
+
+      The reasoner that this model is using.
+
+      :type: AbstractOWLReasoner
+
+   .. attribute:: start_time
+
+      The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+      takes to execute.
+
+      :type: float
+
+   .. attribute:: iter_bound
+
+      Limit to stop the algorithm after n refinement steps are done.
+
+      :type: int
+
+   .. attribute:: heuristic_func
+
+      Function to guide the search heuristic.
+
+      :type: AbstractHeuristic
+
+   .. attribute:: operator
+
+      Operator used to generate refinements.
+
+      :type: BaseRefinement
+
+   .. attribute:: start_class
+
+      The starting class expression for the refinement operation.
+
+      :type: OWLClassExpression
+
+   .. attribute:: max_child_length
+
+      Limit the length of concepts generated by the refinement operator.
+
+      :type: int
+
+
+   .. py:attribute:: __slots__
+      :value: ('operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound')
+
+
+
+   .. py:attribute:: operator
+      :type:  Optional[ontolearn.abstracts.BaseRefinement]
+
+
+   .. py:attribute:: heuristic_func
+      :type:  Optional[ontolearn.abstracts.AbstractHeuristic]
+
+
+   .. py:attribute:: max_child_length
+      :type:  Optional[int]
+
+
+   .. py:attribute:: start_class
+      :type:  Optional[owlapy.class_expression.OWLClassExpression]
+
+
+   .. py:attribute:: iter_bound
+      :type:  Optional[int]
+
+
+   .. py:method:: terminate()
+
+      This method is called when the search algorithm terminates.
+
+      If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.
+
+      :returns: The concept learner object itself.
+
+
+
+   .. py:method:: next_node_to_expand(*args, **kwargs)
+      :abstractmethod:
+
+
+      Return from the search tree the most promising search tree node to use for the next refinement step.
+
+      :returns: Next search tree node to refine.
+      :rtype: _N
+
+
+
+   .. py:method:: downward_refinement(*args, **kwargs)
+      :abstractmethod:
+
+
+      Execute one refinement step of a refinement based learning algorithm.
+
+      :param node: the search tree node on which to refine.
+      :type node: _N
+
+      :returns: Refinement results as new search tree nodes (they still need to be added to the tree).
+      :rtype: Iterable[_N]
+
+
+
+   .. py:method:: show_search_tree(heading_step: str, top_n: int = 10) -> None
+      :abstractmethod:
+
+
+      A debugging function to print out the current search tree and the current n best found hypotheses to
+      standard output.
+
+      :param heading_step: A message to display at the beginning of the output.
+      :param top_n: The number of current best hypotheses to print out.
+
+
+

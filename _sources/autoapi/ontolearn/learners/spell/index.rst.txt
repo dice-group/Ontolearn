@@ -1,0 +1,116 @@
+ontolearn.learners.spell
+========================
+
+.. py:module:: ontolearn.learners.spell
+
+.. autoapi-nested-parse::
+
+   SPELL Learner - SAT-based concept learning using SPELL fitting.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.spell.SPELL
+
+
+Module Contents
+---------------
+
+.. py:class:: SPELL(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, max_runtime: Optional[int] = 60, max_query_size: int = 10, starting_query_size: int = 1, search_mode: str = 'full_approx')
+
+   Bases: :py:obj:`ontolearn.learners.sat_base.SATBaseLearner`
+
+
+   SPELL: SAT-based concept learner using general SPELL fitting.
+
+   This learner uses SAT solvers to find concept expressions that fit positive and negative examples.
+   Unlike ALCSAT which is specialized for ALC, SPELL uses the more general fitting.py module
+   which supports different modes of operation.
+
+   The algorithm incrementally searches for queries of increasing size that maximize
+   the coverage on the given examples.
+
+   .. attribute:: kb
+
+      The knowledge base that the concept learner is using.
+
+      :type: AbstractKnowledgeBase
+
+   .. attribute:: max_query_size
+
+      Maximum size of queries to search for.
+
+      :type: int
+
+   .. attribute:: search_mode
+
+      Search mode - exact, neg_approx, or full_approx.
+
+   .. attribute:: _best_hypothesis
+
+      Best found hypothesis.
+
+      :type: OWLClassExpression
+
+   .. attribute:: _best_hypothesis_accuracy
+
+      Accuracy of the best hypothesis.
+
+      :type: float
+
+   .. attribute:: _structure
+
+      Internal structure representation of the knowledge base.
+
+      :type: Structure
+
+   .. attribute:: _ind_to_owl
+
+      Mapping from internal individual indices to OWL individuals.
+
+      :type: dict
+
+   .. attribute:: _owl_to_ind
+
+      Mapping from OWL individuals to internal indices.
+
+      :type: dict
+
+
+   .. py:attribute:: __slots__
+      :value: ('max_query_size', 'starting_query_size', 'search_mode')
+
+
+
+   .. py:attribute:: name
+      :value: 'spell'
+
+
+
+   .. py:attribute:: max_query_size
+      :value: 10
+
+
+
+   .. py:attribute:: starting_query_size
+      :value: 1
+
+
+
+   .. py:attribute:: search_mode
+
+
+   .. py:method:: fit(lp: ontolearn.learning_problem.PosNegLPStandard)
+
+      Find concept expressions that explain positive and negative examples.
+
+      :param lp: Learning problem with positive and negative examples.
+
+      :returns: self
+
+
+

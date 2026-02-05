@@ -1,0 +1,45 @@
+ontolearn.learners.roces
+========================
+
+.. py:module:: ontolearn.learners.roces
+
+.. autoapi-nested-parse::
+
+   ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.roces.ROCES
+
+
+Module Contents
+---------------
+
+.. py:class:: ROCES(knowledge_base, nces2_or_roces=True, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, num_predictions=5, k=5, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy='p', input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, learning_rate=0.0001, tmax=20, eta_min=1e-05, clip_value=5.0, batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity: Optional[bool] = None)
+
+   Bases: :py:obj:`ontolearn.learners.nces2.NCES2`
+
+
+   Robust Class Expression Synthesis in Description Logics via Iterative Sampling.
+
+
+   .. py:attribute:: name
+      :value: 'ROCES'
+
+
+
+   .. py:attribute:: k
+      :value: 5
+
+
+
+   .. py:attribute:: enforce_validity
+      :value: None
+
+
+

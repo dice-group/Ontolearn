@@ -1,0 +1,153 @@
+ontolearn.nces_architectures
+============================
+
+.. py:module:: ontolearn.nces_architectures
+
+.. autoapi-nested-parse::
+
+   NCES architectures.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nces_architectures.LSTM
+   ontolearn.nces_architectures.GRU
+   ontolearn.nces_architectures.SetTransformer
+
+
+Module Contents
+---------------
+
+.. py:class:: LSTM(vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers, drop_prob)
+
+   Bases: :py:obj:`ontolearn.nces_modules.nn.Module`
+
+
+   LSTM module.
+
+
+   .. py:attribute:: name
+      :value: 'LSTM'
+
+
+
+   .. py:attribute:: max_len
+
+
+   .. py:attribute:: proj_dim
+
+
+   .. py:attribute:: vocab
+
+
+   .. py:attribute:: inv_vocab
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: lstm
+
+
+   .. py:attribute:: bn
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:attribute:: fc3
+
+
+   .. py:method:: forward(x1, x2, target_scores=None)
+
+
+.. py:class:: GRU(vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers, drop_prob)
+
+   Bases: :py:obj:`ontolearn.nces_modules.nn.Module`
+
+
+   GRU module.
+
+
+   .. py:attribute:: name
+      :value: 'GRU'
+
+
+
+   .. py:attribute:: max_len
+
+
+   .. py:attribute:: proj_dim
+
+
+   .. py:attribute:: vocab
+
+
+   .. py:attribute:: inv_vocab
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: gru
+
+
+   .. py:attribute:: bn
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: fc2
+
+
+   .. py:attribute:: fc3
+
+
+   .. py:method:: forward(x1, x2, target_scores=None)
+
+
+.. py:class:: SetTransformer(vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds, m, ln)
+
+   Bases: :py:obj:`ontolearn.nces_modules.nn.Module`
+
+
+   SetTransformer module.
+
+
+   .. py:attribute:: name
+      :value: 'SetTransformer'
+
+
+
+   .. py:attribute:: max_len
+
+
+   .. py:attribute:: m
+
+
+   .. py:attribute:: vocab
+
+
+   .. py:attribute:: inv_vocab
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: enc
+
+
+   .. py:attribute:: dec
+
+
+   .. py:method:: forward(x1, x2)
+
+

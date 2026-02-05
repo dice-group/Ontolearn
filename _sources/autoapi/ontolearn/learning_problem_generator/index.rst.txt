@@ -1,0 +1,151 @@
+ontolearn.learning_problem_generator
+====================================
+
+.. py:module:: ontolearn.learning_problem_generator
+
+.. autoapi-nested-parse::
+
+   Learning problem generator.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learning_problem_generator.SearchAlgos
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learning_problem_generator.LearningProblemGenerator
+
+
+Module Contents
+---------------
+
+.. py:data:: SearchAlgos
+
+.. py:class:: LearningProblemGenerator(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, refinement_operator=None, num_problems=10000, num_diff_runs=100, min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=3, search_algo='strict-dfs')
+
+   Learning problem generator.
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: rho
+      :value: None
+
+
+
+   .. py:attribute:: search_algo
+      :value: 'strict-dfs'
+
+
+
+   .. py:attribute:: min_num_instances
+      :value: None
+
+
+
+   .. py:attribute:: max_num_instances
+      :value: 9223372036854775807
+
+
+
+   .. py:attribute:: min_length
+      :value: 3
+
+
+
+   .. py:attribute:: max_length
+      :value: 5
+
+
+
+   .. py:attribute:: valid_learning_problems
+      :value: []
+
+
+
+   .. py:attribute:: depth
+      :value: 3
+
+
+
+   .. py:attribute:: num_diff_runs
+      :value: 100
+
+
+
+   .. py:attribute:: num_problems
+      :value: 100
+
+
+
+   .. py:method:: export_concepts(concepts: List[ontolearn.search.Node], path: str)
+
+      Serialise the given concepts to a file.
+
+      :param concepts: Node objects.
+      :type concepts: list
+      :param path: Filename base (extension will be added automatically).
+      :type path: str
+
+
+
+   .. py:method:: concept_individuals_to_string_balanced_examples(concept: owlapy.class_expression.OWLClassExpression) -> Dict[str, Set]
+
+
+   .. py:method:: get_balanced_n_samples_per_examples(*, n=5, min_num_problems=None, max_length=None, min_length=None, num_diff_runs=None, min_num_instances=None, search_algo='strict-dfs') -> Iterable[Tuple[ontolearn.search.RL_State, Set[owlapy.owl_individual.OWLNamedIndividual], Set[owlapy.owl_individual.OWLNamedIndividual]]]
+
+      1. We generate min_num_problems number of concepts.
+      2. For each concept, we generate n number of positive and negative examples.
+      3. Each example contains n samples.
+
+
+
+   .. py:method:: balanced_n_sampled_lp(n: int, string_all_pos: set)
+
+
+   .. py:method:: get_balanced_examples(*, min_num_problems=None, max_length=None, min_length=None, num_diff_runs=None, min_num_instances=None, search_algo='strict-dfs') -> list
+
+      (1) Generate valid examples with input search algorithm.
+      (2) Balance valid examples.
+
+      :returns: A list of balanced tuples (s,p,n) where s denotes the string representation of a concept, p and n denote
+                a set of URIs of individuals indicating positive and negative examples.
+
+
+
+   .. py:method:: get_examples(*, num_problems=None, max_length=None, min_length=None, num_diff_runs=None, min_num_ind=None, search_algo=None) -> list
+
+      (1) Get valid examples with input search algorithm.
+
+      :returns: A list of tuples (s,p,n) where s denotes the string representation of a concept, p and n denote
+                a set of URIs of individuals indicating positive and negative examples.
+
+
+
+   .. py:method:: get_concepts(*, num_problems=None, max_length=None, min_length=None, max_num_instances=None, num_diff_runs=None, min_num_instances=None, search_algo=None) -> Generator
+
+      Calls `generate_examples`
+
+
+
+   .. py:method:: generate_examples(*, num_problems=None, max_length=None, min_length=None, num_diff_runs=None, max_num_instances=None, min_num_instances=None, search_algo=None) -> Generator
+
+      Generate examples via search algorithm that are valid examples w.r.t. given constraints.
+
+      :returns: Valid examples
+
+
+
+   .. py:method:: apply_rho_on_rl_state(rl_state)
+
+

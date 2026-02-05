@@ -1,0 +1,180 @@
+ontolearn.heuristics
+====================
+
+.. py:module:: ontolearn.heuristics
+
+.. autoapi-nested-parse::
+
+   Heuristic functions.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.heuristics.CELOEHeuristic
+   ontolearn.heuristics.DLFOILHeuristic
+   ontolearn.heuristics.OCELHeuristic
+   ontolearn.heuristics.CeloeBasedReward
+
+
+Module Contents
+---------------
+
+.. py:class:: CELOEHeuristic(*, gainBonusFactor: float = 0.3, startNodeBonus: float = 0.1, nodeRefinementPenalty: float = 0.001, expansionPenaltyFactor: float = 0.1)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractHeuristic`\ [\ :py:obj:`ontolearn.abstracts.AbstractOEHeuristicNode`\ ]
+
+
+   Heuristic like the CELOE Heuristic in DL-Learner.
+
+
+   .. py:attribute:: __slots__
+      :value: ('gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor')
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'CELOE_Heuristic'
+
+
+
+   .. py:attribute:: gainBonusFactor
+      :type:  Final[float]
+
+
+   .. py:attribute:: startNodeBonus
+      :type:  Final[float]
+
+
+   .. py:attribute:: nodeRefinementPenalty
+      :type:  Final[float]
+
+
+   .. py:attribute:: expansionPenaltyFactor
+      :type:  Final[float]
+
+
+   .. py:method:: apply(node: ontolearn.abstracts.AbstractOEHeuristicNode, instances, learning_problem: ontolearn.abstracts.EncodedLearningProblem)
+
+      Apply the heuristic on a search tree node and set its heuristic property to the calculated value.
+
+      :param node: Node to set the heuristic on.
+      :param instances: Set of instances covered by this node.
+      :type instances: set, optional
+      :param learning_problem: Underlying learning problem to compare the heuristic to.
+
+
+
+.. py:class:: DLFOILHeuristic
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractHeuristic`
+
+
+   DLFOIL Heuristic.
+
+
+   .. py:attribute:: __slots__
+      :value: ()
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'custom_dl_foil'
+
+
+
+   .. py:method:: apply(node, instances, learning_problem: ontolearn.learning_problem.EncodedPosNegUndLP)
+
+      Apply the heuristic on a search tree node and set its heuristic property to the calculated value.
+
+      :param node: Node to set the heuristic on.
+      :param instances: Set of instances covered by this node.
+      :type instances: set, optional
+      :param learning_problem: Underlying learning problem to compare the heuristic to.
+
+
+
+.. py:class:: OCELHeuristic(*, gainBonusFactor: float = 0.5, expansionPenaltyFactor: float = 0.02)
+
+   Bases: :py:obj:`ontolearn.abstracts.AbstractHeuristic`
+
+
+   OCEL Heuristic.
+
+
+   .. py:attribute:: __slots__
+      :value: ('accuracy_method', 'gainBonusFactor', 'expansionPenaltyFactor')
+
+
+
+   .. py:attribute:: name
+      :type:  Final
+      :value: 'OCEL_Heuristic'
+
+
+
+   .. py:attribute:: accuracy_method
+
+
+   .. py:attribute:: gainBonusFactor
+      :value: 0.5
+
+
+
+   .. py:attribute:: expansionPenaltyFactor
+      :value: 0.02
+
+
+
+   .. py:method:: apply(node: ontolearn.search.LBLNode, instances, learning_problem: ontolearn.learning_problem.EncodedPosNegLPStandard)
+
+      Apply the heuristic on a search tree node and set its heuristic property to the calculated value.
+
+      :param node: Node to set the heuristic on.
+      :param instances: Set of instances covered by this node.
+      :type instances: set, optional
+      :param learning_problem: Underlying learning problem to compare the heuristic to.
+
+
+
+.. py:class:: CeloeBasedReward(reward_of_goal=5.0, beta=0.04, alpha=0.5)
+
+   Reward function for DRILL.
+
+
+   .. py:attribute:: name
+      :value: 'DRILL_Reward'
+
+
+
+   .. py:attribute:: lp
+      :value: None
+
+
+
+   .. py:attribute:: reward_of_goal
+      :value: 5.0
+
+
+
+   .. py:attribute:: beta
+      :value: 0.04
+
+
+
+   .. py:attribute:: alpha
+      :value: 0.5
+
+
+
+   .. py:property:: learning_problem
+
+
+   .. py:method:: apply(rl_state: ontolearn.search.RL_State, next_rl_state: ontolearn.search.RL_State)
+
+

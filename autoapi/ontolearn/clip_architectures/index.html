@@ -1,0 +1,426 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.clip_architectures &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.clip_trainer" href="../clip_trainer/index.html" />
+    <link rel="prev" title="ontolearn.binders" href="../binders/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.clip_architectures</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.name"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.loss"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.lstm"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.lstm</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.dropout"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc1"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.fc1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc2"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.fc2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc3"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.fc3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM.forward"><code class="docutils literal notranslate"><span class="pre">LengthLearner_LSTM.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.name"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.loss"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.gru"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.gru</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.dropout"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc1"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.fc1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc2"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.fc2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc3"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.fc3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU.forward"><code class="docutils literal notranslate"><span class="pre">LengthLearner_GRU.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.name"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.loss"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.conv1"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.conv1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.conv2"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.conv2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.dropout1d"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.dropout1d</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.dropout2d"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.dropout2d</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc1"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.fc1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc2"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.fc2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc3"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.fc3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN.forward"><code class="docutils literal notranslate"><span class="pre">LengthLearner_CNN.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.name"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.loss"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.enc"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer.enc</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.dec"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer.dec</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.forward"><code class="docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer.forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.clip_architectures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/clip_architectures/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.clip_architectures">
+<span id="ontolearn-clip-architectures"></span><h1>ontolearn.clip_architectures<a class="headerlink" href="#module-ontolearn.clip_architectures" title="Link to this heading"></a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_LSTM" title="ontolearn.clip_architectures.LengthLearner_LSTM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthLearner_LSTM</span></code></a></p></td>
+<td><p>LSTM architecture</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_GRU" title="ontolearn.clip_architectures.LengthLearner_GRU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthLearner_GRU</span></code></a></p></td>
+<td><p>GRU architecture</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_CNN" title="ontolearn.clip_architectures.LengthLearner_CNN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthLearner_CNN</span></code></a></p></td>
+<td><p>CNN architecture</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer" title="ontolearn.clip_architectures.LengthLearner_SetTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LengthLearner_SetTransformer</span></code></a></p></td>
+<td><p>SetTransformer architecture.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.clip_architectures.</span></span><span class="sig-name descname"><span class="pre">LengthLearner_LSTM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rnn_n_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_LSTM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>LSTM architecture</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LSTM'</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.lstm">
+<span class="sig-name descname"><span class="pre">lstm</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.lstm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.fc2">
+<span class="sig-name descname"><span class="pre">fc2</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.fc3">
+<span class="sig-name descname"><span class="pre">fc3</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.fc3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_LSTM.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_LSTM.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_LSTM.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass through the network.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.clip_architectures.</span></span><span class="sig-name descname"><span class="pre">LengthLearner_GRU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rnn_n_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_GRU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>GRU architecture</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'GRU'</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.gru">
+<span class="sig-name descname"><span class="pre">gru</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.gru" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.fc2">
+<span class="sig-name descname"><span class="pre">fc2</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.fc3">
+<span class="sig-name descname"><span class="pre">fc3</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.fc3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_GRU.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_GRU.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_GRU.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass through the network.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.clip_architectures.</span></span><span class="sig-name descname"><span class="pre">LengthLearner_CNN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_examples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[[5,</span> <span class="pre">7],</span> <span class="pre">[5,</span> <span class="pre">7]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[[3,</span> <span class="pre">3],</span> <span class="pre">[3,</span> <span class="pre">3]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_prob</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_CNN"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>CNN architecture</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CNN'</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.conv1">
+<span class="sig-name descname"><span class="pre">conv1</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.conv2">
+<span class="sig-name descname"><span class="pre">conv2</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.dropout1d">
+<span class="sig-name descname"><span class="pre">dropout1d</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.dropout1d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.dropout2d">
+<span class="sig-name descname"><span class="pre">dropout2d</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.dropout2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.fc2">
+<span class="sig-name descname"><span class="pre">fc2</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.fc3">
+<span class="sig-name descname"><span class="pre">fc3</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.fc3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_CNN.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_CNN.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_CNN.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass through the network.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.clip_architectures.</span></span><span class="sig-name descname"><span class="pre">LengthLearner_SetTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_heads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_seeds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_SetTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>SetTransformer architecture.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SetTransformer'</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer.enc">
+<span class="sig-name descname"><span class="pre">enc</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.enc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer.dec">
+<span class="sig-name descname"><span class="pre">dec</span></span><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.dec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.clip_architectures.LengthLearner_SetTransformer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/clip_architectures.html#LengthLearner_SetTransformer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.clip_architectures.LengthLearner_SetTransformer.forward" title="Link to this definition"></a></dt>
+<dd><p>Forward pass through the network.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../binders/index.html" class="btn btn-neutral float-left" title="ontolearn.binders" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../clip_trainer/index.html" class="btn btn-neutral float-right" title="ontolearn.clip_trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

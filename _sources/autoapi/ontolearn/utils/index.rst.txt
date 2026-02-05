@@ -1,0 +1,189 @@
+ontolearn.utils
+===============
+
+.. py:module:: ontolearn.utils
+
+.. autoapi-nested-parse::
+
+   Ontolearn utils.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/ontolearn/utils/log_config/index
+   /autoapi/ontolearn/utils/oplogging/index
+   /autoapi/ontolearn/utils/static_funcs/index
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.utils.Factory
+   ontolearn.utils.DEFAULT_FMT
+   ontolearn.utils.flag_for_performance
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.utils.setup_logging
+   ontolearn.utils.compute_f1_score
+   ontolearn.utils.f1_set_similarity
+   ontolearn.utils.concept_reducer
+   ontolearn.utils.concept_reducer_properties
+   ontolearn.utils.jaccard_similarity
+   ontolearn.utils.parametrized_performance_debugger
+   ontolearn.utils.performance_debugger
+   ontolearn.utils.create_experiment_folder
+   ontolearn.utils.serializer
+   ontolearn.utils.deserializer
+   ontolearn.utils.apply_TSNE_on_df
+   ontolearn.utils.balanced_sets
+   ontolearn.utils.read_csv
+   ontolearn.utils.assertion_path_isfile
+   ontolearn.utils.sanity_checking_args
+   ontolearn.utils.read_individuals_file
+   ontolearn.utils.read_named_classes_file
+
+
+Package Contents
+----------------
+
+.. py:function:: setup_logging(config_file='ontolearn/logging.conf')
+
+   Setup logging.
+
+   :param config_file: Filepath for logs.
+   :type config_file: str
+
+
+.. py:function:: compute_f1_score(individuals, pos, neg) -> float
+
+   Compute F1-score of a concept
+
+
+
+.. py:function:: f1_set_similarity(y: Set[str], yhat: Set[str]) -> float
+
+   Compute F1 score for two set
+   :param y: A set of URIs
+   :param yhat: A set of URIs
+   :return:
+
+
+.. py:function:: concept_reducer(concepts, opt)
+
+   Reduces a set of concepts by applying a binary operation to each pair of concepts.
+
+   :param concepts: A set of concepts to be reduced.
+   :type concepts: set
+   :param opt: A binary function that takes a pair of concepts and returns a single concept.
+   :type opt: function
+
+   :returns: A set containing the results of applying the binary operation to each pair of concepts.
+   :rtype: set
+
+   .. rubric:: Example
+
+   >>> concepts = {1, 2, 3}
+   >>> opt = lambda x: x[0] + x[1]
+   >>> concept_reducer(concepts, opt)
+   {2, 3, 4, 5, 6}
+
+   .. note:: The operation `opt` should be commutative and associative to ensure meaningful reduction in the context of set operations.
+
+
+.. py:function:: concept_reducer_properties(concepts: Set, properties, cls: Callable = None, cardinality: int = 2) -> Set[Union[owlapy.class_expression.OWLQuantifiedObjectRestriction, owlapy.class_expression.OWLObjectCardinalityRestriction]]
+
+   Map a set of owl concepts and a set of properties into OWL Restrictions
+
+   :param concepts:
+   :param properties:
+   :param cls: An owl Restriction class
+   :type cls: Callable
+   :param cardinality: A positive Integer
+
+   Returns: List of OWL Restrictions
+
+
+
+.. py:data:: Factory
+
+.. py:data:: DEFAULT_FMT
+   :value: 'Func:{name} took {elapsed:0.8f}s'
+
+
+.. py:data:: flag_for_performance
+   :value: False
+
+
+.. py:function:: jaccard_similarity(y: Set[str], yhat: Set[str]) -> float
+
+   Compute Jaccard Similarity
+   :param y: A set of URIs
+   :param yhat: A set of URIs
+   :return:
+
+
+.. py:function:: parametrized_performance_debugger(fmt=DEFAULT_FMT)
+
+.. py:function:: performance_debugger(func_name)
+
+.. py:function:: create_experiment_folder(folder_name='Log')
+
+.. py:function:: serializer(*, object_: object, path: str, serialized_name: str)
+
+.. py:function:: deserializer(*, path: str, serialized_name: str)
+
+.. py:function:: apply_TSNE_on_df(df) -> None
+
+.. py:function:: balanced_sets(a: set, b: set) -> Tuple[Set, Set]
+
+   Balance given two sets through sampling without replacement.
+   Returned sets have the same length.
+   @param a:
+   @param b:
+   @return:
+
+
+.. py:function:: read_csv(path) -> Union[None, pandas.DataFrame]
+
+   Path leads a folder containing embeddings in csv format.
+   indexes correspond subjects or predicates or objects in n-triple.
+   @param path:
+   @return:
+
+
+.. py:function:: assertion_path_isfile(path) -> bool
+
+.. py:function:: sanity_checking_args(args)
+
+.. py:function:: read_individuals_file(file: str) -> Set[owlapy.owl_individual.OWLNamedIndividual]
+
+   Read a text file containing IRIs of Named Individuals (one per line) and return the content as a set of OWL
+   Named Individuals
+
+   :param file: path to the text file with the IRIs of the named individuals
+
+   :returns: set of OWLNamedIndividual with these IRIs
+
+
+.. py:function:: read_named_classes_file(file: str) -> Set[owlapy.class_expression.OWLClass]
+
+   Read a text file containing IRIs of OWL Named Classes (one per line) and return the content as a set of OWL
+   Classes
+
+   :param file: path to the text file with the IRIs of the classes
+
+   :returns: set of OWLNamedIndividual with these IRIs
+
+

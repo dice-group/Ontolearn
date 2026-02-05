@@ -1,0 +1,62 @@
+ontolearn.clip_trainer
+======================
+
+.. py:module:: ontolearn.clip_trainer
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.clip_trainer.CLIPTrainer
+
+
+Module Contents
+---------------
+
+.. py:class:: CLIPTrainer(clip, epochs=300, learning_rate=0.0001, decay_rate=0, clip_value=5.0, storage_path='./')
+
+   CLIP trainer.
+
+
+   .. py:attribute:: clip
+
+
+   .. py:attribute:: epochs
+      :value: 300
+
+
+
+   .. py:attribute:: learning_rate
+      :value: 0.0001
+
+
+
+   .. py:attribute:: decay_rate
+      :value: 0
+
+
+
+   .. py:attribute:: clip_value
+      :value: 5.0
+
+
+
+   .. py:attribute:: storage_path
+      :value: './'
+
+
+
+   .. py:method:: compute_eval_metric(target, prediction)
+
+
+   .. py:method:: get_optimizer(length_predictor, optimizer='Adam')
+
+
+   .. py:method:: show_num_learnable_params()
+
+
+   .. py:method:: train(train_dataloader, save_model=True, optimizer='Adam', record_runtime=True)
+
+

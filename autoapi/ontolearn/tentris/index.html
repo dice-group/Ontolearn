@@ -1,0 +1,572 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.tentris &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="ontolearn.triple_store" href="../triple_store/index.html" />
+    <link rel="prev" title="ontolearn.semantic_caching" href="../semantic_caching/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">ontolearn</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">ontolearn.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../base_nces/index.html">ontolearn.base_nces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../binders/index.html">ontolearn.binders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_architectures/index.html">ontolearn.clip_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../clip_trainer/index.html">ontolearn.clip_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_abstract_syntax_tree/index.html">ontolearn.concept_abstract_syntax_tree</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concept_generator/index.html">ontolearn.concept_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../data_struct/index.html">ontolearn.data_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_algorithms/index.html">ontolearn.ea_algorithms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_initialization/index.html">ontolearn.ea_initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ea_utils/index.html">ontolearn.ea_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executor/index.html">ontolearn.executor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../experiments/index.html">ontolearn.experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fitness_functions/index.html">ontolearn.fitness_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../heuristics/index.html">ontolearn.heuristics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../incomplete_kb/index.html">ontolearn.incomplete_kb</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_base/index.html">ontolearn.knowledge_base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learners/index.html">ontolearn.learners</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem/index.html">ontolearn.learning_problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lp_generator/index.html">ontolearn.lp_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metrics/index.html">ontolearn.metrics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_architectures/index.html">ontolearn.nces_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_modules/index.html">ontolearn.nces_modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_trainer/index.html">ontolearn.nces_trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nces_utils/index.html">ontolearn.nces_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_architectures/index.html">ontolearn.nero_architectures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../nero_utils/index.html">ontolearn.nero_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quality_funcs/index.html">ontolearn.quality_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../refinement_operators/index.html">ontolearn.refinement_operators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.tentris</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris"><code class="docutils literal notranslate"><span class="pre">EncodedPosNegLPStandardTentris</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.__slots__"><code class="docutils literal notranslate"><span class="pre">EncodedPosNegLPStandardTentris.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.id"><code class="docutils literal notranslate"><span class="pre">EncodedPosNegLPStandardTentris.id</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.__repr__"><code class="docutils literal notranslate"><span class="pre">EncodedPosNegLPStandardTentris.__repr__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology"><code class="docutils literal notranslate"><span class="pre">TentrisOntology</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.__slots__"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.classes_in_signature"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.classes_in_signature()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.data_properties_in_signature"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.data_properties_in_signature()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.object_properties_in_signature"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.object_properties_in_signature()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.individuals_in_signature"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.individuals_in_signature()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.data_property_range_axioms"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.data_property_range_axioms()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.data_property_domain_axioms"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.data_property_domain_axioms()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.object_property_domain_axioms"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.object_property_domain_axioms()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.object_property_range_axioms"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.object_property_range_axioms()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.get_owl_ontology_manager"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.get_owl_ontology_manager()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.get_ontology_id"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.get_ontology_id()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.__eq__"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.__eq__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.__hash__"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.__hash__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology.__repr__"><code class="docutils literal notranslate"><span class="pre">TentrisOntology.__repr__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.__slots__"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.data_property_domains"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.data_property_domains()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.object_property_domains"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.object_property_domains()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.object_property_ranges"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.object_property_ranges()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.equivalent_classes"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.equivalent_classes()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.data_property_values"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.data_property_values()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.object_property_values"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.object_property_values()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.flush"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.flush()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.instances"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.instances()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.sub_classes"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.sub_classes()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.sub_data_properties"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.sub_data_properties()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.sub_object_properties"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.sub_object_properties()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.types"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.types()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.get_root_ontology"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.get_root_ontology()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner.super_classes"><code class="docutils literal notranslate"><span class="pre">TentrisReasoner.super_classes()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.EvaluatedConceptTentris"><code class="docutils literal notranslate"><span class="pre">EvaluatedConceptTentris</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.EvaluatedConceptTentris.__slots__"><code class="docutils literal notranslate"><span class="pre">EvaluatedConceptTentris.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.EvaluatedConceptTentris.inds"><code class="docutils literal notranslate"><span class="pre">EvaluatedConceptTentris.inds</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.generator"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.generator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.path"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.__slots__"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.__slots__</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.endpoint_url"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.endpoint_url</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.endpoint_timeout"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.endpoint_timeout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.tasks"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.tasks</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.async_client"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.async_client</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.use_individuals_cache"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.use_individuals_cache</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.encode_learning_problem"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.encode_learning_problem()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.evaluate_concept()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept_async"><code class="docutils literal notranslate"><span class="pre">TentrisKnowledgeBase.evaluate_concept_async()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../verbalizer/index.html">ontolearn.verbalizer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">ontolearn</a></li>
+      <li class="breadcrumb-item active">ontolearn.tentris</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/ontolearn/tentris/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-ontolearn.tentris">
+<span id="ontolearn-tentris"></span><h1>ontolearn.tentris<a class="headerlink" href="#module-ontolearn.tentris" title="Link to this heading"></a></h1>
+<p>Tentris representations.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.tentris.logger" title="ontolearn.tentris.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris" title="ontolearn.tentris.EncodedPosNegLPStandardTentris"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncodedPosNegLPStandardTentris</span></code></a></p></td>
+<td><p>Encoded Abstract learning problem following pos-neg lp standard.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.tentris.TentrisOntology" title="ontolearn.tentris.TentrisOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TentrisOntology</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.tentris.TentrisReasoner" title="ontolearn.tentris.TentrisReasoner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TentrisReasoner</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.tentris.EvaluatedConceptTentris" title="ontolearn.tentris.EvaluatedConceptTentris"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EvaluatedConceptTentris</span></code></a></p></td>
+<td><p>Explicitly declare the attributes that should be returned by the evaluate_concept method of a</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.tentris.TentrisKnowledgeBase" title="ontolearn.tentris.TentrisKnowledgeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TentrisKnowledgeBase</span></code></a></p></td>
+<td><p>Representation of an OWL knowledge base in Ontolearn.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.tentris.logger">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#ontolearn.tentris.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.tentris.EncodedPosNegLPStandardTentris">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">EncodedPosNegLPStandardTentris</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.EncodedPosNegLPStandardKind" title="ontolearn.abstracts.EncodedPosNegLPStandardKind"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.abstracts.EncodedPosNegLPStandardKind</span></code></a></p>
+<p>Encoded Abstract learning problem following pos-neg lp standard.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.EncodedPosNegLPStandardTentris.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'id'</span></span><a class="headerlink" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.EncodedPosNegLPStandardTentris.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.EncodedPosNegLPStandardTentris.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris.__repr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">TentrisOntology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">owlapy.owl_ontology.OWLOntology</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_path',</span> <span class="pre">'_endpoint_url',</span> <span class="pre">'_backing_mgr',</span> <span class="pre">'_backing_onto',</span> <span class="pre">'_endpoint_timeout')</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.classes_in_signature">
+<span class="sig-name descname"><span class="pre">classes_in_signature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.classes_in_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.data_properties_in_signature">
+<span class="sig-name descname"><span class="pre">data_properties_in_signature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLDataProperty</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.data_properties_in_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.object_properties_in_signature">
+<span class="sig-name descname"><span class="pre">object_properties_in_signature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLObjectProperty</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.object_properties_in_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.individuals_in_signature">
+<span class="sig-name descname"><span class="pre">individuals_in_signature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.individuals_in_signature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.data_property_range_axioms">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data_property_range_axioms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLDataProperty</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_axiom.OWLDataPropertyRangeAxiom</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.data_property_range_axioms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.data_property_domain_axioms">
+<span class="sig-name descname"><span class="pre">data_property_domain_axioms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLDataProperty</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_axiom.OWLDataPropertyDomainAxiom</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.data_property_domain_axioms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.object_property_domain_axioms">
+<span class="sig-name descname"><span class="pre">object_property_domain_axioms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectProperty</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_axiom.OWLObjectPropertyDomainAxiom</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.object_property_domain_axioms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.object_property_range_axioms">
+<span class="sig-name descname"><span class="pre">object_property_range_axioms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectProperty</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_axiom.OWLObjectPropertyRangeAxiom</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.object_property_range_axioms" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.get_owl_ontology_manager">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_owl_ontology_manager</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">owlapy.owl_ontology._M</span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.get_owl_ontology_manager" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.get_ontology_id">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_ontology_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">owlapy.owl_ontology.OWLOntologyID</span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.get_ontology_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.__eq__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.__hash__">
+<span class="sig-name descname"><span class="pre">__hash__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.__hash__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisOntology.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisOntology.__repr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">TentrisReasoner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology" title="ontolearn.tentris.TentrisOntology"><span class="pre">TentrisOntology</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.base.ext.OWLReasonerEx</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('_ontology',</span> <span class="pre">'_backing_reasoner')</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.data_property_domains">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data_property_domains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLDataProperty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.data_property_domains" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.object_property_domains">
+<span class="sig-name descname"><span class="pre">object_property_domains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectProperty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.object_property_domains" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.object_property_ranges">
+<span class="sig-name descname"><span class="pre">object_property_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectProperty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.object_property_ranges" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.equivalent_classes">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">equivalent_classes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_named</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.equivalent_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.data_property_values">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">data_property_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLDataProperty</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_literal.OWLLiteral</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.data_property_values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.object_property_values">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">object_property_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectPropertyExpression</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.object_property_values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.flush">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.flush" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.instances">
+<span class="sig-name descname"><span class="pre">instances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.instances" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.sub_classes">
+<span class="sig-name descname"><span class="pre">sub_classes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_named</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.sub_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.sub_data_properties">
+<span class="sig-name descname"><span class="pre">sub_data_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLDataProperty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLDataProperty</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.sub_data_properties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.sub_object_properties">
+<span class="sig-name descname"><span class="pre">sub_object_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_property.OWLObjectPropertyExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLObjectPropertyExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.sub_object_properties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.types">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.owl_individual.OWLNamedIndividual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.types" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.get_root_ontology">
+<span class="sig-name descname"><span class="pre">get_root_ontology</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ontolearn.tentris.TentrisOntology" title="ontolearn.tentris.TentrisOntology"><span class="pre">TentrisOntology</span></a></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.get_root_ontology" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisReasoner.super_classes">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">super_classes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_named</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisReasoner.super_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.tentris.EvaluatedConceptTentris">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">EvaluatedConceptTentris</span></span><a class="headerlink" href="#ontolearn.tentris.EvaluatedConceptTentris" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../search/index.html#ontolearn.search.EvaluatedConcept" title="ontolearn.search.EvaluatedConcept"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.search.EvaluatedConcept</span></code></a></p>
+<dl class="simple">
+<dt>Explicitly declare the attributes that should be returned by the evaluate_concept method of a</dt><dd><p>AbstractKnowledgeBase.</p>
+</dd>
+</dl>
+<p>This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+memory usage.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.EvaluatedConceptTentris.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#ontolearn.tentris.EvaluatedConceptTentris.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ontolearn.tentris.EvaluatedConceptTentris.inds">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">inds</span></span><a class="headerlink" href="#ontolearn.tentris.EvaluatedConceptTentris.inds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.tentris.</span></span><span class="sig-name descname"><span class="pre">TentrisKnowledgeBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_metric_factory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../utils/index.html#ontolearn.utils.Factory" title="ontolearn.utils.Factory"><span class="pre">Factory</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ontolearn.base.owl.utils.OWLClassExpressionLengthMetric</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ontolearn.base.owl.utils.OWLClassExpressionLengthMetric</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individuals_cache_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase" title="ontolearn.knowledge_base.KnowledgeBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ontolearn.knowledge_base.KnowledgeBase</span></code></a></p>
+<p>Representation of an OWL knowledge base in Ontolearn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path to an ontology file that is to be loaded.</p></li>
+<li><p><strong>ontology</strong> – OWL ontology object.</p></li>
+<li><p><strong>reasoner_factory</strong> – Factory that creates a reasoner to reason about the ontology.</p></li>
+<li><p><strong>reasoner</strong> – reasoner Over the ontology.
+reasoner of this object, if you enter a reasoner using <a href="#id1"><span class="problematic" id="id2">:arg:`reasoner_factory`</span></a> or <a href="#id3"><span class="problematic" id="id4">:arg:`reasoner`</span></a>
+argument it will override this setting.</p></li>
+<li><p><strong>include_implicit_individuals</strong> – Whether to identify and consider instances which are not set as OWL Named
+Individuals (does not contain this type) as individuals.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.generator">
+<span class="sig-name descname"><span class="pre">generator</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.generator" title="Link to this definition"></a></dt>
+<dd><p>Instance of concept generator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../concept_generator/index.html#ontolearn.concept_generator.ConceptGenerator" title="ontolearn.concept_generator.ConceptGenerator"><em>ConceptGenerator</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.path">
+<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.path" title="Link to this definition"></a></dt>
+<dd><p>Path of the ontology file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>str</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.__slots__">
+<span class="sig-name descname"><span class="pre">__slots__</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('endpoint_url',</span> <span class="pre">'endpoint_timeout',</span> <span class="pre">'async_client',</span> <span class="pre">'tasks',</span> <span class="pre">'_total_req',</span> <span class="pre">'_current_req')</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.__slots__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.endpoint_url">
+<span class="sig-name descname"><span class="pre">endpoint_url</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.endpoint_url" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.endpoint_timeout">
+<span class="sig-name descname"><span class="pre">endpoint_timeout</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.endpoint_timeout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.tasks">
+<span class="sig-name descname"><span class="pre">tasks</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.tasks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.async_client">
+<span class="sig-name descname"><span class="pre">async_client</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.async_client" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.use_individuals_cache">
+<span class="sig-name descname"><span class="pre">use_individuals_cache</span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.use_individuals_cache" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.encode_learning_problem">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">encode_learning_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractLearningProblem" title="ontolearn.abstracts.AbstractLearningProblem"><span class="pre">AbstractLearningProblem</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.encode_learning_problem" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept">
+<span class="sig-name descname"><span class="pre">evaluate_concept</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoded_learning_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris" title="ontolearn.tentris.EncodedPosNegLPStandardTentris"><span class="pre">EncodedPosNegLPStandardTentris</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../search/index.html#ontolearn.search.EvaluatedConcept" title="ontolearn.search.EvaluatedConcept"><span class="pre">EvaluatedConcept</span></a></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept_async">
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">evaluate_concept_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concept</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoded_learning_problem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.tentris.EncodedPosNegLPStandardTentris" title="ontolearn.tentris.EncodedPosNegLPStandardTentris"><span class="pre">EncodedPosNegLPStandardTentris</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../search/index.html#ontolearn.search.EvaluatedConcept" title="ontolearn.search.EvaluatedConcept"><span class="pre">EvaluatedConcept</span></a></span></span><a class="headerlink" href="#ontolearn.tentris.TentrisKnowledgeBase.evaluate_concept_async" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../semantic_caching/index.html" class="btn btn-neutral float-left" title="ontolearn.semantic_caching" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../triple_store/index.html" class="btn btn-neutral float-right" title="ontolearn.triple_store" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2024, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+ontolearn.nces_utils
+====================
+
+.. py:module:: ontolearn.nces_utils
+
+.. autoapi-nested-parse::
+
+   NCES utils.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.nces_utils.SimpleSolution
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.nces_utils.sample_examples
+   ontolearn.nces_utils.try_get_embs
+   ontolearn.nces_utils.generate_training_data
+
+
+Module Contents
+---------------
+
+.. py:class:: SimpleSolution(vocab, atomic_concept_names)
+
+   .. py:attribute:: name
+      :value: 'SimpleSolution'
+
+
+
+   .. py:attribute:: atomic_concept_names
+
+
+   .. py:attribute:: tokenizer
+
+
+   .. py:method:: predict(expression: str)
+
+
+.. py:function:: sample_examples(pos, neg, num_ex)
+
+.. py:function:: try_get_embs(pos, neg, embeddings, num_examples)
+
+   Depending on the KGE model, some individuals do not get assigned to any embedding during training. This function filters out such individuals from the provided positive/negative examples. It also
+
+
+.. py:function:: generate_training_data(kb_path, kb, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, beyond_alc=True, storage_path=None)
+

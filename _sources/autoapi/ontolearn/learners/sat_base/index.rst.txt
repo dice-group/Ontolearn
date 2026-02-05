@@ -1,0 +1,93 @@
+ontolearn.learners.sat_base
+===========================
+
+.. py:module:: ontolearn.learners.sat_base
+
+.. autoapi-nested-parse::
+
+   Base class for SAT-based concept learners.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.sat_base.SATBaseLearner
+
+
+Module Contents
+---------------
+
+.. py:class:: SATBaseLearner(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, max_runtime: Optional[int] = 60, cache_structure: bool = True)
+
+   Base class for SAT-based concept learners that use the SPELL framework.
+
+   This class provides common functionality for converting between OWL ontologies
+   and the Structure format used by SPELL, as well as converting results back to
+   OWL class expressions.
+
+
+   .. py:attribute:: __slots__
+      :value: ('kb', 'reasoner', 'max_runtime', '_best_hypothesis', '_best_hypothesis_accuracy',...
+
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: reasoner
+      :value: None
+
+
+
+   .. py:attribute:: max_runtime
+      :value: 60
+
+
+
+   .. py:attribute:: cache_structure
+      :value: True
+
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
+   .. py:method:: clean()
+
+      Clear all states of the concept learner.
+
+
+
+   .. py:method:: fit(lp: ontolearn.learning_problem.PosNegLPStandard)
+      :abstractmethod:
+
+
+      Find concept expressions that explain positive and negative examples.
+
+      :param lp: Learning problem with positive and negative examples.
+
+      :returns: self
+
+
+
+   .. py:method:: best_hypothesis() -> owlapy.class_expression.OWLClassExpression
+
+      Get the best found hypothesis.
+
+      :returns: OWL class expression, or OWLThing if no hypothesis found.
+
+
+
+   .. py:method:: best_hypothesis_accuracy() -> Optional[float]
+
+      Get the accuracy of the best found hypothesis.
+
+      :returns: Accuracy as float, or None if no hypothesis found.
+
+
+
