@@ -94,7 +94,7 @@ extras["min"] = deps_list(
 
 extras["doc"] = (extras["min"] + deps_list("sphinx",
                            "sphinx-autoapi",
-                           "sphinx_theme",
+                           "sphinx-theme",
                            "sphinx_rtd_theme",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
