@@ -50,7 +50,7 @@ jobs:
         cp docs/_build/latex/ontolearn.pdf docs/_build/html/
 
     - name: Deploy to netlify
-      uses: nwtgck/actions-netlify@v1.2
+      uses: nwtgck/actions-netlify@v2
       with:
         publish-dir: 'docs/_build/html'
         production-branch: master

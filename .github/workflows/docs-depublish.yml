@@ -14,7 +14,7 @@ jobs:
         mkdir empty_page
         echo "<body onload=\"window.location.host = window.location.host.replace(/^.*--/, '')\">This branch has been completed</body>" > empty_page/index.html
     - name: Depublish from netlify
-      uses: nwtgck/actions-netlify@v1.2
+      uses: nwtgck/actions-netlify@v2
       with:
         publish-dir: 'empty_page'
         production-deploy: false
