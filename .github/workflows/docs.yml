@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.11" ]
+        python-version: [ "3.10.14" ]
       max-parallel: 5
 
     steps:
@@ -52,7 +52,7 @@ jobs:
     - run: test -d docs/_build/html
 
     - name: Deploy to netlify
-      uses: nwtgck/actions-netlify@v3
+      uses: nwtgck/actions-netlify@v2
       with:
         publish-dir: 'docs/_build/html'
         production-branch: master
