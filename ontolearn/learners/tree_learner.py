@@ -22,6 +22,8 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 # ---------
+
+from shap import TreeExplainer
 from sklearn.inspection import permutation_importance
 import matplotlib.pyplot as plt
 from typing import Dict, Set, Tuple, List, Union, Callable
@@ -882,8 +884,8 @@ class TDL:
         }
         return list(prediction_per_example)
 
-    def plot_feature_importances(self, perm_importance_result, feat_name):
-        """bar plot the feature importance"""
+    def plot_res_feature_importances(self, perm_importance_result, feat_name):
+        """bar plot the permutation feature importance"""
         feat_name = np.array(feat_name)
         fig, ax = plt.subplots()
 
@@ -901,6 +903,30 @@ class TDL:
         _ = ax.set_yticklabels(feat_name[indices[-40:]])
         print("show plot")
         plt.show()
+
+    def plot_shap_feature_importances(self, shap_vals, feat_name):
+        """Bar plot the mean absolute SHAP feature importance"""
+        feat_name = np.array(feat_name)
+        indices = np.argsort(shap_vals)
+        num_to_plot = min(len(indices), 40)
+        top_indices = indices[-num_to_plot:]
+        fig, ax = plt.subplots(figsize=(10, 8))
+                
+        plt.barh(
+            range(num_to_plot),
+            shap_vals[top_indices],
+            color='skyblue'
+        )
+
+        ax.set_yticks(range(num_to_plot))
+        ax.set_yticklabels(feat_name[top_indices])
+        ax.set_xlabel("Global feature importance")
+        ax.set_title("Top DL Feature Importance (SHAP)")
+        
+        plt.tight_layout()
+        print("Displaying SHAP Importance Plot")
+        plt.show()
+
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
@@ -990,14 +1016,30 @@ class TDL:
                 cart_tree=self.clf,
                 topk=100,
             )
+        perm_feature_topk=False
+        if perm_feature_topk:
             # plot permutation feature importance
             res = permutation_importance(
                 self.clf, X.values, y.values, n_repeats=10, random_state=0, n_jobs=8
             )
-            self.plot_feature_importances(
+            self.plot_res_feature_importances(
                 res, [owl_expression_to_dl(f) for f in self.features]
             )
+        shap_feature_topk = True
+        #calculate SHAP values, to get topk features
+        if shap_feature_topk:
+            tree_explainer = TreeExplainer(self.clf)
+            sVal = tree_explainer.shap_values(X.values)
+            if isinstance(sVal, np.ndarray):
+                if sVal.ndim == 3:
+                    global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
+                else:
+                    global_importance = np.abs(sVal).mean(axis=0)
 
+            self.plot_shap_feature_importances(
+                global_importance, 
+                [owl_expression_to_dl(f) for f in self.features]
+            )
         self.owl_class_expressions.clear()
         # Each item can be considered is a path of OWL Class Expressions
         # starting from the root node in the decision tree and
