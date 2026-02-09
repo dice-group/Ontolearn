@@ -2,7 +2,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
 [![Pypi](https://img.shields.io/badge/pypi-0.10.0-blue)](https://pypi.org/project/ontolearn/0.10.0/)
-[![Docs](https://img.shields.io/badge/documentation-0.10.0-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Docs](https://img.shields.io/badge/documentation-0.10.0-yellow)](https://dice-group.github.io/Ontolearn/)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/Ontolearn)
 &nbsp;
@@ -33,7 +33,7 @@ including symbolic, neuro-symbolic, and deep learning-based approaches:
 - **SPELL** &rarr; [SAT-Based PAC Learning of Description Logic Concepts](https://www.ijcai.org/proceedings/2023/0373.pdf)
 - **ALCSAT** &rarr; [SAT-Based Bounded Fitting for the Description Logic $\mathcal{ALC}$](https://arxiv.org/pdf/2507.21752)
 
-Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+Find more in the [Documentation](https://dice-group.github.io/Ontolearn/).
 
 [DeepWiki](https://deepwiki.com/dice-group/Ontolearn) can also help you get started with Ontolearn.
 

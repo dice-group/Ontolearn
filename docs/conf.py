@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'Ontolearn'
-copyright = '2021-2024, The Ontolearn team'
+copyright = '2021-2026, The Ontolearn team'
 author = 'Ontolearn team'
 
 # -- General configuration ---------------------------------------------------
@@ -25,15 +25,17 @@ author = 'Ontolearn team'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'autoapi.extension',
-    'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinxcontrib.plantuml',
-    'myst_parser',
-    "sphinx.ext.mathjax",
-]
+extensions = ["autoapi.extension",
+              "sphinx.ext.githubpages",
+              "sphinx.ext.todo",
+              "sphinx.ext.napoleon",
+              "sphinx.ext.viewcode",
+              "sphinx.ext.autodoc",
+              "sphinxcontrib.plantuml",
+              "myst_parser",
+              "sphinx_rtd_theme",
+              "sphinx.ext.mathjax",
+              ]
 
 myst_enable_extensions = [
     "amsmath",
