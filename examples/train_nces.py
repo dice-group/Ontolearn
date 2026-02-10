@@ -11,7 +11,8 @@ Note: One can leave the option `--path_train_data` and new training data will be
 
 import argparse
 import json, os
-from ontolearn.concept_learner import NCES, NCES2, ROCES
+from ontolearn.learners import NCES, NCES2, ROCES
+from ontolearn.knowledge_base import KnowledgeBase
 from transformers import set_seed
 
 def str2bool(v):
@@ -46,13 +47,14 @@ def start(args):
                     assert isinstance(training_data, list), "The training data must either be stored as a dictionary ({'expr': {'positive examples': [], 'negative examples': []}, ...,}) or a list of items"
         except FileNotFoundError:
             print("Couldn't find training data in the specified path. Defaulting to generating training data.")
+    KB = KnowledgeBase(path=args.kb)
     if args.synthesizer == "NCES":
-        synthesizer = NCES(knowledge_base_path=args.kb, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=args.path_of_nces_embeddings, path_temp_embeddings=args.path_temp_embeddings, auto_train=False, dicee_model=args.dicee_model, dicee_emb_dim=args.dicee_emb_dim, dicee_epochs=args.dicee_epochs, dicee_lr=args.dicee_lr, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
+        synthesizer = NCES(knowledge_base=KB, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=args.path_of_nces_embeddings, path_temp_embeddings=args.path_temp_embeddings, auto_train=False, dicee_model=args.dicee_model, dicee_emb_dim=args.dicee_emb_dim, dicee_epochs=args.dicee_epochs, dicee_lr=args.dicee_lr, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     elif args.synthesizer == "NCES2":
-        synthesizer = NCES2(knowledge_base_path=args.kb, auto_train=False, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
+        synthesizer = NCES2(knowledge_base=KB, auto_train=False, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
          drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     else:
-        synthesizer = ROCES(knowledge_base_path=args.kb, auto_train=False, k=5, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
+        synthesizer = ROCES(knowledge_base=KB, auto_train=False, k=5, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
          drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     synthesizer.train(training_data, epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.lr, clip_value=1.0, tmax=args.tmax, max_num_lps=args.max_num_lps, refinement_expressivity=args.refinement_expressivity, refs_sample_size=args.sample_size, storage_path=args.storage_path)
 

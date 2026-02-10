@@ -26,6 +26,7 @@
 
 import logging
 import re
+from functools import cache
 from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable, FrozenSet
 import requests
@@ -43,7 +44,8 @@ from owlapy.owl_axiom import (
 )
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES
+from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, \
+    NonNegativeIntegerOWLDatatype
 from owlapy.owl_ontology import OWLOntologyID
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (
@@ -132,11 +134,13 @@ def send_http_request_to_ts_and_fetch_results(triplestore_address: str, query: s
         # return [return_type(IRI.create(i['x']['value'])) for i in
         #         response.json()['results']['bindings']]
     except JSONDecodeError as e:
-        raise JSONDecodeError(
-            f"Something went wrong with decoding JSON from the response. Check for typos in "
-            f"the `triplestore_address` = '{triplestore_address}' otherwise the error is likely "
-            f"caused by an internal issue. \n  -->Error: {e}"
-        )
+        raise RuntimeError(
+            f"Something went wrong with decoding JSON from the response. "
+            f"Check for typos in the `triplestore_address` = '{triplestore_address}' "
+            f"otherwise the error is likely caused by an internal issue."
+            f"\n  -->Error: {e}"
+            f"\n Response text: {response.text}"
+        ) from e
 
 
 def unwrap(result: Response):
@@ -174,11 +178,27 @@ def suf(direct: bool):
 
 class TripleStoreOntology(AbstractOWLOntology):
 
-    def __init__(self, triplestore_address: str):
+    def __init__(self, triplestore_address: str, use_cache: bool = False):
+        """
+        Args:
+            triplestore_address: The URL of the triplestore where the ontology is stored.
+            use_cache: Whether to use caching for method which retrieve objects in signature.
+                If your triplestore is immutable setting this to True is strongly recommended.
+        """
         assert is_valid_url(triplestore_address), (
             "You should specify a valid URL in the following argument: "
             "'triplestore_address' of class `TripleStore`")
         self.url = triplestore_address
+        self.use_cache = use_cache
+        if use_cache:
+            self.enable_caching()
+
+
+    def enable_caching(self):
+        self.classes_in_signature = cache(self.classes_in_signature)
+        self.data_properties_in_signature = cache(self.data_properties_in_signature)
+        self.object_properties_in_signature = cache(self.object_properties_in_signature)
+        self.individuals_in_signature = cache(self.individuals_in_signature)
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + "SELECT DISTINCT ?x WHERE {?x a owl:Class.}"
@@ -205,10 +225,22 @@ class TripleStoreOntology(AbstractOWLOntology):
     #     for binding in self.query(query).json()["results"]["bindings"]:
     #         yield OWLNamedIndividual(binding["x"]["value"])
 
-    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+    def individuals_in_signature(self, implicit_individuals:bool = True) -> Iterable[OWLNamedIndividual]:
         # TODO AB: Maybe extend this method to check for implicit individuals (idea: check for ?x a owl:Thing and
         #          exclude everything that is not a class, property, etc.)
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        if not implicit_individuals:
+            query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        else:
+            query = owl_prefix + """SELECT DISTINCT ?x
+                                    WHERE {
+                                      ?x ?p ?o .
+                                      FILTER NOT EXISTS { ?x a owl:Class }
+                                      FILTER NOT EXISTS { ?x a owl:ObjectProperty }
+                                      FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
+                                      FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
+                                      FILTER NOT EXISTS { ?x a owl:Ontology }
+                                      FILTER (!isBlank(?x))
+                                    }"""
         yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
@@ -570,14 +602,18 @@ class TripleStoreReasoner(AbstractOWLReasoner):
     def get_root_ontology(self) -> AbstractOWLOntology:
         return self.ontology
 
-    def is_isolated(self):
-        # not needed here
-        pass
-
 
 class TripleStore(AbstractKnowledgeBase):
 
-    def __init__(self, ontology=None, reasoner=None, url: str = None):
+    def __init__(self, ontology=None, reasoner=None, url: str = None, use_cache: bool = False):
+        """
+        Args:
+            ontology: An instance of TripleStoreOntology.
+            reasoner: An instance of TripleStoreReasoner.
+            url: The URL of the triplestore endpoint can also be passed directly.
+            use_cache: Whether to use caching for method which retrieve objects in signature.
+                If your triplestore is immutable setting this to True is strongly recommended.
+        """
 
         self.url = url
         self.ontology = ontology
@@ -593,10 +629,14 @@ class TripleStore(AbstractKnowledgeBase):
             if reasoner is not None:
                 self.ontology = reasoner.ontology
             else:
-                self.ontology = TripleStoreOntology(url)
+                self.ontology = TripleStoreOntology(url, use_cache)
 
         if reasoner is None:
             self.reasoner = TripleStoreReasoner(self.ontology)
+
+        if not self.ontology.use_cache and use_cache and isinstance(self.ontology, TripleStoreOntology):
+            self.ontology.use_cache = True
+            self.ontology.enable_caching()
 
         assert self.url == self.ontology.url == self.reasoner.url, "URLs do not match"
 
@@ -641,11 +681,11 @@ class TripleStore(AbstractKnowledgeBase):
                     elif data_type == "http://www.w3.org/2001/XMLSchema#integer":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
-                        # TODO AB: set type to NonNegativeInteger for OWLLiteral below
-                        #       after integrating the new owlapy release (> 1.3.3)
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]),
+                                                                                type_=NonNegativeIntegerOWLDatatype)
                     elif data_type == "http://www.w3.org/2001/XMLSchema#double":
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]),
+                                                                                type_=DoubleOWLDatatype)
                     else:
                         # TODO: Unclear for the time being.
                         # print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
@@ -820,7 +860,7 @@ class TripleStore(AbstractKnowledgeBase):
         else:
             def get_properties_from_xsd_range(r: OWLDatatype):
                 query = (f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x " +
-                         f"WHERE {{?x rdfs:range xsd:{r.iri.reminder}}}")
+                         f"WHERE {{?x rdfs:range xsd:{r.iri.remainder}}}")
                 for binding in self.query(query).json()["results"]["bindings"]:
                     yield OWLDataProperty(binding["x"]["value"])
             if isinstance(ranges, OWLDatatype):
@@ -843,18 +883,18 @@ class TripleStore(AbstractKnowledgeBase):
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLLiteral(value=float(binding["x"]["value"]))
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) \
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
-            named_individuals: flag for returning only owl named individuals in the SPARQL mapping
+            implicit_individuals: flag for returning individuals (inferred implicitly).
         Returns:
             Generator of individuals belonging to the given class.
         """
 
         if concept is None or concept.is_owl_thing():
-            yield from self.ontology.individuals_in_signature()
+            yield from self.ontology.individuals_in_signature(implicit_individuals)
         else:
             # yield from self.reasoner.instances(concept, named_individuals=named_individuals)
             yield from self.reasoner.instances(concept)

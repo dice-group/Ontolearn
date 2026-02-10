@@ -117,8 +117,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            # default to native Reasoner of owlapy. To use SyncReasoner, pass the reasoner explicitly as an argument.
-            self.reasoner = StructuralReasoner(ontology=self.ontology)
+            if isinstance(self.ontology, Ontology):
+                self.reasoner = StructuralReasoner(ontology=self.ontology)
+            else:
+                self.reasoner = SyncReasoner(ontology=self.ontology, reasoner="Pellet")
 
         if load_class_hierarchy:
             self.class_hierarchy: ClassHierarchy
@@ -144,11 +146,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.generator = ConceptGenerator()
         self.describe()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = True) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
         Args:
             concept: Class expression of which to list individuals.
+            implicit_individuals: No purpose for now (tbd)
         Returns:
             Individuals belonging to the given class.
         """

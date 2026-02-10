@@ -2,7 +2,7 @@ import json
 import os
 import random
 
-from ontolearn.concept_learner import CELOE
+from ontolearn.learners import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.executor import Trainer
 from owlapy.owl_individual import OWLNamedIndividual, IRI

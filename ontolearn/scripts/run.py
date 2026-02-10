@@ -31,16 +31,18 @@ from typing import Dict, Iterable, Union, List
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql
 from ontolearn.utils import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.learners import Drill, TDL
-from ontolearn.concept_learner import NCES
+from ontolearn.learners import NCES
 from ontolearn.metrics import F1
 from ontolearn.verbalizer import LLMVerbalizer
 from owlapy import owl_expression_to_dl
 import os
+import shutil
 
 app = FastAPI()
 args = None
@@ -79,9 +81,13 @@ def get_drill(data: dict):
                   use_nominals=data.get("use_nominals", True),
                   verbose=1)
     # (2) Either load the weights of DRILL or train it.
-    if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
+    if (data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]) and
+            os.path.isfile("path_to_pretrained_drill/drill.pth")):
         drill.load(directory=data["path_to_pretrained_drill"])
     else:
+        # remove the pretrained directory if already exist but does not have the drill.pth file and retrain
+        if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
+            shutil.rmtree(data['path_to_pretrained_drill'])
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
@@ -92,9 +98,9 @@ def get_nces(data: dict) -> NCES:
     """ Load NCES """
     global kb
     global args
-    assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
+    #assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
     # (1) Init NCES.
-    nces = NCES(knowledge_base_path=args.path_knowledge_base,
+    nces = NCES(knowledge_base=kb,
                     path_of_embeddings=data.get("path_embeddings", None),
                     quality_func=F1(),
                     load_pretrained=False,
@@ -177,6 +183,7 @@ async def cel(data: dict) -> Dict:
                                         neg=lp.neg)
             results.append({"Rank": ith + 1,
                             "Prediction": dl_learned_owl_expression,
+                            "SPARQLQuery": owl_expression_to_sparql(expression=learned_owl_expression),
                             "Verbalization": verbalizer(dl_learned_owl_expression),
                             "F1": train_f1})
 

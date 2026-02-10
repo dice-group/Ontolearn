@@ -1,6 +1,8 @@
 [run]
 omit =
     tests/*
+    */_remote_module_non_scriptable*
+source=.
 
 [report]
 exclude_lines =

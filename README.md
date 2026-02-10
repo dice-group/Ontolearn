@@ -1,8 +1,8 @@
 [![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.9.2-blue)](https://pypi.org/project/ontolearn/0.9.2/)
-[![Docs](https://img.shields.io/badge/documentation-0.9.2-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Pypi](https://img.shields.io/badge/pypi-0.10.0-blue)](https://pypi.org/project/ontolearn/0.10.0/)
+[![Docs](https://img.shields.io/badge/documentation-0.10.0-yellow)](https://dice-group.github.io/Ontolearn/)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/Ontolearn)
 &nbsp;
@@ -18,28 +18,38 @@ $E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-synt
 
 $$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
 
-To tackle this supervised learning problem, ontolearn offers many symbolic, neuro-symbolic and deep learning based Learning algorithms: 
-- **TDL** &rarr; Tree-based OWL Class Expression Learner for Large Graphs
+To address this supervised learning problem, OntoLearn provides a diverse suite of learning algorithms, 
+including symbolic, neuro-symbolic, and deep learning-based approaches:
+- **TDL** &rarr; [Tree-based OWL Class Expression Learner for Large Graphs](https://rdcu.be/eJDlY)
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
-- **NCES2** &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
+- **NCES2** &rarr; [Neural Class Expression Synthesis in $\mathcal{ALCHIQ^{(D)}}$](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **ROCES** &rarr; [Robust Class Expression Synthesis in Description Logics via Iterative Sampling](https://www.ijcai.org/proceedings/2024/0479.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
-- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
-- **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
+- **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in $\mathcal{ALC}$](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
+- **SPELL** &rarr; [SAT-Based PAC Learning of Description Logic Concepts](https://www.ijcai.org/proceedings/2023/0373.pdf)
+- **ALCSAT** &rarr; [SAT-Based Bounded Fitting for the Description Logic $\mathcal{ALC}$](https://arxiv.org/pdf/2507.21752)
 
-Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+Find more in the [Documentation](https://dice-group.github.io/Ontolearn/).
 
 [DeepWiki](https://deepwiki.com/dice-group/Ontolearn) can also help you get started with Ontolearn.
 
 
 ## Installation
 
+For CPU-only (recommended for most users):
+```shell
+pip install ontolearn --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+For NVIDIA CUDA-enabled GPUs (full installation):
 ```shell
 pip install ontolearn 
 ```
+
 or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
@@ -132,14 +142,34 @@ Fore more please refer to the [examples](https://github.com/dice-group/Ontolearn
 
 <details><summary> Click me! </summary>
 
-Load an RDF knowledge graph 
+The webservice exposes a lightweight HTTP/JSON API for running Ontolearn learners remotely. 
+Start it with a local knowledge base or a remote triplestore. 
+Submit learning problems as JSON to the `/cel` endpoint 
+(e.g., `POST http://<host>:8000/cel` with `pos`, `neg`, `model` 
+and optional parameters for the particular model like `path_embeddings`, `max_runtime`, etc.).
+The service returns learned OWL class expressions (DL and SPARQL/OWL serializations) 
+and performance metrics in the JSON response.
+
+### Local Dataset
+
 ```shell
 ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
 ```
-or launch a Tentris instance https://github.com/dice-group/tentris over Mutagenesis.
+
+### Remote Dataset
+
 ```shell
-ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
+ontolearn-webservice --endpoint_triple_store <your_triples_store_sparql_endpoint>
 ```
+
+Some leads to hosting your own triplestore endpoint:
+- https://docs.tentris.io/binary/load.html
+- https://ontolearn-docs-dice-group.netlify.app/usage/04_knowledge_base#loading-and-launching-a-triplestore
+
+### Using the Webservice
+
+#### DRILL
+
 The below code trains DRILL with 6 randomly generated learning problems
 provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
 Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
@@ -165,6 +195,9 @@ for str_target_concept, examples in learning_problems.items():
                                   })
     print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
 ```
+
+#### TDL
+
 TDL (a more scalable learner) can also be used as follows
 ```python
 import json
@@ -176,6 +209,9 @@ response = requests.get('http://0.0.0.0:8000/cel',
                               "model": "TDL"})
 print(response.json())
 ```
+
+#### NCES
+
 NCES (another scalable learner). The following will first train NCES if the provided path `path_to_pretrained_nces` does not exist
 ```python
 import json
@@ -246,15 +282,8 @@ To compute the test performance, we compute F1-score of H w.r.t. test positive a
 python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
 ```
 
-```shell
-# To download learning problems and benchmark with selected learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types ocel drill tdl nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
-```
+You can also select specific learners by using the flag `--learner_types` followed by the learner short names separated by space. E.g., `--learner_types ocel drill tdl nces`
 
-```shell
-# To download learning problems and benchmark with a single learner on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
-```
 In the following python script, the results are summarized and the markdown displayed below generated.
 ```python
 import pandas as pd
@@ -265,26 +294,26 @@ print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')
 
 Below, we report the average test F1 score and the average runtimes of learners.
 
-|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL |   Test-F1-NCES |   RT-NCES |   Test-F1-NCES2 |   RT-NCES2 |   Test-F1-ROCES |   RT-ROCES | Test-F1-CLIP | RT-CLIP |
-|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|---------------:|----------:|----------------:|-----------:|----------------:|-----------:|-------------:|--------:|
-|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |          0.805 |     0.632 |           0.812 |      1.136 |           0.812 |      1.119 |        0.855 |   14.059 |
-|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |          0.608 |     0.628 |           0.680 |      1.177 |           0.695 |      1.086 |        0.779 |   9.050 |
-| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |          1.000 |     0.507 |           1.000 |      0.955 |           1.000 |      0.917 |        1.000 |   0.639 |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |          0.927 |     0.505 |           0.947 |      0.944 |           0.927 |      0.924 |        1.000 |   0.746  |
-|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |          0.947 |     0.633 |           0.933 |      1.323 |           0.947 |      1.306 |        1.000 |   0.817 |
-|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |          0.909 |     0.598 |           0.931 |      1.171 |           0.931 |      1.146 |        1.000 |   0.939 |
-|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |          0.854 |     0.538 |           0.891 |      0.948 |           0.891 |      0.905 |        0.928 |   17.682 |
+|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES | Test-F1-NCES2 | RT-NCES2 | Test-F1-ROCES | RT-ROCES | Test-F1-CLIP | RT-CLIP | Test-F1-NERO | RT-NERO | Test-F1-ALCSAT | RT-ALCSAT | Test-F1-SPELL | RT-SPELL |
+|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|--------------:|---------:|--------------:|---------:|-------------:|--------:|--------------|---------|----------------|-----------|---------------|----------|
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.805 |   0.632 |         0.812 |    1.136 |         0.812 |    1.119 |        0.855 |  14.059 | 0.834        | 0.095   | 1.000          | 0.618     | 0.690         | 4.121    |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.608 |   0.628 |         0.680 |    1.177 |         0.695 |    1.086 |        0.779 |   9.050 | 0.704        | 0.113   | 1.000          | 0.749     | 0.715         | 5.346    |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.507 |         1.000 |    0.955 |         1.000 |    0.917 |        1.000 |   0.639 | 1.000        | 0.092   | 1.000          | 0.081     | 1.000         | < 0.001  |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.505 |         0.947 |    0.944 |         0.927 |    0.924 |        1.000 |   0.746 | 1.000        | 0.101   | 1.000          | 0.144     | 1.000         | 0.002    |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.947 |   0.633 |         0.933 |    1.323 |         0.947 |    1.306 |        1.000 |   0.817 | 0.980        | 0.065   | 0.980          | 0.141     | 0.980         | 0.003    |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.909 |   0.598 |         0.931 |    1.171 |         0.931 |    1.146 |        1.000 |   0.939 | 0.980        | 0.095   | 1.000          | 0.171     | 1.000         | 0.003    |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.854 |   0.538 |         0.891 |    0.948 |         0.891 |    0.905 |        0.928 |  17.682 | 0.881        | 0.098   | 0.985          | 0.609     | 0.890         | 3.297    |
 
 
-|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-NCES2 |   Train-F1-ROCES |   Train-F1-CLIP |
-|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|-----------------:|-----------------:|----------------:|
-|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.759 |            0.804 |            0.804 |           0.918 |
-|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.680 |            0.696 |            0.728 |           0.798 |
-| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |            1.000 |            1.000 |           1.000 |
-|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.910 |            0.944 |            0.942 |           1.000 |
-|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.923 |            0.941 |            0.944 |           1.000 |
-|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.911 |            0.923 |            0.923 |           1.000 |
-|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.823 |            0.886 |            0.884 |           0.940 |
+|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-NCES2 |   Train-F1-ROCES |   Train-F1-CLIP | Train-F1-NERO | Train-F1-ALCSAT | Train-F1-SPELL |
+|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|-----------------:|-----------------:|----------------:|---------------|-----------------|----------------|
+|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.759 |            0.804 |            0.804 |           0.918 | 0.828         | 1.000           | 0.756          |
+|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.680 |            0.696 |            0.728 |           0.798 | 0.702         | 1.000           | 0.720          |
+| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |            1.000 |            1.000 |           1.000 | 1.000         | 1.000           | 1.000          |
+|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.910 |            0.944 |            0.942 |           1.000 | 1.000         | 1.000           | 1.000          |
+|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.923 |            0.941 |            0.944 |           1.000 | 1.000         | 1.000           | 1.000          |
+|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.911 |            0.923 |            0.923 |           1.000 | 0.979         | 1.000           | 1.000          |
+|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.823 |            0.886 |            0.884 |           0.940 | 0.884         | 1.000           | 0.883          |
 
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
@@ -345,11 +374,9 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 
-
 </details>
 
 ## References
-Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
 # Ontolearn
@@ -361,6 +388,19 @@ If you find our work useful in your research, please consider citing the respect
   number={63},
   pages={1--6},
   year={2025}
+}
+
+# TDL
+@InProceedings{10.1007/978-3-032-06066-2_29,
+author={Demir, Caglar and Yekini, Moshood and R{\"o}der, Michael and Mahmood, Yasir and Ngonga Ngomo, Axel-Cyrille},
+editor={Ribeiro, Rita P. and Pfahringer, Bernhard and Japkowicz, Nathalie and Larra{\~{n}}aga, Pedro and Jorge, Al{\'i}pio M. and Soares, Carlos and Abreu, Pedro H. and Gama, Jo{\~a}o},
+title={Tree-Based OWL Class Expression Learner over Large Graphs},
+booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track},
+year={2026},
+publisher={Springer Nature Switzerland},
+address={Cham},
+pages={495--511},
+isbn={978-3-032-06066-2}
 }
 
 # ROCES
@@ -428,6 +468,18 @@ address="Cham"
   year={2022},
   publisher={Springer Nature Switzerland}
 }
+
+# NERO
+@InProceedings{10.1007/978-3-031-30047-9_9,
+author="Demir, Caglar and Ngonga Ngomo, Axel-Cyrille",
+title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
+booktitle="Advances in Intelligent Data Analysis XXI",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="103--115"
+}
+
 ```
 
-In case you have any question, please contact: ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
+In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.

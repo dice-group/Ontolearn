@@ -26,7 +26,7 @@
 from collections import defaultdict
 from itertools import chain
 import random
-from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator
+from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator, Tuple
 
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, \
     OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, OWLObjectUnionOf, OWLClass, \
@@ -36,6 +36,7 @@ from owlapy.owl_individual import OWLIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectInverseOf, OWLDataProperty, \
     OWLDataPropertyExpression, OWLObjectProperty
+from owlapy.render import DLSyntaxObjectRenderer
 
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
 from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
@@ -44,6 +45,8 @@ from owlapy.vocab import OWLFacet
 from .abstracts import BaseRefinement, AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from .knowledge_base import KnowledgeBase
+from .nero_utils import AtomicExpression, ExistentialQuantifierExpression, ClassExpression, \
+    ComplementOfAtomicExpression, UniversalQuantifierExpression, UnionClassExpression, IntersectionClassExpression, Role
 from .search import OENode
 
 
@@ -189,7 +192,7 @@ class LengthBasedRefinement(BaseRefinement):
         yield from (OWLObjectSomeValuesFrom(property=owl_obj_property,
                                             filler=C) for C in self.refine(class_expression.get_filler()))
         if self.use_nominals:
-            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+            for owl_named_individual in self.kb.individuals(class_expression):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
 
@@ -204,7 +207,7 @@ class LengthBasedRefinement(BaseRefinement):
         yield from (OWLObjectAllValuesFrom(property=owl_obj_property, filler=C) for C in
                     self.refine(class_expression.get_filler()))
         if self.use_nominals:
-            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+            for owl_named_individual in self.kb.individuals(class_expression):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
 
@@ -1165,3 +1168,250 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield from self.refine_data_has_value(ce)
         else:
             raise ValueError(f"{type(ce)} objects are not yet supported")
+
+
+class NERORefinement(BaseRefinement):
+    """
+    A custom refinement operator for NERO that generates candidate class expressions.
+    This is a faithful implementation of SimpleRefinement from the original NERO.
+    """
+    def __init__(self, knowledge_base: KnowledgeBase, fast_init=False):
+        super().__init__(knowledge_base)
+        self.renderer = DLSyntaxObjectRenderer()
+        self.N_I = {i.str for i in self.kb.individuals(OWLThing)}  # All individuals
+        self.expressions = {}  # str -> ClassExpression
+        self.str_nc_star = None
+        self.dict_sh_direct_down = {}  # subsumption hierarchy down
+        self.dict_sh_direct_up = {}  # subsumption hierarchy up
+        self.fast_init = fast_init
+        self.length_to_expression_str = {}
+        self.str_ae_to_neg_ae = {}  # atomic expression name -> negated expression
+        self.top_refinements = {}  # length -> set of expressions
+
+        self._prepare()
+
+    def _prepare(self):
+        """Materialize KB to subsumption hierarchy and create all basic expressions."""
+        # Get all named classes including Top and Bottom
+        nc_top_bot = list(self.kb.class_hierarchy.sub_classes(OWLThing, direct=False))
+
+        # Initialize length dictionaries
+        self.length_to_expression_str.setdefault(1, set())
+        self.length_to_expression_str.setdefault(2, set())
+        self.length_to_expression_str.setdefault(3, set())
+
+        # (1) Create atomic expressions for all named classes + Top + Bottom
+        for atomic_owl_class in [OWLThing, OWLNothing] + nc_top_bot:
+            # Create atomic expression
+            target = AtomicExpression(
+                name=self.renderer.render(atomic_owl_class),
+                str_individuals={i.str for i in self.kb.individuals(atomic_owl_class)},
+                expression_chain=tuple(
+                    self.renderer.render(x) for x in self.kb.get_direct_parents(atomic_owl_class)
+                )
+            )
+            self._store(target, length=1)
+
+            # (1.3) Create universal restrictions: ∀r.C
+            for mgur in self.kb.most_general_universal_restrictions(domain=OWLThing, filler=atomic_owl_class):
+                filler = self.expressions[self.renderer.render(mgur.get_filler())]
+                role = Role(name=self.renderer.render(mgur.get_property()))
+                target = UniversalQuantifierExpression(
+                    name=self.renderer.render(mgur),
+                    role=role,
+                    filler=filler,
+                    str_individuals={i.str for i in self.kb.individuals(mgur)},
+                    expression_chain=(self.renderer.render(OWLThing),)
+                )
+                self._store(target, length=3)
+
+            # (1.4) Create existential restrictions: ∃r.C
+            for mger in self.kb.most_general_existential_restrictions(domain=OWLThing, filler=atomic_owl_class):
+                filler = self.expressions[self.renderer.render(mger.get_filler())]
+                role = Role(name=self.renderer.render(mger.get_property()))
+                target = ExistentialQuantifierExpression(
+                    name=self.renderer.render(mger),
+                    role=role,
+                    filler=filler,
+                    str_individuals={i.str for i in self.kb.individuals(mger)},
+                    expression_chain=(self.renderer.render(OWLThing),)
+                )
+                self._store(target, length=3)
+
+        if not self.fast_init:
+            # (2) Construct subsumption hierarchy (sh_down and sh_up)
+            for k, v in self.expressions.items():
+                self.dict_sh_direct_down.setdefault(k, set())
+                if len(v.expression_chain) == 0:
+                    v.expression_chain = (self.renderer.render(OWLThing),)
+                assert len(v.expression_chain) > 0
+
+                for x in v.expression_chain:
+                    self.dict_sh_direct_down.setdefault(x, set()).add(k)
+                    self.dict_sh_direct_up.setdefault(k, set()).add(x)
+
+            # Remove self-loop: sh_down(T) => T
+            if '⊤' in self.dict_sh_direct_down:
+                self.dict_sh_direct_down['⊤'].discard('⊤')
+
+            # Fill top refinements: direct children of Top
+            if '⊤' in self.dict_sh_direct_down:
+                for i in self.dict_sh_direct_down['⊤']:
+                    ref = self.expressions[i]
+                    self.top_refinements.setdefault(ref.length, set()).add(ref)
+
+            # Create negations of leaf nodes (concepts with Bottom as child)
+            for i in self._expression_given_length(1):
+                if i.name in ['⊤', '⊥']:
+                    continue
+                if '⊥' in self.dict_sh_direct_down.get(i.name, set()):
+                    neg_i = ComplementOfAtomicExpression(
+                        name='¬' + i.name,
+                        atomic_expression=i,
+                        str_individuals=self.N_I.difference(i.str_individuals),
+                        expression_chain=(self.renderer.render(OWLThing),)
+                    )
+                    self._store(neg_i, length=2)
+                    self.str_ae_to_neg_ae[i.name] = neg_i
+                    self.top_refinements.setdefault(neg_i.length, set()).add(neg_i)
+
+            self.str_nc_star = set(self.expressions.keys())
+        else:
+            # Fast init: create all negations
+            for i in self._expression_given_length(1):
+                if i.name in ['⊤', '⊥']:
+                    continue
+                neg_i = ComplementOfAtomicExpression(
+                    name='¬' + i.name,
+                    atomic_expression=i,
+                    str_individuals=self.N_I.difference(i.str_individuals),
+                    expression_chain=(self.renderer.render(OWLThing),)
+                )
+                self._store(neg_i, length=2)
+
+    def _store(self, target: ClassExpression, length: int) -> None:
+        """Store an expression indexed by its length."""
+        self.expressions[target.name] = target
+        self.length_to_expression_str.setdefault(length, set()).add(target)
+
+    def _expression_given_length(self, length: int) -> List[ClassExpression]:
+        """Get all expressions of a given length."""
+        if length in self.length_to_expression_str:
+            return list(self.length_to_expression_str[length])
+        else:
+            return []
+
+    def _negate_atomic_class(self, i: AtomicExpression) -> ComplementOfAtomicExpression:
+        """Negate an atomic class expression."""
+        neg_i = ComplementOfAtomicExpression(
+            name='¬' + i.name,
+            atomic_expression=i,
+            str_individuals=self.N_I.difference(i.str_individuals),
+            expression_chain=i.expression_chain
+        )
+        self._store(neg_i, length=2)
+        self.str_ae_to_neg_ae[i.name] = neg_i
+        return neg_i
+
+    def _sh_down(self, atomic_class_expression: AtomicExpression) -> List[AtomicExpression]:
+        """Return direct sub-concepts in subsumption hierarchy."""
+        res = []
+        for str_ in self.dict_sh_direct_down.get(atomic_class_expression.name, []):
+            res.append(self.expressions[str_])
+        return res
+
+    def _sh_up(self, atomic_class_expression: AtomicExpression) -> List[AtomicExpression]:
+        """Return direct super-concepts in subsumption hierarchy."""
+        res = []
+        for str_ in self.dict_sh_direct_up.get(atomic_class_expression.name, []):
+            res.append(self.expressions[str_])
+        return res
+
+    def _intersect_with_top(self, res: List[ClassExpression]):
+        """Intersect given expressions with refinements of Top."""
+        for k_length_int, refinements_top in self.top_refinements.items():
+            for ref_top in refinements_top:
+                for j in res:
+                    if (len(j.str_individuals) > 0 and
+                        len(ref_top.str_individuals.intersection(j.str_individuals)) > 0):
+                        ref_top_and_j = ref_top * j  # Use __mul__ operator
+                        if ref_top_and_j.length == 3:
+                            self.top_refinements.setdefault(ref_top_and_j.length, set()).add(ref_top_and_j)
+                        yield ref_top_and_j
+
+    def _refine_atomic_concept(self, atomic_class_expression: AtomicExpression):
+        """Refine atomic concept: {A' | A' ∈ sh_down(A)} ∪ {A ⊓ D | D ∈ ρ(⊤)}"""
+        yield from self._sh_down(atomic_class_expression)
+        yield from self._intersect_with_top([atomic_class_expression])
+
+    def _refine_complement_of(self, neg_atomic_expression: ComplementOfAtomicExpression):
+        """Refine negation: {¬A' | A' ∈ sh_↑(A)} ∪ {¬A ⊓ D | D ∈ ρ(⊤)}"""
+        atomic_class_expression = neg_atomic_expression.atomic_expression
+        res = []
+        for ae in self._sh_up(atomic_class_expression):
+            if ae.name in self.str_ae_to_neg_ae:
+                res.append(self.str_ae_to_neg_ae[ae.name])
+            else:
+                # Create negation on the fly if not exists
+                neg_ae = self._negate_atomic_class(ae)
+                res.append(neg_ae)
+        yield from res
+        yield from self._intersect_with_top(res)
+
+    def _refine_universal_quantifier(self, uqe: UniversalQuantifierExpression):
+        """Refine universal quantifier: {∀r.D ⊓ E | E ∈ ρ(⊤)}"""
+        yield from self._intersect_with_top([uqe])
+
+    def _refine_existential_quantifier(self, eqe: ExistentialQuantifierExpression):
+        """Refine existential quantifier: {∃r.D ⊓ E | E ∈ ρ(⊤)}"""
+        yield from self._intersect_with_top([eqe])
+
+    def _refine_union_or_intersection(self, x, operator):
+        """Refine union or intersection by refining operands."""
+        a, b = x.concepts
+
+        # Refine left operand
+        for refined_a in self.refine(a):
+            if (len(refined_a.str_individuals) > 0 and
+                len(refined_a.str_individuals.intersection(b.str_individuals)) > 0):
+                yield operator(refined_a, b)
+
+        # Refine right operand
+        for refined_b in self.refine(b):
+            if (len(refined_b.str_individuals) > 0 and
+                len(refined_b.str_individuals.intersection(a.str_individuals)) > 0):
+                yield operator(a, refined_b)
+
+    def _refine_union_expression(self, ue: UnionClassExpression):
+        """Refine union expression."""
+        yield from self._refine_union_or_intersection(ue, operator=lambda x, y: x + y)
+
+    def _refine_intersection_expression(self, ie: IntersectionClassExpression):
+        """Refine intersection expression."""
+        yield from self._refine_union_or_intersection(ie, operator=lambda x, y: x * y)
+
+    def refine(self, class_expression: ClassExpression) -> List[ClassExpression]:
+        """
+        Generate refinements for a given class expression.
+        This implements the full refinement logic from the original NERO.
+        """
+        refinements = []
+
+        if isinstance(class_expression, AtomicExpression):
+            refinements = list(self._refine_atomic_concept(class_expression))
+        elif isinstance(class_expression, ComplementOfAtomicExpression):
+            refinements = list(self._refine_complement_of(class_expression))
+        elif isinstance(class_expression, UniversalQuantifierExpression):
+            refinements = list(self._refine_universal_quantifier(class_expression))
+        elif isinstance(class_expression, ExistentialQuantifierExpression):
+            refinements = list(self._refine_existential_quantifier(class_expression))
+        elif isinstance(class_expression, UnionClassExpression):
+            refinements = list(self._refine_union_expression(class_expression))
+        elif isinstance(class_expression, IntersectionClassExpression):
+            refinements = list(self._refine_intersection_expression(class_expression))
+        else:
+            # Unknown type, return empty list
+            refinements = []
+
+        return refinements
+

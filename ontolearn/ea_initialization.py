@@ -359,7 +359,9 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_object_terminal(self, expr: Tree, pset: PrimitiveSetTyped, type_: OWLClass):
         for t in pset.terminals[OWLClassExpression]:
-            if t.name == escape(type_.iri.get_remainder()):
+            # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+            # remainder but different namespaces
+            if t.name == escape(type_.str):
                 expr.append(t)
                 return
 
@@ -371,6 +373,8 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_primitive(self, expr: Tree, pset: PrimitiveSetTyped, property_: Property, vocab: OperatorVocabulary):
         for p in pset.primitives[OWLClassExpression]:
-            if p.name == vocab + escape(property_.iri.get_remainder()):
+            # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+            # remainder but different namespaces
+            if p.name == vocab + escape(property_.str):
                 expr.append(p)
                 return

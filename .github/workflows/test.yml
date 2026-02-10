@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.10.14"]
+        python-version: ["3.11.14"]
       max-parallel: 5
 
     steps:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff check ontolearn/learners/ --line-length=200
+          ruff check ontolearn/learners --exclude ontolearn/learners/spell_kit --line-length=200
 
       - name: Get external files
         run: |
@@ -73,5 +73,5 @@ jobs:
       - name: Testing and coverage report
         run: | 
           pip install coverage
-          coverage run -m pytest -p no:warnings -x
+          coverage run -m pytest -p no:warnings -x --durations=0
           coverage report -m

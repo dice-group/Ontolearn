@@ -1,6 +1,6 @@
 # About Ontolearn
 
-**Version:** ontolearn 0.9.2
+**Version:** ontolearn 0.10.0
 
 **GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
@@ -20,25 +20,25 @@ One of OntoLearn’s key contributions is its exclusive concept learning algorit
 Logics (DL). The library currently includes nine fully functional algorithms capable of learning complex concepts in DL. 
 For further details and references, relevant research papers can be found [here](09_further_resources.md).
 
-At the core of OntoLearn lies [Owlapy]((https://github.com/dice-group/owlapy)), a Python package inspired by the OWL API (its Java counterpart) and developed by 
+At the core of OntoLearn lies [OWLAPY](https://github.com/dice-group/owlapy), a Python package inspired by the OWL API (its Java counterpart) and developed by 
 the OntoLearn team. To enhance modularity, readability, and maintainability, we have separated Owlapy from Ontolearn into an 
 independent repository. This modular approach allows Owlapy to serve not only as a framework for representing OWL 2 
 entities, but also as a tool for ontology manipulation and reasoning.
 
 ---------------------------------------
 
-**Ontolearn (including owlapy and ontosample) can do the following:**
+**Ontolearn offers:**
 
-- **Use concept learning algorithms to generate hypotheses for classifying positive examples in a learning problem**.
-- **Use local datasets or datasets that are hosted on a triplestore server, for the learning task.**
-- Construct/Generate class expressions and evaluate them using different metrics.
-- Define learning problems.
-- Load/create/save ontologies in RDF/XML, OWL/XML.
-- Modify ontologies by adding/removing axioms.
-- Access individuals/classes/properties of an ontology (and a lot more).
-- Reason over an ontology.
-- Convenient functionalities like converting OWL class expressions to SPARQL or DL syntax.
-- Sample ontologies.
+- **Diverse concept learning algorithms to generate hypotheses for classifying positive examples in a learning problem**.
+- **Support for local datasets and datasets hosted on triplestore servers.**
+- Perform operation on generated class expressions like evaluating them using different metrics, verbalizing, etc.
+- Generate learning problems.
+- An extensible and modular architecture that allows easy integration of new algorithms and functionalities.
+
+Via [OWLAPY](https://github.com/dice-group/owlapy) you can also perform ontology manipulations and reasoning.
+
+[OntoSample](https://github.com/alkidbaci/OntoSample) is another library closely related with the task of concept learning, where sampling is used 
+to accelerate the learning process.
 
 ------------------------------------
 

@@ -34,7 +34,6 @@ from typing import TypeVar, List, Optional, Union
 import pandas as pd
 
 from ontolearn.learners.tree_learner import TDL
-from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
@@ -42,9 +41,10 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
 
 from ontolearn.abstracts import AbstractNode
-from ontolearn.base_concept_learner import BaseConceptLearner
+from ontolearn.learners.base import BaseConceptLearner
+from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from .learners import CELOE, OCEL
-from ontolearn.concept_learner import EvoLearner, NCES
+from ontolearn.learners import EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, EARandomInitialization, RandomInitMethod
 from ontolearn.fitness_functions import LinearPressureFitness

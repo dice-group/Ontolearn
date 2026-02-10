@@ -23,14 +23,12 @@
 # -----------------------------------------------------------------------------
 from abc import abstractmethod
 
-import pandas as pd
 import json
-from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass
-from owlapy.iri import IRI
+from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 
-from ontolearn.base_concept_learner import RefinementBasedConceptLearner
+from .base import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
 from ontolearn.search import RL_State
@@ -90,11 +88,14 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         self.name = "DRILL"
         self.verbose = verbose
         self.learning_problem = None
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
                 print("Reading Embeddings...", end="\t")
-            self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
+            self.df_embeddings = read_csv(path_embeddings).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
             if self.verbose > 0:
                 print(self.df_embeddings.shape)
@@ -152,7 +153,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                  model_args={'input_shape': (4, self.embedding_dim),
                                                              'first_out_channels': 32,
                                                              'second_out_channels': 16, 'third_out_channels': 8,
-                                                             'kernel_size': 3})
+                                                             'kernel_size': 3},
+                                                 device=self.device)
             self.experiences = Experience(maxlen=self.max_len_replay_memory)
             if self.learning_rate:
                 self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
@@ -189,8 +191,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         self.pos = pos
         self.neg = neg
 
-        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos])
-        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg])
+        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos]).to(self.device)
+        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg]).to(self.device)
 
         # (3) Initialize the root state of the quasi-ordered RL env.
         # print("Initializing Root RL state...", end=" ")
@@ -301,7 +303,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     print("No loading because embeddings not provided")
                 else:
                     print("Loading pretrained DQL Agent...", end="")
-                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
+                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", self.device))
                     print(self.heuristic_func.net)
             else:
                 print(f"{directory} is not found...")
@@ -347,7 +349,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
         for _ in make_iterable_verbose(range(0, self.iter_bound),
                                        verbose=self.verbose,
-                                       desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
+                                       desc=f"Learning OWL Class Expression with at most {self.iter_bound} iterations"):
             assert len(self.search_tree) > 0, "Search Tree cannot be empty!"
             self.search_tree.show_current_search_tree()
             # (6.1) Get the most fitting RL-state.
@@ -356,6 +358,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # (6.2) Checking the runtime termination criterion.
             if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
+            # (6.2.1) Checking the max_num_of_concepts_tested termination criterion.
+            if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
             # (6.3) Refine (6.1)
             # Convert this into tqdm with an update ?!
             for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
@@ -363,6 +368,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                           position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
+                    break
+                # (6.3.1.1) Checking the max_num_of_concepts_tested termination criterion.
+                if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
                     break
                 # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
@@ -403,7 +411,6 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # @TODO: CD: Why not use self.get_embeddings_individuals(pos_uri)
             self.pos = pos_uri
             self.neg = neg_uri
-
             self.emb_pos = torch.from_numpy(self.df_embeddings.loc[
                                                 [owl_individual.str.strip() for owl_individual in
                                                  pos_uri]].values)
@@ -440,16 +447,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (3) Increment the number of tested concepts attribute.
 
         """
-        if isinstance(self.kb, TripleStore):
-            c = state.concept
-            if c is OWLThing:
-                tp = list(self.kb.reasoner.types(list(self.pos)[0], True))  # get types of a lp example
-                if OWLThing not in tp:  # if owl:Thing not explicitly specified check for owl:NamedIndividual
-                    named_individual = OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'NamedIndividual'))
-                    if named_individual in tp:
-                        c = named_individual
-
-            sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=c, positive_examples=self.pos,
+        if isinstance(self.kb, TripleStore) and state.concept is not OWLThing:
+            sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=state.concept, positive_examples=self.pos,
                                                                           negative_examples=self.neg)
             bindings = self.kb.query(sparql_query).json()["results"]["bindings"]
             assert len(bindings) == 1
@@ -458,8 +457,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             quality = self.quality_func(confusion_matrix=confusion_matrix)
 
         else:
-            individuals = frozenset([i for i in self.kb.individuals(state.concept)])
-            quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
+            individuals = frozenset([i for i in self.kb.individuals(state.concept,True)])
+            quality = compute_f1_score(individuals=individuals, pos=self.pos, neg=self.neg)
         state.quality = quality
         self._number_of_tested_concepts += 1
 
@@ -529,10 +528,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         next_state_batch: List[torch.FloatTensor]
         current_state_batch, next_state_batch, y = self.experiences.retrieve()
         # N, 1, dim
-        current_state_batch = torch.cat(current_state_batch, dim=0)
+        current_state_batch = torch.cat(current_state_batch, dim=0).to(self.device)
         # N, 1, dim
-        next_state_batch = torch.cat(next_state_batch, dim=0)
-        y = torch.Tensor(y)
+        next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
+        y = torch.Tensor(y).to(self.device)
 
         try:
             assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
@@ -557,7 +556,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             current_state_batch,
             next_state_batch,
             self.emb_pos.repeat((num_next_states, 1, 1)),
-            self.emb_neg.repeat((num_next_states, 1, 1))], 1)
+            self.emb_neg.repeat((num_next_states, 1, 1))], 1).to(self.device)
 
         self.heuristic_func.net.train()
         total_loss = 0
@@ -603,18 +602,18 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     def get_embeddings_individuals(self, individuals: List[str]) -> torch.FloatTensor:
         assert isinstance(individuals, list)
         if len(individuals) == 0:
-            emb = torch.zeros(1, 1, self.embedding_dim)
+            emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         else:
             if self.df_embeddings is not None:
                 assert isinstance(individuals[0], str)
-                emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values, ), dim=0)
+                emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values), dim=0).to(self.device)
                 emb = emb.view(1, 1, self.embedding_dim)
             else:
-                emb = torch.zeros(1, 1, self.embedding_dim)
+                emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
-        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept)]
+        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept, True)]
 
     def assign_embeddings(self, rl_state: RL_State) -> None:
         """
@@ -667,8 +666,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         (4) Return next state.
         """
         # predictions: torch.Size([len(next_states)])
-        predictions: torch.FloatTensor = self.predict_values(current_state, next_states)
-        argmax_id = int(torch.argmax(predictions))
+        predictions: torch.FloatTensor = self.predict_values(current_state, next_states).to(self.device)
+        argmax_id = int(torch.argmax(predictions).to(self.device))
         next_state = next_states[argmax_id]
         return next_state
 
@@ -687,7 +686,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             next_state_batch = []
             for _ in next_states:
                 next_state_batch.append(self.get_embeddings_individuals(self.get_individuals(_)))
-            next_state_batch = torch.cat(next_state_batch, dim=0)
+            next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
             x = PrepareBatchOfPrediction(self.get_embeddings_individuals(self.get_individuals(current_state)),
                                          next_state_batch,
                                          self.emb_pos,
@@ -713,61 +712,84 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
             Time complexity: O(n^2) n = named concepts
         """
-        counter = 0
-        size_of_examples = 3
-        examples = []
-        # C: Iterate over all named OWL concepts
+        # Initialize counters and containers
+        counter = 0   
+        size_of_examples = 3  # Minimum number of examples required for positive/negative sets
+        examples = []   
+         # C: Iterate over all named OWL concepts
         for i in self.kb.get_concepts():
-            # Retrieve(C)
-            individuals_i = set(self.kb.individuals(i))
+            # Retrieve all individuals that belong to concept i (positive examples)
+            individuals_i = set(self.kb.individuals(i, True))
+            
+            # Skip concepts with insufficient individuals for sampling
             if len(individuals_i) < size_of_examples:
                 continue
+                
             for j in self.kb.get_concepts():
+                # Skip if same concept (can't use same concept for both positive and negative examples)
                 if i == j:
                     continue
                 str_dl_concept_i = owl_expression_to_dl(i)
-                individuals_j = set(self.kb.individuals(j))
+                
+                # Retrieve all individuals that belong to concept j (negative examples)
+                individuals_j = set(self.kb.individuals(j, True))
+                
+                # Skip concepts with insufficient individuals for sampling
                 if len(individuals_j) < size_of_examples:
                     continue
 
                 # Generate Learning problems from a single target
                 for _ in range(num_of_target_concepts):
+                    # Randomly sample positive examples from concept i
                     sampled_positives = set(random.sample(individuals_i, size_of_examples))
+                    
+                    # Randomly sample negative examples from concept j
                     sampled_negatives = set(random.sample(individuals_j, size_of_examples))
-                    if sampled_negatives== sampled_positives:
+                    
+                    # Validate that positive and negative examples are different
+                    if sampled_negatives == sampled_positives:
                         print("Sampled Positives and negatives are same. We need to ignore this example")
                         continue
-                    lp = (str_dl_concept_i,sampled_positives,sampled_negatives)
+                     
+                    lp = (str_dl_concept_i, sampled_positives, sampled_negatives)
                     examples.append(lp)
                     counter += 1
+                    
+                    # Break innermost loop: Stop sampling from this concept pair
                     if counter == num_learning_problems:
                         break
 
+                # Break middle loop: Stop iterating through concept j for this concept i
                 if counter == num_learning_problems:
                     break
+                    
+            # Break outermost loop: Stop iterating through all concepts i
+            if counter == num_learning_problems:
+                    break
+                
+        # Return the generated learning problems
+        return examples
+        """
+        # if |Retrieve(C|>3
+        if len(individuals_i) > size_of_examples:
+            str_dl_concept_i = owl_expression_to_dl(i)
+            for j in self.kb.get_concepts():
+                if i == j:
+                    continue
+                individuals_j = set(self.kb.individuals(j))
+                if len(individuals_j) > size_of_examples:
+                    for _ in range(num_learning_problems):
+                        lp = (str_dl_concept_i,
+                                set(random.sample(individuals_i, size_of_examples)),
+                                set(random.sample(individuals_j, size_of_examples)))
+                        yield lp
 
-            return examples
-            """
-            # if |Retrieve(C|>3
-            if len(individuals_i) > size_of_examples:
-                str_dl_concept_i = owl_expression_to_dl(i)
-                for j in self.kb.get_concepts():
-                    if i == j:
-                        continue
-                    individuals_j = set(self.kb.individuals(j))
-                    if len(individuals_j) > size_of_examples:
-                        for _ in range(num_learning_problems):
-                            lp = (str_dl_concept_i,
-                                  set(random.sample(individuals_i, size_of_examples)),
-                                  set(random.sample(individuals_j, size_of_examples)))
-                            yield lp
-
-                    counter += 1
-                    if counter == num_of_target_concepts:
-                        break
+                counter += 1
                 if counter == num_of_target_concepts:
                     break
-            """
+            if counter == num_of_target_concepts:
+                break
+        """
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """
@@ -796,7 +818,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
     def best_hypotheses(self, n=1, return_node: bool = False) -> Union[OWLClassExpression, List[OWLClassExpression]]:
         assert self.search_tree is not None, "Search tree is not initialized"
-        assert len(self.search_tree) > 1, "Search tree is empty"
+        assert len(self.search_tree) >= 1, "Search tree is empty"
 
         result = []
         for i, rl_state in enumerate(self.search_tree.get_top_n_nodes(n)):
@@ -854,21 +876,22 @@ class DrillHeuristic:  # pragma: no cover
     Heuristic implements a convolutional neural network.
     """
 
-    def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None):
+    def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None, device=None):
         if model:
             self.net = model
         elif mode in ['averaging', 'sampling']:
-            self.net = DrillNet(model_args)
+            self.net = DrillNet(model_args, device)
             self.mode = mode
             self.name = 'DrillHeuristic_' + self.mode
         else:
             raise ValueError
         self.net.eval()
+        self.device = device
 
     def score(self, node, parent_node=None):
         """ Compute heuristic value of root node only"""
         if parent_node is None and node.is_root:
-            return torch.FloatTensor([.0001]).squeeze()
+            return torch.FloatTensor([.0001], device=self.device).squeeze()
         raise ValueError
 
     def apply(self, node, parent_node=None):
@@ -894,35 +917,35 @@ class DrillNet(torch.nn.Module):  # pragma: no cover
 
     """
 
-    def __init__(self, args):
+    def __init__(self, args, device):
         super(DrillNet, self).__init__()
         self.in_channels, self.embedding_dim = args['input_shape']
         assert self.embedding_dim
-
-        self.loss = torch.nn.MSELoss()
+        self.device = device
+        self.loss = torch.nn.MSELoss().to(self.device)
         # Conv1D seems to be faster than Conv2d
         self.conv1 = torch.nn.Conv1d(in_channels=4,
                                      out_channels=args['first_out_channels'],
                                      kernel_size=args['kernel_size'],
-                                     padding=1, stride=1, bias=True)
+                                     padding=1, stride=1, bias=True, device=self.device)
 
         # Fully connected layers.
         self.size_of_fc1 = int(args['first_out_channels'] * self.embedding_dim)
-        self.fc1 = torch.nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2)
-        self.fc2 = torch.nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1)
+        self.fc1 = torch.nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2, device=self.device)
+        self.fc2 = torch.nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1, device=self.device)
 
         self.init()
 
     def init(self):
-        torch.nn.init.xavier_normal_(self.fc1.weight.data)
-        torch.nn.init.xavier_normal_(self.conv1.weight.data)
+        torch.nn.init.xavier_normal_(self.fc1.weight.data).to(self.device)
+        torch.nn.init.xavier_normal_(self.conv1.weight.data).to(self.device)
 
     def forward(self, X: torch.FloatTensor):
         """
         X  n by 4 by d float tensor
         """
         # N x 32 x D
-        X = torch.nn.functional.relu(self.conv1(X))
+        X = torch.nn.functional.relu(self.conv1(X)).to(self.device)
         X = X.flatten(start_dim=1)
         # N x (32D/2)
         X = torch.nn.functional.relu(self.fc1(X))

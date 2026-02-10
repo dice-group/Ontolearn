@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'Ontolearn'
-copyright = '2021-2024, The Ontolearn team'
+copyright = '2021-2026, The Ontolearn team'
 author = 'Ontolearn team'
 
 # -- General configuration ---------------------------------------------------
@@ -25,15 +25,27 @@ author = 'Ontolearn team'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'autoapi.extension',
-    'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinxcontrib.plantuml',
-    'myst_parser',
-    'sphinx_rtd_theme',
+extensions = ["autoapi.extension",
+              "sphinx.ext.githubpages",
+              "sphinx.ext.todo",
+              "sphinx.ext.napoleon",
+              "sphinx.ext.viewcode",
+              "sphinx.ext.autodoc",
+              "sphinxcontrib.plantuml",
+              "myst_parser",
+              "sphinx_rtd_theme",
+              "sphinx.ext.mathjax",
+              ]
+
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+    "colon_fence",
+    "deflist",
 ]
+
+mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+
 
 # autoapi for ontolearn and owlapy. for owlapy we need to refer to its path in GitHub Action environment
 autoapi_dirs = ['../ontolearn',
@@ -49,11 +61,6 @@ autoapi_add_toctree_entry = False
 
 
 inheritance_graph_attrs = dict(rankdir="TB")
-
-myst_enable_extensions = [
-    'colon_fence',
-    'deflist',
-]
 
 myst_heading_anchors = 3
 

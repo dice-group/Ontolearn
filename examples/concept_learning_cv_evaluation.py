@@ -8,10 +8,11 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 import json
 import time
 import os
+from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
-from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
+from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP, ALCSAT, SPELL, NERO
+from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
@@ -19,10 +20,34 @@ from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
-
 from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
+
+def parse_boolean_arg(arg_value: Union[str, bool]) -> bool:
+    """
+    Convert a string or boolean input into a proper boolean value.
+
+    Args:
+        arg_value (Union[str, bool]): The input value.
+            Acceptable string values (case-insensitive) for True: "yes", "true", "1"
+            Acceptable string values (case-insensitive) for False: "no", "false", "0"
+
+    Returns:
+        bool: The parsed boolean value.
+
+    Raises:
+        ValueError: If the input cannot be interpreted as a boolean.
+    """
+    if isinstance(arg_value, bool):
+        return arg_value
+    if isinstance(arg_value, str):
+        lowered = arg_value.lower()
+        if lowered in ('yes', 'true', '1'):
+            return True
+        elif lowered in ('no', 'false', '0'):
+            return False
+    raise ValueError('Boolean value expected (true/false).')
 
 def dl_concept_learning(args):
     args.kb = os.path.abspath(args.kb)
@@ -54,31 +79,34 @@ def dl_concept_learning(args):
                 verbose=0)
         
     if not args.learner_types or 'nces' in args.learner_types:
-        nces = NCES(knowledge_base_path=args.kb,
+        nces = NCES(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_embeddings=args.path_of_nces_embeddings,
                     path_of_trained_models=args.path_of_nces_trained_models,
                     learner_names=["LSTM", "GRU", "SetTransformer"],
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'nces2' in args.learner_types:
-        nces2 = NCES2(knowledge_base_path=args.kb,
+        nces2 = NCES2(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_nces2_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'roces' in args.learner_types:
-        roces = ROCES(knowledge_base_path=args.kb,
+        roces = ROCES(knowledge_base=kb,
                     k=50,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_roces_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'clip' in args.learner_types:
         clip = CLIP(knowledge_base=kb,
@@ -87,6 +115,26 @@ def dl_concept_learning(args):
                     max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                     path_of_embeddings=args.path_of_clip_embeddings,
                     pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
+
+    if not args.learner_types or 'alcsat' in args.learner_types:
+        alcsat = ALCSAT(knowledge_base=kb,
+                        max_runtime=args.max_runtime,
+                        max_concept_size=30)
+
+    if not args.learner_types or 'spell' in args.learner_types:
+        spell = SPELL(knowledge_base=kb,
+                      max_runtime=args.max_runtime,
+                      max_query_size=10,
+                      search_mode="full_approx")
+
+    if not args.learner_types or 'nero' in args.learner_types:
+        nero = NERO(knowledge_base=kb,
+                    num_embedding_dim=128,
+                    neural_architecture='DeepSet',
+                    learning_rate=0.001,
+                    num_epochs=50,
+                    batch_size=32
+                )
 
     # dictionary to store the data
     data = dict()
@@ -98,6 +146,7 @@ def dl_concept_learning(args):
         problems = settings.items()
         positives_key = "positive examples"
         negatives_key = "negative examples"
+
     for str_target_concept, examples in problems:
         print('Target concept: ', str_target_concept)
         p = examples[positives_key]
@@ -126,6 +175,7 @@ def dl_concept_learning(args):
             # Sanity checking for individuals used for testing.
             assert test_pos.issubset(examples[positives_key])
             assert test_neg.issubset(examples[negatives_key])
+
             train_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in train_pos},
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
@@ -274,7 +324,6 @@ def dl_concept_learning(args):
                 print(f"NCES Runtime: {rt_nces:.3f}")
 
             if not args.learner_types or 'nces2' in args.learner_types:
-                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_nces2 = nces2.fit(train_lp).best_hypotheses(n=1)
@@ -299,7 +348,6 @@ def dl_concept_learning(args):
                 ##
 
             if not args.learner_types or 'roces' in args.learner_types:
-                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_roces = roces.fit(train_lp).best_hypotheses(n=1)
@@ -344,6 +392,74 @@ def dl_concept_learning(args):
                 print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
                 print(f"CLIP Runtime: {rt_clip:.3f}")
 
+            if not args.learner_types or 'alcsat' in args.learner_types:
+                print("ALCSAT starts..", end="\t")
+                start_time = time.time()
+                pred_alcsat = alcsat.fit(train_lp).best_hypothesis()
+                rt_alcsat = time.time() - start_time
+                print("ALCSAT ends..", end="\t")
+                # () Quality on the training data
+                train_f1_alcsat = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_alcsat)}),
+                                                   pos=train_lp.pos,
+                                                   neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_alcsat = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_alcsat)}),
+                                                  pos=test_lp.pos,
+                                                  neg=test_lp.neg)
+
+                data.setdefault("Train-F1-ALCSAT", []).append(train_f1_alcsat)
+                data.setdefault("Test-F1-ALCSAT", []).append(test_f1_alcsat)
+                data.setdefault("RT-ALCSAT", []).append(rt_alcsat)
+                print(f"ALCSAT Train Quality: {train_f1_alcsat:.3f}", end="\t")
+                print(f"ALCSAT Test Quality: {test_f1_alcsat:.3f}", end="\t")
+                print(f"ALCSAT Runtime: {rt_alcsat:.3f}")
+
+            if not args.learner_types or 'spell' in args.learner_types:
+                print("SPELL starts..", end="\t")
+                start_time = time.time()
+                pred_spell = spell.fit(train_lp).best_hypothesis()
+                rt_spell = time.time() - start_time
+                print("SPELL ends..", end="\t")
+                # () Quality on the training data
+                train_f1_spell = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_spell)}),
+                                                  pos=train_lp.pos,
+                                                  neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_spell = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_spell)}),
+                                                 pos=test_lp.pos,
+                                                 neg=test_lp.neg)
+
+                data.setdefault("Train-F1-SPELL", []).append(train_f1_spell)
+                data.setdefault("Test-F1-SPELL", []).append(test_f1_spell)
+                data.setdefault("RT-SPELL", []).append(rt_spell)
+                print(f"SPELL Train Quality: {train_f1_spell:.3f}", end="\t")
+                print(f"SPELL Test Quality: {test_f1_spell:.3f}", end="\t")
+                print(f"SPELL Runtime: {rt_spell:.3f}")
+
+            if not args.learner_types or 'nero' in args.learner_types:
+                a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
+                ns = a_prop.iri.get_namespace()
+                nero.ns = ns
+                print("NERO starts..", end="\t")
+                start_time = time.time()
+                pred_nero = nero.fit(train_lp).best_hypothesis()
+                rt_nero = time.time() - start_time
+                print("NERO ends..", end="\t")
+                # () Quality on the training data
+                train_f1_nero = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nero)}),
+                                                 pos=train_lp.pos,
+                                                 neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_nero = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nero)}),
+                                                pos=test_lp.pos,
+                                                neg=test_lp.neg)
+
+                data.setdefault("Train-F1-NERO", []).append(train_f1_nero)
+                data.setdefault("Test-F1-NERO", []).append(test_f1_nero)
+                data.setdefault("RT-NERO", []).append(rt_nero)
+                print(f"NERO Train Quality: {train_f1_nero:.3f}", end="\t")
+                print(f"NERO Test Quality: {test_f1_nero:.3f}", end="\t")
+                print(f"NERO Runtime: {rt_nero:.3f}")
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
@@ -358,7 +474,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "alcsat", "spell", "nero"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
@@ -368,4 +484,8 @@ if __name__ == '__main__':
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
+
+    # valid neural concept guarantee
+    parser.add_argument("--enforce_validity", type=parse_boolean_arg, default=None,
+                    help="Use true/false to enable enforcement. If passed without value, defaults to True.")
     dl_concept_learning(parser.parse_args())
