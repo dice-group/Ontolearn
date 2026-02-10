@@ -260,13 +260,13 @@ class PruneCELWrapper:
                 # Get first row (should be the best hypothesis)
                 row = rows[0]
                 
-                # DEBUG: Print what we're actually getting
-                print(f"\n=== PruneCEL CSV Output Debug ===")
-                print(f"Available columns: {list(row.keys())}")
-                print(f"First 3 columns with values:")
-                for i, (k, v) in enumerate(list(row.items())[:3]):
-                    print(f"  {k}: {v[:200] if len(str(v)) > 200 else v}")
-                print(f"=================================\n")
+                
+                # print(f"\n=== PruneCEL CSV Output Debug ===")
+                # print(f"Available columns: {list(row.keys())}")
+                # print(f"First 3 columns with values:")
+                # for i, (k, v) in enumerate(list(row.items())[:3]):
+                #     print(f"  {k}: {v[:200] if len(str(v)) > 200 else v}")
+                # print(f"=================================\n")
                 
                 # Extract F1 score and other metrics from PruneCEL output
                 try:
@@ -359,6 +359,11 @@ class PruneCELWrapper:
         
         # Replace with just the fragment (short name) - group 1
         processed = re.sub(iri_pattern, r'\1', expression)
+        
+        # Replace "Thing" with "⊤" (OWL Thing symbol)
+        # PruneCEL outputs "Thing" but OWL parser expects "⊤"
+        # Use word boundaries to avoid replacing "Something", "Nothing", etc.
+        processed = re.sub(r'\bThing\b', '⊤', processed)
         
         # Add spaces around operators for the parser
         operators = ['⊓', '⊔', '∃', '∀', '≤', '≥', '=']

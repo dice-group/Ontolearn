@@ -50,6 +50,1317 @@ from .nero_utils import AtomicExpression, ExistentialQuantifierExpression, Class
 from .search import OENode
 
 
+
+
+
+
+
+class _PositionMarker(OWLClassExpression):
+    """
+    Position marker (μ) used in recursive refinement.
+    
+    This is a special placeholder concept that marks where new concepts
+    should be inserted during context-based refinement.
+    """
+    __slots__ = '_is_marker'
+    
+    def __init__(self):
+        self._is_marker = True
+    
+    def __eq__(self, other):
+        return isinstance(other, _PositionMarker)
+    
+    def __hash__(self):
+        return hash("__POSITION_MARKER__")
+    
+    def __repr__(self):
+        return "μ"
+    
+    def __str__(self):
+        return "μ"
+    
+    def is_owl_thing(self) -> bool:
+        """Position marker is not OWL Thing."""
+        return False
+    
+    def is_owl_nothing(self) -> bool:
+        """Position marker is not OWL Nothing."""
+        return False
+    
+    def get_object_complement_of(self):
+        """Position markers don't have complements."""
+        return self
+    
+    def get_nnf(self):
+        """Position marker is already in NNF."""
+        return self
+
+
+# Global position marker instance
+POSITION_MARKER = _PositionMarker()
+
+
+class PruneCELBasedRefinement(BaseRefinement):
+    """ 
+    Recursive refinement operator based on PruneCEL (equation 5).
+    
+    This implements the full recursive refinement operator ρ* described in:
+    "Explainable Benchmarking through the Lense of Concept Learning" 
+    (Zhang et al., K-CAP 2025, arXiv:2510.20439)
+    
+    Architecture:
+    ------------
+    The refinement is organized into type-specific methods for clarity:
+    
+    1. rho_star() - Main dispatcher that routes to type-specific refinement methods
+    2. refine_existential() - Handles ∃r.X → recursively refine X + add ∀r.X
+    3. refine_universal() - Handles ∀r.X → recursively refine X
+    4. refine_complement() - Handles ¬X → recursively refine X (if X not atomic)
+    5. refine_intersection() - Handles X⊓Y → recursively refine each operand
+    6. refine_union() - Handles X⊔Y → recursively refine each operand
+    7. refine_named_concept() - Handles atomic C → generate base refinements with ⊓ and ⊔
+    8. refine_top_concept() - Handles ⊤ → generate base refinements
+    9. g() - Base refinement generator using SPARQL queries
+    10. m_star() - Context replacement function (replaces μ with new expression)
+    
+    Properties:
+        - Recursive: Each refinement method can call rho_star() on sub-expressions
+        - Coverage-guided: Only generates concepts covering positive examples
+        - Context-aware: Uses position marker μ to track refinement location
+        - Prevents redundancy: Checks for duplicate operands (A⊓A, A⊔A) and nested same properties
+    """
+
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
+                 max_concepts: int = 100,
+                 random_seed: Optional[int] = None,
+                 use_inverse: bool = True,
+                 use_negation: bool = True,
+                 use_all_constructor: bool = True,
+                 use_card_restrictions: bool = True,
+                 min_cardinality_restriction: int = 2,
+                 max_cardinality_restriction: int = 5,
+                 sparql_endpoint: Optional[str] = None):
+        """
+        Initialize PruneCEL recursive refinement operator.
+        
+        Args:
+            knowledge_base: Knowledge base containing the ontology and instances
+            max_concepts: Maximum number of concepts to generate per refinement
+            random_seed: Random seed for reproducibility
+            use_inverse: Whether to use inverse properties in refinements
+            use_negation: Whether to generate negated concepts
+            use_all_constructor: Whether to use universal restrictions (∀r.C)
+            use_card_restrictions: Whether to use cardinality restrictions (≥n r.C)
+            min_cardinality_restriction: Minimum cardinality value
+            max_cardinality_restriction: Maximum cardinality value
+            sparql_endpoint: Optional SPARQL endpoint URL for smart suggestion.
+                           If provided, uses SPARQL-based candidate selection.
+                           If None, falls back to local KB-based selection.
+        """
+        super().__init__(knowledge_base)
+        self.max_concepts = max_concepts
+        self.random_seed = random_seed
+        self.use_inverse = use_inverse
+        self.use_negation = use_negation
+        self.use_all_constructor = use_all_constructor
+        self.use_card_restrictions = use_card_restrictions
+        self.min_cardinality_restriction = min_cardinality_restriction
+        self.max_cardinality_restriction = max_cardinality_restriction
+        self.sparql_endpoint = sparql_endpoint
+        self.concept_generator = ConceptGenerator()
+        self.pos = None
+        self.neg = None
+        self._sparql_suggestor = None
+        self.top_refinements = set()  # Pool of previously refined concepts for complex fillers
+        
+        # Initialize SPARQL suggestor if endpoint provided
+        if self.sparql_endpoint:
+            try:
+                from ontolearn.prunecel_suggestor import SPARQLSuggestor
+                self._sparql_suggestor = SPARQLSuggestor(self.sparql_endpoint)
+            except ImportError:
+                print("Warning: SPARQLSuggestor not available. Install SPARQLWrapper: pip install SPARQLWrapper")
+                print("Falling back to local KB-based suggestion.")
+        
+        # Renderer for debug output
+        self._renderer = DLSyntaxObjectRenderer()
+
+    def set_input_examples(self, pos: frozenset, neg: frozenset):
+        """Set positive and negative examples for coverage-guided refinement."""
+        assert isinstance(pos, frozenset)
+        self.pos = {i for i in pos}
+        self.neg = {i for i in neg}
+        # Clear pool when setting new examples
+        self.top_refinements = set()
+    
+    # ==========================================================================
+    # CORE ORACLE FUNCTIONS
+    # ==========================================================================
+    
+    def m_star(self, template: OWLClassExpression, filler: OWLClassExpression) -> OWLClassExpression:
+        """
+        Context replacement function m*.
+        
+        Replaces the position marker μ in the template with the given filler.
+        This is the key operation for building concepts from templates.
+        
+        Args:
+            template: A class expression containing POSITION_MARKER (μ)
+            filler: The concept to substitute for μ
+            
+        Returns:
+            New class expression with μ replaced by filler
+            
+        Example:
+            m*(Female ⊓ μ, ∃hasChild.⊤) = Female ⊓ (∃hasChild.⊤)
+        """
+        if template == POSITION_MARKER:
+            return filler
+        
+        if isinstance(template, OWLObjectIntersectionOf):
+            new_operands = []
+            for op in template.operands():
+                new_operands.append(self.m_star(op, filler))
+            return OWLObjectIntersectionOf(new_operands)
+        
+        if isinstance(template, OWLObjectUnionOf):
+            new_operands = []
+            for op in template.operands():
+                new_operands.append(self.m_star(op, filler))
+            return OWLObjectUnionOf(new_operands)
+        
+        if isinstance(template, OWLObjectSomeValuesFrom):
+            prop = template.get_property()
+            new_filler = self.m_star(template.get_filler(), filler)
+            return OWLObjectSomeValuesFrom(property=prop, filler=new_filler)
+        
+        if isinstance(template, OWLObjectAllValuesFrom):
+            prop = template.get_property()
+            new_filler = self.m_star(template.get_filler(), filler)
+            return OWLObjectAllValuesFrom(property=prop, filler=new_filler)
+        
+        if isinstance(template, OWLObjectComplementOf):
+            new_operand = self.m_star(template.get_operand(), filler)
+            return OWLObjectComplementOf(new_operand)
+        
+        # For atomic concepts (OWLClass, OWLThing, OWLNothing), return as-is
+        return template
+    
+    def _contains_marker(self, expr: OWLClassExpression) -> bool:
+        """Check if expression contains the position marker μ."""
+        if expr == POSITION_MARKER:
+            return True
+        
+        if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf)):
+            return any(self._contains_marker(op) for op in expr.operands())
+        
+        if isinstance(expr, (OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom)):
+            return self._contains_marker(expr.get_filler())
+        
+        if isinstance(expr, OWLObjectComplementOf):
+            return self._contains_marker(expr.get_operand())
+        
+        return False
+    
+    def g(self, template: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Oracle-guided generator function g.
+        
+        This is the key function that uses SPARQL to find data-supported fillers
+        for a given template. It queries which concepts, when substituted for μ
+        in the template, would cover positive examples.
+        
+        According to the paper, g generates:
+        1. Named concepts A where m*(template, A) covers positives
+        2. Negated concepts ¬A where m*(template, ¬A) covers positives  
+        3. Existential restrictions ∃r.⊤ where m*(template, ∃r.⊤) covers positives
+        
+        Args:
+            template: A class expression containing POSITION_MARKER (μ)
+            pos: Positive examples to cover
+            neg: Negative examples to avoid
+            
+        Returns:
+            Iterable of class expressions that are valid refinements
+            
+        Example:
+            g(μ, E+, E-) for Aunt problem might return:
+            {Female, Sister, ∃hasChild.⊤, ∃hasSibling.⊤, ¬Male, ...}
+        """
+        if self._sparql_suggestor is None:
+            # Fallback to KB-based generation (existing behavior)
+            yield from self._g_kb_based(template, pos, neg)
+        else:
+            # exit(0)
+            # SPARQL-based oracle generation
+            yield from self._g_sparql_based(template, pos, neg)
+    
+    # def _g_kb_based(self, template: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+    #     """
+    #     KB-based generation (fallback when SPARQL not available).
+        
+    #     Uses the knowledge base directly to generate candidates.
+        
+    #     CRITICAL FIX: Use ALL classes in ontology, not just most_general_classes()!
+    #     most_general_classes() only returns Person, missing Brother, Female, etc.
+    #     """
+    #     seen = set()  # Track generated concepts to avoid duplicates
+        
+    #     # Generate named concepts - USE ALL CLASSES, not just most general!
+    #     all_classes = list(self.kb.ontology.classes_in_signature())
+    #     for cls in all_classes:
+    #         concept = self.m_star(template, cls)
+    #         # Skip redundant concepts (e.g., A ⊓ A, A ⊔ A)
+    #         if self._is_redundant(concept):
+    #             continue
+    #         concept_key = str(concept)
+    #         if concept_key in seen:
+    #             continue
+    #         seen.add(concept_key)
+    #         if self._covers_any_positive(concept, pos):
+    #             yield concept
+        
+    #     # Generate negated concepts (if enabled) - also use ALL classes
+    #     if self.use_negation:
+    #         for cls in all_classes:
+    #             neg_cls = OWLObjectComplementOf(cls)
+    #             concept = self.m_star(template, neg_cls)
+    #             if self._is_redundant(concept):
+    #                 continue
+    #             concept_key = str(concept)
+    #             if concept_key in seen:
+    #                 continue
+    #             seen.add(concept_key)
+    #             if self._covers_any_positive(concept, pos):
+    #                 yield concept
+        
+    #     # Generate existential restrictions
+    #     for prop in self.kb.get_object_properties():
+    #         exist = OWLObjectSomeValuesFrom(property=prop, filler=OWLThing)
+    #         concept = self.m_star(template, exist)
+    #         if self._is_redundant(concept):
+    #             continue
+    #         concept_key = str(concept)
+    #         if concept_key in seen:
+    #             continue
+    #         seen.add(concept_key)
+    #         if self._covers_any_positive(concept, pos):
+    #             yield concept
+            
+    #         # Also try inverse properties if enabled
+    #         if self.use_inverse:
+    #             inv_prop = prop.get_inverse_property()
+    #             exist_inv = OWLObjectSomeValuesFrom(property=inv_prop, filler=OWLThing)
+    #             concept_inv = self.m_star(template, exist_inv)
+    #             if self._covers_any_positive(concept_inv, pos):
+    #                 yield concept_inv
+        
+    #     # Generate universal restrictions (if enabled)
+    #     # ∀r.⊥ means "has no r-successors" - important for Aunt problem!
+    #     if self.use_all_constructor:
+    #         for prop in self.kb.get_object_properties():
+    #             # ∀r.⊥ = "no r-successors"
+    #             univ = OWLObjectAllValuesFrom(property=prop, filler=OWLNothing)
+    #             concept = self.m_star(template, univ)
+    #             if self._is_redundant(concept):
+    #                 continue
+    #             concept_key = str(concept)
+    #             if concept_key in seen:
+    #                 continue
+    #             seen.add(concept_key)
+    #             if self._covers_any_positive(concept, pos):
+    #                 yield concept
+                
+    #             # Also try inverse properties if enabled
+    #             if self.use_inverse:
+    #                 inv_prop = prop.get_inverse_property()
+    #                 univ_inv = OWLObjectAllValuesFrom(property=inv_prop, filler=OWLNothing)
+    #                 concept_inv = self.m_star(template, univ_inv)
+    #                 concept_key_inv = str(concept_inv)
+    #                 if concept_key_inv not in seen:
+    #                     seen.add(concept_key_inv)
+    #                     if self._covers_any_positive(concept_inv, pos):
+    #                         yield concept_inv
+        
+    #     # Generate universal restrictions with negated fillers
+    #     # ∀r.¬C is crucial for learning - e.g., "∀hasParent.¬Brother" (all parents are non-brothers)
+    #     if self.use_all_constructor and self.use_negation:
+    #         # Use all classes in the ontology signature, not just most_general
+    #         all_classes = list(self.kb.ontology.classes_in_signature())
+    #         for prop in self.kb.get_object_properties():
+    #             for cls in all_classes:
+    #                 neg_cls = OWLObjectComplementOf(cls)
+    #                 univ = OWLObjectAllValuesFrom(property=prop, filler=neg_cls)
+    #                 concept = self.m_star(template, univ)
+    #                 if self._is_redundant(concept):
+    #                     continue
+    #                 concept_key = str(concept)
+    #                 if concept_key in seen:
+    #                     continue
+    #                 seen.add(concept_key)
+    #                 if self._covers_any_positive(concept, pos):
+    #                     yield concept
+                    
+    #                 # Also try inverse properties
+    #                 if self.use_inverse:
+    #                     inv_prop = prop.get_inverse_property()
+    #                     univ_inv = OWLObjectAllValuesFrom(property=inv_prop, filler=neg_cls)
+    #                     concept_inv = self.m_star(template, univ_inv)
+    #                     concept_key_inv = str(concept_inv)
+    #                     if concept_key_inv not in seen:
+    #                         seen.add(concept_key_inv)
+    #                         if self._covers_any_positive(concept_inv, pos):
+    #                             yield concept_inv
+    
+    def _g_sparql_based(self, template: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        SPARQL-based oracle generation.
+        
+        Uses SPARQL queries to directly find data-supported fillers for the template.
+        This is the true oracle approach from the PruneCEL paper.
+        """
+        # Convert template to a SPARQL-queryable form
+        # The suggestor will find classes/properties that cover positives when
+        # substituted into the template
+        
+        # 1. Suggest named classes
+        # NOTE: SPARQL already filters for coverage — no need to re-verify
+        # with the DL reasoner. Java trusts SPARQL results the same way.
+        class_suggestions = self._sparql_suggestor.suggest_classes(
+            template, pos, neg, limit=self.max_concepts
+        )
+        for class_iri, score in class_suggestions:
+            cls = OWLClass(class_iri)
+            concept = self.m_star(template, cls)
+            yield concept
+        
+        # 2. Suggest negated classes (if enabled)
+        if self.use_negation:
+            neg_class_suggestions = self._sparql_suggestor.suggest_classes(
+                template, neg, pos, limit=self.max_concepts  # Swap pos/neg for negation
+            )
+            for class_iri, score in neg_class_suggestions:
+                cls = OWLClass(class_iri)
+                neg_cls = OWLObjectComplementOf(cls)
+                concept = self.m_star(template, neg_cls)
+                yield concept
+        
+        # 3. Suggest properties for existential restrictions
+        prop_suggestions = self._sparql_suggestor.suggest_properties(
+            template, pos, neg, limit=self.max_concepts
+        )
+        for prop_iri, is_inverse, score in prop_suggestions:
+            prop = OWLObjectProperty(prop_iri)
+            if is_inverse:
+                prop = prop.get_inverse_property()
+            exist = OWLObjectSomeValuesFrom(property=prop, filler=OWLThing)
+            concept = self.m_star(template, exist)
+            yield concept
+        
+        # # NOTE: The Java suggestor only returns named classes, ¬classes, and ∃r.⊤.
+        # # Complex forms (∃r.C, ∀r.C, nested, union/intersection fillers) emerge
+        # # through recursive refinement in rho_star(), not from the suggestor g().
+        # return
+        
+        # 4. Generate universal restrictions (if enabled)
+        # ∀r.⊥ means "has no r-successors" - important for learning problems!
+        if self.use_all_constructor:
+            for prop_iri, is_inverse, score in prop_suggestions:
+                prop = OWLObjectProperty(prop_iri)
+                if is_inverse:
+                    prop = prop.get_inverse_property()
+                # ∀r.⊥ = "no r-successors"
+                univ = OWLObjectAllValuesFrom(property=prop, filler=OWLNothing)
+                concept = self.m_star(template, univ)
+                if self._covers_any_positive(concept, pos):
+                    yield concept
+        
+        # 5. Generate existential restrictions with class fillers: ∃r.C and ∃r.¬C
+        # This is crucial for concepts like "∃hasSibling.Female" (has a female sibling)
+        all_classes = list(self.kb.ontology.classes_in_signature())
+        for prop_iri, is_inverse, score in prop_suggestions:
+            prop = OWLObjectProperty(prop_iri)
+            if is_inverse:
+                prop = prop.get_inverse_property()
+            
+            # ∃r.C for each class C
+            for cls in all_classes:
+                exist = OWLObjectSomeValuesFrom(property=prop, filler=cls)
+                concept = self.m_star(template, exist)
+                if self._covers_any_positive(concept, pos):
+                    yield concept
+            
+            # ∃r.¬C for each class C (if negation enabled)
+            if self.use_negation:
+                for cls in all_classes:
+                    neg_cls = OWLObjectComplementOf(cls)
+                    exist = OWLObjectSomeValuesFrom(property=prop, filler=neg_cls)
+                    concept = self.m_star(template, exist)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+        
+        # 6. Generate universal restrictions with class fillers: ∀r.C and ∀r.¬C
+        # This is important for concepts like "∀hasChild.Female" (all children are female)
+        if self.use_all_constructor:
+            for prop_iri, is_inverse, score in prop_suggestions:
+                prop = OWLObjectProperty(prop_iri)
+                if is_inverse:
+                    prop = prop.get_inverse_property()
+                
+                # ∀r.C for each class C
+                for cls in all_classes:
+                    univ = OWLObjectAllValuesFrom(property=prop, filler=cls)
+                    concept = self.m_star(template, univ)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+                
+                # ∀r.¬C for each class C (if negation enabled)
+                if self.use_negation:
+                    for cls in all_classes:
+                        neg_cls = OWLObjectComplementOf(cls)
+                        univ = OWLObjectAllValuesFrom(property=prop, filler=neg_cls)
+                        concept = self.m_star(template, univ)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+        
+        # 7. Generate nested existential restrictions: ∃r.(∃s.⊤)
+        # This is crucial for concepts like "∃hasSibling.(∃hasChild.⊤)" (has a sibling who has a child)
+        for prop_iri, is_inverse, score in prop_suggestions:
+            prop = OWLObjectProperty(prop_iri)
+            if is_inverse:
+                prop = prop.get_inverse_property()
+            
+            # For each inner property, create ∃r.(∃s.⊤)
+            for inner_prop_iri, inner_is_inverse, inner_score in prop_suggestions:
+                inner_prop = OWLObjectProperty(inner_prop_iri)
+                if inner_is_inverse:
+                    inner_prop = inner_prop.get_inverse_property()
+                
+                inner_exist = OWLObjectSomeValuesFrom(property=inner_prop, filler=OWLThing)
+                nested_exist = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist)
+                concept = self.m_star(template, nested_exist)
+                if self._covers_any_positive(concept, pos):
+                    yield concept
+                
+                # Also: ∃r.(∃s.C) for important classes
+                for cls in all_classes:
+                    inner_exist_cls = OWLObjectSomeValuesFrom(property=inner_prop, filler=cls)
+                    nested_exist_cls = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_cls)
+                    concept = self.m_star(template, nested_exist_cls)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+                
+                # # ∃r.(∃s.(C ⊔ D)) - nested existential with union filler
+                # for i, cls1 in enumerate(all_classes):
+                #     for cls2 in all_classes[i+1:]:  # Avoid duplicates (C ⊔ D) and (D ⊔ C)
+                #         union_filler = OWLObjectUnionOf([cls1, cls2])
+                #         inner_exist_union = OWLObjectSomeValuesFrom(property=inner_prop, filler=union_filler)
+                #         nested_exist_union = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_union)
+                #         concept = self.m_star(template, nested_exist_union)
+                #         if self._covers_any_positive(concept, pos):
+                #             yield concept
+                
+                # # ∃r.(∃s.(C ⊓ D)) - nested existential with intersection filler
+                # for i, cls1 in enumerate(all_classes):
+                #     for cls2 in all_classes[i+1:]:
+                #         inter_filler = OWLObjectIntersectionOf([cls1, cls2])
+                #         inner_exist_inter = OWLObjectSomeValuesFrom(property=inner_prop, filler=inter_filler)
+                #         nested_exist_inter = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_inter)
+                #         concept = self.m_star(template, nested_exist_inter)
+                #         if self._covers_any_positive(concept, pos):
+                #             yield concept
+        
+        # 8. Generate existential with union/intersection fillers: ∃r.(C ⊔ D) and ∃r.(C ⊓ D)
+        for prop_iri, is_inverse, score in prop_suggestions:
+            prop = OWLObjectProperty(prop_iri)
+            if is_inverse:
+                prop = prop.get_inverse_property()
+            
+            # ∃r.(C ⊔ D)
+            for i, cls1 in enumerate(all_classes):
+                for cls2 in all_classes[i+1:]:
+                    union_filler = OWLObjectUnionOf([cls1, cls2])
+                    exist_union = OWLObjectSomeValuesFrom(property=prop, filler=union_filler)
+                    concept = self.m_star(template, exist_union)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+            
+            # ∃r.(C ⊓ D)
+            for i, cls1 in enumerate(all_classes):
+                for cls2 in all_classes[i+1:]:
+                    inter_filler = OWLObjectIntersectionOf([cls1, cls2])
+                    exist_inter = OWLObjectSomeValuesFrom(property=prop, filler=inter_filler)
+                    concept = self.m_star(template, exist_inter)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+    
+    def _covers_any_positive(self, concept: OWLClassExpression, pos: Set) -> bool:
+        """Check if concept covers at least one positive example."""
+        try:
+            instances = set(self.kb.individuals(concept))
+            return len(instances & pos) > 0 and len(instances & self.neg) == 0
+        except Exception:
+            return False
+    
+    def _g_with_blacklist(self, template: OWLClassExpression, pos: Set, neg: Set,
+                          class_blacklist: Set[str], role_blacklist: Set[str]) -> Iterable[OWLClassExpression]:
+        """
+        Oracle-guided generator with blacklists to avoid duplicates.
+        
+        Uses SPARQL when available (fast), falls back to KB iteration.
+        Blacklists prevent adding operands already in a junction.
+        """
+        if self._sparql_suggestor is not None:
+            yield from self._g_sparql_with_blacklist(template, pos, neg, class_blacklist, role_blacklist)
+        else:
+            yield from self._g_kb_with_blacklist(template, pos, neg, class_blacklist, role_blacklist)
+    
+    def _g_sparql_with_blacklist(self, template: OWLClassExpression, pos: Set, neg: Set,
+                                  class_blacklist: Set[str], role_blacklist: Set[str]) -> Iterable[OWLClassExpression]:
+        """
+        SPARQL-based junction extension with blacklists.
+        Uses a single SPARQL query to find covering classes/properties,
+        then filters out blacklisted ones. Much faster than KB iteration.
+        """
+        seen = set()
+        
+        # 1. Suggest named classes via SPARQL (pre-filtered for coverage)
+        class_suggestions = self._sparql_suggestor.suggest_classes(
+            template, pos, neg, limit=self.max_concepts
+        )
+        for class_iri, score in class_suggestions:
+            iri_str = str(class_iri) if not isinstance(class_iri, str) else class_iri
+            if iri_str in class_blacklist:
+                continue
+            cls = OWLClass(class_iri)
+            concept = self.m_star(template, cls)
+            concept_key = str(concept)
+            if concept_key not in seen:
+                seen.add(concept_key)
+                yield concept
+        
+        # 2. Suggest negated classes (swap pos/neg for negation)
+        if self.use_negation:
+            neg_suggestions = self._sparql_suggestor.suggest_classes(
+                template, neg, pos, limit=self.max_concepts
+            )
+            for class_iri, score in neg_suggestions:
+                iri_str = str(class_iri) if not isinstance(class_iri, str) else class_iri
+                if iri_str in class_blacklist:
+                    continue
+                cls = OWLClass(class_iri)
+                neg_cls = OWLObjectComplementOf(cls)
+                concept = self.m_star(template, neg_cls)
+                concept_key = str(concept)
+                if concept_key not in seen:
+                    seen.add(concept_key)
+                    yield concept
+        
+        # 3. Suggest properties for ∃r.⊤
+        prop_suggestions = self._sparql_suggestor.suggest_properties(
+            template, pos, neg, limit=self.max_concepts
+        )
+        for prop_iri, is_inverse, score in prop_suggestions:
+            iri_str = str(prop_iri) if not isinstance(prop_iri, str) else prop_iri
+            if iri_str in role_blacklist:
+                continue
+            prop = OWLObjectProperty(prop_iri)
+            if is_inverse:
+                prop = prop.get_inverse_property()
+            exist = OWLObjectSomeValuesFrom(property=prop, filler=OWLThing)
+            concept = self.m_star(template, exist)
+            concept_key = str(concept)
+            if concept_key not in seen:
+                seen.add(concept_key)
+                yield concept
+    
+    def _g_kb_with_blacklist(self, template: OWLClassExpression, pos: Set, neg: Set,
+                             class_blacklist: Set[str], role_blacklist: Set[str]) -> Iterable[OWLClassExpression]:
+        """
+        KB-based junction extension with blacklists (fallback when no SPARQL).
+        Iterates all KB classes/properties and checks coverage with reasoner.
+        """
+        seen = set()
+        
+        all_classes = list(self.kb.ontology.classes_in_signature())
+        for cls in all_classes:
+            if str(cls.iri) in class_blacklist:
+                continue
+            concept = self.m_star(template, cls)
+            if self._is_redundant(concept):
+                continue
+            concept_key = str(concept)
+            if concept_key in seen:
+                continue
+            seen.add(concept_key)
+            if self._covers_any_positive(concept, pos):
+                yield concept
+        
+        if self.use_negation:
+            for cls in all_classes:
+                if str(cls.iri) in class_blacklist:
+                    continue
+                neg_cls = OWLObjectComplementOf(cls)
+                concept = self.m_star(template, neg_cls)
+                if self._is_redundant(concept):
+                    continue
+                concept_key = str(concept)
+                if concept_key in seen:
+                    continue
+                seen.add(concept_key)
+                if self._covers_any_positive(concept, pos):
+                    yield concept
+        
+        for prop in self.kb.get_object_properties():
+            if str(prop.iri) in role_blacklist:
+                continue
+            exist = OWLObjectSomeValuesFrom(property=prop, filler=OWLThing)
+            concept = self.m_star(template, exist)
+            if self._is_redundant(concept):
+                continue
+            concept_key = str(concept)
+            if concept_key in seen:
+                continue
+            seen.add(concept_key)
+            if self._covers_any_positive(concept, pos):
+                yield concept
+            
+            if self.use_inverse:
+                inv_prop = prop.get_inverse_property()
+                exist_inv = OWLObjectSomeValuesFrom(property=inv_prop, filler=OWLThing)
+                concept_inv = self.m_star(template, exist_inv)
+                concept_key = str(concept_inv)
+                if concept_key not in seen:
+                    seen.add(concept_key)
+                    if self._covers_any_positive(concept_inv, pos):
+                        yield concept_inv
+        
+        # Generate universal restrictions (if enabled)
+        if self.use_all_constructor:
+            for prop in self.kb.get_object_properties():
+                if str(prop.iri) in role_blacklist:
+                    continue
+                univ = OWLObjectAllValuesFrom(property=prop, filler=OWLNothing)
+                concept = self.m_star(template, univ)
+                concept_key = str(concept)
+                if concept_key not in seen:
+                    seen.add(concept_key)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+        
+        # Generate existential restrictions with class fillers: ∃r.C and ∃r.¬C
+        for prop in self.kb.get_object_properties():
+            if str(prop.iri) in role_blacklist:
+                continue
+            
+            # ∃r.C for each class C
+            for cls in all_classes:
+                exist = OWLObjectSomeValuesFrom(property=prop, filler=cls)
+                concept = self.m_star(template, exist)
+                concept_key = str(concept)
+                if concept_key not in seen:
+                    seen.add(concept_key)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+            
+            # ∃r.¬C for each class C (if negation enabled)
+            if self.use_negation:
+                for cls in all_classes:
+                    neg_cls = OWLObjectComplementOf(cls)
+                    exist = OWLObjectSomeValuesFrom(property=prop, filler=neg_cls)
+                    concept = self.m_star(template, exist)
+                    concept_key = str(concept)
+                    if concept_key not in seen:
+                        seen.add(concept_key)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+            
+            # # Also try inverse properties if enabled
+            # if self.use_inverse:
+            #     inv_prop = prop.get_inverse_property()
+                
+            #     # ∃r⁻.C
+            #     for cls in all_classes:
+            #         exist_inv = OWLObjectSomeValuesFrom(property=inv_prop, filler=cls)
+            #         concept_inv = self.m_star(template, exist_inv)
+            #         concept_key = str(concept_inv)
+            #         if concept_key not in seen:
+            #             seen.add(concept_key)
+            #             if self._covers_any_positive(concept_inv, pos):
+            #                 yield concept_inv
+                
+            #     # ∃r⁻.¬C (if negation enabled)
+            #     if self.use_negation:
+            #         for cls in all_classes:
+            #             neg_cls = OWLObjectComplementOf(cls)
+            #             exist_inv = OWLObjectSomeValuesFrom(property=inv_prop, filler=neg_cls)
+            #             concept_inv = self.m_star(template, exist_inv)
+            #             concept_key = str(concept_inv)
+            #             if concept_key not in seen:
+            #                 seen.add(concept_key)
+            #                 if self._covers_any_positive(concept_inv, pos):
+            #                     yield concept_inv
+        
+        # Generate universal restrictions with class fillers: ∀r.C and ∀r.¬C
+        if self.use_all_constructor:
+            for prop in self.kb.get_object_properties():
+                if str(prop.iri) in role_blacklist:
+                    continue
+                
+                # ∀r.C for each class C
+                for cls in all_classes:
+                    univ = OWLObjectAllValuesFrom(property=prop, filler=cls)
+                    concept = self.m_star(template, univ)
+                    concept_key = str(concept)
+                    if concept_key not in seen:
+                        seen.add(concept_key)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+                
+                # ∀r.¬C for each class C (if negation enabled)
+                if self.use_negation:
+                    for cls in all_classes:
+                        neg_cls = OWLObjectComplementOf(cls)
+                        univ = OWLObjectAllValuesFrom(property=prop, filler=neg_cls)
+                        concept = self.m_star(template, univ)
+                        concept_key = str(concept)
+                        if concept_key not in seen:
+                            seen.add(concept_key)
+                            if self._covers_any_positive(concept, pos):
+                                yield concept
+        
+        # Generate nested existential restrictions: ∃r.(∃s.⊤) and ∃r.(∃s.C)
+        all_props = list(self.kb.get_object_properties())
+        for prop in all_props:
+            if str(prop.iri) in role_blacklist:
+                continue
+            
+            for inner_prop in all_props:
+                # ∃r.(∃s.⊤)
+                inner_exist = OWLObjectSomeValuesFrom(property=inner_prop, filler=OWLThing)
+                nested_exist = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist)
+                concept = self.m_star(template, nested_exist)
+                concept_key = str(concept)
+                if concept_key not in seen:
+                    seen.add(concept_key)
+                    if self._covers_any_positive(concept, pos):
+                        yield concept
+                
+                # ∃r.(∃s.C) for each class
+                for cls in all_classes:
+                    inner_exist_cls = OWLObjectSomeValuesFrom(property=inner_prop, filler=cls)
+                    nested_exist_cls = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_cls)
+                    concept = self.m_star(template, nested_exist_cls)
+                    concept_key = str(concept)
+                    if concept_key not in seen:
+                        seen.add(concept_key)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+                
+                # # Also with inverse outer property if enabled
+                # if self.use_inverse:
+                #     inv_prop = prop.get_inverse_property()
+                    
+                #     # ∃r⁻.(∃s.⊤)
+                #     nested_exist_inv = OWLObjectSomeValuesFrom(property=inv_prop, filler=inner_exist)
+                #     concept_inv = self.m_star(template, nested_exist_inv)
+                #     concept_key = str(concept_inv)
+                #     if concept_key not in seen:
+                #         seen.add(concept_key)
+                #         if self._covers_any_positive(concept_inv, pos):
+                #             yield concept_inv
+                
+                # # ∃r.(∃s.(C ⊔ D)) - nested existential with union filler
+                # for i, cls1 in enumerate(all_classes):
+                #     for cls2 in all_classes[i+1:]:
+                #         union_filler = OWLObjectUnionOf([cls1, cls2])
+                #         inner_exist_union = OWLObjectSomeValuesFrom(property=inner_prop, filler=union_filler)
+                #         nested_exist_union = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_union)
+                #         concept = self.m_star(template, nested_exist_union)
+                #         concept_key = str(concept)
+                #         if concept_key not in seen:
+                #             seen.add(concept_key)
+                #             if self._covers_any_positive(concept, pos):
+                #                 yield concept
+                
+                # # ∃r.(∃s.(C ⊓ D)) - nested existential with intersection filler
+                # for i, cls1 in enumerate(all_classes):
+                #     for cls2 in all_classes[i+1:]:
+                #         inter_filler = OWLObjectIntersectionOf([cls1, cls2])
+                #         inner_exist_inter = OWLObjectSomeValuesFrom(property=inner_prop, filler=inter_filler)
+                #         nested_exist_inter = OWLObjectSomeValuesFrom(property=prop, filler=inner_exist_inter)
+                #         concept = self.m_star(template, nested_exist_inter)
+                #         concept_key = str(concept)
+                #         if concept_key not in seen:
+                #             seen.add(concept_key)
+                #             if self._covers_any_positive(concept, pos):
+                #                 yield concept
+        
+        # Generate existential with union/intersection fillers: ∃r.(C ⊔ D) and ∃r.(C ⊓ D)
+        for prop in all_props:
+            if str(prop.iri) in role_blacklist:
+                continue
+            
+            # ∃r.(C ⊔ D)
+            for i, cls1 in enumerate(all_classes):
+                for cls2 in all_classes[i+1:]:
+                    union_filler = OWLObjectUnionOf([cls1, cls2])
+                    exist_union = OWLObjectSomeValuesFrom(property=prop, filler=union_filler)
+                    concept = self.m_star(template, exist_union)
+                    concept_key = str(concept)
+                    if concept_key not in seen:
+                        seen.add(concept_key)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+            
+            # ∃r.(C ⊓ D)
+            for i, cls1 in enumerate(all_classes):
+                for cls2 in all_classes[i+1:]:
+                    inter_filler = OWLObjectIntersectionOf([cls1, cls2])
+                    exist_inter = OWLObjectSomeValuesFrom(property=prop, filler=inter_filler)
+                    concept = self.m_star(template, exist_inter)
+                    concept_key = str(concept)
+                    if concept_key not in seen:
+                        seen.add(concept_key)
+                        if self._covers_any_positive(concept, pos):
+                            yield concept
+
+    def _is_redundant(self, concept: OWLClassExpression) -> bool:
+        """
+        Check if a concept is structurally redundant.
+        
+        Redundant patterns include:
+        - A ⊓ A (intersection with self)
+        - A ⊔ A (union with self)
+        - Nested same properties: ∃r.(∃r.X) when outer already has ∃r
+        """
+        if isinstance(concept, OWLObjectIntersectionOf):
+            operands = list(concept.operands())
+            # Check for duplicate operands
+            seen = set()
+            for op in operands:
+                op_str = str(op)
+                if op_str in seen:
+                    return True
+                seen.add(op_str)
+        
+        if isinstance(concept, OWLObjectUnionOf):
+            operands = list(concept.operands())
+            # Check for duplicate operands
+            seen = set()
+            for op in operands:
+                op_str = str(op)
+                if op_str in seen:
+                    return True
+                seen.add(op_str)
+        
+        return False
+    
+    
+    
+    def refine_top_concept(self, C:OWLClassExpression, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+            Refine the top concept ⊤ using the marker-based refinement operator.
+
+            In the paper, ⊤ is treated as a special case with a single template:
+                T = μ
+
+            According to Equation (5), the refinement of ⊤ is defined as:
+                ρ*(⊤, μ, E+, E-) = g(μ, E+, E-)
+
+            where g is the oracle-guided generator.
+
+            Operationally, this function:
+            1. Uses the template T = μ (a single marker).
+            2. Queries oracle functions to obtain data-supported fillers D, including:
+                - atomic named concepts A
+                - negated atomic concepts ¬A
+                - existential role restrictions ∃r.⊤
+            3. Produces refinements by applying marker substitution m(μ, D).
+
+            The resulting refinements are of the form:
+                { A, ¬A, ∃r.⊤ }
+
+            provided each refinement covers at least one positive example.
+
+            Example (Aunt learning problem):
+                ρ(⊤) = { Female, ¬Male, ∃hasChild.⊤, ... }
+
+            Note:
+            - Universal restrictions (∀r.C) are NOT generated in the paper.
+            - Negation is only applied to atomic concepts.
+            - All refinements are downward specializations of ⊤.
+
+            Returns:
+                An iterable of OWLClassExpression refinements of ⊤.
+        """
+        # For ⊤, the refinement uses the current template T
+        # ρ*(⊤, T, E+, E-) = g(T, E+, E-)
+        # The template T contains the context (e.g., ∃r.μ means "refine under ∃r")
+        yield from self.g(T, pos, neg)
+
+
+    def refine_any_concept(self, C: OWLClassExpression, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Base refinement case for arbitrary (non-top, non-bottom) class expressions.
+
+        This function implements the base case of the recursive refinement
+        operator ρ★ as defined in Equation (5) of the paper.
+
+        Formal definition (Equation 5):
+            If C ∉ {⊤, ⊥}, then:
+
+                ρ*(C, T, E+, E−) =
+                    g(m*(T, C ⊓ μ), E+, E−)
+                    ∪
+                    g(m*(T, C ⊔ μ), E+, E−)
+
+        Semantics:
+            - C is treated as an indivisible refinement anchor.
+            - No structural decomposition of C is performed here.
+            - The marker μ is positioned relative to C using m*.
+            - The generator g instantiates μ with data-supported
+            atomic or quantified concepts.
+
+        Important properties:
+            - This function does NOT:
+                * recurse into subexpressions of C
+                * enumerate refinement templates
+                * generate concepts directly
+            - All concept creation is delegated to g.
+            - Structural recursion is handled by other cases of ρ★
+            (intersection, union, quantifiers, negation).
+
+        Role in the refinement process:
+            - Acts as the unique entry point for generation.
+            - Ensures that every refinement step is local,
+            explainable, and grounded in data.
+
+        Returns:
+            An iterable of OWLClassExpression instances
+            generated by g via marker substitution.
+        """
+        # ρ*(C, T, E+, E−) = g(m*(T, C ⊓ μ), E+, E−) ∪ g(m*(T, C ⊔ μ), E+, E−)
+        
+        # Create template for conjunction: m*(T, C ⊓ μ)
+        conj_template = self.m_star(T, OWLObjectIntersectionOf([C, POSITION_MARKER]))
+        yield from self.g(conj_template, pos, neg)
+        
+        # Create template for disjunction: m*(T, C ⊔ μ)
+        disj_template = self.m_star(T, OWLObjectUnionOf([C, POSITION_MARKER]))
+        yield from self.g(disj_template, pos, neg)
+
+
+
+    def refine_existential(self, C: OWLObjectSomeValuesFrom, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Structural refinement for existential restrictions.
+
+        Let C = ∃r.X.
+
+        Formal definition (Equation 5):
+            ρ*(∃r.X, T, E+, E−) =
+                ρ*(X, m*(T, ∃r.μ), E+, E−)
+                ∪
+                { m(T, ∀r.X) }
+
+        Semantics:
+            1. Recursive refinement:
+                - Refine the filler X.
+                - The marker μ is placed under the existential restriction
+                using m*(T, ∃r.μ).
+            2. Structural generalization:
+                - Add the universally quantified concept ∀r.X
+                placed into the current marker context via m(T, ∀r.X).
+        Returns:
+            Refinements obtained by recursion plus the universal generalization.
+        """
+        # Extract property and filler
+        r = C.get_property()
+        X = C.get_filler()
+        
+        # 1. Recursive refinement: ρ*(X, m*(T, ∃r.μ), E+, E−)
+        # Create new template with marker under existential
+        new_template = self.m_star(T, OWLObjectSomeValuesFrom(property=r, filler=POSITION_MARKER))
+        yield from self.rho_star(X, new_template, pos, neg)
+        
+        # 2. Structural generalization: m(T, ∀r.X)
+        # Only if universal constructor is enabled
+        if self.use_all_constructor:
+            universal = OWLObjectAllValuesFrom(property=r, filler=X)
+            result = self.m_star(T, universal)
+            if self._covers_any_positive(result, pos):
+                yield result
+        
+        # 3. Junction extension (Java: visitAnyNode after filler refinement)
+        # Extend ∃r.X with a junction, blacklisting the same property to avoid ∃r.X ⊓ ∃r.⊤
+        role_blacklist = {str(r)}
+        conj_template = self.m_star(T, OWLObjectIntersectionOf([C, POSITION_MARKER]))
+        yield from self._g_with_blacklist(conj_template, pos, neg, set(), role_blacklist)
+        disj_template = self.m_star(T, OWLObjectUnionOf([C, POSITION_MARKER]))
+        yield from self._g_with_blacklist(disj_template, pos, neg, set(), role_blacklist)
+
+    def refine_universal(self, C: OWLObjectAllValuesFrom, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Structural refinement for universal restrictions.
+
+        Let C = ∀r.X.
+
+        Formal definition (Equation 5):
+            ρ*(∀r.X, T, E+, E−) =
+                ρ*(X, m*(T, ∀r.μ), E+, E−)
+
+        Semantics:
+            - Refinement proceeds exclusively by refining the filler X.
+            - The marker μ records that refinement occurs under ∀r.
+            - No additional structural refinement (such as ∀ → ∃)
+            is allowed.
+
+        IMPORTANT:
+            - There is NO union with additional expressions.
+            - Universals cannot be structurally generalized further
+            within this operator.
+
+        Returns:
+            Refinements obtained by recursive descent into X.
+        """
+        # Extract property and filler
+        r = C.get_property()
+        X = C.get_filler()
+        
+        # Recursive refinement: ρ*(X, m*(T, ∀r.μ), E+, E−)
+        new_template = self.m_star(T, OWLObjectAllValuesFrom(property=r, filler=POSITION_MARKER))
+        yield from self.rho_star(X, new_template, pos, neg)
+        
+        # 2. Junction extension (Java: visitAnyNode after filler refinement)
+        # Extend ∀r.X with a junction, blacklisting the same property
+        role_blacklist = {str(r)}
+        conj_template = self.m_star(T, OWLObjectIntersectionOf([C, POSITION_MARKER]))
+        yield from self._g_with_blacklist(conj_template, pos, neg, set(), role_blacklist)
+        disj_template = self.m_star(T, OWLObjectUnionOf([C, POSITION_MARKER]))
+        yield from self._g_with_blacklist(disj_template, pos, neg, set(), role_blacklist)
+
+    def refine_intersection(self, C: OWLObjectIntersectionOf, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Structural refinement for conjunctions.
+
+        Let C = X ⊓ Y.
+
+        Formal definition (Equation 5):
+            ρ*(X ⊓ Y, T, E+, E−) =
+                ρ*(X, m*(T, μ ⊓ Y), E+, E−)
+                ∪
+                ρ*(Y, m*(T, X ⊓ μ), E+, E−)
+
+        Semantics:
+            - Refinement proceeds by refining exactly one conjunct at a time.
+            - The non-refined conjunct is kept fixed and recorded via the marker.
+            - No new conjunctions are created at this level.
+
+        Marker intuition:
+            - μ ⊓ Y   means “refine the left-hand side”
+            - X ⊓ μ   means “refine the right-hand side”
+
+        IMPORTANT:
+            - Both recursive calls are mandatory.
+            - No direct call to g() occurs here.
+            - Concept generation happens only when recursion reaches a base case.
+
+        Returns:
+            Refinements obtained by recursive descent into X and Y.
+        """
+        # Get operands as a list
+        operands = list(C.operands())
+        
+        # ============================================================
+        # PART 1: Recursive refinement of existing operands (paper Eq. 5)
+        # ============================================================
+        for i, operand in enumerate(operands):
+            # Create the other operands (frozen part)
+            other_operands = operands[:i] + operands[i+1:]
+            
+            if len(other_operands) == 1:
+                # Binary case: m*(T, μ ⊓ Y) or m*(T, X ⊓ μ)
+                frozen = other_operands[0]
+                new_conj = OWLObjectIntersectionOf([POSITION_MARKER, frozen])
+            else:
+                # N-ary case: m*(T, μ ⊓ Y ⊓ Z ⊓ ...)
+                new_conj = OWLObjectIntersectionOf([POSITION_MARKER] + other_operands)
+            
+            # Create new template
+            new_template = self.m_star(T, new_conj)
+            
+            # Recursively refine this operand
+            yield from self.rho_star(operand, new_template, pos, neg)
+        
+        # ============================================================
+        # PART 2: Extend the junction with NEW operands (Java extendJunction)
+        # This is CRITICAL for finding concepts like (A ⊓ B) ⊓ C
+        # ============================================================
+        # Build blacklists from existing operands to avoid duplicates
+        class_blacklist = set()
+        role_blacklist = set()
+        for op in operands:
+            if isinstance(op, OWLClass):
+                class_blacklist.add(str(op.iri))
+            elif isinstance(op, OWLObjectComplementOf):
+                inner = op.get_operand()
+                if isinstance(inner, OWLClass):
+                    class_blacklist.add(str(inner.iri))
+            elif isinstance(op, OWLObjectSomeValuesFrom):
+                role_blacklist.add(str(op.get_property()))
+            elif isinstance(op, OWLObjectAllValuesFrom):
+                role_blacklist.add(str(op.get_property()))
+        
+        # Extend conjunction: (X ⊓ Y) ⊓ μ
+        # Java: extendJunction with switchFlag=false — only extend with same junction type
+        extend_template = self.m_star(T, OWLObjectIntersectionOf(operands + [POSITION_MARKER]))
+        yield from self._g_with_blacklist(extend_template, pos, neg, class_blacklist, role_blacklist)
+
+
+    def refine_union(self, C: OWLObjectUnionOf, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Structural refinement for disjunctions.
+
+        Let C = X ⊔ Y.
+
+        Formal definition (Equation 5):
+            ρ*(X ⊔ Y, T, E+, E−) =
+                ρ*(X, m*(T, μ ⊔ Y), E+, E−)
+                ∪
+                ρ*(Y, m*(T, X ⊔ μ), E+, E−)
+
+        Semantics:
+            - Refinement proceeds by refining one disjunct at a time.
+            - The other disjunct is frozen and tracked via the marker.
+            - This preserves explainability and avoids combinatorial blow-up.
+
+        Marker intuition:
+            - μ ⊔ Y   means “refine the left disjunct”
+            - X ⊔ μ   means “refine the right disjunct”
+
+        IMPORTANT:
+            - Disjunctions are not expanded or reordered.
+            - No direct generation happens here.
+
+        Returns:
+            Refinements obtained by recursive descent.
+        """
+        # Get operands as a list
+        operands = list(C.operands())
+        
+        # ============================================================
+        # PART 1: Recursive refinement of existing operands (paper Eq. 5)
+        # ============================================================
+        for i, operand in enumerate(operands):
+            # Create the other operands (frozen part)
+            other_operands = operands[:i] + operands[i+1:]
+            
+            if len(other_operands) == 1:
+                # Binary case: m*(T, μ ⊔ Y) or m*(T, X ⊔ μ)
+                frozen = other_operands[0]
+                new_union = OWLObjectUnionOf([POSITION_MARKER, frozen])
+            else:
+                # N-ary case: m*(T, μ ⊔ Y ⊔ Z ⊔ ...)
+                new_union = OWLObjectUnionOf([POSITION_MARKER] + other_operands)
+            
+            # Create new template
+            new_template = self.m_star(T, new_union)
+            
+            # Recursively refine this operand
+            yield from self.rho_star(operand, new_template, pos, neg)
+        
+        # ============================================================
+        # PART 2: Extend the junction with NEW operands (Java extendJunction)
+        # ============================================================
+        # Build blacklists from existing operands to avoid duplicates
+        class_blacklist = set()
+        role_blacklist = set()
+        for op in operands:
+            if isinstance(op, OWLClass):
+                class_blacklist.add(str(op.iri))
+            elif isinstance(op, OWLObjectComplementOf):
+                inner = op.get_operand()
+                if isinstance(inner, OWLClass):
+                    class_blacklist.add(str(inner.iri))
+            elif isinstance(op, OWLObjectSomeValuesFrom):
+                role_blacklist.add(str(op.get_property()))
+            elif isinstance(op, OWLObjectAllValuesFrom):
+                role_blacklist.add(str(op.get_property()))
+        
+        # Extend disjunction: (X ⊔ Y) ⊔ μ
+        # Java: extendJunction with switchFlag=false — only extend with same junction type
+        extend_template = self.m_star(T, OWLObjectUnionOf(operands + [POSITION_MARKER]))
+        yield from self._g_with_blacklist(extend_template, pos, neg, class_blacklist, role_blacklist)
+    
+    # ==========================================================================
+    # MAIN DISPATCHER: rho_star
+    # ==========================================================================
+    
+    def rho_star(self, C: OWLClassExpression, T: OWLClassExpression, pos: Set, neg: Set) -> Iterable[OWLClassExpression]:
+        """
+        Main recursive refinement operator ρ*.
+        
+        Dispatches to type-specific refinement methods based on the structure of C.
+        
+        Args:
+            C: The concept to refine
+            T: The template (context) with position marker μ
+            pos: Positive examples
+            neg: Negative examples
+            
+        Returns:
+            Iterable of refinements
+        """
+        # Base cases
+        if C.is_owl_thing():
+            yield from self.refine_top_concept(C, T, pos, neg)
+        elif C.is_owl_nothing():
+            # Bottom cannot be refined further
+            return
+        # Structural cases (recurse into subexpressions)
+        elif isinstance(C, OWLObjectSomeValuesFrom):
+            yield from self.refine_existential(C, T, pos, neg)
+        elif isinstance(C, OWLObjectAllValuesFrom):
+            yield from self.refine_universal(C, T, pos, neg)
+        elif isinstance(C, OWLObjectIntersectionOf):
+            yield from self.refine_intersection(C, T, pos, neg)
+        elif isinstance(C, OWLObjectUnionOf):
+            yield from self.refine_union(C, T, pos, neg)
+        # Base generation cases (call oracle)
+        elif isinstance(C, OWLClass):
+            yield from self.refine_any_concept(C, T, pos, neg)
+        elif isinstance(C, OWLObjectComplementOf):
+            # For negations: treat as atomic and generate extensions
+            yield from self.refine_any_concept(C, T, pos, neg)
+        else:
+            # Unknown type: treat as atomic
+            yield from self.refine_any_concept(C, T, pos, neg)
+    
+    def refine(self, ce: OWLClassExpression, **kwargs) -> Iterable[OWLClassExpression]:
+        """
+        Public refinement interface required by BaseRefinement.
+        
+        This method wraps rho_star with the proper initial template (just μ).
+        It uses the stored positive/negative examples.
+        
+        Args:
+            ce: The concept to refine
+            **kwargs: Additional arguments (ignored for compatibility)
+            
+        Returns:
+            Iterable of refined concepts
+        """
+        assert self.pos is not None and self.neg is not None, \
+            "Call set_input_examples() before refine()"
+        
+        # Initial template is just the marker μ
+        # This means refinements will be placed at the "top level"
+        initial_template = POSITION_MARKER
+        
+        yield from self.rho_star(ce, initial_template, self.pos, self.neg)
+
+
 class LengthBasedRefinement(BaseRefinement):
     """ A top-down length based ("no semantic information leveraged) refinement operator in ALC."""
 
