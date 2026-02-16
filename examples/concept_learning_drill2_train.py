@@ -19,7 +19,7 @@ from sklearn.model_selection import StratifiedKFold
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.refinement_operators import LengthBasedRefinement, PruneCELBasedRefinement
+from ontolearn.refinement_operators import LengthBasedRefinement, PruneCELBasedRefinement, ModifiedCELOERefinement
 from ontolearn.learners import Drill, DrillV, OCEL, CELOE, TDL
 from ontolearn.learners import EvoLearner, ALCSAT, SPELL, NERO
 from ontolearn.metrics import F1
@@ -136,7 +136,7 @@ def start(args):
     
     # Initialize experiment tracker
     tracker = ExperimentTracker() if args.save_results else None
-    tracker = None
+    # tracker = None
 
     # Determine which learners to include based on --learner_mode
     include_non_search = args.learner_mode == 'all'
@@ -195,7 +195,7 @@ def start(args):
                     kb=kb,
                     operator=operator,
                     time_limit=args.max_runtime,
-                    beam_width=5,
+                    beam_width=1,
                     max_depth=20,
                     # use_negation=False,
                     # use_skip=True,
@@ -271,7 +271,7 @@ def start(args):
     drillv = DrillVClass(
         knowledge_base=kb,
         path_embeddings=args.path_embeddings,
-        refinement_operator=PruneCELBasedRefinement(knowledge_base=kb, sparql_endpoint=args.vocell_sparql_url),#LengthBasedRefinement(knowledge_base=kb),
+        refinement_operator=LengthBasedRefinement(knowledge_base=kb),
         quality_func=F1(),
         reward_func=CeloeBasedReward(),
         epsilon_decay=args.epsilon_decay,
@@ -815,9 +815,9 @@ if __name__ == '__main__':
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=5,
+    parser.add_argument("--num_problems", type=int, default=1,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=30, help="Max runtime")
     parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--learner_mode", type=str, default='search',
                         choices=['search', 'all'],
