@@ -174,6 +174,8 @@ class PruneCELBasedRefinement(BaseRefinement):
             instances = set(self.kb.individuals(cls))
             covers_pos = len(instances & self.pos) > 0
             covers_neg = len(instances & self.neg) > 0
+
+            # refinements.append(cls)  # Always add the class as a refinement candidate
             
             if covers_pos:
                 # If it covers positives, add the class as-is
@@ -387,6 +389,17 @@ class PruneCELBasedRefinement(BaseRefinement):
             
             if covers_pos:
                 refinements.append(new_concept)
+
+        # -----------------------------------
+        # Also generate ∀r.X from ∃r.X (universal restriction)
+        # ∀r.X means "all r-successors are X"
+        # -----------------------------------
+        univ_concept = OWLObjectAllValuesFrom(prop, filler)
+        instances = set(self.kb.individuals(univ_concept))
+        covers_pos = len(instances & self.pos) > 0
+        
+        if covers_pos:
+            refinements.append(univ_concept)
         
         return refinements
     
@@ -430,6 +443,86 @@ class PruneCELBasedRefinement(BaseRefinement):
                 
                 if covers_pos:
                     refinements.append(new_concept)
+        
+        return refinements
+    
+    def refine_universal(self, concept: OWLClassExpression):
+        """
+        Refine universal restrictions ∀r.X by refining the filler X.
+        
+        Strategy:
+        1. Recursively refine the filler X to get ∀r.X'
+        2. Add conjunctions/disjunctions with classes: A ⊓ ∀r.X
+        3. Generate ∀r.¬X (negation of filler)
+        """
+        if not isinstance(concept, OWLObjectAllValuesFrom):
+            return
+        
+        prop = concept.get_property()
+        filler = concept.get_filler()
+        refinements = []
+        
+        examples = list(self.pos) + list(self.neg)
+        if not examples:
+            return
+        
+        values_clause = " ".join(f"<{ind.iri.as_str()}>" for ind in examples)
+        
+        # -----------------------------------
+        # 1. ∀r.X' - Recursively refine filler
+        # -----------------------------------
+        
+        # Recursively refine the filler
+        for refined_filler in self.refine(filler):
+            new_concept = OWLObjectAllValuesFrom(prop, refined_filler)
+            
+            # Check coverage
+            instances = set(self.kb.individuals(new_concept))
+            covers_pos = len(instances & self.pos) > 0
+            
+            if covers_pos:
+                refinements.append(new_concept)
+    
+        # -----------------------------------
+        # 2. A ⊓ ∀r.X - conjunction with named classes
+        # -----------------------------------
+        class_query = f"""
+        SELECT DISTINCT ?class
+        WHERE {{
+            VALUES ?ind {{ {values_clause} }}
+            ?ind a ?class .
+            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
+        }}
+        """
+        
+        class_results = self.sparql(class_query)
+        
+        # Get original concept coverage
+        original_instances = set(self.kb.individuals(concept))
+        
+        for row in class_results:
+            cls = OWLClass(row["class"]["value"])
+            
+            # Try conjunction
+            new_concept = OWLObjectIntersectionOf([cls, concept])
+            instances = set(self.kb.individuals(new_concept))
+            if len(instances & self.pos) > 0 and instances != original_instances:
+                refinements.append(new_concept)
+            
+            # Try disjunction
+            new_concept = OWLObjectUnionOf([cls, concept])
+            instances = set(self.kb.individuals(new_concept))
+            if len(instances & self.pos) > 0 and instances != original_instances:
+                refinements.append(new_concept)
+        
+        # -----------------------------------
+        # 3. ∀r.¬X - negate the filler
+        # -----------------------------------
+        neg_filler = OWLObjectComplementOf(filler)
+        neg_concept = OWLObjectAllValuesFrom(prop, neg_filler)
+        instances = set(self.kb.individuals(neg_concept))
+        if len(instances & self.pos) > 0:
+            refinements.append(neg_concept)
         
         return refinements
     
@@ -616,6 +709,12 @@ class PruneCELBasedRefinement(BaseRefinement):
             results = list(self.refine_top_concept(concept))
         elif isinstance(concept, OWLObjectSomeValuesFrom):
             results = self.refine_existential(concept)
+            if results:
+                results = list(results)
+            else:
+                results = []
+        elif isinstance(concept, OWLObjectAllValuesFrom):
+            results = self.refine_universal(concept)
             if results:
                 results = list(results)
             else:

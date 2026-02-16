@@ -257,15 +257,13 @@ class IntelligentTerminationAgent:
                 print(f"   Quality {self.best_quality:.4f} < threshold {self.min_quality_threshold:.4f} → Continue")
             return False, "Quality below threshold", 0.0
         
-        # CRITICAL: Don't stop if current quality is significantly worse than best_ever
-        # This prevents returning bad concepts when we've seen much better ones before
-        # This is NOT cheating - we're just being smart about when to stop
-        if self.best_ever_quality > 0.80:  # Only apply if we've seen good quality before
-            min_acceptable = max(0.75, self.best_ever_quality - 0.15)  # Allow 0.15 drop max
-            if self.best_quality < min_acceptable:
+        # CRITICAL: NEVER stop if quality hasn't matched best_ever.
+        # This guarantees RL termination never degrades solution quality.
+        if self.best_ever_quality > 0:
+            if self.best_quality < self.best_ever_quality:
                 if verbose > 1:
-                    print(f"   Current quality {self.best_quality:.4f} < min_acceptable {min_acceptable:.4f} → Continue")
-                return False, "Quality too low compared to previous runs", 0.0
+                    print(f"   Quality {self.best_quality:.4f} < best_ever {self.best_ever_quality:.4f} → Continue")
+                return False, "Quality hasn't matched best_ever yet", 0.0
         
         # Log V-network prediction periodically (every 100 concepts) for debugging
         if verbose > 1 and self.concepts_explored_count % 100 == 0:

@@ -19,13 +19,14 @@ from sklearn.model_selection import StratifiedKFold
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.refinement_operators import LengthBasedRefinement
+from ontolearn.refinement_operators import LengthBasedRefinement, PruneCELBasedRefinement
 from ontolearn.learners import Drill, DrillV, OCEL, CELOE, TDL
 from ontolearn.learners import EvoLearner, ALCSAT, SPELL, NERO
 from ontolearn.metrics import F1
 from ontolearn.heuristics import CeloeBasedReward
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.vocell import VOCELL
 
 # Import DrillV variants
 import sys
@@ -135,6 +136,7 @@ def start(args):
     
     # Initialize experiment tracker
     tracker = ExperimentTracker() if args.save_results else None
+    tracker = None
 
     # Determine which learners to include based on --learner_mode
     include_non_search = args.learner_mode == 'all'
@@ -175,6 +177,39 @@ def start(args):
         else:
             print("  ⚠ PruneCEL not available. Run ./setup_prunecel.sh to install.")
             print("    Continuing without PruneCEL")
+    
+    # Initialize VOCELL if requested
+    vocell = None
+    if args.use_vocell:
+        if not args.vocell_sparql_url:
+            print("  ⚠ VOCELL requested but missing --vocell_sparql_url")
+            print("    Skipping VOCELL initialization")
+        else:
+            try:
+                operator = PruneCELBasedRefinement(
+                    knowledge_base=kb,
+                    sparql_endpoint='http://localhost:3030/family/sparql'
+                    # max_concepts=100
+                )
+                vocell = VOCELL(
+                    kb=kb,
+                    operator=operator,
+                    time_limit=args.max_runtime,
+                    beam_width=5,
+                    max_depth=20,
+                    # use_negation=False,
+                    # use_skip=True,
+                    # max_concepts=10,
+                    # use_termination=args.vocell_termination,
+                    # verbose=1,
+                )
+                term_tag = "V-learning ON" if args.vocell_termination else "pure search"
+                print(f"  ✓ VOCELL initialized (PruneCEL-S, {term_tag})")
+                print(f"    SPARQL: {args.vocell_sparql_url}")
+            except Exception as e:
+                print(f"  ⚠ Failed to initialize VOCELL: {e}")
+                print("    Continuing without VOCELL")
+                vocell = None
     
     # Initialize non-search-based learners only if 'all' mode
     if include_non_search:
@@ -236,7 +271,7 @@ def start(args):
     drillv = DrillVClass(
         knowledge_base=kb,
         path_embeddings=args.path_embeddings,
-        refinement_operator=LengthBasedRefinement(knowledge_base=kb),
+        refinement_operator=PruneCELBasedRefinement(knowledge_base=kb, sparql_endpoint=args.vocell_sparql_url),#LengthBasedRefinement(knowledge_base=kb),
         quality_func=F1(),
         reward_func=CeloeBasedReward(),
         epsilon_decay=args.epsilon_decay,
@@ -250,18 +285,18 @@ def start(args):
     )
 
      # Train and time both models
-    if args.path_pretrained_dir:
-        print("Loading pretrained Drill agent...")
-        drill.load(directory="pretrained_drill")
-        print("Loading pretrained DrillV agent...")
-        drillv.load(directory="pretrained_drillv")
-    else:
-        print("Training Drill agent...")
-        drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
-        print("Training DrillV agent...")
-        drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
-        print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
-        print(f"Drill training time: {drill_train_time:.2f} seconds\n")
+    # if args.path_pretrained_dir:
+    #     print("Loading pretrained Drill agent...")
+    #     drill.load(directory="pretrained_drill")
+    #     print("Loading pretrained DrillV agent...")
+    #     drillv.load(directory="pretrained_drillv")
+    # else:
+    #     print("Training Drill agent...")
+    #     drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
+    #     print("Training DrillV agent...")
+    #     drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
+    #     print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
+    #     print(f"Drill training time: {drill_train_time:.2f} seconds\n")
       
     # time.sleep(10)  # Just to have a small break between training and testing
     # exit(0)
@@ -283,11 +318,13 @@ def start(args):
     alcsat_times = []
     spell_times = []
     nero_times = []
+    vocell_times = []
     # Collect concepts tested counts
     drill_concepts = []
     drillv_concepts = []
     drillv_random_concepts = []
     prunecel_concepts = []
+    vocell_concepts = []
     # Collect F1 scores
     drill_train_f1s = []
     drill_test_f1s = []
@@ -309,6 +346,8 @@ def start(args):
     spell_test_f1s = []
     nero_train_f1s = []
     nero_test_f1s = []
+    vocell_train_f1s = []
+    vocell_test_f1s = []
     print("\nComparing models on each class expression:\n")
     
     # Limit the number of problems if specified
@@ -336,6 +375,7 @@ def start(args):
         
         # Track concepts per fold for analysis
         fold_drillv_concepts = []
+        fold_vocell_concepts = []
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
             train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
@@ -360,7 +400,7 @@ def start(args):
                     method='Drill',
                     problem=str_target_concept,
                     fold=ith + 1,
-                    train_time=drill_train_time,  
+                    train_time=0,#drill_train_time,  
                     inference_time=drill_result['prediction_time'],
                     train_f1=drill_result['train_f1'],
                     test_f1=drill_result['test_f1'],
@@ -382,7 +422,7 @@ def start(args):
                     method=f'DrillV_{variant_name}',
                     problem=str_target_concept,
                     fold=ith + 1,
-                    train_time=drillv_train_time,
+                    train_time=0,#drillv_train_time,
                     inference_time=drillv_result['prediction_time'],
                     train_f1=drillv_result['train_f1'],
                     test_f1=drillv_result['test_f1'],
@@ -476,6 +516,45 @@ def start(args):
                         prediction=prunecel_result['prediction']
                     )
             
+            # VOCELL (if available) — PruneCEL-S + optional V-learning
+            if vocell is not None:
+                # Pass lp_name so V-learning agent is shared across folds
+                # of the same target concept
+                dl_render = DLSyntaxObjectRenderer()
+                start_time = time.time()
+                best, vocell_nc = vocell.fit(train_lp, lp_name=str_target_concept, max_runtime=10)
+                vocell_pred_time = time.time() - start_time
+                
+                if isinstance(best, tuple):
+                    best = best[0]  
+                    vocell_nc = best[-1]
+
+                vocell_pred_str = dl_render.render(best) if best else "None"
+                # Train F1: use the SPARQL-scored value from the search
+                vocell_train_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(best)}),
+                                pos=train_lp.pos, neg=train_lp.neg)
+                # Test F1: evaluate the concept on the held-out fold
+                vocell_test_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(best)}),
+                                pos=test_lp.pos, neg=test_lp.neg)
+                vocell_times.append(vocell_pred_time)
+                vocell_concepts.append(vocell_nc)
+                vocell_train_f1s.append(vocell_train_f1)
+                vocell_test_f1s.append(vocell_test_f1)
+                fold_vocell_concepts.append(vocell_nc)
+                
+                if tracker:
+                    tracker.add_result(
+                        method='VOCELL',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,  # VOCELL doesn't require pre-training
+                        inference_time=vocell_pred_time,
+                        train_f1=vocell_train_f1,
+                        test_f1=vocell_test_f1,
+                        concepts_tested=vocell_nc,
+                        prediction=vocell_pred_str
+                    )
+            
             # Non-search-based learners (only if include_non_search is True)
             if include_non_search:
                 # TDL
@@ -557,14 +636,14 @@ def start(args):
                         prediction=nero_result['prediction']
                     )
             
-            print(f"  OCEL:")
-            print(f"    Prediction: {ocel_result['prediction']}")
-            print(f"    Train F1: {ocel_result['train_f1']:.3f} | Test F1: {ocel_result['test_f1']:.3f}")
-            print(f"    Prediction time: {ocel_result['prediction_time']:.2f} seconds")
-            print(f"  CELOE:")
-            print(f"    Prediction: {celoe_result['prediction']}")
-            print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
-            print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
+            # print(f"  OCEL:")
+            # print(f"    Prediction: {ocel_result['prediction']}")
+            # print(f"    Train F1: {ocel_result['train_f1']:.3f} | Test F1: {ocel_result['test_f1']:.3f}")
+            # print(f"    Prediction time: {ocel_result['prediction_time']:.2f} seconds")
+            # print(f"  CELOE:")
+            # print(f"    Prediction: {celoe_result['prediction']}")
+            # print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
+            # print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
             
             if prunecel is not None:
                 print(f"  PruneCEL:")
@@ -572,6 +651,14 @@ def start(args):
                 print(f"    Train F1: {prunecel_result['train_f1']:.3f} | Test F1: {prunecel_result['test_f1']:.3f}")
                 print(f"    Concepts tested: {prunecel_result['concepts_tested']}")
                 print(f"    Prediction time: {prunecel_result['prediction_time']:.2f} seconds")
+            
+            if vocell is not None:
+                # early_tag = " [EARLY STOP]" if vocell.stopped_early else ""
+                # print(f"  VOCELL:{early_tag}")
+                print(f"    Prediction: {vocell_pred_str}")
+                print(f"    Train F1: {vocell_train_f1:.3f} | Test F1: {vocell_test_f1:.3f}")
+                print(f"    Concepts scored: {vocell_nc}")
+                print(f"    Prediction time: {vocell_pred_time:.2f} seconds")
             
             if include_non_search:
                 print(f"  TDL:")
@@ -607,6 +694,20 @@ def start(args):
                 else:
                     print(f"   Stable performance across folds")
 
+        # # VOCELL V-learning trend
+        # if vocell is not None and len(fold_vocell_concepts) > 1:
+        #     print(f"\nVOCELL V-Learning Analysis for '{str_target_concept}':")
+        #     print(f"Concepts per fold: {fold_vocell_concepts}")
+        #     first_fold = fold_vocell_concepts[0]
+        #     last_fold = fold_vocell_concepts[-1]
+        #     if first_fold > 0:
+        #         improvement = ((first_fold - last_fold) / first_fold) * 100
+        #         print(f"Learning trend: {first_fold} → {last_fold} ({improvement:+.1f}% efficiency)")
+        #         if vocell.termination_agent:
+        #             stats = vocell.termination_agent.get_statistics()
+        #             print(f"Agent runs={stats['total_runs']}, "
+        #                   f"best_ever={stats['best_ever_quality']:.3f}")
+
 
     # Print average prediction times
     avg_drill_time = np.mean(drill_times) if drill_times else 0
@@ -618,6 +719,7 @@ def start(args):
     avg_alcsat_time = np.mean(alcsat_times) if alcsat_times else 0
     avg_spell_time = np.mean(spell_times) if spell_times else 0
     avg_nero_time = np.mean(nero_times) if nero_times else 0
+    avg_vocell_time = np.mean(vocell_times) if vocell_times else 0
     
     print("\n" + "="*80)
     print("SUMMARY STATISTICS")
@@ -630,6 +732,8 @@ def start(args):
     print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
     if prunecel is not None:
         print(f"  PruneCEL:                 {avg_prunecel_time:.3f} seconds")
+    if vocell is not None:
+        print(f"  VOCELL:                   {avg_vocell_time:.3f} seconds")
     
     if include_non_search:
         print(f"  TDL:                      {avg_tdl_time:.3f} seconds")
@@ -645,6 +749,8 @@ def start(args):
     print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
     if prunecel is not None:
         print(f"  PruneCEL:                 {np.mean(prunecel_test_f1s):.3f}")
+    if vocell is not None and vocell_test_f1s:
+        print(f"  VOCELL:                   {np.mean(vocell_test_f1s):.3f}")
     
     if include_non_search:
         print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
@@ -657,6 +763,8 @@ def start(args):
     print(f"  DrillV ({variant_name}):  {np.mean(drillv_concepts):.0f}")
     if prunecel is not None and prunecel_concepts:
         print(f"  PruneCEL:                 {np.mean(prunecel_concepts):.0f}")
+    if vocell is not None and vocell_concepts:
+        print(f"  VOCELL:                   {np.mean(vocell_concepts):.0f}")
     
     print("\n" + "="*80)
     
@@ -692,7 +800,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     # General
     parser.add_argument("--path_knowledge_base", type=str,
-                        default='KGs/Family/family-benchmark_rich_background.owl')
+                        default='KGs/Family/family.owl')
     parser.add_argument("--path_embeddings", type=str,
                         default='Experiments/embeddings/Keci_entity_embeddings.csv')
     parser.add_argument("--num_of_target_concepts",
@@ -709,8 +817,8 @@ if __name__ == '__main__':
                              "instances. e.g. 'some/path/lp.json'")
     parser.add_argument("--num_problems", type=int, default=5,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=5, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
+    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
+    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--learner_mode", type=str, default='search',
                         choices=['search', 'all'],
                         help="Which learners to include: 'search' (Drill, DrillV, OCEL, CELOE) or 'all' (includes TDL, ALCSAT, SPELL, NERO)")
@@ -737,6 +845,16 @@ if __name__ == '__main__':
                         help='Enable PruneCEL recursive extension (-R)')
     parser.add_argument("--prunecel_skip_none", action='store_true', default=True,
                         help='Enable PruneCEL skip-none extension (-S)')
+    
+    # VOCELL related
+    parser.add_argument("--use_vocell", action='store_true', default=True,
+                        help='Include VOCELL')
+    parser.add_argument("--vocell_sparql_url", type=str, default="http://localhost:3030/family/sparql",
+                        help='SPARQL endpoint URL for VOCELL')
+    parser.add_argument("--vocell_termination", action='store_true', default=False,
+                        help='Enable V-learning termination agent in VOCELL')
+    parser.add_argument("--no_vocell_termination", action='store_false', dest='vocell_termination',
+                        help='Disable V-learning termination agent in VOCELL (pure PruneCEL-S search)')
     
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
