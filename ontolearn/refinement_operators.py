@@ -52,6 +52,14 @@ from .nero_utils import AtomicExpression, ExistentialQuantifierExpression, Class
 from .search import OENode
 from owlapy import owl_expression_to_sparql
 import requests
+from owlapy.iri import IRI
+from owlapy.marked_entity_generator_converter import (
+    CONTEXT_POSITION_MARKER,
+    owl_expression_to_class_query,
+    owl_expression_to_property_query as property_query_with_counts,
+    owl_expression_to_negated_class_query
+)
+
 
 
 
@@ -71,7 +79,7 @@ class PruneCELBasedRefinement(BaseRefinement):
                  max_concepts: int = 100,
                  random_seed: Optional[int] = None,
                  sparql_endpoint: Optional[str] = None,
-                 length_penalty: float = 0.01):
+                 length_penalty: float = 0.001):
         """
         Initialize PruneCEL recursive refinement operator.
         
@@ -105,12 +113,15 @@ class PruneCELBasedRefinement(BaseRefinement):
         self.covered_positives = set()  # Track which positives are covered by fragments
         self.precision_threshold = 1.0  # Minimum precision for a fragment
         self.recall_threshold = 0.5  # Maximum recall for a fragment (low recall)
-        
-        # Refinement score caching
-        self._score_cache = {}  # Cache for parent concept scores
+        self.use_negation = False
         
         # Renderer for debug output
         self._renderer = DLSyntaxObjectRenderer()
+
+        # Define template as a global variable for now (can be improved by passing it through methods)
+        # self.template = CONTEXT_POSITION_MARKER
+        self._score_cache = {}
+ 
 
     def sparql(self, query: str) -> List[Dict[str, str]]:
         headers = {
@@ -132,521 +143,363 @@ class PruneCELBasedRefinement(BaseRefinement):
         assert isinstance(pos, frozenset)
         self.pos = {i for i in pos}
         self.neg = {i for i in neg}
+        self.set_examples = self.pos.union(self.neg)
         # Clear pool and fragments when setting new examples
         self.top_refinements = set()
         self.high_precision_fragments = []
         self.covered_positives = set()
 
+
+    def oracle_class_suggestor(self, template):
+
+        query = owl_expression_to_class_query(
+            context=template,
+            positive_examples=self.pos,
+            negative_examples=self.neg,
+        )
+
+        # print(query)
+        # exit(0)
+
+        res = self.sparql(query)
+
+        results = set()
+
+        try:
+            for row in res:
+
+                if "class" not in row or "value" not in row["class"]:
+                    continue
+
+                uri = row["class"]["value"]
+                pos_hits = int(row["posHits"]["value"])
+                neg_hits = int(row["negHits"]["value"])
+
+                if uri == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                    continue
+
+                if uri == "http://www.w3.org/2002/07/owl#NamedIndividual":
+                    continue
+
+                if pos_hits + neg_hits == 0:
+                    continue
+
+                owl_class = OWLClass(IRI.create(uri))
+                results.add(owl_class)
+        except Exception as e:
+            print(f"Error in oracle_class_suggestor with template {self._renderer.render(template)}: {e}")
+            exit(0)
+
+        return results
+
+
+    def oracle_role_suggestor(self, template: OWLClassExpression) -> Set[OWLObjectProperty]:
+
+        query = property_query_with_counts(
+            context=template,
+            positive_examples=self.pos,
+            negative_examples=self.neg,
+        )
+
+        res = self.sparql(query) 
+        results = set()
+
+        for row in res:
+
+            if "prop" not in row or "value" not in row["prop"]:
+                    continue
+            
+            uri = row["prop"]["value"]
+            pos_hits = int(row["posHits"]["value"])
+            neg_hits = int(row["negHits"]["value"])
+
+            if uri == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                continue
+
+            if uri == "http://www.w3.org/2002/07/owl#NamedIndividual":
+                continue
+
+            if pos_hits + neg_hits == 0:
+                continue
+
+            owl_class = OWLObjectProperty(IRI.create(uri))
+            results.add(owl_class)
+
+        return results
     
-    def refine_top_concept(self, concept: OWLClassExpression):
+    def oracle_negation_class_suggestor(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
 
-        if concept != OWLThing:
-            return
+        query = owl_expression_to_negated_class_query(
+            context=template, 
+            positive_examples=self.pos, 
+            negative_examples=self.neg)
+        
+        res = self.sparql(query) 
 
-        examples = list(self.pos) + list(self.neg)
-        if not examples:
-            return
+        
+        results = set()
 
-        values_clause = " ".join(f"<{ind.iri.as_str()}>" for ind in examples)
+        for row in res:
 
-        refinements = []
+            if "class" not in row or "value" not in row["class"]:
+                continue
 
-        # -----------------------------------
-        # Named atomic concepts
-        # -----------------------------------
-        class_query = f"""
-        SELECT DISTINCT ?class
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind a ?class .
-            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-            # FILTER(?class != <http://www.w3.org/2002/07/owl#Thing>)
-        }}
+            uri = row["class"]["value"]
+            pos_hits = int(row["posHits"]["value"])
+            neg_hits = int(row["negHits"]["value"])
+
+            if uri == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                continue
+
+            if uri == "http://www.w3.org/2002/07/owl#NamedIndividual":
+                continue
+
+            if pos_hits + neg_hits == 0:
+                continue
+
+            owl_class = OWLClass(IRI.create(uri))
+            results.add(owl_class)
+
+        return results
+    
+
+    def g(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
+        results = set()
+
+        classes = self.oracle_class_suggestor(template)
+        neg_classes = self.oracle_negation_class_suggestor(template)
+        roles = self.oracle_role_suggestor(template)
+
+        # m*(T, D)
+        for c in classes:
+            results.add(self.m_star(template, c))
+
+        # m*(T, ¬D)  ← FIXED
+        if self.use_negation:
+            for c in neg_classes:
+                neg_c = OWLObjectComplementOf(c)
+                results.add(self.m_star(template, neg_c))
+
+        # m*(T, ∃ r . ⊤)
+        for r in roles:
+            exists = OWLObjectSomeValuesFrom(property=r, filler=OWLThing)
+            results.add(self.m_star(template, exists))
+
+        return results
+
+    def m_star(self,
+           template: OWLClassExpression,
+           expr: OWLClassExpression) -> OWLClassExpression:
+        """
+        Replace CONTEXT_POSITION_MARKER (μ) in template with expr.
         """
 
+        # Base case: found the marker
+        if template == CONTEXT_POSITION_MARKER:
+            return expr
 
-        class_results = self.sparql(class_query)
+        # Atomic classes (nothing to replace)
+        if isinstance(template, OWLClass):
+            return template
 
-        for row in class_results:
-            cls = OWLClass(row["class"]["value"])
-            
-            # Check coverage of this class
-            instances = set(self.kb.individuals(cls))
-            covers_pos = len(instances & self.pos) > 0
-            covers_neg = len(instances & self.neg) > 0
-
-            # refinements.append(cls)  # Always add the class as a refinement candidate
-            
-            if covers_pos:
-                # If it covers positives, add the class as-is
-                refinements.append(cls)
-            elif covers_neg:
-                # If it only covers negatives, add its negation (which will cover positives)
-                refinements.append(OWLObjectComplementOf(cls))
-
-        # -----------------------------------
-        # Existential restrictions ∃ μ . ⊤
-        # -----------------------------------
-        property_query = f"""
-        SELECT DISTINCT ?prop
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind ?prop ?obj .
-            FILTER(?prop != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)
-            FILTER(isIRI(?obj))
-        }}
-        """
-
-        prop_results = self.sparql(property_query)
-
-        for row in prop_results:
-            prop = OWLObjectProperty(row["prop"]["value"])
-            refinements.append(
-                OWLObjectSomeValuesFrom(prop, OWLThing)
+        # Complement
+        if self.use_negation and isinstance(template, OWLObjectComplementOf):
+            return OWLObjectComplementOf(
+                self.m_star(template.get_operand(), expr)
             )
 
-        return refinements
-    
-    def refine_existential(self, concept: OWLClassExpression):
-        """
-        Refine existential restrictions ∃r.X
-        
-        Strategy:
-        1. Recursively refine the filler X to get ∃r.X' (when X=⊤, gets ∃r.A, etc.)
-        2. Add conjunctions: A ⊓ ∃r.X
-        3. Add nested properties: ∃r.(∃s.⊤)
-        """
-        if not isinstance(concept, OWLObjectSomeValuesFrom):
-            return
-        
-        prop = concept.get_property()
-        filler = concept.get_filler()
-        refinements = []
-        
-        examples = list(self.pos) + list(self.neg)
-        if not examples:
-            return
-        
-        values_clause = " ".join(f"<{ind.iri.as_str()}>" for ind in examples)
-        
-        # -----------------------------------
-        # 1. ∃r.X' - Recursively refine filler
-        # When filler=⊤, this queries for classes of property objects
-        # When filler≠⊤, this refines the filler concept
-        # -----------------------------------
-        if filler == OWLThing:
-            # Query for classes that objects of this property belong to
-            class_query = f"""
-            SELECT DISTINCT ?class
-            WHERE {{
-                VALUES ?ind {{ {values_clause} }}
-                ?ind <{prop.iri.as_str()}> ?obj .
-                ?obj a ?class .
-                FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-            }}
-            """
+        # Intersection
+        if isinstance(template, OWLObjectIntersectionOf):
+            return OWLObjectIntersectionOf([
+                self.m_star(op, expr)
+                for op in template.operands()
+            ])
+
+        # Union
+        if isinstance(template, OWLObjectUnionOf):
+            return OWLObjectUnionOf([
+                self.m_star(op, expr)
+                for op in template.operands()
+            ])
+
+        # Existential
+        if isinstance(template, OWLObjectSomeValuesFrom):
+            return OWLObjectSomeValuesFrom(
+                property=template.get_property(),
+                filler=self.m_star(template.get_filler(), expr)
+            )
+
+        # Universal
+        if isinstance(template, OWLObjectAllValuesFrom):
+            return OWLObjectAllValuesFrom(
+                property=template.get_property(),
+                filler=self.m_star(template.get_filler(), expr)
+            )
+
+        # Fallback
+        return template
             
-            class_results = self.sparql(class_query)
-            for row in class_results:
-                cls = OWLClass(row["class"]["value"])
-                new_concept = OWLObjectSomeValuesFrom(prop, cls)
-                
-                # Check coverage - only add if it covers at least one positive
-                instances = set(self.kb.individuals(new_concept))
-                covers_pos = len(instances & self.pos) > 0
-                
-                if covers_pos:
-                    refinements.append(new_concept)
+
+    def rho_star(self, concept: OWLClassExpression, template: OWLClassExpression):
+
+        results = set()
+
+        # TOP
+        if concept == OWLThing:
+            results |= self.g(template)
+            # return results
+
+        # ∃ r . X
+        if isinstance(concept, OWLObjectSomeValuesFrom):
+
+            r = concept.get_property()
+            X = concept.get_filler()
+
+            new_template = self.m_star(template,
+                                    OWLObjectSomeValuesFrom(r, CONTEXT_POSITION_MARKER))
+
+            # recursive refinement
+            results |= self.rho_star(X, new_template)
+
+            # special case: ∀ r . X
+            results.add(self.m_star(template,
+                                    OWLObjectAllValuesFrom(r, X)))
+
+            # return results
+
+        # ∀ r . X
+        if isinstance(concept, OWLObjectAllValuesFrom):
+
+            r = concept.get_property()
+            X = concept.get_filler()
+
+            new_template = self.m_star(template,
+                                    OWLObjectAllValuesFrom(r, CONTEXT_POSITION_MARKER))
+
+            results |= self.rho_star(X, new_template)
+
+        # ¬ X
+        if self.use_negation and isinstance(concept, OWLObjectComplementOf):
+
+            X = concept.get_operand()
+
+            new_template = self.m_star(template,
+                                    OWLObjectComplementOf(CONTEXT_POSITION_MARKER))
+
+            results |= self.rho_star(X, new_template)
+
+        # X ⊓ Y
+        if isinstance(concept, OWLObjectIntersectionOf):
+
+            X, Y = concept.operands()
+
+            results |= self.rho_star(
+                X,
+                self.m_star(template,
+                            OWLObjectIntersectionOf([CONTEXT_POSITION_MARKER, Y]))
+            )
+
+            results |= self.rho_star(
+                Y,
+                self.m_star(template,
+                            OWLObjectIntersectionOf([X, CONTEXT_POSITION_MARKER]))
+            )
+
+            # return results
+
+        # X ⊔ Y
+        if isinstance(concept, OWLObjectUnionOf):
+
+            X, Y = concept.operands()
+
+            results |= self.rho_star(
+                X,
+                self.m_star(template,
+                            OWLObjectUnionOf([CONTEXT_POSITION_MARKER, Y]))
+            )
+
+            results |= self.rho_star(
+                Y,
+                self.m_star(template,
+                            OWLObjectUnionOf([X, CONTEXT_POSITION_MARKER]))
+            )
+
+            # return results
+
+        # not ⊤ or ⊥ concepts
+        if not self.is_top_or_bottom(concept):
+            results |= self.g(
+                self.m_star(template,
+                            OWLObjectIntersectionOf([concept, CONTEXT_POSITION_MARKER]))
+            )
+
+            results |= self.g(
+                self.m_star(template,
+                            OWLObjectUnionOf([concept, CONTEXT_POSITION_MARKER]))
+            )
+
+        return results
+    
+
+    def refine(self, concept: OWLClassExpression):
+
+        template = CONTEXT_POSITION_MARKER
+
+        candidates = self.rho_star(concept, template)
+
+        # return candidates
+
+        # Calculate parent score (cache it)
+        parent_key = str(concept)
+        if parent_key not in self._score_cache:
+            parent_f1, parent_precision, parent_recall, parent_coverage = self.compute_f1(concept, self.kb, self.pos, self.neg)
+            parent_instances = set(self.kb.individuals(concept))
+            parent_tp = len(parent_instances & self.pos)
+            parent_score = self.refinement_score(concept, parent_f1, parent_tp)
+            self._score_cache[parent_key] = parent_score
         else:
-            # Recursively refine the filler
-            refined_filler = self.refine(filler)
-            # print(list(self._renderer.render(i) for i in refined_filler))  # Debug output
-            # exit(0)
-            for refined_filler in self.refine(filler):
-                new_concept = OWLObjectSomeValuesFrom(prop, refined_filler)
-                
-                # Check coverage - only add if it covers at least one positive
-                instances = set(self.kb.individuals(new_concept))
-                covers_pos = len(instances & self.pos) > 0
-                
-                if covers_pos:
-                    refinements.append(new_concept)
-        
-        # -----------------------------------
-        # 2. A ⊓ ∃r.X - conjunction with named classes
-        # -----------------------------------
-        top_class_query = f"""
-        SELECT DISTINCT ?class
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind a ?class .
-            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-        }}
-        """
-        
-        top_class_results = self.sparql(top_class_query)
-        
-        # Get original concept coverage
-        original_instances = set(self.kb.individuals(concept))
-        
-        for row in top_class_results:
-            cls = OWLClass(row["class"]["value"])
-            new_concept = OWLObjectIntersectionOf([cls, concept])
-            
-            # Check coverage - only add if it covers positives AND changes coverage
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
+            parent_score = self._score_cache[parent_key]
 
-
-        # -----------------------------------
-        # 2. A ⊓ ∃r.X - conjunction with named classes
-        # -----------------------------------
-        top_class_query = f"""
-        SELECT DISTINCT ?class
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind a ?class .
-            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-        }}
-        """
-        
-        top_class_results = self.sparql(top_class_query)
-        
-        # Get original concept coverage
-        original_instances = set(self.kb.individuals(concept))
-        
-        for row in top_class_results:
-            cls = OWLClass(row["class"]["value"])
-            new_concept = OWLObjectUnionOf([cls, concept])
-            
-            # Check coverage - only add if it covers positives AND changes coverage
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-
-        
-        
-        # -----------------------------------
-        # 3. ∃r.(Filler ⊓ ∃s.⊤) - nested existential with filler preserved
-        # Query for properties that objects of r have
-        # This adds nested properties while preserving the original filler constraint
-        # -----------------------------------
-        # nested_prop_query = f"""
-        # SELECT DISTINCT ?prop2
-        # WHERE {{
-        #     VALUES ?ind {{ {values_clause} }}
-        #     ?ind <{prop.iri.as_str()}> ?obj .
-        #     ?obj ?prop2 ?obj2 .
-        #     FILTER(?prop2 != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)
-        #     FILTER(?prop2 != <{prop.iri.as_str()}>)  # Avoid nested same property
-        #     FILTER(isIRI(?obj2))
-        # }}
-        # """
-        
-        # nested_prop_results = self.sparql(nested_prop_query)
-        # for row in nested_prop_results:
-        #     inner_prop = OWLObjectProperty(row["prop2"]["value"])
-        #     inner_exist = OWLObjectSomeValuesFrom(inner_prop, OWLThing)
-        #     # Combine original filler with nested property: Filler ⊓ ∃s.⊤
-        #     combined_filler = OWLObjectIntersectionOf([filler, inner_exist])
-        #     new_concept = OWLObjectSomeValuesFrom(prop, combined_filler)
-            
-        #     # Check coverage - only add if it covers at least one positive
-        #     instances = set(self.kb.individuals(new_concept))
-        #     covers_pos = len(instances & self.pos) > 0
-            
-        #     if covers_pos:
-                # refinements.append(new_concept)
-
-
-        # -----------------------------------
-        # 4. ∃r.(∃s.Filler) - nested existential with filler preserved
-        # Query for properties that objects of r have
-        # This adds nested properties while preserving the original filler constraint
-        # -----------------------------------
-        nested_prop_query = f"""
-        SELECT DISTINCT ?prop2
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind <{prop.iri.as_str()}> ?obj .
-            ?obj ?prop2 ?obj2 .
-            FILTER(?prop2 != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)
-            FILTER(?prop2 != <{prop.iri.as_str()}>)  # Avoid nested same property
-            FILTER(isIRI(?obj2))
-        }}
-        """
-        
-        nested_prop_results = self.sparql(nested_prop_query)
-        for row in nested_prop_results:
-            inner_prop = OWLObjectProperty(row["prop2"]["value"])
-            inner_exist = OWLObjectSomeValuesFrom(inner_prop, filler)
-            new_concept = OWLObjectSomeValuesFrom(prop, inner_exist)
-            
-            # Check coverage - only add if it covers at least one positive
-            instances = set(self.kb.individuals(new_concept))
-            covers_pos = len(instances & self.pos) > 0
-            
-            if covers_pos:
-                refinements.append(new_concept)
-
-        # -----------------------------------
-        # Also generate ∀r.X from ∃r.X (universal restriction)
-        # ∀r.X means "all r-successors are X"
-        # -----------------------------------
-        univ_concept = OWLObjectAllValuesFrom(prop, filler)
-        instances = set(self.kb.individuals(univ_concept))
-        covers_pos = len(instances & self.pos) > 0
-        
-        if covers_pos:
-            refinements.append(univ_concept)
-        
-        return refinements
-    
-
-    def refine_intersection(self, concept: OWLClassExpression):
-        """Refine intersection concepts A⊓B by refining each operand."""
-        if not isinstance(concept, OWLObjectIntersectionOf):
-            return
-        
         refinements = []
-        for operand in concept.operands():
-            for refined_operand in self.refine(operand):
-                # Replace the operand with its refinement
-                new_operands = [refined_operand if op == operand else op for op in concept.operands()]
-                new_concept = OWLObjectIntersectionOf(new_operands)
-                
-                # Check coverage - only add if it covers at least one positive
-                instances = set(self.kb.individuals(new_concept))
-                covers_pos = len(instances & self.pos) > 0
-                
-                if covers_pos:
-                    refinements.append(new_concept)
-        
-        return refinements
-    
-    def refine_union(self, concept: OWLClassExpression):
-        """Refine union concepts A⊔B by refining each operand."""
-        if not isinstance(concept, OWLObjectUnionOf):
-            return
-        
-        refinements = []
-        for operand in concept.operands():
-            for refined_operand in self.refine(operand):
-                # Replace the operand with its refinement
-                new_operands = [refined_operand if op == operand else op for op in concept.operands()]
-                new_concept = OWLObjectUnionOf(new_operands)
-                
-                # Check coverage - only add if it covers at least one positive
-                instances = set(self.kb.individuals(new_concept))
-                covers_pos = len(instances & self.pos) > 0
-                
-                if covers_pos:
-                    refinements.append(new_concept)
-        
-        return refinements
-    
-    def refine_universal(self, concept: OWLClassExpression):
-        """
-        Refine universal restrictions ∀r.X by refining the filler X.
-        
-        Strategy:
-        1. Recursively refine the filler X to get ∀r.X'
-        2. Add conjunctions/disjunctions with classes: A ⊓ ∀r.X
-        3. Generate ∀r.¬X (negation of filler)
-        """
-        if not isinstance(concept, OWLObjectAllValuesFrom):
-            return
-        
-        prop = concept.get_property()
-        filler = concept.get_filler()
-        refinements = []
-        
-        examples = list(self.pos) + list(self.neg)
-        if not examples:
-            return
-        
-        values_clause = " ".join(f"<{ind.iri.as_str()}>" for ind in examples)
-        
-        # -----------------------------------
-        # 1. ∀r.X' - Recursively refine filler
-        # -----------------------------------
-        
-        # Recursively refine the filler
-        for refined_filler in self.refine(filler):
-            new_concept = OWLObjectAllValuesFrom(prop, refined_filler)
-            
-            # Check coverage
-            instances = set(self.kb.individuals(new_concept))
-            covers_pos = len(instances & self.pos) > 0
-            
-            if covers_pos:
-                refinements.append(new_concept)
-    
-        # -----------------------------------
-        # 2. A ⊓ ∀r.X - conjunction with named classes
-        # -----------------------------------
-        class_query = f"""
-        SELECT DISTINCT ?class
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind a ?class .
-            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-        }}
-        """
-        
-        class_results = self.sparql(class_query)
-        
-        # Get original concept coverage
-        original_instances = set(self.kb.individuals(concept))
-        
-        for row in class_results:
-            cls = OWLClass(row["class"]["value"])
-            
-            # Try conjunction
-            new_concept = OWLObjectIntersectionOf([cls, concept])
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-            
-            # Try disjunction
-            new_concept = OWLObjectUnionOf([cls, concept])
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-        
-        # -----------------------------------
-        # 3. ∀r.¬X - negate the filler
-        # -----------------------------------
-        neg_filler = OWLObjectComplementOf(filler)
-        neg_concept = OWLObjectAllValuesFrom(prop, neg_filler)
-        instances = set(self.kb.individuals(neg_concept))
-        if len(instances & self.pos) > 0:
-            refinements.append(neg_concept)
-        
-        return refinements
-    
-    def refine_any_concept(self, concept: OWLClassExpression):
-        """Refine named atomic concepts A by adding conjunctions and disjunctions."""
-        # if not isinstance(concept, OWLClass):
-        #     return
-        
-        refinements = []
-        
-        examples = list(self.pos) + list(self.neg)
-        if not examples:
-            return
-        
-        values_clause = " ".join(f"<{ind.iri.as_str()}>" for ind in examples)
-        
-        # Build filter to exclude current concept (only for OWLClass)
-        concept_filter = ""
-        if isinstance(concept, OWLClass):
-            concept_filter = f"FILTER(?class != <{concept.iri.as_str()}>)"
-        
-        # Add conjunctions with other classes
-        class_query = f"""
-        SELECT DISTINCT ?class
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind a ?class .
-            FILTER(?class != <http://www.w3.org/2002/07/owl#NamedIndividual>)
-            FILTER(?class != <http://www.w3.org/2002/07/owl#Thing>)
-            {concept_filter}
-        }}
-        """
-        
-        class_results = self.sparql(class_query)
-        
-        # Get coverage of original concept for comparison
-        original_instances = set(self.kb.individuals(concept))
-        
-        for row in class_results:
-            cls = OWLClass(row["class"]["value"])
 
-            # Try conjunction: concept ⊓ cls
-            new_concept = OWLObjectIntersectionOf([concept, cls])
-            instances = set(self.kb.individuals(new_concept))
-            # Only add if it covers positives AND changes the coverage
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
+        for ref in candidates:
+            # Compute metrics for child
+            f1, precision, recall, coverage = self.compute_f1(ref, self.kb, self.pos, self.neg)
+            instances = set(self.kb.individuals(ref))
+            tp = len(instances & self.pos)
+            
+            # Calculate child refinement score
+            child_score = self.refinement_score(ref, f1, tp)
+            
+            # Cache child score for future use
+            child_key = str(ref)
+            self._score_cache[child_key] = child_score
+            
+            #only yield if score improved OR added a role
+            if child_score >= parent_score or self.added_role(concept, ref): #if child_score >= parent_score or self.added_role(concept, ref):
 
-            # Try disjunction: concept ⊔ cls  
-            new_concept = OWLObjectUnionOf([concept, cls])
-            instances = set(self.kb.individuals(new_concept))
-            # Only add if it covers positives AND changes the coverage
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-
-        #BUG if we limit at to the above version, we will never get out of the loop of refining the same named classes over and over (A⊓B⊓C⊓D, A⊔C⊔B⊔D, etc.)
-        #  because we never add new properties to break out of it. We need to add a refinement that adds a new property restriction (∃r.⊤) to create 
-        # new patterns that can then be refined further.  T
-        
-        # -----------------------------------
-        # Add concept ⊓ ∃r.⊤ to break out of intersection/union loop
-        # -----------------------------------
-        property_query = f"""
-        SELECT DISTINCT ?prop
-        WHERE {{
-            VALUES ?ind {{ {values_clause} }}
-            ?ind ?prop ?obj .
-            FILTER(?prop != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)
-            FILTER(isIRI(?obj))
-        }}
-        """
-        
-        prop_results = self.sparql(property_query)
-        
-        for row in prop_results:
-            prop = OWLObjectProperty(row["prop"]["value"])
-            exist = OWLObjectSomeValuesFrom(prop, OWLThing)
-            
-            # Try conjunction: concept ⊓ ∃r.⊤
-            new_concept = OWLObjectIntersectionOf([concept, exist])
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-            
-            # Try disjunction: concept ⊔ ∃r.⊤
-            new_concept = OWLObjectUnionOf([concept, exist])
-            instances = set(self.kb.individuals(new_concept))
-            if len(instances & self.pos) > 0 and instances != original_instances:
-                refinements.append(new_concept)
-        
-        # -----------------------------------
-        # MOST IMPORTANT - Generate ∃r.concept and ∃r.¬concept
-        # This creates patterns like ∃hasChild.Male (has a male child)
-        # Query for inverse relationships - which individuals have relationships TO our examples
-        # -----------------------------------
-        inverse_property_query = f"""
-        SELECT DISTINCT ?prop
-        WHERE {{
-            VALUES ?target {{ {values_clause} }}
-            ?subject ?prop ?target .
-            FILTER(?prop != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)
-            FILTER(isIRI(?subject))
-        }}
-        """
-        
-        inv_prop_results = self.sparql(inverse_property_query)
-        
-        for row in inv_prop_results:
-            prop = OWLObjectProperty(row["prop"]["value"])
-            
-            # Generate ∃r.concept (e.g., ∃hasChild.Male)
-            exist_concept = OWLObjectSomeValuesFrom(prop, concept)
-            instances = set(self.kb.individuals(exist_concept))
-            if len(instances & self.pos) > 0:
-                refinements.append(exist_concept)
-            
-            # Generate ∃r.¬concept (e.g., ∃hasChild.¬Male)
-            neg_concept = OWLObjectComplementOf(concept)
-            exist_neg_concept = OWLObjectSomeValuesFrom(prop, neg_concept)
-            instances = set(self.kb.individuals(exist_neg_concept))
-            if len(instances & self.pos) > 0:
-                refinements.append(exist_neg_concept)
-        
-        return refinements
+                # Check for high-precision fragment
+                if precision >= self.precision_threshold and recall < self.recall_threshold:
+                    covered = instances & self.pos
+                    covered_sig = frozenset(covered)
+                    
+                    # Check if we haven't already stored a fragment with this exact coverage
+                    duplicate = False
+                    for existing_frag in self.high_precision_fragments:
+                        existing_covered = set(self.kb.individuals(existing_frag)) & self.pos
+                        if frozenset(existing_covered) == covered_sig:
+                            duplicate = True
+                            break
+                    
+                    if not duplicate:
+                        print(f"Fragment: P={precision:.3f}, R={recall:.3f} | {self._renderer.render(ref)[:80]}")
+                        self.high_precision_fragments.append(ref)
+                        self.covered_positives.update(covered)
+                
+                # Yield concept that passed the filter
+                refinements.append(ref)
+        return refinements 
+    
 
 
     def concept_length(self, concept: OWLClassExpression) -> int:
@@ -686,96 +539,11 @@ class PruneCELBasedRefinement(BaseRefinement):
         return self.count_quantifiers(child) > self.count_quantifiers(parent)
 
 
-    def refine(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        """
-        Main refinement method that dispatches to type-specific refinements.
-        Uses PruneCEL-S filtering: only yield child if:
-        (1) refinement_score(child) > refinement_score(parent), OR
-        (2) child was derived by adding a role (∃r or ∀r)
-        """
-        # Calculate parent score (cache it)
-        parent_key = str(concept)
-        if parent_key not in self._score_cache:
-            parent_f1, parent_precision, parent_recall, parent_coverage = self.compute_f1(concept, self.kb, self.pos, self.neg)
-            parent_instances = set(self.kb.individuals(concept))
-            parent_tp = len(parent_instances & self.pos)
-            parent_score = self.refinement_score(concept, parent_f1, parent_tp)
-            self._score_cache[parent_key] = parent_score
-        else:
-            parent_score = self._score_cache[parent_key]
+    def is_top_or_bottom(self, concept: OWLClassExpression) -> bool:
+        """Check if concept is ⊤ or ⊥."""
+        return concept == OWLThing or concept == OWLNothing
+   
         
-        # Generate refinements
-        if concept == OWLThing:
-            results = list(self.refine_top_concept(concept))
-        elif isinstance(concept, OWLObjectSomeValuesFrom):
-            results = self.refine_existential(concept)
-            if results:
-                results = list(results)
-            else:
-                results = []
-        elif isinstance(concept, OWLObjectAllValuesFrom):
-            results = self.refine_universal(concept)
-            if results:
-                results = list(results)
-            else:
-                results = []
-        elif isinstance(concept, OWLObjectIntersectionOf):
-            results = self.refine_intersection(concept)
-            if results:
-                results = list(results)
-            else:
-                results = []
-        elif isinstance(concept, OWLObjectUnionOf):
-            results = self.refine_union(concept)
-            if results:
-                results = list(results)
-            else:
-                results = []
-        else:
-            # For other types (atomic concepts, complements, etc.)
-            results = self.refine_any_concept(concept)
-            if results:
-                results = list(results)
-            else:
-                results = []
-        
-        # Filter and yield results based on refinement score
-        for ref in results:
-            # Compute metrics for child
-            f1, precision, recall, coverage = self.compute_f1(ref, self.kb, self.pos, self.neg)
-            instances = set(self.kb.individuals(ref))
-            tp = len(instances & self.pos)
-            
-            # Calculate child refinement score
-            child_score = self.refinement_score(ref, f1, tp)
-            
-            # Cache child score for future use
-            child_key = str(ref)
-            self._score_cache[child_key] = child_score
-            
-            # PruneCEL-S filter: only yield if score improved OR added a role
-            if child_score > parent_score or self.added_role(concept, ref):
-                # Check for high-precision fragment
-                if precision >= self.precision_threshold and recall < self.recall_threshold:
-                    covered = instances & self.pos
-                    covered_sig = frozenset(covered)
-                    
-                    # Check if we haven't already stored a fragment with this exact coverage
-                    duplicate = False
-                    for existing_frag in self.high_precision_fragments:
-                        existing_covered = set(self.kb.individuals(existing_frag)) & self.pos
-                        if frozenset(existing_covered) == covered_sig:
-                            duplicate = True
-                            break
-                    
-                    if not duplicate:
-                        print(f"Fragment: P={precision:.3f}, R={recall:.3f} | {self._renderer.render(ref)[:80]}")
-                        self.high_precision_fragments.append(ref)
-                        self.covered_positives.update(covered)
-                
-                # Yield concept that passed the filter
-                yield ref
-    
     def compute_f1(self, concept: OWLClassExpression, kb: KnowledgeBase, 
                    pos: Set, neg: Set) -> Tuple[float, float, float, int]:
         """Compute F1, precision, recall, and coverage counts for a concept."""
