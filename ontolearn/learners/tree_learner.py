@@ -82,7 +82,7 @@ from owlapy.vocab import OWLFacet, XSDVocabulary
 from owlapy.owl_property import OWLDataProperty
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_datatype import OWLDatatype
-
+from collections.abc  import Sequence
 
 def explain_inference(clf, X: pd.DataFrame):
     """
@@ -272,7 +272,7 @@ class TDL:
         plot_feature_importance: bool = False,
         verbose: int = 10,
         verbalize: bool = False,
-        feature_refinement: bool = False,
+        feature_refinement: bool = True,
     ):
         self.use_inverse = use_inverse
         self.use_data_properties = use_data_properties
@@ -405,14 +405,28 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
-    def _compute_dt_gaussian_ranges(self, values: set, best_dist: dict) -> List[tuple]:
-        print(type(list(best_dist.keys())[0]))
+    def _compute_dt_pdf_ranges(self, values: tuple, best_dist: dict, iteration:int = 1) -> List[tuple]:
+        frozen_dist: rv_frozen
+        dist_name: list
+        #print(type(list(best_dist.keys())[0]))
         dist_name = list(best_dist.keys())[0]
         distribution = getattr(sc.stats, dist_name)
-        frozen_dist: rv_frozen
         frozen_dist = distribution(**best_dist[dist_name])
-        mean = frozen_dist.stats(moments="m")
-        std = frozen_dist.std()
+        mean: np.float64
+        std: np.float64
+
+        if(iteration==1):
+            mean = frozen_dist.stats(moments="m")
+            std = frozen_dist.std()
+            #print(type(mean), type(std))
+        elif(type(values) == tuple and iteration>1):
+            raise NotImplementedError("more iterations than 1 not implemented")
+            truncated_dist:rv_frozen
+            truncated_dist = sc.stats.truncate(frozen_dist, values[0], values[1])
+            mean = truncated_dist.stats(moments='m')
+            std = truncated_dist.std()
+        else:
+            raise ValueError("Interval is not tuple or iteration >1 where it should not be")
         ranges = [
             (mean - std, mean),
             (mean, mean + std),
@@ -433,6 +447,7 @@ class TDL:
             return
         mode = "gauss"
         ranges_dict = dict()
+        generated_dt_class_expressions = dict()
         for prop in data_properties_dict:
             if mode == "minmax":
                 ranges_dict.setdefault(prop, self._get_data_property_range(data_properties_dict[prop]))
@@ -440,20 +455,22 @@ class TDL:
             if mode == "gauss":
                 f = Fitter(data_properties_dict[prop], distributions=get_common_distributions())
                 f.fit()
-                if "lumo" in prop.__repr__():
-                    f.summary(Nbest=1, method="ks_statistic")
-                    plt.legend(["exponpow", "lumo data (Histogram)"])
 
-                    plt.xlabel("lumo values")
-                    plt.ylabel("Density (Data & Probability)")
-                    plt.title("Best Distribution Fit (Ranked by K-S)")
-                    plt.show()
-                print("act" + prop.__repr__())
+                #distribution fit plot
+                #if "lumo" in prop.__repr__():
+                #    f.summary(Nbest=1, method="ks_statistic")
+                #    plt.legend(["exponpow", "lumo data (Histogram)"])
+#
+                #    plt.xlabel("lumo values")
+                #    plt.ylabel("Density (Data & Probability)")
+                #    plt.title("Best Distribution Fit (Ranked by K-S)")
+                #    plt.show()
+                print("prop" + prop.__repr__())
                 best_dist = f.get_best(method="ks_statistic")
                 print(best_dist)
                 ranges_dict.setdefault(
                     prop,
-                    self._compute_dt_gaussian_ranges(data_properties_dict[prop], best_dist),
+                    self._compute_dt_pdf_ranges(None, best_dist, iteration=1),
                 )
 
         for r in ranges_dict:
@@ -463,21 +480,39 @@ class TDL:
                 # add concept to features
                 if str_dl_concept not in features:
                     features[str_dl_concept] = new_class_expression
-            # assign concept per individual, if satisfied
+        # assign concept per individual, if satisfied
+
         for ind in individuals:
             for prop in data_properties_dict:
                 if prop in per_individual_data_properties.get(ind, {}):
                     for v in per_individual_data_properties[ind][prop]:
                         for interval in ranges_dict[prop]:
                             if interval[0] <= v and v <= interval[1]:
-                                individuals_to_feature_mapping[ind.str].add(owl_expression_to_dl(self._pack_data_property_with_range_to_dl_concept(prop, interval)))
+                                #
+                                #debug
+                                #print(ind, prop)
+                                new_class_expression = self._pack_data_property_with_range_to_dl_concept(prop, interval)
+                                str_dl_concept = owl_expression_to_dl(new_class_expression)
+
+                                #if str_dl_concept not in features:
+                                #    features[str_dl_concept] = new_class_expression
+                                individuals_to_feature_mapping[ind.str].add(str_dl_concept)
+                                if ind.str not in generated_dt_class_expressions:
+                                    generated_dt_class_expressions[ind.str] = set()
+                                generated_dt_class_expressions[ind.str].add((new_class_expression,prop))
+
+                                #individuals_to_feature_mapping[ind.str].add(owl_expression_to_dl(self._pack_data_property_with_range_to_dl_concept(prop, interval)))
+                                
+                                
                                 break
                             # print(individuals_to_feature_mapping[ind.str])
+        return generated_dt_class_expressions
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
-        features = dict()
+        features_dict = dict()
         # () Grouped str dl concepts given str individuals.
+        generated_dt_classexpressions_per_individual = dict()
         data_properties_dict = dict()
         per_individual_data_properties = dict()
         individuals_to_feature_mapping = dict()
@@ -496,36 +531,37 @@ class TDL:
                 self._add_feature(
                     owl_class_expression,
                     owl_named_individual,
-                    features,
+                    features_dict,
                     individuals_to_feature_mapping,
                 )
 
             # Generate additional features based on flags
             if self.use_inverse:
-                self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
+                self._extract_inverse_property_features(owl_named_individual, features_dict, individuals_to_feature_mapping)
 
             if self.use_data_properties:
                 self._extract_data_property_features(
                     owl_named_individual,
-                    features,
+                    features_dict,
                     individuals_to_feature_mapping,
                     data_properties_dict,
                     per_individual_data_properties,
                 )
 
             if self.use_card_restrictions:
-                self._extract_cardinality_features(owl_named_individual, features, individuals_to_feature_mapping)
+                self._extract_cardinality_features(owl_named_individual, features_dict, individuals_to_feature_mapping)
+
         # map individuals to additional data property features
         if self.use_data_properties:
-            self._extract_ranges_from_data_properties(
+            generated_dt_classexpressions_per_individual = self._extract_ranges_from_data_properties(
                 individuals,
-                features,
+                features_dict,
                 individuals_to_feature_mapping,
                 data_properties_dict,
                 per_individual_data_properties,
             )
 
-        if len(features) == 0:
+        if len(features_dict) == 0:
             num_individuals = len(list(make_iterable_verbose(individuals)))
             error_msg = (
                 "First hop features cannot be extracted.\n"
@@ -542,7 +578,7 @@ class TDL:
             )
             raise AssertionError(error_msg)
         if self.verbose > 0:
-            print(f"Unique OWL Class Expressions as features: {len(features)}")
+            print(f"Unique OWL Class Expressions as features: {len(features_dict)}")
             if self.use_inverse:
                 print("  - Including inverse property features")
             if self.use_data_properties:
@@ -550,8 +586,11 @@ class TDL:
             if self.use_card_restrictions:
                 print("  - Including cardinality restriction features")
 
+        #maybe not needed
+        dict_list = list[dict]
+        dict_list = [features_dict, individuals, individuals_to_feature_mapping, data_properties_dict, per_individual_data_properties, generated_dt_classexpressions_per_individual]
         # Convert features dict to list
-        features_list = [v for k, v in features.items()]
+        features_list = [v for k, v in features_dict.items()]
 
         # Construct binary feature matrix
         X = []
@@ -567,7 +606,7 @@ class TDL:
             X.append(binary_sparse_representation)
 
         X = np.array(X)
-        return X, features_list
+        return X, features_list, dict_list
 
     def _extract_inverse_property_features(
         self,
@@ -711,10 +750,9 @@ class TDL:
             if self.verbose > 0:
                 print(f"Warning: Error extracting cardinality features: {e}")
 
-    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    def get_examples(self, learning_problem: PosNegLPStandard) -> List[OWLNamedIndividual]:
         # (1) Initialize ordering over positive and negative examples.
-        if self.verbose > 0:
-            print("Creating a Training Dataset")
         positive_examples: List[OWLNamedIndividual]
         negative_examples: List[OWLNamedIndividual]
         positive_examples = [i for i in learning_problem.pos]
@@ -723,9 +761,17 @@ class TDL:
         y = [1.0 for _ in positive_examples] + [0.0 for _ in negative_examples]
         # (3) Iterate over examples to extract unique features.
         examples = positive_examples + negative_examples
+        return examples,y
+
+    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        
+        if self.verbose > 0:
+            print("Creating a Training Dataset")
+        
+        examples,y = self.get_examples(learning_problem)
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
 
-        X, features = self.extract_expressions_from_owl_individuals(examples)
+        X, features, dict_list = self.extract_expressions_from_owl_individuals(examples)
 
         # (4) Creating a tabular data for the binary classification problem.
         # X = self.sparse_binary_representations(features, examples, examples_to_features)
@@ -736,7 +782,7 @@ class TDL:
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
         self.features = X.columns.values.tolist()
-        return X, y
+        return X, y, dict_list
 
     def construct_owl_expression_from_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
         """Construct an OWL class expression from a decision tree"""
@@ -823,6 +869,22 @@ class TDL:
         print("Displaying SHAP Importance Plot")
         plt.show()
 
+    def refine_numerical_features(self, topk_expressions:list[OWLClassExpression], dict_list:list[dict], iteration:int):
+        
+        #get facet values
+        for e in topk_expressions:
+            #print(type(e))
+            if type(e) == OWLDataSomeValuesFrom:
+                filler = e.get_filler()
+                if type(filler) == OWLDatatypeRestriction:
+                    restriction_sequence: Sequence[OWLFacetRestriction]
+                    restriction_sequence = filler.get_facet_restrictions()
+                    for e in restriction_sequence:
+                        print(e.get_facet(), e.get_facet_value())
+                    print('\n')
+                
+                
+
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
@@ -846,7 +908,8 @@ class TDL:
             self.max_runtime = max_runtime
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
-        X, y = self.create_training_data(learning_problem=learning_problem)
+        dict_list: list[dict]
+        X, y, dict_list = self.create_training_data(learning_problem=learning_problem)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
         if self.plot_embeddings:
@@ -867,19 +930,45 @@ class TDL:
         if self.feature_refinement:
             topk = 30
             for i in range(1):
-                topk_id = np.argsort(self.clf.feature_importances_)
+                #calculate SHAP global feature importance
+                tree_explainer = TreeExplainer(self.clf)
+                sVal = tree_explainer.shap_values(X.values)
+                if isinstance(sVal, np.ndarray):
+                    if sVal.ndim == 3:
+                        global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
+                    else:
+                        global_importance = np.abs(sVal).mean(axis=0)
+                
+                topk_id = np.argsort(global_importance)
+                # top expressions sorted low to high
+                top_expressions: list[OWLClassExpression]
                 top_expressions = [self.features[i] for i in topk_id[-topk:].tolist()]
-                # least important features
-                least_important_expressions = [self.features[i] for i in topk_id[: -topk - 1].tolist()]
+                #print(top_expressions[-5:])
+                refined_expressions = self.refine_numerical_features(top_expressions,dict_list,iteration=i+1)
 
-                self.X = self.X.iloc[:, topk_id[-topk:]]
-                X = self.X
-                # refit decision tree
-                self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
+                
+                #print([global_importance[i] for i in topk_id[-topk:].tolist()])
+                # least important features
+                #least_important_expressions = [self.features[i] for i in topk_id[: -topk - 1].tolist()]
+                
+                # for top expressions find individual and refine 
+
+
+
+                #self.X = self.X.iloc[:, topk_id[-topk:]]
+                #X = self.X
+                ## refit decision tree
+                #self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
 
                 # self.clf.fit(X=self.X.values, y=self.y.values)
                 # only top_expressions in features also have to be removed from y
                 # TODO refine features for most_important
+
+
+
+
+
+
 
         if self.report_classification:
             self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
