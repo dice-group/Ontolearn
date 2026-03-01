@@ -423,11 +423,19 @@ class TDL:
             std = frozen_dist.std()
             #print(type(mean), type(std))
         elif(type(values) == tuple and iteration>1):
-            raise NotImplementedError("more iterations than 1 not implemented")
-            truncated_dist:rv_frozen
-            truncated_dist = sc.stats.truncate(frozen_dist, values[0], values[1])
-            mean = truncated_dist.stats(moments='m')
-            std = truncated_dist.std()
+            lb, ub = values
+            #raise NotImplementedError("more iterations than 1 not implemented")
+            #truncated_dist:rv_frozen
+            #truncated_dist = sc.stats.truncate(frozen_dist, values[0], values[1])
+
+            z = frozen_dist.cdf(ub) - frozen_dist.cdf(lb)
+            mean = (frozen_dist.expect(lambda x: x, lb=lb, ub=ub)) / z
+            second_moment = (frozen_dist.expect(lambda x: x**2, lb=lb, ub=ub)) / z
+            std = np.sqrt(second_moment - mean**2)
+            #truncated_dist = sc.stats.truncate(d.pdf(d,a,kwds), lb=values[0], ub=values[1])
+            #mean = truncated_dist.stats(moments='m')
+            #std = truncated_dist.std()
+        
         else:
             raise ValueError("Interval is not tuple or iteration >1 where it should not be")
         ranges = [
@@ -451,6 +459,7 @@ class TDL:
         mode = "gauss"
         ranges_dict = dict()
         generated_dt_class_expressions = dict()
+        best_dists = dict()
         for prop in data_properties_dict:
             if mode == "minmax":
                 ranges_dict.setdefault(prop, self._get_data_property_range(data_properties_dict[prop]))
@@ -471,6 +480,7 @@ class TDL:
                 print("prop" + prop.__repr__())
                 best_dist = f.get_best(method="ks_statistic")
                 print(best_dist)
+                best_dists[prop._iri] = best_dist
                 ranges_dict.setdefault(
                     prop,
                     self._compute_dt_pdf_ranges(None, best_dist, iteration=1),
@@ -509,7 +519,7 @@ class TDL:
                                 
                                 break
                             # print(individuals_to_feature_mapping[ind.str])
-        return generated_dt_class_expressions
+        return generated_dt_class_expressions,best_dists
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
@@ -556,7 +566,7 @@ class TDL:
 
         # map individuals to additional data property features
         if self.use_data_properties:
-            generated_dt_classexpressions_per_individual = self._extract_ranges_from_data_properties(
+            generated_dt_classexpressions_per_individual, prob_dists = self._extract_ranges_from_data_properties(
                 individuals,
                 features_dict,
                 individuals_to_feature_mapping,
@@ -590,8 +600,8 @@ class TDL:
                 print("  - Including cardinality restriction features")
 
         #maybe not needed
-        dict_list = list[dict]
-        dict_list = [features_dict, individuals, individuals_to_feature_mapping, data_properties_dict, per_individual_data_properties, generated_dt_classexpressions_per_individual]
+        dict_list = dict[dict]
+        dict_list = {"features": features_dict, "individuals":individuals, "individuals_to_feature_mapping":individuals_to_feature_mapping, "data_properties_dict":data_properties_dict, "per_individual_data_properties":per_individual_data_properties, "distributions_prop":prob_dists,"gen_dt_ce_per_ind":generated_dt_classexpressions_per_individual}
         # Convert features dict to list
         features_list = [v for k, v in features_dict.items()]
 
@@ -873,8 +883,9 @@ class TDL:
         plt.show()
 
     def refine_numerical_features(self, topk_expressions:list[OWLClassExpression], dict_list:list[dict], iteration:int):
-        generated_dt_classexpressions_per_individual = dict_list[-1]
-        print("Number of individuals, that have generatex expressions: ", len(generated_dt_classexpressions_per_individual.keys()))
+        generated_dt_classexpressions_per_individual = dict_list["gen_dt_ce_per_ind"]
+        p_distributions = dict_list["distributions_prop"]
+        print("Number of individuals, that have generated expressions: ", len(generated_dt_classexpressions_per_individual.keys()))
         #get facet values
         ces_to_be_refine = 0
         for e in topk_expressions:
@@ -883,17 +894,24 @@ class TDL:
             if type(e) == OWLDataSomeValuesFrom:
                 filler = e.get_filler()
                 if type(filler) == OWLDatatypeRestriction:
+                    data_type = filler.get_datatype().iri
                     restriction_sequence: Sequence[OWLFacetRestriction]
                     restriction_sequence = filler.get_facet_restrictions()
-                    for r in restriction_sequence:
-                        print(r.get_facet(), r.get_facet_value())
+                    borders:tuple
+                    borders = tuple(r.get_facet_value().parse_double() for r in restriction_sequence)
+                    print("Range to be refined :", borders)
+                    refined_range = self._compute_dt_pdf_ranges(borders, p_distributions[data_type], iteration)
+                    print("Refined ranges(truncated) :", refined_range)
                     print('\n')
+
+                    ##this can happen, after the topk expressions have already been refined
+                    #then again need to check if dp value in interval
                     for ind in generated_dt_classexpressions_per_individual:
                         for cetuple in generated_dt_classexpressions_per_individual[ind]:
                             #print("Class Expressions of individual " + ind + "  :", len(generated_dt_classexpressions_per_individual[ind]) )
                             if cetuple[0] == e:    
                                 ces_to_be_refine += 1
-                                print(cetuple[1])
+                                #print(cetuple[1])
         print("CEs to refine: ",ces_to_be_refine)
                 
                 
@@ -942,7 +960,7 @@ class TDL:
 
         if self.feature_refinement:
             topk = 30
-            for i in range(1):
+            for i in range(1,3):
                 #calculate SHAP global feature importance
                 tree_explainer = TreeExplainer(self.clf)
                 sVal = tree_explainer.shap_values(X.values)
