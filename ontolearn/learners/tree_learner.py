@@ -336,11 +336,13 @@ class TDL:
         min_restr = OWLFacetRestriction(
             OWLFacet.MIN_INCLUSIVE,
             OWLLiteral(literal_range[0], OWLDatatype(XSDVocabulary.DOUBLE)),
+            #OWLLiteral(literal_range[0], property),
         )
         if literal_range is None:
             max_restr = OWLFacetRestriction(
                 OWLFacet.MAX_INCLUSIVE,
                 OWLLiteral(literal_range[0], OWLDatatype(XSDVocabulary.DOUBLE)),
+                #OWLLiteral(literal_range[0], property),
             )
         else:
             max_restr = OWLFacetRestriction(
@@ -350,7 +352,8 @@ class TDL:
 
         dt_range = OWLDatatypeRestriction(
             # here some way to auto detect datatype is needed
-            type_=OWLDatatype(XSDVocabulary.DOUBLE),
+            #type_=OWLDatatype(XSDVocabulary.DOUBLE),
+            type_=OWLDatatype(property._iri),
             facet_restrictions=[min_restr, max_restr],
         )
 
@@ -870,18 +873,28 @@ class TDL:
         plt.show()
 
     def refine_numerical_features(self, topk_expressions:list[OWLClassExpression], dict_list:list[dict], iteration:int):
-        
+        generated_dt_classexpressions_per_individual = dict_list[-1]
+        print("Number of individuals, that have generatex expressions: ", len(generated_dt_classexpressions_per_individual.keys()))
         #get facet values
+        ces_to_be_refine = 0
         for e in topk_expressions:
             #print(type(e))
+            # turn generated dt_class expression dict inside out, less loops needed
             if type(e) == OWLDataSomeValuesFrom:
                 filler = e.get_filler()
                 if type(filler) == OWLDatatypeRestriction:
                     restriction_sequence: Sequence[OWLFacetRestriction]
                     restriction_sequence = filler.get_facet_restrictions()
-                    for e in restriction_sequence:
-                        print(e.get_facet(), e.get_facet_value())
+                    for r in restriction_sequence:
+                        print(r.get_facet(), r.get_facet_value())
                     print('\n')
+                    for ind in generated_dt_classexpressions_per_individual:
+                        for cetuple in generated_dt_classexpressions_per_individual[ind]:
+                            #print("Class Expressions of individual " + ind + "  :", len(generated_dt_classexpressions_per_individual[ind]) )
+                            if cetuple[0] == e:    
+                                ces_to_be_refine += 1
+                                print(cetuple[1])
+        print("CEs to refine: ",ces_to_be_refine)
                 
                 
 
