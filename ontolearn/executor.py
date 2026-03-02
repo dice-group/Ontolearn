@@ -38,12 +38,16 @@ from ontolearn.consyn.executor import ConSynExecutor
 from ontolearn.consyn.initializer import Initializer
 from ontolearn.consyn.model.model import ConSynGeneratorModel
 from ontolearn.consyn.trainer import ConSynTrainer
+from ontolearn.learners.alcsat import ALCSAT
+from ontolearn.learners.nero import NERO
+from ontolearn.learners.spell import SPELL
 from ontolearn.learners.tree_learner import TDL
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
+from owlapy import owl_expression_to_dl
 
 from ontolearn.abstracts import AbstractNode
 from ontolearn.learners.base import BaseConceptLearner
@@ -77,6 +81,9 @@ models = {'celoe': CELOE,
           'evolearner': EvoLearner,
           'nces': NCES,
           'tdl': TDL,
+          'alcsat': ALCSAT,
+          'spell': SPELL,
+          'nero': NERO,
           'consyn': ConSynGeneratorModel}
 
 heuristics = {'celoe': CELOEHeuristic,
@@ -248,6 +255,7 @@ def execute(args): # pragma: no cover
         neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples[negatives_key]))))
         lp = PosNegLPStandard(pos=pos, neg=neg)
 
+        hypothesis = None
         if args.model in ["celoe", "ocel"]:
             heur_func = heuristics[args.model](**_get_matching_opts(heuristics[args.model], {}, args_d))
             refinement_op = ModifiedCELOERefinement(**_get_matching_opts(ModifiedCELOERefinement,
@@ -276,14 +284,50 @@ def execute(args): # pragma: no cover
         # elif args.model == "drill":
         #     optargs = {"knowledge_base": kb,
         #                "quality_func": metrics[args.quality_metric]()}
+        elif args.model == 'alcsat':
+            model = ALCSAT(knowledge_base=kb,
+                        max_runtime=args.max_runtime,
+                        max_concept_size=30)
 
-        if args.model not in ["nces", "tdl", "consyn"]:
+        elif args.model ==  'spell':
+            model = SPELL(knowledge_base=kb,
+                        max_runtime=args.max_runtime,
+                        max_query_size=10,
+                        search_mode="full_approx")
+
+        elif args.model == 'nero':
+            model = NERO(knowledge_base=kb,
+                        num_embedding_dim=128,
+                        neural_architecture='DeepSet',
+                        learning_rate=0.001,
+                        num_epochs=50,
+                        batch_size=32
+                    )
+            a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
+            model.ns = a_prop.iri.get_namespace()
+
+        if args.model in ["celoe", "ocel", "evolearner"]:
             model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
         if args.model in ["celoe", "evolearner", "ocel"]:
+            arg_model = args.model.upper()[:3]
+            print(f"{arg_model} starts..", end="\t")
+            start_time = time.time()
             trainer = Trainer(model, kb.reasoner)
             trainer.fit(lp)
-            print(trainer.best_hypotheses(1))
+            hypothesis = trainer.best_hypotheses(1)
+
+            rt_arg_model = time.time() - start_time
+            print(f"{arg_model} ends..", end="\t")
+            f1_arg_model = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
+                                            pos=lp.pos,
+                                            neg=lp.neg)
+
+            data.setdefault("F1-{arg_model}", []).append(f1_arg_model)
+            data.setdefault("RT-{arg_model}", []).append(rt_arg_model)
+            print(f"{arg_model} Quality: {f1_arg_model:.3f}", end="\t")
+            print(f"{arg_model} Runtime: {rt_arg_model:.3f}")
+
             if args.save:
                 trainer.save_best_hypothesis()
 
@@ -299,7 +343,7 @@ def execute(args): # pragma: no cover
             lp = PosNegLPStandard(pos=pos, neg=neg)
             print("NCES starts..", end="\t")
             start_time = time.time()
-            hypothesis = model.fit(lp).best_hypotheses(n=1)  # This will also print the prediction
+            hypothesis = model.fit(lp).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_tdl = time.time() - start_time
             f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
@@ -317,7 +361,7 @@ def execute(args): # pragma: no cover
                   plot_feature_importance=False,
                   grid_search_apply=False,
                   verbalize=False,
-                  kwargs_classifier={"random_state": 123, 'criterion': 'entropy'})
+                  kwargs_classifier={"random_state": 123, 'criterion': 'entropy'}, verbose=0)
             
             print("TDL starts..", end="\t")
             start_time = time.time()
@@ -332,12 +376,28 @@ def execute(args): # pragma: no cover
             data.setdefault("RT-TDL", []).append(rt_tdl)
             print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
+
+        elif args.model in ['alcsat', 'spell', 'nero']:
+            arg_model = args.model.upper()[:3]
+
+            print(f"{arg_model} starts..", end="\t")
+            start_time = time.time()
+            hypothesis = model.fit(lp).best_hypothesis()
+            print(f"{arg_model} ends..", end="\t")
+            rt_tdl = time.time() - start_time
+            f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
+                                            pos=lp.pos,
+                                            neg=lp.neg)
+
+            data.setdefault(f"F1-{arg_model}", []).append(f1_tdl)
+            data.setdefault(f"RT-{arg_model}", []).append(rt_tdl)
+            print(f"{arg_model} Quality: {f1_tdl:.3f}", end="\t")
+            print(f"{arg_model} Runtime: {rt_tdl:.3f}")
         
         elif args.model in ["consyn"]:
+            consyn_trainer = consyn_executor.trainer
             print("ConSyn starts..", end="\t")
             start_time = time.time()
-
-            consyn_trainer = consyn_executor.trainer
             hypothesis = consyn_trainer.fit(
                 knowledge_base=kb,
                 target_concept=str_target_concept,
@@ -358,7 +418,13 @@ def execute(args): # pragma: no cover
             data.setdefault("RT-ConSyn", []).append(avg_rt_consyn)
             print(f"ConSyn Quality: {f1_tdl:.3f}", end="\t")
             print(f"ConSyn Runtime: {avg_rt_consyn:.3f}")
-            print()
+
+        if hypothesis and args.model not in ['celoe', 'ocel']:
+            print(f"Predicted Hypothesis: {owl_expression_to_dl(hypothesis)}")
+        
+        print()
+        print()
+
     print()
     df = pd.DataFrame.from_dict(data)
     file_base_name = f'{get_file_base_name(args.knowledge_base_path)}_{args.model}'
