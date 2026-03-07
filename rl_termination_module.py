@@ -280,10 +280,10 @@ class IntelligentTerminationAgent:
             return True, self.termination_reason, 1.0 - v_continue
         
         # Also stop if quality is really good and not improving
-        if self.best_quality >= 0.95 and self.iterations_without_improvement > 100:
+        if self.best_quality >= 0.9999 and self.iterations_without_improvement > 100:
             if verbose > 0:
                 print(f"\n Agent: Excellent quality reached ({self.best_quality:.4f})")
-            return True, "Excellent quality found", 0.9
+            return True, "Excellent quality found", 0.9999
         
         # Continue exploring
         if verbose > 1 and self.concepts_explored_count % 50 == 0:

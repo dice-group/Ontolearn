@@ -25,6 +25,7 @@
 """Refinement Operators for refinement-based concept learners."""
 from collections import defaultdict
 from typing import FrozenSet, Tuple, Dict
+from ordered_set import OrderedSet
 
 from itertools import chain
 import random
@@ -61,10 +62,6 @@ from owlapy.marked_entity_generator_converter import (
 )
 
 
-
-
-
-
 class PruneCELBasedRefinement(BaseRefinement):
     """ 
     Recursive refinement operator based on PruneCEL
@@ -82,7 +79,7 @@ class PruneCELBasedRefinement(BaseRefinement):
                  length_penalty: float = 0.001):
         """
         Initialize PruneCEL recursive refinement operator.
-        
+
         Args:
             knowledge_base: Knowledge base containing the ontology and instances
             max_concepts: Maximum number of concepts to generate per refinement
@@ -107,25 +104,25 @@ class PruneCELBasedRefinement(BaseRefinement):
         self.pos = None
         self.neg = None
         self.top_refinements = set()  # Pool of previously refined concepts for complex fillers
-        
+
         # High-precision fragment collection
         self.high_precision_fragments = []  # Store high-precision, low-recall concepts
         self.covered_positives = set()  # Track which positives are covered by fragments
         self.precision_threshold = 1.0  # Minimum precision for a fragment
         self.recall_threshold = 0.5  # Maximum recall for a fragment (low recall)
         self.use_negation = False
-        
+
         # Renderer for debug output
         self._renderer = DLSyntaxObjectRenderer()
 
         # Define template as a global variable for now (can be improved by passing it through methods)
         # self.template = CONTEXT_POSITION_MARKER
         self._score_cache = {}
- 
+
 
     def sparql(self, query: str) -> List[Dict[str, str]]:
         headers = {
-        "Accept": "application/sparql-results+json"
+            "Accept": "application/sparql-results+json"
         }
 
         response = requests.post(
@@ -137,8 +134,7 @@ class PruneCELBasedRefinement(BaseRefinement):
         response.raise_for_status()
         return response.json()["results"]["bindings"]
 
-
-    def set_input_examples(self, pos: frozenset, neg: frozenset):
+    def set_input_examples(self, pos: frozenset, neg: frozenset,high_precision_fragments=[]):
         """Set positive and negative examples for coverage-guided refinement."""
         assert isinstance(pos, frozenset)
         self.pos = {i for i in pos}
@@ -146,9 +142,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         self.set_examples = self.pos.union(self.neg)
         # Clear pool and fragments when setting new examples
         self.top_refinements = set()
-        self.high_precision_fragments = []
-        self.covered_positives = set()
-
+        # self.high_precision_fragments = high_precision_fragments
+        # self.covered_positives = set()
 
     def oracle_class_suggestor(self, template):
 
@@ -170,9 +165,14 @@ class PruneCELBasedRefinement(BaseRefinement):
 
                 if "class" not in row or "value" not in row["class"]:
                     continue
-
                 uri = row["class"]["value"]
+                
+                if "posHits" not in row or "value" not in row["posHits"]:
+                    continue
                 pos_hits = int(row["posHits"]["value"])
+                
+                if "negHits" not in row or "value" not in row["negHits"]:
+                    continue
                 neg_hits = int(row["negHits"]["value"])
 
                 if uri == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
@@ -192,7 +192,6 @@ class PruneCELBasedRefinement(BaseRefinement):
 
         return results
 
-
     def oracle_role_suggestor(self, template: OWLClassExpression) -> Set[OWLObjectProperty]:
 
         query = property_query_with_counts(
@@ -201,14 +200,14 @@ class PruneCELBasedRefinement(BaseRefinement):
             negative_examples=self.neg,
         )
 
-        res = self.sparql(query) 
+        res = self.sparql(query)
         results = set()
 
         for row in res:
 
             if "prop" not in row or "value" not in row["prop"]:
-                    continue
-            
+                continue
+
             uri = row["prop"]["value"]
             pos_hits = int(row["posHits"]["value"])
             neg_hits = int(row["negHits"]["value"])
@@ -226,17 +225,16 @@ class PruneCELBasedRefinement(BaseRefinement):
             results.add(owl_class)
 
         return results
-    
+
     def oracle_negation_class_suggestor(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
 
         query = owl_expression_to_negated_class_query(
-            context=template, 
-            positive_examples=self.pos, 
+            context=template,
+            positive_examples=self.pos,
             negative_examples=self.neg)
-        
-        res = self.sparql(query) 
 
-        
+        res = self.sparql(query)
+
         results = set()
 
         for row in res:
@@ -261,7 +259,6 @@ class PruneCELBasedRefinement(BaseRefinement):
             results.add(owl_class)
 
         return results
-    
 
     def g(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
         results = set()
@@ -288,8 +285,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         return results
 
     def m_star(self,
-           template: OWLClassExpression,
-           expr: OWLClassExpression) -> OWLClassExpression:
+               template: OWLClassExpression,
+               expr: OWLClassExpression) -> OWLClassExpression:
         """
         Replace CONTEXT_POSITION_MARKER (μ) in template with expr.
         """
@@ -338,11 +335,10 @@ class PruneCELBasedRefinement(BaseRefinement):
 
         # Fallback
         return template
-            
 
     def rho_star(self, concept: OWLClassExpression, template: OWLClassExpression):
 
-        results = set()
+        results = OrderedSet()
 
         # TOP
         if concept == OWLThing:
@@ -351,12 +347,11 @@ class PruneCELBasedRefinement(BaseRefinement):
 
         # ∃ r . X
         if isinstance(concept, OWLObjectSomeValuesFrom):
-
             r = concept.get_property()
             X = concept.get_filler()
 
             new_template = self.m_star(template,
-                                    OWLObjectSomeValuesFrom(r, CONTEXT_POSITION_MARKER))
+                                       OWLObjectSomeValuesFrom(r, CONTEXT_POSITION_MARKER))
 
             # recursive refinement
             results |= self.rho_star(X, new_template)
@@ -369,28 +364,25 @@ class PruneCELBasedRefinement(BaseRefinement):
 
         # ∀ r . X
         if isinstance(concept, OWLObjectAllValuesFrom):
-
             r = concept.get_property()
             X = concept.get_filler()
 
             new_template = self.m_star(template,
-                                    OWLObjectAllValuesFrom(r, CONTEXT_POSITION_MARKER))
+                                       OWLObjectAllValuesFrom(r, CONTEXT_POSITION_MARKER))
 
             results |= self.rho_star(X, new_template)
 
         # ¬ X
         if self.use_negation and isinstance(concept, OWLObjectComplementOf):
-
             X = concept.get_operand()
 
             new_template = self.m_star(template,
-                                    OWLObjectComplementOf(CONTEXT_POSITION_MARKER))
+                                       OWLObjectComplementOf(CONTEXT_POSITION_MARKER))
 
             results |= self.rho_star(X, new_template)
 
         # X ⊓ Y
         if isinstance(concept, OWLObjectIntersectionOf):
-
             X, Y = concept.operands()
 
             results |= self.rho_star(
@@ -409,7 +401,6 @@ class PruneCELBasedRefinement(BaseRefinement):
 
         # X ⊔ Y
         if isinstance(concept, OWLObjectUnionOf):
-
             X, Y = concept.operands()
 
             results |= self.rho_star(
@@ -439,7 +430,6 @@ class PruneCELBasedRefinement(BaseRefinement):
             )
 
         return results
-    
 
     def refine(self, concept: OWLClassExpression):
 
@@ -452,7 +442,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         # Calculate parent score (cache it)
         parent_key = str(concept)
         if parent_key not in self._score_cache:
-            parent_f1, parent_precision, parent_recall, parent_coverage = self.compute_f1(concept, self.kb, self.pos, self.neg)
+            parent_f1, parent_precision, parent_recall, parent_coverage = self.compute_f1(concept, self.kb, self.pos,
+                                                                                          self.neg)
             parent_instances = set(self.kb.individuals(concept))
             parent_tp = len(parent_instances & self.pos)
             parent_score = self.refinement_score(concept, parent_f1, parent_tp)
@@ -467,40 +458,24 @@ class PruneCELBasedRefinement(BaseRefinement):
             f1, precision, recall, coverage = self.compute_f1(ref, self.kb, self.pos, self.neg)
             instances = set(self.kb.individuals(ref))
             tp = len(instances & self.pos)
-            
+
             # Calculate child refinement score
             child_score = self.refinement_score(ref, f1, tp)
-            
+
             # Cache child score for future use
             child_key = str(ref)
             self._score_cache[child_key] = child_score
-            
-            #only yield if score improved OR added a role
-            if child_score >= parent_score or self.added_role(concept, ref): #if child_score >= parent_score or self.added_role(concept, ref):
 
-                # Check for high-precision fragment
-                if precision >= self.precision_threshold and recall < self.recall_threshold:
-                    covered = instances & self.pos
-                    covered_sig = frozenset(covered)
-                    
-                    # Check if we haven't already stored a fragment with this exact coverage
-                    duplicate = False
-                    for existing_frag in self.high_precision_fragments:
-                        existing_covered = set(self.kb.individuals(existing_frag)) & self.pos
-                        if frozenset(existing_covered) == covered_sig:
-                            duplicate = True
-                            break
-                    
-                    if not duplicate:
-                        print(f"Fragment: P={precision:.3f}, R={recall:.3f} | {self._renderer.render(ref)[:80]}")
-                        self.high_precision_fragments.append(ref)
-                        self.covered_positives.update(covered)
-                
+            # only yield if score improved OR added a role
+            if child_score >= parent_score or self.added_role(concept,ref):
                 # Yield concept that passed the filter
                 refinements.append(ref)
-        return refinements 
-    
 
+        return refinements
+
+
+
+        
 
     def concept_length(self, concept: OWLClassExpression) -> int:
         """Calculate concept length (number of symbols)."""
@@ -513,7 +488,7 @@ class PruneCELBasedRefinement(BaseRefinement):
         if isinstance(concept, (OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom)):
             return 2 + self.concept_length(concept.get_filler())
         return 1
-    
+
     def refinement_score(self, concept: OWLClassExpression, f1: float, tp: int) -> float:
         """
         Calculate refinement score = F1 - length * penalty.
@@ -523,7 +498,7 @@ class PruneCELBasedRefinement(BaseRefinement):
             return 0.0
         length = self.concept_length(concept)
         return f1 - length * self.length_penalty
-    
+
     def count_quantifiers(self, concept: OWLClassExpression) -> int:
         """Count number of existential/universal quantifiers in a concept."""
         if isinstance(concept, (OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom)):
@@ -533,18 +508,16 @@ class PruneCELBasedRefinement(BaseRefinement):
         if isinstance(concept, OWLObjectComplementOf):
             return self.count_quantifiers(concept.get_operand())
         return 0
-    
+
     def added_role(self, parent: OWLClassExpression, child: OWLClassExpression) -> bool:
         """Check if child was derived from parent by adding a role (∃r or ∀r)."""
         return self.count_quantifiers(child) > self.count_quantifiers(parent)
 
-
     def is_top_or_bottom(self, concept: OWLClassExpression) -> bool:
         """Check if concept is ⊤ or ⊥."""
         return concept == OWLThing or concept == OWLNothing
-   
-        
-    def compute_f1(self, concept: OWLClassExpression, kb: KnowledgeBase, 
+
+    def compute_f1(self, concept: OWLClassExpression, kb: KnowledgeBase,
                    pos: Set, neg: Set) -> Tuple[float, float, float, int]:
         """Compute F1, precision, recall, and coverage counts for a concept."""
         try:
@@ -552,30 +525,30 @@ class PruneCELBasedRefinement(BaseRefinement):
             tp = len(instances.intersection(pos))
             fp = len(instances.intersection(neg))
             fn = len(pos - instances)
-            
+
             precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
             f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-            
+
             return f1, precision, recall, len(instances)
         except Exception as e:
             return 0.0, 0.0, 0.0, 0
-    
+
     def get_union_of_fragments(self) -> Optional[OWLClassExpression]:
         """
         Get the union of all collected high-precision fragments.
-        
+
         Returns:
             Union concept if fragments exist, None otherwise
         """
         if not self.high_precision_fragments:
             return None
-        
+
         if len(self.high_precision_fragments) == 1:
             return self.high_precision_fragments[0]
-        
+
         return OWLObjectUnionOf(self.high_precision_fragments)
-    
+
     def get_fragment_stats(self) -> Dict:
         """Get statistics about collected fragments."""
         if not self.high_precision_fragments:
@@ -585,7 +558,7 @@ class PruneCELBasedRefinement(BaseRefinement):
                 'total_positives': len(self.pos) if self.pos else 0,
                 'coverage_ratio': 0.0
             }
-        
+
         total_pos = len(self.pos) if self.pos else 0
         return {
             'num_fragments': len(self.high_precision_fragments),
@@ -593,6 +566,9 @@ class PruneCELBasedRefinement(BaseRefinement):
             'total_positives': total_pos,
             'coverage_ratio': len(self.covered_positives) / total_pos if total_pos > 0 else 0.0
         }
+
+
+
 
 
 class LengthBasedRefinement(BaseRefinement):
