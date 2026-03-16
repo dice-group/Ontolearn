@@ -426,16 +426,9 @@ class VOCELL:
                         with torch.no_grad():
                             v_scores = self.v_net(X).tolist()
 
-                        DEAD_END_THRESHOLD = 0.7  # V-net score below this = dead end
+                        DEAD_END_THRESHOLD = 0.8  # V-net score below this = dead end
                         F1_SAFETY_FLOOR    = 0.8  # never prune a concept already this good
 
-                        # Quick F1 approximation per candidate (no extra KB call —
-                        # get_concept_embedding already called individuals_set internally,
-                        # but here we use a rough heuristic: keep if v_score high enough
-                        # OR if this candidate is already scoring well currently).
-                        # Since we have not evaluated F1 yet at this point, we use only
-                        # the V-net score combined with the safety floor on CURRENT best_f1
-                        # to avoid ever pruning when we already have a good lead.
                         filtered = [
                             (c, emb)
                             for (c, emb), v in zip(candidates, v_scores)
@@ -467,7 +460,7 @@ class VOCELL:
                                 should_stop, reason, confidence = \
                                     self.termination_agent.should_stop_exploring(verbose=0)
                                 if should_stop:
-                                    print(f"\n🤖 Termination agent: {reason} "
+                                    print(f"\nTermination agent: {reason} "
                                           f"(confidence: {confidence:.2f})")
                                     print(f"   Best F1: {best_f1:.3f} | "
                                           f"Explored: {self.total_refinements_explored}")
@@ -650,10 +643,10 @@ def main():
     """
     import os
 
-    LP_NAME    = 'Aunt'
+    LP_NAME    = 'Grandgrandmother'  # target LP for evaluation
     EMBEDDINGS = 'Experiments/embeddings/Keci_entity_embeddings.csv'
     V_NET_SAVE = f'vocell_v_net_{LP_NAME}.pt'
-    EVAL_TIME  = 30   # seconds per run
+    EVAL_TIME  = 60   # seconds per run
 
     # ── Load KB & LP ─────────────────────────────────────────────────────────
     print("Loading knowledge base...")
