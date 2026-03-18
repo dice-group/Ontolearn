@@ -118,7 +118,9 @@ class BeamSearchLearner:
             
             for concept in beam:
                 try:
-                    for child in self.operator.refine(concept):
+                    for child, f1, _, precision, recall, tp in self.operator.refine(concept):
+                    # for child in self.operator.refine(concept):
+
                         # print(self.renderer.render(child))
                         self.total_refinements_explored += 1
                         
@@ -128,8 +130,9 @@ class BeamSearchLearner:
                             continue
                         visited.add(child_str)
                         
-                        # Evaluate child
-                        f1, precision, recall, covered_pos = self.evaluate(child, pos, neg)
+                        # # Evaluate child
+                        # f1, precision, recall, covered_pos = self.evaluate(child, pos, neg)
+                        # tp = len(covered_pos)
 
                         # Check if necessary to start recursive
                         if precision >= self.operator.precision_threshold and recall <= self.operator.recall_threshold:
@@ -143,13 +146,13 @@ class BeamSearchLearner:
                             print(f"F1: {f1:.3f}")
                             print(f"Precision: {precision:.3f}")
                             print(f"Recall: {recall:.3f}")
-                            print(f"Covers: {len(covered_pos)}/{len(pos)} positives")
+                            print(f"Covers: {tp}/{len(pos)} positives")
                             print(f"Explored refinements so far: {self.total_refinements_explored}")
                             print("-" * 70 + "\n")
 
                             return child
                         
-                        all_refinements.append((child, f1, precision, recall, covered_pos))
+                        all_refinements.append((child, f1, precision, recall, tp))
 
                         # Check for perfect F1 - stop immediately!
                         if f1 == 1.0:
@@ -164,7 +167,8 @@ class BeamSearchLearner:
                             best_f1 = f1
                 
                 except Exception as e:
-                    continue
+                    print(f"  Exception: {e}")
+                    break
 
             if not all_refinements:
                 print(f"  No new refinements generated")
@@ -203,6 +207,8 @@ class BeamSearchLearner:
 
         start = time.time()
         while remaining_pos:
+            
+            self.operator.set_input_examples(frozenset(remaining_pos), frozenset(neg))
 
             if (time.time() - start) >= self.time_limit:
                 print(f"\n⏱ Time limit reached!")
@@ -245,94 +251,6 @@ class BeamSearchLearner:
             return fragments[0]
 
 
-    def learn_louis(self, pos: Set, neg: Set):
-        """
-        Main learning method.
-
-        Returns:
-            (best_concept, union_of_fragments)
-        """
-        print(f"Starting learning")
-        print(f"Positives: {len(pos)}, Negatives: {len(neg)}")
-        print("="*80)
-        start = time.time()
-
-        # Run beam search (fragments are collected automatically by operator)
-        best_concept = self.beam_search(pos, neg, start)
-
-        # If perfect F1 found, return immediately without computing fragments
-        if best_concept:
-            f1, precision, recall, _ = self.evaluate(best_concept, pos, neg)
-            if f1 == 1.0:
-                print(f"\n{'='*80}")
-                print(f"PERFECT SOLUTION FOUND - STOPPING")
-                print(f"{'='*80}")
-                print(f"\n{self.renderer.render(best_concept)}")
-                print(f"\nF1: {f1:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}")
-                print(f"number of refinements explored: {self.total_refinements_explored}")
-                print(f"{'='*80}")
-                return best_concept, None
-
-        # Get collected fragments
-        union_concept = self.operator.get_union_of_fragments()
-        fragment_stats = self.operator.get_fragment_stats()
-
-        print(f"\n{'='*80}")
-        print(f"LEARNING RESULTS")
-        print(f"{'='*80}")
-
-        # Print best F1 concept
-        if best_concept:
-            f1, precision, recall, _ = self.evaluate(best_concept, pos, neg)
-            # print(f"\nBest F1 Concept:")
-            # print(f"  {self.renderer.render(best_concept)}")
-            # print(f"  F1: {f1:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}")
-
-        # Print fragment stats
-        print(f"\nHigh-Precision Fragments Collected: {fragment_stats['num_fragments']}")
-        if fragment_stats['num_fragments'] > 0:
-            print(f"  Covers: {fragment_stats['covered_positives']}/{fragment_stats['total_positives']} positives ({fragment_stats['coverage_ratio']*100:.1f}%)")
-            print(f"\n  Fragments:")
-            for i, frag in enumerate(self.operator.high_precision_fragments, 1):
-                frag_f1, frag_p, frag_r, _ = self.evaluate(frag, pos, neg)
-                print(f"    {i}. P={frag_p:.3f} R={frag_r:.3f} | {self.renderer.render(frag)[:80]}")
-
-        # Evaluate union concept
-        final_concept = best_concept
-        final_f1 = f1 if best_concept else 0.0
-
-        if union_concept:
-            final_union_concept = OWLObjectUnionOf([best_concept,union_concept])
-            print(f"\nUnion of Fragments:")
-            print(f"  {self.renderer.render(union_concept)}")
-            reduced_union = simplify_class_expression(final_union_concept)
-            print('='*60)
-
-            print(f"  Simplified: {self.renderer.render(reduced_union)}")
-            # exit(0)
-            union_f1, union_p, union_r, _ = self.evaluate(reduced_union, pos, neg)
-            print(f"\n  Final Metrics:")
-            print(f"    F1: {union_f1:.3f}")
-            print(f"    Precision: {union_p:.3f}")
-            print(f"    Recall: {union_r:.3f}")
-
-            # Choose the better concept: union or best from search
-            if union_f1 > final_f1:
-                final_concept = reduced_union
-                final_f1 = union_f1
-                print(f"\n  → Union has better F1, using union as final result")
-            else:
-                print(f"\n  → Best concept from search has better F1, using it as final result")
-
-        print(f"\n{'='*80}")
-        print(f"FINAL RESULT")
-        print(f"{'='*80}")
-        print(f"{self.renderer.render(final_concept)}")
-        print(f"\nF1: {final_f1:.3f}")
-        print(f"{'='*80}")
-
-        return final_concept, union_concept
-
 
 def main():
     """Main test function."""
@@ -346,7 +264,7 @@ def main():
         lps = json.load(f)
     
     # Test on Grandgranddaughter problem
-    problem_name = 'Cousin'  # 'Aunt' or 'Uncle'
+    problem_name = 'Uncle'  # 'Aunt' or 'Uncle'
     problem = lps['problems'][problem_name]
     pos = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['positive_examples']})
     neg = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['negative_examples']})

@@ -2,25 +2,40 @@
 train_vocell_v_net.py  —  Offline V-Net training for VOCELL
 ============================================================
 
-Two-step pipeline
------------------
-  Step 1 (generate_vnet_dataset.py)
-    Run BeamSearchLearner on every LP in lps_difficult.json, record the
-    beam-search tree (concept_str, f1, depth, parent_str, instance_iris)
-    and save to  vnet_search_data_difficult.json.
-    This is the expensive step — needs SPARQL + reasoner, run once.
+Goal
+----
+Train a V-network that, given a concept C and the positive/negative example
+sets (E+, E-), predicts the BEST F1 score reachable by continuing the beam
+search from C.  We call this  y_C = max_{D reachable from C} F1(D, E+, E-).
 
-  Step 2 (this file)
-    Load the pre-computed JSON.  For a given target LP (e.g. Uncle),
-    exclude it from training and train on all other LPs:
-      • compute emb_pos, emb_neg from the stored IRI lists
-      • propagate best-reachable F1 bottom-up through the recorded tree
-      • build (X, y) tensors:  x_C = [emb(I(C)), emb_pos, emb_neg]
-                                y_C = best-reachable F1 from C
+This is used at inference time (vocell.py) to guide BEAM SELECTION:
+instead of always expanding the top-beam_width concepts by their own F1,
+we use the V-net to pick which concepts to expand next — preferring those
+from which a high F1 is achievable deeper in the search tree.  This reduces
+the total number of concepts explored while preserving solution quality.
+
+Note: PruneCELBasedRefinement already evaluates every concept via SPARQL
+during refine(), so filtering BEFORE evaluate() saves nothing.  The savings
+come entirely from smarter beam expansion decisions.
+
+Three-file pipeline
+-------------------
+  Step 1 — generate_vnet_dataset.py
+    Run beam search on every LP, record the search tree
+    (concept_str, f1, depth, parent_str, instance_iris) → JSON.
+    Expensive one-time step that needs SPARQL + reasoner.
+
+  Step 2 — this file
+    Leave-one-LP-out training:
+      • For each training LP load nodes from JSON
+      • y_C = bottom-up DP max over best F1 reachable from C
+      • x_C = [mean_emb(instance_iris_C), mean_emb(E+), mean_emb(E-)]
       • MSE training of ConceptVNet
-    No KB / SPARQL queries needed here.
+    No KB / SPARQL queries needed here — instance_iris already in JSON.
 
-The saved checkpoint is loaded by VOCELL at inference time (beam ranking).
+  Step 3 — vocell.py
+    Load checkpoint, run beam search, use V-net to select which top-F1
+    concepts to expand at each depth (hybrid guaranteed + exploratory beam).
 """
 
 import json
@@ -143,11 +158,13 @@ def build_dataset_from_nodes(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     For every recorded node build one training sample:
-        x_C = [mean_emb(instance_iris),  emb_pos,  emb_neg]   shape (3, dim)
-        y_C = best_reachable_f1 from C
+        x_C = [mean_emb(instance_iris_C),  emb_pos,  emb_neg]   shape (1, 3, dim)
+        y_C = best_reachable_f1 from C  (bottom-up DP target)
 
-    instance_iris comes directly from the pre-computed node dict —
-    no KB query needed here.
+    instance_iris is read directly from the node dict written by
+    generate_vnet_dataset.py — no KB queries needed here.
+    If a node has no instance_iris (old dataset format), we fall back to
+    get_iris() which uses a shared, memoised KB.
 
     Returns X (N, 3, dim),  y (N,)
     """
@@ -160,14 +177,19 @@ def build_dataset_from_nodes(
         if cstr not in best_reachable:
             continue
 
-        iris   = get_iris(cstr)
-        emb_c  = get_mean_emb(iris, df)                         # (1, 1, dim)
-        x      = torch.cat([emb_c, emb_pos, emb_neg], dim=1)   # (1, 3, dim)
+        # Prefer pre-computed iris stored during dataset generation.
+        # This is consistent with inference and avoids KB round-trips.
+        iris = node.get('instance_iris')
+        if iris is None:                  # backwards-compat with old JSON format
+            iris = get_iris(cstr) or []
+
+        emb_c = get_mean_emb(iris, df)                            # (1, 1, dim)
+        x     = torch.cat([emb_c, emb_pos, emb_neg], dim=1)      # (1, 3, dim)
         X_list.append(x)
         y_list.append(best_reachable[cstr])
 
-    X = torch.cat(X_list, dim=0)                                # (N, 3, dim)
-    y = torch.tensor(y_list, dtype=torch.float32)               # (N,)
+    X = torch.cat(X_list, dim=0)                                  # (N, 3, dim)
+    y = torch.tensor(y_list, dtype=torch.float32)                 # (N,)
     return X, y
 
 
@@ -182,11 +204,17 @@ def train_v_net(
     batch_size: int   = 256,
     lr:         float = 1e-3,
     device:     str   = 'cpu',
+    seed:       int   = 42,
 ) -> ConceptVNet:
     """
     Train ConceptVNet to predict y from X.
-    Prints loss every epoch — you should see it decrease.
+
+    seed fixes torch / random state so repeated runs on the same data
+    produce the same checkpoint — essential for reproducible experiments.
     """
+    torch.manual_seed(seed)
+    import random as _random
+    _random.seed(seed)
     _, _, embedding_dim = X.shape
     net = ConceptVNet(embedding_dim, device)
     opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=1e-5)
@@ -229,18 +257,38 @@ def train_v_net(
     return net
 
 
-def get_iris(concept_str: str) -> Optional[List[str]]:
-    """Helper to get instance_iris for a given concept_str from the recorded nodes."""
-    from ontolearn.knowledge_base import KnowledgeBase
-    from owlapy.parser import DLSyntaxParser
+# Module-level cache: shared KB + parser created once, results memoised.
+# This ensures get_iris() returns the same sorted list every call and
+# avoids loading the OWL file hundreds of times during dataset construction.
+_IRIS_CACHE: Dict[str, List[str]] = {}
+_SHARED: Dict[str, object] = {}
 
 
-    kb = KnowledgeBase(path="KGs/Family/family.owl")
-    parser = DLSyntaxParser(namespace=list(kb.ontology.classes_in_signature())[0].iri.get_namespace())
+def get_iris(concept_str: str) -> List[str]:
+    """Translate a DL concept string to a sorted list of instance IRIs.
 
-    owl_expr = parser.parse(concept_str)
-    iris = [i.str for i in kb.individuals(owl_expr)]
-    return iris if iris else None
+    Uses one shared KnowledgeBase + DLSyntaxParser (lazy-init, memoised).
+    Returns [] for concepts that cannot be parsed or have no instances.
+    """
+    if concept_str in _IRIS_CACHE:
+        return _IRIS_CACHE[concept_str]
+
+    if 'kb' not in _SHARED:
+        from ontolearn.knowledge_base import KnowledgeBase
+        from owlapy.parser import DLSyntaxParser
+        kb  = KnowledgeBase(path="KGs/Family/family.owl")
+        ns  = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
+        _SHARED['kb']     = kb
+        _SHARED['parser'] = DLSyntaxParser(namespace=ns)
+
+    try:
+        owl_expr = _SHARED['parser'].parse(concept_str)
+        iris     = sorted(i.str for i in _SHARED['kb'].individuals(owl_expr))
+    except Exception:
+        iris = []
+
+    _IRIS_CACHE[concept_str] = iris
+    return iris
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Main
@@ -249,7 +297,7 @@ def get_iris(concept_str: str) -> Optional[List[str]]:
 def main():
     # ── Config ────────────────────────────────────────────────────────────────
     # Target LP: held out from training, used only for evaluation.
-    LP_NAME      = 'Grandgrandmother'   
+    LP_NAME      = 'Aunt'   
 
     # Pre-computed search data produced by generate_vnet_dataset.py.
     DATASET_FILE = 'vnet_search_data_difficult.json'

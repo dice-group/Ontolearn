@@ -383,7 +383,7 @@ class VOCELL:
                     candidates = []
                     candidate_embs = []
 
-                    for child in self.operator.refine(concept):
+                    for child, f1, _, precision, recall, tp in self.operator.refine(concept):
 
                         child_str = str(child)
                         if child_str in visited:
@@ -426,7 +426,11 @@ class VOCELL:
                         with torch.no_grad():
                             v_scores = self.v_net(X).tolist()
 
-                        DEAD_END_THRESHOLD = 0.8  # V-net score below this = dead end
+
+                        # print(v_scores)
+                        # exit(0)
+
+                        DEAD_END_THRESHOLD = 0.7  # V-net score below this = dead end
                         F1_SAFETY_FLOOR    = 0.8  # never prune a concept already this good
 
                         filtered = [
@@ -492,8 +496,9 @@ class VOCELL:
                             best_concept = child
                             best_f1 = f1
 
-                except Exception:
-                    continue
+                except Exception as e:
+                    print(f"Error refining {self.renderer.render(concept)}: {e}")
+                    break
 
                 if v_stop:
                     break  # break beam loop
@@ -643,7 +648,7 @@ def main():
     """
     import os
 
-    LP_NAME    = 'Grandgrandmother'  # target LP for evaluation
+    LP_NAME    = 'Aunt'  # target LP for evaluation
     EMBEDDINGS = 'Experiments/embeddings/Keci_entity_embeddings.csv'
     V_NET_SAVE = f'vocell_v_net_{LP_NAME}.pt'
     EVAL_TIME  = 60   # seconds per run

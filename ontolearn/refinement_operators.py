@@ -76,7 +76,7 @@ class PruneCELBasedRefinement(BaseRefinement):
                  max_concepts: int = 100,
                  random_seed: Optional[int] = None,
                  sparql_endpoint: Optional[str] = None,
-                 length_penalty: float = 0.001):
+                 length_penalty: float = 0.1):
         """
         Initialize PruneCEL recursive refinement operator.
 
@@ -110,7 +110,7 @@ class PruneCELBasedRefinement(BaseRefinement):
         self.covered_positives = set()  # Track which positives are covered by fragments
         self.precision_threshold = 1.0  # Minimum precision for a fragment
         self.recall_threshold = 0.5  # Maximum recall for a fragment (low recall)
-        self.use_negation = False
+        self.use_negation = True
 
         # Renderer for debug output
         self._renderer = DLSyntaxObjectRenderer()
@@ -436,8 +436,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         template = CONTEXT_POSITION_MARKER
 
         candidates = self.rho_star(concept, template)
-
-        # return candidates
+        
+        # return [ref for ref in candidates]
 
         # Calculate parent score (cache it)
         parent_key = str(concept)
@@ -469,7 +469,9 @@ class PruneCELBasedRefinement(BaseRefinement):
             # only yield if score improved OR added a role
             if child_score >= parent_score or self.added_role(concept,ref):
                 # Yield concept that passed the filter
-                refinements.append(ref)
+                refinements.append((ref, f1, child_score, precision, recall, tp))
+                # refinements.append(ref)
+
 
         return refinements
 
