@@ -350,6 +350,44 @@ python examples/owl_class_expression_learning_dbpedia.py --model Drill && python
 
 </details>
 
+## Dockerization
+
+Full guide can be found in the [Documentation](https://dice-group.github.io/Ontolearn/usage/07_docker_guide.html).
+
+### Quick Start
+
+#### 1. Build and Run the Webservice
+
+```bash
+# Build the production image
+docker compose build ontolearn
+
+# Start the webservice (uses local KGs/Family ontology by default)
+docker compose up ontolearn
+```
+
+The API will be available at **http://localhost:8000**.
+
+Verify it's running:
+```bash
+curl http://localhost:8000/
+# Expected: {"response":"Ontolearn Service is Running"}
+```
+
+#### 2. Query the Concept Learning Endpoint 
+
+```bash
+# Example using TDL
+curl -X GET http://localhost:8000/cel \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "TDL",
+    "pos": ["http://www.benchmark.org/family#F2F28"],
+    "neg": ["http://www.benchmark.org/family#F2F14", "http://www.benchmark.org/family#F2M18"]
+  }'
+```
+
+
 ## Development
 
 
