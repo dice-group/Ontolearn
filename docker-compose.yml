@@ -27,7 +27,12 @@ services:
       retries: 3
       start_period: 30s
 
-  # ─── Ontolearn with Triplestore Backend ─────────────────────────────
+  # ─── Ontolearn with External Triplestore Backend ────────────────────
+  # Assumes the triplestore is already running and a dataset is hosted at
+  # the endpoint specified by TRIPLE_STORE_ENDPOINT.
+  # Pass the endpoint via a .env file or the command line, e.g.:
+  #   TRIPLE_STORE_ENDPOINT=http://my-fuseki-host:3030/mydataset/sparql \
+  #     docker compose --profile triplestore up
   ontolearn-triplestore:
     build:
       context: .
@@ -36,28 +41,13 @@ services:
     container_name: ontolearn-triplestore
     ports:
       - "8001:8000"
-    depends_on:
-      fuseki:
-        condition: service_started
+    environment:
+      - TRIPLE_STORE_ENDPOINT=${TRIPLE_STORE_ENDPOINT:?Please set TRIPLE_STORE_ENDPOINT (e.g. http://host:3030/dataset/sparql)}
     command: >
       ontolearn-webservice
-      --endpoint_triple_store http://fuseki:3030/family/sparql
+      --endpoint_triple_store ${TRIPLE_STORE_ENDPOINT}
       --host 0.0.0.0
       --port 8000
-    profiles:
-      - triplestore
-    restart: unless-stopped
-
-  # ─── Apache Jena Fuseki Triplestore ─────────────────────────────────
-  fuseki:
-    image: stain/jena-fuseki
-    container_name: ontolearn-fuseki
-    ports:
-      - "3030:3030"
-    environment:
-      - ADMIN_PASSWORD=pw123
-    volumes:
-      - fuseki_data:/fuseki
     profiles:
       - triplestore
     restart: unless-stopped
@@ -88,6 +78,5 @@ services:
     profiles:
       - test
 
-volumes:
-  fuseki_data:
+
 
