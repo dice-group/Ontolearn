@@ -353,7 +353,7 @@ class TDL:
         dt_range = OWLDatatypeRestriction(
             # here some way to auto detect datatype is needed
             #type_=OWLDatatype(XSDVocabulary.DOUBLE),
-            type_=OWLDatatype(property._iri),
+            type_=OWLDatatype(XSDVocabulary.DOUBLE),
             facet_restrictions=[min_restr, max_restr],
         )
 
@@ -425,15 +425,14 @@ class TDL:
         elif(type(values) == tuple and iteration>1):
             lb, ub = values
             #raise NotImplementedError("more iterations than 1 not implemented")
-            #truncated_dist:rv_frozen
             #truncated_dist = sc.stats.truncate(frozen_dist, values[0], values[1])
-
+            
             z = frozen_dist.cdf(ub) - frozen_dist.cdf(lb)
             mean = (frozen_dist.expect(lambda x: x, lb=lb, ub=ub)) / z
             second_moment = (frozen_dist.expect(lambda x: x**2, lb=lb, ub=ub)) / z
             std = np.sqrt(second_moment - mean**2)
-            #truncated_dist = sc.stats.truncate(d.pdf(d,a,kwds), lb=values[0], ub=values[1])
-            #mean = truncated_dist.stats(moments='m')
+         
+           # mean = truncated_dist.mean()
             #std = truncated_dist.std()
         
         else:
@@ -445,46 +444,59 @@ class TDL:
             (mean + std, mean + 2 * std),
         ]
         return ranges
+    
+    def _find_best_distribution_for_dp(self, dt_values:List[float], plot:bool = False )->dict:
+        f = Fitter(dt_values, distributions=get_common_distributions())
+        f.fit()
+        best_dist = f.get_best(method="ks_statistic")
+        print(best_dist)
+        if(plot):
+            #distribution fit plot
+            f.summary(Nbest=1, method="ks_statistic")
+            plt.legend(["function", " data (Histogram)"])
+            plt.xlabel(" values")
+            plt.ylabel("Density (Data & Probability)")
+            plt.title("Best Distribution Fit (Ranked by K-S)")
+            plt.show()
+
+        return best_dist
+        #ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(None, best_dist, iteration=1),)
+
+
+    def _extract_refined_ranges_from_data_properties(self, data_property_values:dict, range_values):
+        lb,ub = range_values
+        prop_values = np.sort(np.array(data_property_values))
+        #where can maybe be runtime optimized
+        lb_index = np.where(prop_values[np.abs(prop_values-lb).argmin()] == prop_values)
+        ub_index = np.where(prop_values[np.abs(prop_values-ub).argmin()] == prop_values)
+        print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
+        dist = self._find_best_distribution_for_dp(prop_values[lb_index[0][0]:ub_index[0][0]],plot=True)
+        print("Refined Ranges", self._compute_dt_pdf_ranges(None, dist))
+
+
 
     def _extract_ranges_from_data_properties(
         self,
-        individuals,
-        features,
+        individuals:List[OWLNamedIndividual],
+        features:Dict[str, OWLClassExpression],
         individuals_to_feature_mapping,
-        data_properties_dict,
-        per_individual_data_properties,
-    ):
+        data_properties_dict:dict[OWLDataProperty,List[float]],
+        per_individual_data_properties:dict[OWLNamedIndividual,dict[OWLDataProperty,float]],):
+
         if len(data_properties_dict) == 0:
             return
-        mode = "gauss"
-        ranges_dict = dict()
+        ranges_dict:dict[OWLDataProperty,List[Tuple[float,float]]] = dict()
         generated_dt_class_expressions = dict()
         best_dists = dict()
+
+        
         for prop in data_properties_dict:
-            if mode == "minmax":
-                ranges_dict.setdefault(prop, self._get_data_property_range(data_properties_dict[prop]))
+            best_dist=self._find_best_distribution_for_dp(data_properties_dict[prop])
 
-            if mode == "gauss":
-                f = Fitter(data_properties_dict[prop], distributions=get_common_distributions())
-                f.fit()
-
-                #distribution fit plot
-                #if "lumo" in prop.__repr__():
-                #    f.summary(Nbest=1, method="ks_statistic")
-                #    plt.legend(["exponpow", "lumo data (Histogram)"])
-#
-                #    plt.xlabel("lumo values")
-                #    plt.ylabel("Density (Data & Probability)")
-                #    plt.title("Best Distribution Fit (Ranked by K-S)")
-                #    plt.show()
-                print("prop" + prop.__repr__())
-                best_dist = f.get_best(method="ks_statistic")
-                print(best_dist)
-                best_dists[prop._iri] = best_dist
-                ranges_dict.setdefault(
-                    prop,
-                    self._compute_dt_pdf_ranges(None, best_dist, iteration=1),
-                )
+            print("prop" + prop.__repr__())
+            print(best_dist)
+            best_dists[prop._iri] = best_dist
+            ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(None, best_dist, iteration=1),)
 
         for r in ranges_dict:
             for interval in range(len(ranges_dict[r])):
@@ -900,8 +912,11 @@ class TDL:
                     borders:tuple
                     borders = tuple(r.get_facet_value().parse_double() for r in restriction_sequence)
                     print("Range to be refined :", borders)
-                    refined_range = self._compute_dt_pdf_ranges(borders, p_distributions[data_type], iteration)
-                    print("Refined ranges(truncated) :", refined_range)
+                    
+                    refined_range = self._extract_refined_ranges_from_data_properties(dict_list["data_properties_dict"][OWLDataProperty(data_type)],borders)
+                    # range refinement with truncated mean
+                    # refined_range = self._compute_dt_pdf_ranges(borders, p_distributions[data_type], iteration)
+                    #print("Refined ranges(truncated) :", refined_range)
                     print('\n')
 
                     ##this can happen, after the topk expressions have already been refined
