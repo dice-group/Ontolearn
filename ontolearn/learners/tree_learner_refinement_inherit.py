@@ -112,7 +112,6 @@ class TDL_refinement(TDL):
 
         dt_range = OWLDatatypeRestriction(
             # here some way to auto detect datatype is needed
-            #type_=OWLDatatype(XSDVocabulary.DOUBLE),
             type_=OWLDatatype(XSDVocabulary.DOUBLE),
             facet_restrictions=[min_restr, max_restr],
         )
@@ -450,7 +449,7 @@ class TDL_refinement(TDL):
                     borders = tuple(r.get_facet_value().parse_double() for r in restriction_sequence)
                     print("Range to be refined :", borders)
                     
-                    refined_range = self._extract_refined_ranges_from_data_properties(dict_list["data_properties_dict"][OWLDataProperty(data_type)],borders)
+                    refined_range = self._extract_refined_ranges_from_data_properties(dict_list["data_properties_dict"][e.get_property()],borders)
                     # range refinement with truncated mean
                     # refined_range = self._compute_dt_pdf_ranges(borders, p_distributions[data_type], iteration)
                     #print("Refined ranges(truncated) :", refined_range)
@@ -465,6 +464,33 @@ class TDL_refinement(TDL):
                                 ces_to_be_refine += 1
                                 #print(cetuple[1])
         print("CEs to refine: ",ces_to_be_refine)
+
+    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        
+        if self.verbose > 0:
+            print("Creating a Training Dataset")
+        positive_examples: List[OWLNamedIndividual]
+        negative_examples: List[OWLNamedIndividual]
+        positive_examples = [i for i in learning_problem.pos]
+        negative_examples = [i for i in learning_problem.neg]
+        # (2) Initialize labels for (1).
+        y = [1.0 for _ in positive_examples] + [0.0 for _ in negative_examples]
+        # (3) Iterate over examples to extract unique features.
+        examples = positive_examples + negative_examples
+        # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
+
+        X, features, dict_list = self.extract_expressions_from_owl_individuals(examples)
+
+        # (4) Creating a tabular data for the binary classification problem.
+        # X = self.sparse_binary_representations(features, examples, examples_to_features)
+        self.features = features
+        X = pd.DataFrame(data=X, index=examples, columns=self.features)
+        y = pd.DataFrame(data=y, index=examples, columns=["label"])
+        # Remove redundant columns
+        same_value_columns = X.apply(lambda col: col.nunique() == 1)
+        X = X.loc[:, ~same_value_columns]
+        self.features = X.columns.values.tolist()
+        return X, y, dict_list
 
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
