@@ -25,21 +25,6 @@ class BiasedRandomLPGenerator:
         self.concepts = None
         self.all_individuals = set(self.kb.individuals())
         self.beyond_alc = beyond_alc
-        #  TODO: We should make the refinement operator more flexible by allowing to set the parameters
-        #  (e.g., use_inverse, use_data_properties, etc.) from the constructor. Another option it to take
-        #  the refinement operator as an input from the constructor.
-        """self.refinement_operator = ExpressRefinement(knowledge_base=self.kb,
-                                                     downsample=True,
-                                                     expressivity=0.8,
-                                                     sample_fillers_count=5,
-                                                     value_splitter=None,
-                                                     max_child_length=10,
-                                                     use_inverse=True,
-                                                     use_card_restrictions=True,
-                                                     use_numeric_datatypes=True,
-                                                     use_time_datatypes=True,
-                                                     use_boolean_datatype=True,
-                                                     card_limit=10)"""
         if self.beyond_alc:
             self.refinement_operator = ExpressRefinement(knowledge_base=self.kb, max_child_length=10,
                                     sample_fillers_count=5,
@@ -85,7 +70,7 @@ class BiasedRandomLPGenerator:
                 neg = [ind.str.split("/")[-1] for ind in neg]
                 concept_name = self.dl_syntax_renderer.render(lp.get_nnf())
                 self.dataset[concept_name] = {'positive examples': pos, 'negative examples': neg,
-                                              'length': concept_len(lp.get_nnf())}
+                                              'length': concept_len(concept_name)}
             self.curr_itter += 1
         if self.generate_data_description:
             description = generate_data_description(self.dataset)
