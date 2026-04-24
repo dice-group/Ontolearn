@@ -184,6 +184,11 @@ class PruneCELBasedRefinement(BaseRefinement):
                 if pos_hits + neg_hits == 0:
                     continue
 
+                # Skip blank nodes (SPARQL returns bnode IDs like "b0") —
+                # they are anonymous classes that cannot be used as OWLClass.
+                if not uri.startswith("http://") and not uri.startswith("https://"):
+                    continue
+
                 owl_class = OWLClass(IRI.create(uri))
                 results.add(owl_class)
         except Exception as e:
@@ -221,6 +226,10 @@ class PruneCELBasedRefinement(BaseRefinement):
             if pos_hits + neg_hits == 0:
                 continue
 
+            # Skip blank nodes
+            if not uri.startswith("http://") and not uri.startswith("https://"):
+                continue
+
             owl_class = OWLObjectProperty(IRI.create(uri))
             results.add(owl_class)
 
@@ -253,6 +262,10 @@ class PruneCELBasedRefinement(BaseRefinement):
                 continue
 
             if pos_hits + neg_hits == 0:
+                continue
+
+            # Skip blank nodes
+            if not uri.startswith("http://") and not uri.startswith("https://"):
                 continue
 
             owl_class = OWLClass(IRI.create(uri))
@@ -467,11 +480,11 @@ class PruneCELBasedRefinement(BaseRefinement):
             self._score_cache[child_key] = child_score
 
             # only yield if score improved OR added a role
-            if child_score >= parent_score or self.added_role(concept,ref):
-                # Yield concept that passed the filter
+            # (skip this filter when skip_score_filter=True, e.g. for training
+            # data generation where we want all refinements recorded)
+            if getattr(self, 'skip_score_filter', False) or \
+                    child_score >= parent_score or self.added_role(concept, ref):
                 refinements.append((ref, f1, child_score, precision, recall, tp))
-                # refinements.append(ref)
-
 
         return refinements
 
