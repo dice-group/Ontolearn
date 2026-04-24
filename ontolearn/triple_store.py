@@ -476,10 +476,17 @@ class TripleStoreReasoner(AbstractOWLReasoner):
             seen_set.add(ce)
         ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
         if not direct:
-            ce_to_sparql = ce_to_sparql.replace(
-                "?x a ",
-                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
-            )
+            counter = [0]
+
+            def replace_with_counter(match):
+                counter[0] += 1
+                n = counter[0]
+                return (
+                    f"?x a ?some_cls{n}. \n"
+                    f" ?some_cls{n} <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+                )
+
+            ce_to_sparql = re.sub(r"\?x a ", replace_with_counter, ce_to_sparql)
         yield from send_http_request_to_ts_and_fetch_results(self.url, ce_to_sparql, OWLNamedIndividual)
         if not direct:
             for cls in self.equivalent_classes(ce):
