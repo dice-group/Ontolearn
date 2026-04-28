@@ -62,8 +62,11 @@ def generate_concepts_parallel(kb, root, refinement_operator, max_example_percen
             if res:
                 concept, examples = res
                 concept_dict[concept] = examples
+    concept_keys = list(concept_dict.keys())
 
-    return concept_dict, list(concept_dict.keys())
+    print(f"Generated {len(concept_keys)} concepts with less than {max_instances} positive examples.")
+
+    return concept_dict, concept_keys
 
 
 def generate_concepts(kb, root, refinement_operator, max_example_percent, max_length = 10, num_sub_roots=50, second_level_refinement = False):
@@ -98,9 +101,27 @@ def generate_concepts(kb, root, refinement_operator, max_example_percent, max_le
     return concept_dict, concepts
 
 def sample_examples(raw_pos, raw_neg, sample_ind_size):
-    n = min(len(raw_pos), len(raw_neg), sample_ind_size)
-    pos = random.sample(raw_pos, n)
-    neg = random.sample(raw_neg, n)
+    if min(len(raw_pos), len(raw_neg)) >= sample_ind_size // 2:
+        if len(raw_pos) > len(raw_neg):
+            n_samples_neg = sample_ind_size // 2
+            n_samples_pos = min(sample_ind_size - n_samples_neg, len(raw_pos))
+        else:
+            n_samples_pos = sample_ind_size // 2
+            n_samples_neg = min(sample_ind_size - n_samples_pos, len(raw_neg))
+    elif len(raw_pos) > len(raw_neg):
+        n_samples_neg = len(raw_neg)
+        n_samples_pos = min(sample_ind_size - n_samples_neg, len(raw_pos))
+    elif len(raw_pos) < len(raw_neg):
+        n_samples_pos = len(raw_pos)
+        n_samples_neg = min(sample_ind_size - n_samples_pos, len(raw_neg))
+    else:
+        # CATCH-ALL: len(raw_pos) == len(raw_neg) AND both are < sample_ind_size // 2
+        n_samples_pos = len(raw_pos)
+        n_samples_neg = len(raw_neg)
+
+    pos = random.sample(raw_pos, n_samples_pos)
+    neg = random.sample(raw_neg, n_samples_neg)
+
     return pos, neg
 
 def generate_data_description(dataset):
@@ -153,7 +174,7 @@ def construct_exemplars(ind_to_emb):
 def sample_examples_from_clusters(all_cluster_ids, ind_to_cluster, clusters_to_ind, raw_pos, raw_neg, sample_ind_size):
     pos_by_cluster = {}
     for p in raw_pos:
-        p_name = p.str.split("/")[-1]
+        p_name = p.split("/")[-1]
         if p_name in ind_to_cluster:
             c_id = ind_to_cluster[p_name]
             pos_by_cluster.setdefault(c_id, []).append(p_name)
@@ -161,13 +182,30 @@ def sample_examples_from_clusters(all_cluster_ids, ind_to_cluster, clusters_to_i
     pos_cluster_ids = list(pos_by_cluster.keys())
     #neg_cluster_ids = list(all_cluster_ids - set(pos_cluster_ids))
 
-    n_samples = min(len(raw_pos), len(raw_neg), sample_ind_size)
-    #print(f'sample size for this concept: {n_samples}, pos_len {len(raw_pos)}, neg_len {len(raw_neg)}')
+    if min(len(raw_pos), len(raw_neg)) >= sample_ind_size // 2:
+        if len(raw_pos) > len(raw_neg):
+            n_samples_neg = sample_ind_size // 2
+            n_samples_pos = min(sample_ind_size - n_samples_neg, len(raw_pos))
+        else:
+            n_samples_pos = sample_ind_size // 2
+            n_samples_neg = min(sample_ind_size - n_samples_pos, len(raw_neg))
+    elif len(raw_pos) > len(raw_neg):
+        n_samples_neg = len(raw_neg)
+        n_samples_pos = min(sample_ind_size - n_samples_neg, len(raw_pos))
+    elif len(raw_pos) < len(raw_neg):
+        n_samples_pos = len(raw_pos)
+        n_samples_neg = min(sample_ind_size - n_samples_pos, len(raw_neg))
+    else:
+        # CATCH-ALL: len(raw_pos) == len(raw_neg) AND both are < sample_ind_size // 2
+        n_samples_pos = len(raw_pos)
+        n_samples_neg = len(raw_neg)
 
+    #print(f'sample size for this concept: selected neg = {n_samples_neg}, selected pos = {n_samples_pos}, pos_len {len(raw_pos)}, neg_len {len(raw_neg)}')
+    #print(f'raw pos: {pos_by_cluster}, raw neg: {raw_neg}')
     if len(pos_cluster_ids) > 0:
         selected_pos, selected_neg = set(), set()
         #counter = 0
-        while len(selected_pos) < n_samples:
+        while len(selected_pos) < n_samples_pos:
             # print how many no. of times the while loop runs
             #counter += 1
 
@@ -178,14 +216,14 @@ def sample_examples_from_clusters(all_cluster_ids, ind_to_cluster, clusters_to_i
                     selected_pos.add(pos_by_cluster[c][0])  # take one example from each positive cluster
                     # remove the selected positive example from the cluster to avoid selecting it again
                     pos_by_cluster[c] = pos_by_cluster[c][1:]
-                    if len(selected_pos) >= n_samples:
+                    if len(selected_pos) >= n_samples_pos:
                         break
                 else:
                     continue
                     #print(f'Cluster {c} has no more positive examples to select.')
             #print(f'While loop iteration: {counter}, selected_pos size: {len(selected_pos)}')
        # take n negative examples from raw neg
-        selected_neg = set(random.sample([neg.str.split("/")[-1] for neg in raw_neg], n_samples))
+        selected_neg = set(random.sample([neg.split("/")[-1] for neg in raw_neg], n_samples_neg))
         #print(f'Selected {len(selected_neg)} negative examples.')
 
     else:
