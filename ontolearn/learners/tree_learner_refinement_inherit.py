@@ -148,6 +148,7 @@ class TDL_refinement(TDL):
         return ranges
     
     def _find_best_distribution_for_dp(self, dt_values:List[float], plot:bool = False )->dict:
+        assert len(dt_values) > 0, "Data property values list cannot be empty for distribution fitting."
         f = Fitter(dt_values, distributions=[
         "cauchy",
         "chi2",
@@ -180,8 +181,9 @@ class TDL_refinement(TDL):
         #where can maybe be runtime optimized
         lb_index = np.where(prop_values[np.abs(prop_values-lb).argmin()] == prop_values)
         ub_index = np.where(prop_values[np.abs(prop_values-ub).argmin()] == prop_values)
-        if self.verbose>10:
-            print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
+        #if self.verbose>10:
+        print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
+        assert lb_index[0][0] < ub_index[0][0], "Lower bound index must be less than upper bound index for valid range refinement."
         dist = self._find_best_distribution_for_dp(prop_values[lb_index[0][0]:ub_index[0][0]],plot=False)
         return self._compute_dt_pdf_ranges(None, dist)
 
@@ -486,41 +488,67 @@ class TDL_refinement(TDL):
         X = X.loc[:, ~same_value_columns]
         self.features = X.columns.values.tolist()
         return X, y, dict_list
+    
+    def plot_importance_evolution(self, initial_dict, refined_dicts, top_k=10):
+    #prepare data
+        def to_str(obj):
+            return str(obj).strip()
 
-    def plot_importance_evolution(self, initial_dict, refined_dict, new_features, top_k=20):
+        initial_set = {to_str(k) for k in initial_dict.keys()}
+        feature_birthdays = {feat: 0 for feat in initial_set}
+
+        for i, d in enumerate(refined_dicts):
+            iteration_idx = i + 1
+            for feat_obj in d.keys():
+                feat_str = to_str(feat_obj)
+                if feat_str not in feature_birthdays:
+                    feature_birthdays[feat_str] = iteration_idx
+
+        
+        last_dict = refined_dicts[-1]
+        sorted_feats = sorted(last_dict.items(), key=lambda x: x[1], reverse=True)
+        features_to_plot = [to_str(f[0]) for f in sorted_feats[:int(top_k)]]
+
         plt.figure(figsize=(12, 8))
+        labels = ["Initial"] + [f"Iteration {i+1}" for i in range(len(refined_dicts))]
 
-        # Combine all unique features across both steps
-        all_features = set(initial_dict.keys()).union(set(refined_dict.keys()))
+        
+        cmap = plt.cm.get_cmap('tab20', len(features_to_plot))
+        feature_colors = {feat: cmap(i) for i, feat in enumerate(features_to_plot)}
 
-        # Filter for the top K features in the refined model to keep the plot clean
-        sorted_refined = sorted(refined_dict.items(), key=lambda x: x[1], reverse=True)
-        top_features = [f[0] for f in sorted_refined[:top_k]]
+        for feat in features_to_plot:
+            birth_idx = feature_birthdays.get(feat, 0)
+            v = []
+            color = feature_colors[feat]  #unique color per feature
+            is_new = birth_idx > 0
 
-        for feat in top_features:
-            v_init = initial_dict.get(feat, 0)  # 0 if it's a brand new feature
-            v_ref = refined_dict.get(feat, 0)
+            if birth_idx == 0:
+                val = next((_v for _k, _v in initial_dict.items() if to_str(_k) == feat), 0)
+                v.append(val)
+            else:
+                v.append(None)
 
-            # Color logic: Red for brand new features, Blue for existing ones
-            is_new = feat in new_features
-            color = '#e74c3c' if is_new else '#3498db'
-            alpha = 0.9 if is_new else 0.4
-            linewidth = 3 if is_new else 1.5
-            label = "Refined Feature" if is_new else "Original Feature"
+            for i, d in enumerate(refined_dicts):
+                current_step = i + 1
+                if current_step < birth_idx:
+                    v.append(None)
+                else:
+                    step_val = next((_v for _k, _v in d.items() if to_str(_k) == feat), 0)
+                    v.append(step_val)
 
-            plt.plot(["Initial", "Refined"], [v_init, v_ref], 
-                     marker='o', color=color, alpha=alpha, linewidth=linewidth)
+            
+            plt.plot(labels, v, marker='o', color=color,
+                     alpha=0.9 if is_new else 0.6,
+                     linewidth=3 if is_new else 1.5,
+                     linestyle='--' if is_new else '-',  #dashes for new features
+                     zorder=5 if is_new else 2)
 
-            # Label the end points
-            plt.text(1.02, v_ref, f"{feat} {'(NEW)' if is_new else ''}", 
-                     va='center', fontsize=9, color=color, fontweight='bold' if is_new else 'normal')
+            if v[-1] is not None:
+                plt.text(len(labels) - 1, v[-1], f" {feat}",
+                         va='center', fontsize=9, color=color,
+                         fontweight='bold' if is_new else 'normal')
 
-        # Remove duplicate labels in legend
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc='upper left')
-
-        plt.title("Feature Importance Shift: Original vs. Refined Ranges")
+        plt.title(f"Feature Importance Shift (Top {top_k})")
         plt.ylabel("Global SHAP Importance")
         plt.grid(axis='y', linestyle='--', alpha=0.3)
         plt.tight_layout()
@@ -586,6 +614,7 @@ class TDL_refinement(TDL):
         if self.feature_refinement:
             topk = 30
             refined_expressions:Set[OWLClassExpression] = set()
+            top_feature_dicts:List = list()
             for i in range(1,4):
                 #calculate SHAP global feature importance
                 tree_explainer = TreeExplainer(self.clf)
@@ -595,7 +624,8 @@ class TDL_refinement(TDL):
                         global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
                     else:
                         global_importance = np.abs(sVal).mean(axis=0)
-                initial_importance_dict = self._get_shap_importance_dict(X)
+                if i == 1:
+                    initial_importance_dict = self._get_shap_importance_dict(X)
                 topk_id = np.argsort(global_importance)
                 # top expressions sorted low to high
                 top_expressions: list[OWLClassExpression]
@@ -611,7 +641,6 @@ class TDL_refinement(TDL):
                 positive_examples = [i for i in learning_problem.pos]
                 negative_examples = [i for i in learning_problem.neg]
                 examples = positive_examples + negative_examples
-                new_feature_names = [owl_expression_to_dl(f) for f in refined_features_list]
                 X_r = []
                 for owl_named_individual in make_iterable_verbose(examples, verbose=self.verbose, desc="Constructing Training Data"):
                     binary_sparse_representation = []
@@ -635,8 +664,8 @@ class TDL_refinement(TDL):
                 X = X.loc[:, ~same_value_columns]
                 self.X = X
                 self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-                refined_importance_dict = self._get_shap_importance_dict(self.X)
-                self.plot_importance_evolution(initial_importance_dict, refined_importance_dict, new_feature_names)
+                top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+            self.plot_importance_evolution(initial_importance_dict, top_feature_dicts, top_k=10)
        
 
 
