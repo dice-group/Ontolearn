@@ -184,6 +184,10 @@ class TDL_refinement(TDL):
         #if self.verbose>10:
         print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
         assert lb_index[0][0] < ub_index[0][0], "Lower bound index must be less than upper bound index for valid range refinement."
+        if lb_index[0][0] >= ub_index[0][0]:
+            if self.verbose > 0:
+                print("Warning: Lower bound and upper bound indices are the same. Refinement may not be effective.")
+            return None
         dist = self._find_best_distribution_for_dp(prop_values[lb_index[0][0]:ub_index[0][0]],plot=False)
         return self._compute_dt_pdf_ranges(None, dist)
 
@@ -444,6 +448,10 @@ class TDL_refinement(TDL):
                         print("Range to be refined :", borders)
                         print(e)
                     refined_ranges = self._extract_refined_ranges_from_data_properties(dict_list["data_properties_dict"][e.get_property()],borders)
+                    
+                    if refined_ranges is None:
+                        continue
+
                     for r in refined_ranges:
                         new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), r)
                         str_dl_concept = owl_expression_to_dl(new_class_expression)
