@@ -23,7 +23,7 @@ Standard learners evaluate *every* refinement; our V-Net scores candidates *befo
 Bootstrap-trained V-Net used as a **beam filter** during search.  
 The V-Net predicts the best-reachable F1 from each candidate concept and prunes low-promise branches before the expensive SPARQL evaluation step.
 
-### VoCell-DR (`DrillV_Complex` in `run_experiments.py`)
+### VoCell-DR (`DrillV_Complex` in `main.py`)
 Compact V-learning network integrated into the **DrillV** framework.  
 Uses `DrillVNet_Complex` (~92K parameters, ×55 smaller than Drill's `DrillNet`) trained with the same offline pipeline.
 
@@ -103,12 +103,11 @@ python vocell.py \
 ### Step 4 — Run VoCell-DR (DrillV_Complex)
 
 ```bash
-python run_experiments.py \
+python main.py \
     --lps_file LPs/Family/lps_difficult.json \
     --kb KGs/Family/family.owl \
     --sparql http://localhost:3030/family/sparql \
-    --embeddings Experiments/embeddings/Keci_entity_embeddings.csv \
-    --methods DrillV_complex
+    --embeddings Experiments/embeddings/Keci_entity_embeddings.csv
 ```
 
 ---
@@ -140,10 +139,57 @@ The example below shows the search tree for the *Aunt* learning problem (top-2 b
 
 ## Reproducing Paper Results
 
-Run the full comparison across all methods and datasets:
+All dataset paths, SPARQL endpoints, embedding files, and training hyper-parameters are centralised in [`configs/datasets.yaml`](configs/datasets.yaml).  
+The pipeline runner [`run_vocell_pipeline.py`](run_vocell_pipeline.py) reads this config and executes the three steps — **generate → train → evaluate** — for any subset of datasets.
+
+### Prerequisites
+
+1. Start a SPARQL endpoint (e.g. Apache Jena Fuseki) for every dataset you want to reproduce, and verify the URLs match those in `configs/datasets.yaml`.
+2. Place entity embeddings at the paths listed in the config (DeCaL embeddings for all datasets except Family, which uses Keci).
+
+### Run the full pipeline
 
 ```bash
-python run_experiments.py --config experiments/config_family.json
+# All six datasets, all three steps
+python run_vocell_pipeline.py
+
+# One or more specific datasets
+python run_vocell_pipeline.py --datasets carcinogenesis mutagenesis
+
+# Skip data generation (search-tree JSON files already exist)
+python run_vocell_pipeline.py --steps train evaluate
+
+# Dry-run: print every command without executing
+python run_vocell_pipeline.py --dry_run
+```
+
+### Run individual steps manually
+
+**Step 1 — generate search-tree data** (one-time, requires live SPARQL endpoint):
+```bash
+python generate_vnet_dataset.py \
+    --lp_file  LPs/Carcinogenesis/lps.json \
+    --output   vnet_search_data_carcinogenesis.json \
+    --kb        KGs/Carcinogenesis/carcinogenesis.owl \
+    --sparql    http://localhost:3030/carcinogenesis/sparql \
+    --beam_width 10 --time_limit 180
+```
+
+**Step 2 — train the V-Net:**
+```bash
+python train_vocell_v_net.py \
+    --lps_file    LPs/Carcinogenesis/lps.json \
+    --dataset_file vnet_search_data_carcinogenesis.json \
+    --embeddings  ../Ontolearn_ISWC/datasets/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv \
+    --strategy    bootstrap --epochs 200 --output_dir Carcinogenesis_mean
+```
+
+**Step 3 — evaluate all learners:**
+```bash
+python examples/concept_learning_drill2_train.py \
+    --path_knowledge_base    KGs/Carcinogenesis/carcinogenesis.owl \
+    --path_learning_problem  LPs/Carcinogenesis/lps.json \
+    --max_runtime 60
 ```
 
 Results are saved as CSV files under `results/`.
@@ -158,7 +204,9 @@ Results are saved as CSV files under `results/`.
 | `train_vocell_v_net.py` | Offline V-Net training pipeline |
 | `generate_vnet_dataset.py` | Search-tree dataset generation |
 | `visualize_vnet_tree.py` | V-Net tree visualisation |
-| `run_experiments.py` | Full experimental runner (all methods) |
+| `main.py` | Experimental runner (DrillV_Complex and variants) |
+| `run_vocell_pipeline.py` | End-to-end pipeline runner (generate → train → evaluate) |
+| `configs/datasets.yaml` | Centralised dataset / path / hyper-parameter config |
 | `concept_aggregators.py` | DeepSets / SetTransformer aggregators |
 | `Family_mean/` | Pre-trained V-Net checkpoints (Family, LOOCV) |
 | `results/` | Experimental result CSVs |

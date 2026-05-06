@@ -1,0 +1,82 @@
+# ============================================================
+# VoCell dataset configuration
+# ============================================================
+# Each entry defines paths and parameters for one dataset.
+# Used by:  python run_vocell_pipeline.py [--datasets ...] [--steps ...]
+# ============================================================
+
+defaults:
+  beam_width:   10
+  time_limit:   180
+  epochs:       200
+  strategy:     bootstrap
+  max_runtime:  60          # per-learner time budget during evaluation
+
+datasets:
+
+  family:
+    kb:              KGs/Family/family.owl
+    lps_file:        LPs/Family/lps_difficult.json
+    sparql:          http://localhost:3030/family/sparql
+    embeddings:      Experiments/embeddings/Keci_entity_embeddings.csv
+    dataset_file:    vnet_search_data_difficult.json
+    ckpt_dir:        Family_mean
+    strategy:        loocv          # override default — use leave-one-out for Family
+    learners:        [vocell, celoe, ocel, drill, drillv, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/family/sparql
+    vocell_sparql:   http://localhost:3030/family/sparql
+
+  carcinogenesis:
+    kb:              KGs/Carcinogenesis/carcinogenesis.owl
+    lps_file:        LPs/Carcinogenesis/lps.json
+    sparql:          http://localhost:3030/carcinogenesis/sparql
+    embeddings:      ../Ontolearn_ISWC/datasets/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv
+    dataset_file:    vnet_search_data_carcinogenesis.json
+    ckpt_dir:        Carcinogenesis_mean
+    learners:        [vocell, celoe, ocel, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/carcinogenesis/sparql
+    vocell_sparql:   http://localhost:3030/carcinogenesis/sparql
+
+  mutagenesis:
+    kb:              KGs/Mutagenesis/mutagenesis.owl
+    lps_file:        LPs/Mutagenesis/lps.json
+    sparql:          http://localhost:3030/mutagenesis/sparql
+    embeddings:      ../Ontolearn_ISWC/datasets/mutagenesis/embeddings/DeCaL_entity_embeddings.csv
+    dataset_file:    vnet_search_data_mutagenesis.json
+    ckpt_dir:        Mutagegenesis_mean
+    learners:        [vocell, celoe, ocel, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/mutagenesis/sparql
+    vocell_sparql:   http://localhost:3030/mutagenesis/sparql
+
+  animals:
+    kb:              ../Ontolearn_ISWC/datasets/animals/kb/ontology.owl
+    lps_file:        ../Ontolearn_ISWC/datasets/animals/training_data/training_data_prep.json
+    sparql:          http://localhost:3030/animals/sparql
+    embeddings:      ../Ontolearn_ISWC/datasets/animals/embeddings/DeCaL_entity_embeddings.csv
+    dataset_file:    vnet_search_data_animals.json
+    ckpt_dir:        animals_mean
+    learners:        [vocell, celoe, ocel, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/animals/sparql
+    vocell_sparql:   http://localhost:3030/animals/sparql
+
+  lymphography:
+    kb:              ../Ontolearn_ISWC/datasets/lymphography/kb/ontology.owl
+    lps_file:        ../Ontolearn_ISWC/datasets/lymphography/training_data/training_data_prep.json
+    sparql:          http://localhost:3030/lymphography/sparql
+    embeddings:      ../Ontolearn_ISWC/datasets/lymphography/embeddings/DeCaL_entity_embeddings.csv
+    dataset_file:    vnet_search_data_lymphography.json
+    ckpt_dir:        lymphography_mean
+    learners:        [vocell, celoe, ocel, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/lymphography/sparql
+    vocell_sparql:   http://localhost:3030/lymphography/sparql
+
+  nctrer:
+    kb:              ../Ontolearn_ISWC/datasets/nctrer/kb/ontology.owl
+    lps_file:        ../Ontolearn_ISWC/datasets/nctrer/training_data/training_data_prep.json
+    sparql:          http://localhost:3030/nctrer/sparql
+    embeddings:      ../Ontolearn_ISWC/datasets/nctrer/embeddings/DeCaL_entity_embeddings.csv
+    dataset_file:    vnet_search_data_nctrer.json
+    ckpt_dir:        nctrer_mean
+    learners:        [vocell, celoe, ocel, evolearner, alcsat, spell, nero, prunecel]
+    prunecel_sparql: http://localhost:3030/nctrer/sparql
+    vocell_sparql:   http://localhost:3030/nctrer/sparql
