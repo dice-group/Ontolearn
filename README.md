@@ -2,7 +2,7 @@
 
 
 
-# VoCell Value-oriented Class Expression Learning
+# VoCel Value-oriented Class Expression Learning
 
 > **VoCel-BS** and **VoCel-DR** are concept-learning algorithms that use a lightweight offline-trained **V-Network** to guide beam search, dramatically reducing the number of concepts explored while maintaining solution quality.
 
