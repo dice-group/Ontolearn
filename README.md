@@ -2,9 +2,9 @@
 
 
 
-# VoCell & DrillV — Value-Network Guided Class Expression Learning
+# VoCell Value-oriented Class Expression Learning
 
-> **VoCell-BS** and **VoCell-DR** are concept-learning algorithms that use a lightweight offline-trained **V-Network** to guide beam search, dramatically reducing the number of concepts explored while maintaining solution quality.
+> **VoCel-BS** and **VoCel-DR** are concept-learning algorithms that use a lightweight offline-trained **V-Network** to guide beam search, dramatically reducing the number of concepts explored while maintaining solution quality.
 
 ---
 
@@ -19,7 +19,7 @@ Standard learners evaluate *every* refinement; our V-Net scores candidates *befo
 
 ## Algorithms
 
-### VoCell-BS (`vocell.py`)
+### VoCel-BS (`vocell.py`)
 Bootstrap-trained V-Net used as a **beam filter** during search.  
 The V-Net predicts the best-reachable F1 from each candidate concept and prunes low-promise branches before the expensive SPARQL evaluation step.
 
@@ -86,7 +86,7 @@ python train_vocell_v_net.py \
 
 The figure below shows V-Net training loss across all six datasets:
 
-![V-Net training loss curves](results_loss_curve/vnet_loss_curves.png)
+![V-Net training loss curves](results_loss_curve/vnet_loss_curves-1.png)
 
 ### Step 3 — Run VoCell-BS
 
