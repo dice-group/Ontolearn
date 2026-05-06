@@ -762,10 +762,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 # Generate Learning problems from a single target
                 for _ in range(num_of_target_concepts):
                     # Randomly sample positive examples from concept i
-                    sampled_positives = set(random.sample(individuals_i, size_of_examples))
+                    sampled_positives = set(random.sample(list(individuals_i), size_of_examples))
                     
                     # Randomly sample negative examples from concept j
-                    sampled_negatives = set(random.sample(individuals_j, size_of_examples))
+                    sampled_negatives = set(random.sample(list(individuals_j), size_of_examples))
                     
                     # Validate that positive and negative examples are different
                     if sampled_negatives == sampled_positives:

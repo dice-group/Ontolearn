@@ -27,6 +27,15 @@ from owlapy import owl_expression_to_dl
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
+# PruneCELBasedRefinement is only in the local workspace copy of ontolearn,
+# not the installed package.  Prepend the local package path so that
+# ontolearn.refinement_operators resolves to our version, then force a reload.
+import importlib, sys as _sys, pathlib as _pl
+_local_onto = str(_pl.Path(__file__).parent / "ontolearn")
+import ontolearn as _onto_pkg
+if _local_onto not in _onto_pkg.__path__:
+    _onto_pkg.__path__.insert(0, _local_onto)
+_sys.modules.pop("ontolearn.refinement_operators", None)
 from ontolearn.refinement_operators import PruneCELBasedRefinement
 from owlapy.class_expression import (
     OWLObjectSomeValuesFrom, OWLThing, OWLClass, OWLObjectUnionOf,
@@ -51,7 +60,11 @@ import torch
 import torch.nn as nn
 import random
 from collections import deque
-
+import numpy as np
+from concept_aggregators import (
+    get_instance_emb_matrix as _get_inst_emb_mat,
+    ConceptVNet as AggConceptVNet,
+)
 
 class BeamVNet(nn.Module):
     """V-network for VOCELL beam scoring.
@@ -173,8 +186,10 @@ class VOCELL:
         self.df_embeddings = df_embeddings
         self.embedding_dim = 1
         self.v_net: Optional[BeamVNet] = None
+        self.agg_v_net: Optional[AggConceptVNet] = None  # deepsets / settransformer checkpoint
         self.v_optimizer = None
-        self.v_net_trained = False
+        self.v_net_trained = False       # True only when BeamVNet (mean) is ready
+        self.agg_v_net_trained = False   # True only when AggConceptVNet is loaded
         self.v_experiences: Optional[_ReplayBuffer] = None
         self.emb_pos = None
         self.emb_neg = None
@@ -201,6 +216,11 @@ class VOCELL:
         elif use_v_learning and self.df_embeddings is None:
             print("use_v_learning=True but no embeddings provided "
                   "\u2014 V-Net disabled, using IntelligentTerminationAgent only")
+        elif not use_v_learning and v_net_path and os.path.isfile(v_net_path) \
+                and self.df_embeddings is not None:
+            # Inference-only: load a pre-trained V-net without online RL machinery
+            self.v_net = BeamVNet(self.embedding_dim, device)  # needed for mean nets
+            self.load(v_net_path)
     
     def get_instances(self, concept: OWLClassExpression) -> Set[OWLNamedIndividual]:
         """Get all instances of a concept."""
@@ -233,10 +253,16 @@ class VOCELL:
         """Mean embedding from a collection of OWLNamedIndividual. Returns (1, 1, dim) tensor."""
         if self.df_embeddings is None:
             return torch.zeros(1, 1, self.embedding_dim)
-        # try:
         iris = [ind.str for ind in individuals]
+        if not iris:
+            # Concept has no instances — normal during beam search, no warning needed.
+            return torch.zeros(1, 1, self.embedding_dim)
         valid = [i for i in iris if i in self.df_embeddings.index]
         if not valid:
+            # IRIs exist but none are in the embedding index — likely an IRI format mismatch.
+            print(f"Warning: no valid embeddings found for individuals: {iris[:5]}"
+                  f"{'...' if len(iris) > 5 else ''} "
+                  f"— check that the embeddings file uses the same IRI format as the KB.")
             return torch.zeros(1, 1, self.embedding_dim)
         vals = self.df_embeddings.loc[valid].values
         emb = torch.from_numpy(vals.mean(axis=0)).float()
@@ -249,6 +275,14 @@ class VOCELL:
         if self.df_embeddings is None:
             return None
         return self._get_embedding_from_ind_set(self.get_instances(concept))
+
+    def _get_concept_emb_matrix(self, concept: OWLClassExpression) -> torch.Tensor:
+        """Raw (K, dim) embedding matrix of concept instances, used by DeepSets / SetTransformer V-nets.
+        Returns (0, dim) when no embeddings are available or the concept has no known instances."""
+        if self.df_embeddings is None:
+            return torch.zeros(0, self.embedding_dim)
+        iris = [ind.str for ind in self.get_instances(concept)]
+        return _get_inst_emb_mat(iris, self.df_embeddings)
 
     # ── V-learning (mirrors DrillV_Complex) ───────────────────────────────────
 
@@ -271,8 +305,8 @@ class VOCELL:
         emb_batch    = torch.cat(emb_batch, dim=0)          # (N, 1, dim)
         reward_batch = torch.tensor(y, dtype=torch.float32) # (N,)
         N  = len(reward_batch)
-        ep = self.emb_pos if self.emb_pos is not None else torch.zeros(1, 1, self.embedding_dim)
-        en = self.emb_neg if self.emb_neg is not None else torch.zeros(1, 1, self.embedding_dim)
+        ep = self.emb_pos #if self.emb_pos is not None else torch.zeros(1, 1, self.embedding_dim)
+        en = self.emb_neg #if self.emb_neg is not None else torch.zeros(1, 1, self.embedding_dim)
 
         X = torch.cat([
             emb_batch,
@@ -297,15 +331,35 @@ class VOCELL:
 
 
     def load(self, path: str = 'vocell_v_net.pt') -> None:
-        """Load V-net weights from disk."""
-        if self.v_net is None:
-            print("V-net not initialized (no embeddings provided).")
-            return
-        ckpt = torch.load(path, weights_only=True)
-        self.v_net.load_state_dict(ckpt['model_state_dict'])
-        self.v_net_trained = ckpt.get('v_net_trained', True)
-        self.v_net.eval()
-        print(f"V-Net loaded \u2190 {path}  (trained={self.v_net_trained})")
+        """Load V-net weights from disk.
+
+        'mean' checkpoints (or old checkpoints without an 'agg_type' key) are loaded
+        into the existing BeamVNet (self.v_net) — unchanged behaviour.
+
+        'deepsets' / 'settransformer' checkpoints instantiate a ConceptVNet from
+        concept_aggregators and store it in self.agg_v_net; self.v_net is left
+        untouched so that online V-learning replay continues to work normally.
+        """
+        ckpt     = torch.load(path, weights_only=True)
+        agg_type = ckpt.get('agg_type', 'mean')
+
+        if agg_type == 'mean':
+            # ── original mean path ────────────────────────────────────────────
+            if self.v_net is None:
+                print("V-net not initialized (no embeddings provided).")
+                return
+            self.v_net.load_state_dict(ckpt['model_state_dict'])
+            self.v_net_trained = ckpt.get('v_net_trained', True)
+            self.v_net.eval()
+            print(f"V-Net (mean) loaded ← {path}  (trained={self.v_net_trained})")
+        else:
+            # ── deepsets / settransformer path ─────────────────────────────
+            emb_dim = ckpt.get('embedding_dim', self.embedding_dim)
+            self.agg_v_net = AggConceptVNet(emb_dim, agg_type, self.device)
+            self.agg_v_net.load_state_dict(ckpt['model_state_dict'])
+            self.agg_v_net.eval()
+            self.agg_v_net_trained = True   # only this flag — mean filter stays off
+            print(f"V-Net ({agg_type}) loaded ← {path}")
 
     # ─────────────────────────────────────────────────────────────────────────
 
@@ -341,6 +395,17 @@ class VOCELL:
         if self.v_net is not None:
             self.emb_pos = self._get_embedding_from_ind_set(pos)
             self.emb_neg = self._get_embedding_from_ind_set(neg)
+
+        # Pre-compute raw pos/neg matrices for aggregator-based V-net
+        _agg_pos_mat: Optional[torch.Tensor] = None
+        _agg_neg_mat: Optional[torch.Tensor] = None
+        if self.agg_v_net is not None and self.df_embeddings is not None:
+            _agg_pos_mat = _get_inst_emb_mat(
+                [ind.str for ind in pos], self.df_embeddings
+            ).to(self.device)
+            _agg_neg_mat = _get_inst_emb_mat(
+                [ind.str for ind in neg], self.df_embeddings
+            ).to(self.device)
 
         # Episode buffers (consumed by form_experiences in fit())
         self._episode_pairs   = []
@@ -382,13 +447,18 @@ class VOCELL:
                     # Generate refinements
                     candidates = []
                     candidate_embs = []
+                    metrics = {}  # child_str → (f1, precision, recall, tp)
 
                     for child, f1, _, precision, recall, tp in self.operator.refine(concept):
+                        # if self.verbose:
+                        #     print(f"Already generated {self.total_refinements_explored} refinements", end='\r')
 
                         child_str = str(child)
                         if child_str in visited:
                             continue
                         visited.add(child_str)
+
+                        metrics[child_str] = (f1, precision, recall, tp)
 
                         child_emb = None
 
@@ -405,13 +475,15 @@ class VOCELL:
                     # ---------------------------------------------------------
                     # V-NET FILTER (before evaluation)
                     # ---------------------------------------------------------
+
+
+                   
                     if (
                         self.v_net is not None
                         and self.v_net_trained
                         and len(candidate_embs) == len(candidates)
                         and self.emb_pos is not None
                     ):
-
                         N = len(candidate_embs)
 
                         child_batch = torch.cat(candidate_embs, dim=0)
@@ -426,11 +498,10 @@ class VOCELL:
                         with torch.no_grad():
                             v_scores = self.v_net(X).tolist()
 
-
                         # print(v_scores)
-                        # exit(0)
+                    
 
-                        DEAD_END_THRESHOLD = 0.7  # V-net score below this = dead end
+                        DEAD_END_THRESHOLD = np.mean(v_scores)  # V-net score below this = dead end
                         F1_SAFETY_FLOOR    = 0.8  # never prune a concept already this good
 
                         filtered = [
@@ -438,7 +509,7 @@ class VOCELL:
                             for (c, emb), v in zip(candidates, v_scores)
                             if v >= DEAD_END_THRESHOLD and best_f1 >= F1_SAFETY_FLOOR
                         ]
-
+                       
                         # Only apply if enough survivors remain to fill the beam
                         if len(filtered) >= self.beam_width:
                             if self.verbose:
@@ -447,15 +518,56 @@ class VOCELL:
                                     print(f"  V-net skipped {pruned}/{N} refinements before evaluation")
                             candidates = filtered
 
+
+                    # ---------------------------------------------------------
+                    # V-NET FILTER (aggregator-based: deepsets / settransformer)
+                    # ---------------------------------------------------------
+                   
+                    elif (
+                        self.agg_v_net is not None
+                        and self.agg_v_net_trained
+                        and len(candidates) > 0
+                        and _agg_pos_mat is not None
+                    ):  
+                        N              = len(candidates)
+                        candidate_mats = [
+                            self._get_concept_emb_matrix(c).to(self.device)
+                            for c, _ in candidates
+                        ]
+
+                        with torch.no_grad():
+                            v_scores = self.agg_v_net.score_candidates(
+                                candidate_mats, _agg_pos_mat, _agg_neg_mat
+                            ).tolist()
+
+                        
+
+                        DEAD_END_THRESHOLD = np.mean(v_scores)
+                        F1_SAFETY_FLOOR    = 0.8
+
+                        filtered = [
+                            (c, emb)
+                            for (c, emb), v in zip(candidates, v_scores)
+                            if v >= DEAD_END_THRESHOLD and best_f1 >= F1_SAFETY_FLOOR
+                        ]
+
+                        if len(filtered) >= self.beam_width:
+                            if self.verbose:
+                                pruned = N - len(filtered)
+                                if pruned > 0:
+                                    print(f"  V-net ({self.agg_v_net.agg_type}) skipped "
+                                          f"{pruned}/{N} refinements before evaluation")
+                            candidates = filtered
+
                     # ---------------------------------------------------------
                     # Evaluate remaining candidates
                     # ---------------------------------------------------------
+                    
                     for child, child_emb in candidates:
 
                         self.total_refinements_explored += 1
-
-                        f1, precision, recall, covered_pos = \
-                            self.evaluate(child, pos, neg)
+                        child_str = str(child)
+                        f1, precision, recall, tp = metrics[child_str]
 
                         # termination agent
                         if self.termination_agent is not None:
@@ -482,7 +594,7 @@ class VOCELL:
                             return child
 
                         all_refinements.append(
-                            (child, f1, precision, recall, covered_pos)
+                            (child, f1, precision, recall, tp)
                         )
 
                         # perfect concept
@@ -495,6 +607,8 @@ class VOCELL:
                         if f1 > best_f1:
                             best_concept = child
                             best_f1 = f1
+                    # exit(0)
+
 
                 except Exception as e:
                     print(f"Error refining {self.renderer.render(concept)}: {e}")
@@ -552,6 +666,8 @@ class VOCELL:
         start = time.time()
         while remaining_pos:
 
+            self.operator.set_input_examples(frozenset(remaining_pos), frozenset(neg))
+
             if (time.time() - start) >= self.time_limit:
                 print(f"\n⏱ Time limit reached!")
                 break
@@ -580,6 +696,9 @@ class VOCELL:
 
             fragments.append(fragment)
             remaining_pos -= covered
+
+        if not fragments:
+            return None, self.total_refinements_explored
 
         if len(fragments) > 1:
             final_concepts = OWLObjectUnionOf(fragments)
@@ -641,86 +760,214 @@ def _run_learner(kb, operator, pos, neg, use_v_learning, v_epsilon=1.,
 
 def main():
     """
-    Evaluate VOCELL on a learning problem using a pre-trained V-Net.
+    Evaluate VOCELL on one or more learning problems and compare V-Net variants.
 
-    Train the V-Net first with:
-        python train_vocell_v_net.py
+    Train checkpoints first with:
+        python train_vocell_v_net.py --strategy bootstrap --output_dir Carcinogenesis_mean ...
     """
-    import os
+    import argparse
 
-    LP_NAME    = 'Aunt'  # target LP for evaluation
-    EMBEDDINGS = 'Experiments/embeddings/Keci_entity_embeddings.csv'
-    V_NET_SAVE = f'vocell_v_net_{LP_NAME}.pt'
-    EVAL_TIME  = 60   # seconds per run
+    parser = argparse.ArgumentParser(
+        description="Evaluate VOCELL and compare V-Net filtering variants.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    # ── Problem ───────────────────────────────────────────────────────────────
+    parser.add_argument('--lps_file', default='LPs/Family/lps_difficult.json',
+                        help='Path to the LP JSON file.')
+    parser.add_argument('--num_lps', type=int, default=0,
+                        help='How many LPs to evaluate (0 = all).')
+    parser.add_argument('--kb',       default='KGs/Family/family.owl',
+                        help='Path to the OWL knowledge base.')
+    parser.add_argument('--sparql',   default='http://localhost:3030/family/sparql',
+                        dest='sparql_endpoint',
+                        help='SPARQL endpoint URL.')
+    # ── Search ────────────────────────────────────────────────────────────────
+    parser.add_argument('--time_limit', type=float, default=600.0,
+                        help='Time budget per run in seconds.')
+    parser.add_argument('--beam_width', type=int,   default=5,
+                        help='Beam width.')
+    parser.add_argument('--max_depth',  type=int,   default=15,
+                        help='Maximum refinement depth.')
+    parser.add_argument('--precision_threshold', type=float, default=1.0,
+                        help='Operator precision threshold.')
+    parser.add_argument('--recall_threshold',    type=float, default=0.6,
+                        help='Operator recall threshold.')
+    # ── Embeddings & checkpoints ──────────────────────────────────────────────
+    parser.add_argument('--embeddings', default='Experiments/embeddings/Keci_entity_embeddings.csv',
+                        help='Path to entity embeddings CSV.')
+    parser.add_argument('--agg_types', nargs='+', default=['mean'],
+                        choices=['mean', 'deepsets', 'settransformer'],
+                        help='Aggregation strategies to compare (space-separated).')
+    parser.add_argument('--training_strategies', nargs='+', default=['loocv'],
+                        choices=['loocv', 'bootstrap'],
+                        help='Training strategies whose checkpoints to load.')
+    parser.add_argument('--checkpoint_dir', default=None,
+                        help=('Override checkpoint directory for all variants. '
+                              'Default: Family_{agg_type} per aggregator '
+                              '(matches train_vocell_v_net.py output_dir).'))
+    # ── Misc ──────────────────────────────────────────────────────────────────
+    parser.add_argument('--no_baseline', action='store_true',
+                        help='Skip the no-V-net baseline run.')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Print per-depth beam-search details.')
+    args = parser.parse_args()
 
-    # ── Load KB & LP ─────────────────────────────────────────────────────────
+    # ── Load KB & LP file ─────────────────────────────────────────────────────
     print("Loading knowledge base...")
-    kb = KnowledgeBase(path='KGs/Family/family.owl')
+    kb = KnowledgeBase(path=args.kb)
 
-    with open('LPs/Family/lps.json', 'r') as f:
+    with open(args.lps_file, 'r') as f:
         lps = json.load(f)
 
-    p       = lps['problems'][LP_NAME]
-    pos     = frozenset({OWLNamedIndividual(IRI.create(i)) for i in p['positive_examples']})
-    neg     = frozenset({OWLNamedIndividual(IRI.create(i)) for i in p['negative_examples']})
-    print(f"LP: {LP_NAME}  (pos={len(pos)}, neg={len(neg)})")
+    # Support both {"problems": {...}} and flat {"LP_name": {...}} formats.
+    lps_problems  = lps.get('problems', lps) if isinstance(lps, dict) else {}
+    all_problems  = list(lps_problems.items())
+    total_lps     = len(all_problems)
+    n_to_run      = total_lps if args.num_lps == 0 else min(args.num_lps, total_lps)
 
-    print("\nInitializing refinement operator...")
-    operator = PruneCELBasedRefinement(
-        knowledge_base=kb,
-        sparql_endpoint='http://localhost:3030/family/sparql'
-    )
-    operator.precision_threshold = 1.
-    operator.recall_threshold    = 0.6
-    operator.set_input_examples(pos, neg)
+    print(f"LP file      : {args.lps_file}")
+    print(f"Total LPs    : {total_lps}")
+    print(f"LPs to run   : {n_to_run}")
 
-    results = []
+    problems_to_run = all_problems[:n_to_run]
+    # Build two O(1) indexes to remap LP example IRIs onto the KB-canonical
+    # namespace (e.g. /animals/trex01 → /animals#trex01).
+    _kb_ind_by_iri:   dict = {str(ind.iri): ind for ind in kb.individuals()}
+    _kb_ind_by_local: dict = {ind.iri.get_remainder(): ind for ind in kb.individuals()}
 
-    # (a) Baseline — no V-learning
-    print("\n" + "-" * 60)
-    print("(a) BASELINE  — no V-learning")
-    print("-" * 60)
-    concept_str, f1, total = _run_learner(kb, operator, pos, neg,
-                                          use_v_learning=False,
-                                          time_limit=EVAL_TIME)
-    results.append({"label": "Baseline (no V)", "concept": concept_str, "f1": f1, "concepts": total})
+    def _resolve_ind(iri_str: str) -> OWLNamedIndividual:
+        if iri_str in _kb_ind_by_iri:
+            return _kb_ind_by_iri[iri_str]
+        local = IRI.create(iri_str).get_remainder()
+        return _kb_ind_by_local.get(local, OWLNamedIndividual(IRI.create(iri_str)))
+    # ── Build variant list (same for every LP) ────────────────────────────────
+    variant_specs = []
+    if not args.no_baseline:
+        variant_specs.append(("Baseline (no V-net)", None, None))
 
-    # (b) Pre-trained V-Net — loaded from train_vocell_v_net.py output
-    if not os.path.exists(V_NET_SAVE):
-        print(f"\n[!] {V_NET_SAVE} not found — run `python train_vocell_v_net.py` first.")
-    else:
-        print("\n" + "-" * 60)
-        print(f"(b) PRE-TRAINED V-Net  (loaded from {V_NET_SAVE})")
-        print("-" * 60)
-        concept_str, f1, total = _run_learner(kb, operator, pos, neg,
-                                              use_v_learning=True,
-                                              time_limit=EVAL_TIME,
-                                              path_embeddings=EMBEDDINGS,
-                                              v_net_path=V_NET_SAVE,
-                                              verbose=True)
-        results.append({"label": "Pre-trained V-Net", "concept": concept_str, "f1": f1, "concepts": total})
+    for agg in args.agg_types:
+        ckpt_dir = args.checkpoint_dir or f'Family_{agg}'
+        for strat in args.training_strategies:
+            if strat == 'loocv':
+                # LOOCV checkpoint is LP-specific; path resolved per LP below
+                variant_specs.append((f'V-Net [{agg} / loocv]', agg, 'loocv'))
+            else:
+                ckpt  = os.path.join(ckpt_dir, f'vocell_v_net_bootstrap_{agg}.pt')
+                variant_specs.append((f'V-Net [{agg} / bootstrap]', agg, ckpt))
 
-    # ── Summary ───────────────────────────────────────────────────────────────
-    baseline_total = results[0]["concepts"]
-    baseline_f1    = results[0]["f1"]
-    print("\n" + "=" * 100)
-    print(f"RESULTS — {LP_NAME}")
-    print("=" * 100)
-    print(f"  {'Setup':<22} {'F1':>6}  {'vs Base F1':>10}  {'Concepts':>10}  {'vs Base #':>10}  Concept")
-    print("-" * 100)
-    for r in results:
-        f1_delta = f"{r['f1'] - baseline_f1:+.3f}" if r['f1'] != baseline_f1 else ""
-        c_delta  = ""
-        if r["concepts"] != baseline_total and baseline_total:
-            pct     = (1 - r["concepts"] / baseline_total) * 100
-            c_delta = f"{pct:+.1f}%"
-        cstr = r["concept"]
-        if len(cstr) > 45:
-            cstr = cstr[:42] + "..."
-        print(f"  {r['label']:<22} {r['f1']:>6.3f}  {f1_delta:>10}  {r['concepts']:>10}  {c_delta:>10}  {cstr}")
-    print("=" * 100)
-    print("\n\u2713 Done!")
+    # ── Accumulate results across all LPs ────────────────────────────────────
+    all_results = []   # list of {lp_name, label, f1, concepts, concept}
+
+    for lp_idx, (lp_name, p) in enumerate(problems_to_run, 1):
+        pos = frozenset(_resolve_ind(i) for i in p['positive_examples'])
+        neg = frozenset(_resolve_ind(i) for i in p['negative_examples'])
+
+        # Shorten long LP names for display
+        lp_display = lp_name if len(lp_name) <= 50 else lp_name[:47] + "..."
+
+        print(f"\n{'=' * 100}")
+        print(f"LP {lp_idx}/{n_to_run}: {lp_display}")
+        print(f"  pos={len(pos)}  neg={len(neg)}")
+        print(f"{'=' * 100}")
+
+        def make_operator(pos=pos, neg=neg):
+            op = PruneCELBasedRefinement(
+                knowledge_base=kb,
+                sparql_endpoint=args.sparql_endpoint,
+            )
+            op.precision_threshold = args.precision_threshold
+            op.recall_threshold    = args.recall_threshold
+            op.set_input_examples(pos, neg)
+            return op
+
+        lp_results = []
+
+        for label, agg, strat_or_ckpt in variant_specs:
+            use_vl = agg is not None  # False only for baseline
+
+            # Resolve checkpoint path
+            v_net_path = None
+            if use_vl:
+                ckpt_dir = args.checkpoint_dir or f'Family_{agg}'
+                if strat_or_ckpt == 'loocv':
+                    # LOOCV checkpoint is named after the LP — not meaningful for
+                    # non-Family datasets, but we try anyway.
+                    safe_name = lp_name.replace(' ', '_').replace('/', '_')
+                    v_net_path = os.path.join(ckpt_dir, f'vocell_v_net_{safe_name}_{agg}.pt')
+                else:
+                    v_net_path = strat_or_ckpt   # already a full path
+
+            print(f"\n  [{label}]")
+            if use_vl and not os.path.exists(v_net_path):
+                print(f"    [!] Checkpoint not found: {v_net_path} — skipping")
+                continue
+
+            concept_str, f1, total = _run_learner(
+                kb, make_operator(), pos, neg,
+                use_v_learning=use_vl,
+                time_limit=args.time_limit,
+                beam_width=args.beam_width,
+                max_depth=args.max_depth,
+                path_embeddings=args.embeddings if use_vl else None,
+                v_net_path=v_net_path,
+                verbose=args.verbose,
+            )
+            lp_results.append({
+                "lp_name":  lp_name,
+                "label":    label,
+                "f1":       f1,
+                "concepts": total,
+                "concept":  concept_str,
+            })
+
+        # ── Per-LP summary table ───────────────────────────────────────────
+        if lp_results:
+            base_f1    = lp_results[0]["f1"]
+            base_total = lp_results[0]["concepts"]
+            print(f"\n  {'Setup':<30} {'F1':>6}  {'Δ F1':>8}  {'Concepts':>10}  Concept")
+            print(f"  {'-' * 80}")
+            for r in lp_results:
+                delta = f"{r['f1'] - base_f1:+.3f}" if r['f1'] != base_f1 else "      "
+                cstr  = r["concept"] if len(r["concept"]) <= 40 else r["concept"][:37] + "..."
+                print(f"  {r['label']:<30} {r['f1']:>6.3f}  {delta:>8}  {r['concepts']:>10}  {cstr}")
+
+        all_results.extend(lp_results)
+
+    # ── Grand summary (average F1 per variant across all LPs) ────────────────
+    if all_results and n_to_run > 1:
+        from collections import defaultdict
+        import numpy as _np
+        agg_f1 = defaultdict(list)
+        agg_ct = defaultdict(list)
+        for r in all_results:
+            agg_f1[r["label"]].append(r["f1"])
+            agg_ct[r["label"]].append(r["concepts"])
+
+        print(f"\n{'=' * 100}")
+        print(f"GRAND SUMMARY  ({n_to_run} LPs)")
+        print(f"{'=' * 100}")
+        print(f"  {'Setup':<30} {'Avg F1':>8}  {'Std F1':>8}  {'Avg Concepts':>14}")
+        print(f"  {'-' * 65}")
+        for label, f1s in agg_f1.items():
+            cts = agg_ct[label]
+            print(f"  {label:<30} {_np.mean(f1s):>8.3f}  {_np.std(f1s):>8.3f}  {_np.mean(cts):>14.0f}")
+        print("=" * 100)
+
+    print("\n✓ Done!")
 
 
 if __name__ == "__main__":
     main()
+
+# Family (all LPs):
+#   python vocell.py --lps_file LPs/Family/lps_difficult.json --kb KGs/Family/family.owl \
+#     --sparql http://localhost:3030/family/sparql \
+#     --embeddings Experiments/embeddings/Keci_entity_embeddings.csv \
+#     --agg_types mean --training_strategies loocv --num_lps 0 --verbose
+#
+# Carcinogenesis (first 3 LPs, bootstrap, no baseline):
+#   python vocell.py --lps_file LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl \
+#     --sparql http://localhost:3030/carcinogenesis/sparql \
+#     --embeddings ../Ontolearn_ISWC/datasets/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv \
+#     --checkpoint_dir Carcinogenesis_mean --agg_types mean --training_strategies bootstrap \
+#     --num_lps 3 --beam_width 15 --no_baseline

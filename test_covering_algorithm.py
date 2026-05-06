@@ -123,6 +123,8 @@ class BeamSearchLearner:
 
                         # print(self.renderer.render(child))
                         self.total_refinements_explored += 1
+
+                        # print(f"Already generated {self.total_refinements_explored} refinements", end='\r')
                         
                         # Skip if already visited
                         child_str = str(child)
@@ -264,7 +266,7 @@ def main():
         lps = json.load(f)
     
     # Test on Grandgranddaughter problem
-    problem_name = 'Uncle'  # 'Aunt' or 'Uncle'
+    problem_name = 'Aunt'  # 'Aunt' or 'Uncle'
     problem = lps['problems'][problem_name]
     pos = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['positive_examples']})
     neg = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['negative_examples']})
@@ -291,7 +293,7 @@ def main():
     # Configure fragment collection thresholds
     if isinstance(operator, PruneCELBasedRefinement):
         operator.precision_threshold = 1.
-        operator.recall_threshold = 0.6
+        operator.recall_threshold = 0.1
 
     # Create learner
     learner = BeamSearchLearner(
@@ -303,10 +305,11 @@ def main():
     )
     
     # Run learning
+    start_time = time.time()
     best_concept = learner.learn_recursive(pos=set(pos), neg=set(neg))
-    
+    elapsed_time = time.time() - start_time
     print(f"\n✓ Learning complete!")
-    # print(f"Best concept found: {learner.renderer.render(best_concept)}")
+    print(f"Elapsed time: {elapsed_time:.2f}s")
 
 
 if __name__ == "__main__":
