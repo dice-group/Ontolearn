@@ -13,7 +13,7 @@
 The figure below illustrates the key difference between standard neural concept learners (e.g. Drill) and our V-Net guided approach.  
 Standard learners evaluate *every* refinement; our V-Net scores candidates *before* evaluation and skips dead-end branches.
 
-![V-Net conceptual diagram](results_loss_curve/V_learning.drawio.jpg)
+![V-Net conceptual diagram](results_loss_curve/V_learning.drawio_1.png)
 
 ---
 
