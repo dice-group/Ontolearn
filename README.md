@@ -4,6 +4,9 @@
 
 # VoCel Value-oriented Class Expression Learning
 
+> **Acknowledgement** — This project is built upon the open-source framework [Ontolearn](https://github.com/dice-group/Ontolearn).  
+> We sincerely thank the Ontolearn development team for their excellent and highly readable codebase, which made this work possible.
+
 > **VoCel-BS** and **VoCel-DR** are concept-learning algorithms that use a lightweight offline-trained **V-Network** to guide beam search, dramatically reducing the number of concepts explored while maintaining solution quality.
 
 ---
