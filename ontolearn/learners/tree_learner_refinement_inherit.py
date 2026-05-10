@@ -62,7 +62,7 @@ from collections.abc  import Sequence
 
 class TDL_refinement(TDL):
     def __init__(self, knowledge_base,
-                 use_inverse: bool = True,
+                 use_inverse: bool = False,
                  use_data_properties: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
@@ -71,7 +71,7 @@ class TDL_refinement(TDL):
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  kwargs_grid_search: dict = {},
-                 report_classification: bool = True,
+                 report_classification: bool = False,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
@@ -82,6 +82,9 @@ class TDL_refinement(TDL):
         super().__init__(knowledge_base,use_inverse,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
                        plot_tree, plot_embeddings,plot_feature_importance,verbose, verbalize)
         self.feature_refinement = feature_refinement
+        self.concept_per_iteration:List = list()
+        self.top_feature_dicts:List = list()
+        self.initial_importance_dict:Dict = dict()
 
     def _get_data_property_range(self, values: set) -> tuple:
         """Get the data property range of an OWL class expression"""
@@ -631,7 +634,7 @@ class TDL_refinement(TDL):
                     else:
                         global_importance = np.abs(sVal).mean(axis=0)
                 if i == 1:
-                    initial_importance_dict = self._get_shap_importance_dict(X)
+                    self.initial_importance_dict = self._get_shap_importance_dict(X)
                 topk_id = np.argsort(global_importance)
                 # top expressions sorted low to high
                 top_expressions: list[OWLClassExpression]
@@ -670,8 +673,10 @@ class TDL_refinement(TDL):
                 X = X.loc[:, ~same_value_columns]
                 self.X = X
                 self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-                top_feature_dicts.append(self._get_shap_importance_dict(self.X))
-            #self.plot_importance_evolution(initial_importance_dict, top_feature_dicts, top_k=10)
+                self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+                self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+            #self.plot_importance_evolution(self.initial_importance_dict, self.top_feature_dicts, top_k=10)
+                
        
 
 
@@ -725,6 +730,7 @@ class TDL_refinement(TDL):
         if self.verbose > 0:
             print("Computing disjunction_of_conjunctive_concepts...")
         self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts, reduced_cls=OWLObjectUnionOf)
+        self.concept_per_iteration.append(self.disjunction_of_conjunctive_concepts)
         if self.verbalize:
             verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
 
