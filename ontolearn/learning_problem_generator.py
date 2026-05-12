@@ -124,7 +124,7 @@ class LearningProblemGenerator:  # pragma: no cover
 
         string_all_pos = set(self.kb.individuals(concept))
 
-        string_all_neg = set(self.kb.ontology().individuals_in_signature()).difference(string_all_pos)
+        string_all_neg = set(self.kb.ontology.individuals_in_signature()).difference(string_all_pos)
 
         string_balanced_pos, string_balanced_neg = balanced_sets(set(string_all_pos), set(string_all_neg))
         assert len(string_balanced_pos) >= self.min_num_instances, f"String Representation " \

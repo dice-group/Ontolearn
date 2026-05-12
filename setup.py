@@ -47,8 +47,8 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.6.2",
-    "dicee==0.2.0",
+    "owlapy==1.6.3",
+    "dicee==0.3.2",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
@@ -66,6 +66,7 @@ _deps = [
     "asciitree==0.3.3",
     "fitter>=1.7.0",
     "shap==0.49.1"]
+    "more-itertools>=10.0.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -84,7 +85,6 @@ extras["min"] = deps_list(
     "owlapy",
     "flask",  # Drill, NCES
     "tqdm", "transformers",  # NCES
-    "dicee",  # Drill
     "deap",  # Evolearner
     "fastapi",
     "uvicorn",
@@ -94,6 +94,7 @@ extras["min"] = deps_list(
     "asciitree",
     "fitter",
     "shap")
+    "more-itertools",)
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
@@ -102,12 +103,12 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff", "dicee"))
 
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.9.2",
+    version="0.10.0",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,
@@ -118,7 +119,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
-    python_requires='>=3.10.13',
+    python_requires='>=3.11',
     entry_points={"console_scripts": ["ontolearn-webservice=ontolearn.scripts.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",

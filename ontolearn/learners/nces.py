@@ -100,7 +100,7 @@ class NCES(BaseNCES):
                 del dicee
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
-                subprocess.run('pip install dicee==0.2.0')
+                subprocess.run('pip install dicee==0.3.2')
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
                       +"Poor performance is expected as we will also train the synthesizer for a few epochs."

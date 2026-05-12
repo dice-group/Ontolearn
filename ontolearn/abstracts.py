@@ -288,13 +288,8 @@ class AbstractConceptNode(metaclass=ABCMeta):
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
     """Abstract knowledge base."""
-    __slots__ = ()
 
-    # CD: This function is used as "a get method". Insteadf either access the atttribute directly
-    # or use it as a property @abstractmethod
-    def ontology(self) -> AbstractOWLOntology:
-        """The base ontology of this knowledge base."""
-        pass
+    ontology: AbstractOWLOntology
 
     def describe(self) -> None:
         """Print a short description of the Knowledge Base to the info logger output."""
