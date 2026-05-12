@@ -1,68 +1,48 @@
-from shap import TreeExplainer
+from owlapy.vocab import OWLFacet, XSDVocabulary
+from owlapy.owl_property import OWLDataProperty
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_datatype import OWLDatatype
+from owlapy import owl_expression_to_dl
 from sklearn.inspection import permutation_importance
-import matplotlib.pyplot as plt
-from typing import Dict, Set, Tuple, List, Union, Callable
-from fitter import Fitter, get_common_distributions
-import logging
-import scipy as sc
-from scipy.stats._distn_infrastructure import rv_frozen
 from .tree_learner import concepts_reducer
-from ontolearn.learners import TDL
-logging.getLogger("fitter").setLevel(logging.CRITICAL)
-import numpy as np
-import pandas as pd
-from ontolearn.verbalizer import verbalize_learner_prediction
-from owlapy.class_expression import (
-    OWLObjectIntersectionOf,
-    OWLClassExpression,
-    OWLObjectUnionOf,
-    OWLObjectComplementOf,
-    OWLObjectOneOf,
-    OWLObjectHasValue,
-    OWLDataOneOf,
-    OWLDataHasValue,
-    OWLObjectSomeValuesFrom,
-    OWLObjectAllValuesFrom,
-    OWLObjectMinCardinality,
-    OWLObjectMaxCardinality,
-    OWLObjectExactCardinality,
-    OWLDataSomeValuesFrom,
-    OWLDataAllValuesFrom,
-    OWLClass,
-)
-from owlapy.utils import HasFiller
-from owlapy.owl_individual import OWLNamedIndividual
-import ontolearn.triple_store
-from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
-import sklearn
-from sklearn import tree
-from collections import Counter
-
 from ..utils.static_funcs import (
     plot_umap_reduced_embeddings,
     plot_decision_tree_of_expressions,
     plot_topk_feature_importance,
 )
-
-import itertools
-from owlapy import owl_expression_to_dl
+from owlapy.class_expression import (
+    OWLObjectIntersectionOf,
+    OWLClassExpression,
+    OWLObjectUnionOf,
+    OWLDataSomeValuesFrom,
+)
 from ..utils.static_funcs import make_iterable_verbose
 from owlapy.class_expression.restriction import (
-    OWLDataSomeValuesFrom,
     OWLFacetRestriction,
     OWLDatatypeRestriction,
 )
-from owlapy.vocab import OWLFacet, XSDVocabulary
-from owlapy.owl_property import OWLDataProperty
-from owlapy.owl_literal import OWLLiteral
-from owlapy.owl_datatype import OWLDatatype
-from collections.abc  import Sequence
+from owlapy.owl_individual import OWLNamedIndividual
+from ontolearn.verbalizer import verbalize_learner_prediction
+import numpy as np
+import pandas as pd
+import sklearn
+from sklearn import tree
+import itertools
+from shap import TreeExplainer
+import matplotlib.pyplot as plt
+from typing import Dict, Set, Tuple, List, Union
+from fitter import Fitter
+import logging
+import scipy as sc
+from scipy.stats._distn_infrastructure import rv_frozen
+from ontolearn.learners import TDL
+logging.getLogger("fitter").setLevel(logging.CRITICAL)
 
 
 class TDL_refinement(TDL):
     def __init__(self, knowledge_base,
-                 use_inverse: bool = False,
+                 use_inverse: bool = True,
                  use_data_properties: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
@@ -78,12 +58,14 @@ class TDL_refinement(TDL):
                  verbose: int = 10,
                  verbalize: bool = False,
                  feature_refinement:bool = True,
-                 plot_importance_evo:bool = False
+                 plot_importance_evo:bool = True,
+                 refine_iterations: int = 3
                  ):
         super().__init__(knowledge_base,use_inverse,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
                        plot_tree, plot_embeddings,plot_feature_importance,verbose, verbalize)
         self.feature_refinement = feature_refinement
         self.plot_importance_evo = plot_importance_evo
+        self.refine_iterations = refine_iterations
         self.concept_per_iteration:List = list()
         self.top_feature_dicts:List = list()
         self.initial_importance_dict:Dict = dict()
@@ -272,16 +254,13 @@ class TDL_refinement(TDL):
                 print(f"Warning: Error extracting data property features: {e}")
 
 
-
-
-    
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features_dict = dict()
-        # () Grouped str dl concepts given str individuals.
-        generated_dt_classexpressions_per_individual = dict()
+        
         data_properties_dict = dict()
         per_individual_data_properties = dict()
+        # () Grouped str dl concepts given str individuals.
         individuals_to_feature_mapping = dict()
         for owl_named_individual in make_iterable_verbose(
             individuals,
@@ -317,15 +296,6 @@ class TDL_refinement(TDL):
 
             if self.use_card_restrictions:
                 self._extract_cardinality_features(owl_named_individual, features_dict, individuals_to_feature_mapping)
-
-        # map individuals to additional data property features
-        #if self.use_data_properties:
-        #    generated_dt_classexpressions_per_individual = self._extract_ranges_from_data_properties(
-        #        features_dict,
-        #        individuals_to_feature_mapping,
-        #        data_properties_dict,
-        #        per_individual_data_properties,
-        #    )
 
         if len(features_dict) == 0:
             num_individuals = len(list(make_iterable_verbose(individuals)))
@@ -422,9 +392,9 @@ class TDL_refinement(TDL):
 
         topk_expressions = set(topk_expressions)
         for e in topk_expressions:
-            if type(e) == OWLDataSomeValuesFrom:
+            if type(e) is OWLDataSomeValuesFrom:
                 filler = e.get_filler()
-                if type(filler) == OWLDatatypeRestriction:
+                if type(filler) is OWLDatatypeRestriction:
                     borders = tuple(r.get_facet_value().parse_double() for r in filler.get_facet_restrictions())
                     if self.verbose > 10:
                         print("Range to be refined :", borders)
@@ -647,7 +617,7 @@ class TDL_refinement(TDL):
             tree_explainer = TreeExplainer(self.clf)
             sVal = tree_explainer.shap_values(self.X.values)
             self.initial_importance_dict = self._get_shap_importance_dict(X)
-
+            # map individuals to additional data property features
             #refine base features here ( extract from data properties)
             dp_features:dict = dict()
             generated_dt_class_expressions = self._extract_ranges_from_data_properties(dp_features, self.individuals_to_feature_mapping,self.data_properties_dict,self.per_individual_data_properties)
@@ -659,7 +629,7 @@ class TDL_refinement(TDL):
             self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
             topk = 30
             refined_expressions:Set[OWLClassExpression] = set()
-            for i in range(1,4):
+            for i in range(1,self.refine_iterations):
                 #calculate SHAP global feature importance
                 tree_explainer = TreeExplainer(self.clf)
                 sVal = tree_explainer.shap_values(self.X.values)

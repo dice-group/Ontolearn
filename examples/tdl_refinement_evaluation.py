@@ -29,7 +29,6 @@ def plot_importance_evolution(initial_dict, refined_dicts, top_k=10,
     def to_str(obj):
         return str(obj).strip()
 
-    # --- 1. PREP DATA ---
     initial_set = {to_str(k) for k in initial_dict.keys()}
     feature_birthdays = {feat: 0 for feat in initial_set}
 
@@ -39,7 +38,6 @@ def plot_importance_evolution(initial_dict, refined_dicts, top_k=10,
             if feat_str not in feature_birthdays:
                 feature_birthdays[feat_str] = i + 1
 
-    # --- 2. SELECT TOP K PER ITERATION ---
     features_to_plot_set = set()
     top_initial = sorted(initial_dict.items(), key=lambda x: x[1], reverse=True)
     features_to_plot_set.update(to_str(f[0]) for f in top_initial[:int(top_k)])
@@ -50,8 +48,6 @@ def plot_importance_evolution(initial_dict, refined_dicts, top_k=10,
     last_lookup = {to_str(k): v for k, v in refined_dicts[-1].items()}
     features_to_plot = sorted(features_to_plot_set, key=lambda f: last_lookup.get(f, 0), reverse=True)
 
-    # --- 3. LAYOUT ---
-    # importance x-axis: Initial + one entry per refined_dict
     labels = ["Initial"] + ["Base DP"] + [f"Iteration {i+1}" for i in range(len(refined_dicts) - 1)]
 
     has_f1 = train_f1_scores is not None and test_f1_scores is not None
@@ -104,7 +100,6 @@ def plot_importance_evolution(initial_dict, refined_dicts, top_k=10,
     ax_imp.set_ylabel("Global SHAP Importance")
     ax_imp.grid(axis='y', linestyle='--', alpha=0.3)
 
-    # --- 5. F1 SUBPLOT ---
     if has_f1:
         # concept_per_iteration has one entry per label — must match
         x = range(len(train_f1_scores))
