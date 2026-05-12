@@ -135,7 +135,8 @@ class NCES(BaseNCES):
                                f"--lr {self.dicee_lr} "
                                f"--model {self.dicee_model} "
                                f"--embedding_dim {self.dicee_emb_dim} "
-                               f"--eval_mode test",
+                               f"--eval_mode test "
+                               f"--optim 'Adam'",
                                shell=True)
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
