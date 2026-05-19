@@ -13,7 +13,7 @@ import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP, ALCSAT, SPELL, NERO
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from ontolearn.learners import Drill, TDL, OCEL
+from ontolearn.learners import Drill, TDL, OCEL, TDL_refinement
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -77,6 +77,12 @@ def dl_concept_learning(args):
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
+        
+    if not args.learner_types or 'tdl_refinement' in args.learner_types:
+        tdl_refinement = TDL_refinement(knowledge_base=kb,
+                            kwargs_classifier={"random_state": 1},
+                            max_runtime=args.max_runtime,
+                            verbose=0)    
         
     if not args.learner_types or 'nces' in args.learner_types:
         nces = NCES(knowledge_base=kb,
@@ -300,6 +306,31 @@ def dl_concept_learning(args):
                 print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
                 print(f"TDL Runtime: {rt_tdl:.3f}")
 
+            if not args.learner_types or 'tdl_refinement' in args.learner_types:
+                print("TDL Refinement starts..", end="\t")
+                start_time = time.time()
+                # () Fit model on training dataset
+                pred_tdl_refinement = tdl_refinement.fit(train_lp).best_hypotheses(n=1)
+                print("TDL Refinement ends..", end="\t")
+                rt_tdl_refinement = time.time() - start_time
+
+                # () Quality on the training data
+                train_f1_tdl_refinement = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl_refinement)}),
+                                                pos=train_lp.pos,
+                                                neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_tdl_refinement = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl_refinement)}),
+                                            pos=test_lp.pos,
+                                            neg=test_lp.neg)
+
+                data.setdefault("Train-F1-refinement-TDL", []).append(train_f1_tdl_refinement)
+                data.setdefault("Test-F1-refinement-TDL", []).append(test_f1_tdl_refinement)
+                data.setdefault("RT-refinement-TDL", []).append(rt_tdl_refinement)
+                print(f"TDL Refinement Train Quality: {train_f1_tdl_refinement:.3f}", end="\t")
+                print(f"TDL Refinement Test Quality: {test_f1_tdl_refinement:.3f}", end="\t")
+                print(f"TDL Refinement Runtime: {rt_tdl_refinement:.3f}")
+
+
             if not args.learner_types or 'nces' in args.learner_types:
                 start_time = time.time()
                 # () Fit model on training dataset
@@ -474,7 +505,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "alcsat", "spell", "nero"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "tdl_refinement", "nces2", "roces", "clip", "alcsat", "spell", "nero"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
