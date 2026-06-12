@@ -51,8 +51,14 @@ class BiasedRandomLPGenerator:
                                                                       self.max_example_percent, self.max_length,
                                                                       self.num_sub_roots, self.second_level_refinement)
 
-    def generate_lps(self):
-        self.get_concepts()
+    def generate_lps(self, concept_dict=None, concepts=None, concept_len_dict = None):
+        if concept_dict is not None and concepts is not None:
+            self.concept_dict = concept_dict
+            self.concepts = concepts
+            self.concept_len_dict = concept_len_dict
+        else:
+            print("generating concepts using the refinement operator...")
+            self.get_concepts()
         np.random.seed(self.seed)
         while self.curr_itter < self.max_itter and len(self.concepts) > 0:
             # take a random float r in [0, 1]
@@ -60,18 +66,27 @@ class BiasedRandomLPGenerator:
             r = np.random.rand()  # faster than random.random() because it is implemented in C
             # and optimized for performance.
             if r > 0.5:
-
                 self.concepts.remove(lp)
-                raw_pos_set = set(i.str for i in self.concept_dict[lp])
+                if type(self.concept_dict[lp][0]) == str:
+                    raw_pos_set = set(i for i in self.concept_dict[lp])
+                else:
+                    raw_pos_set = set(i.str for i in self.concept_dict[lp])
+                # raw_pos_set = set(i.str for i in self.concept_dict[lp])
                 raw_neg_set = self.all_individuals_str - raw_pos_set
                 raw_pos = list(raw_pos_set)
                 raw_neg = list(raw_neg_set)
                 pos, neg = sample_examples(raw_pos, raw_neg, self.sample_ind_size)
                 pos = [ind.split("/")[-1] for ind in pos]
                 neg = [ind.split("/")[-1] for ind in neg]
-                concept_name = self.dl_syntax_renderer.render(lp.get_nnf())
+                if type(lp) == str:
+                    concept_name = lp
+                    concept_length = concept_len_dict[lp]
+                else:
+                    concept_name = self.dl_syntax_renderer.render(lp.get_nnf())
+                    concept_length = concept_len(lp)
+                # concept_name = self.dl_syntax_renderer.render(lp.get_nnf())
                 self.dataset[concept_name] = {'positive examples': pos, 'negative examples': neg,
-                                              'length': concept_len(lp)}
+                                              'length': concept_length}
                 self.curr_data_len = len(self.dataset)
                 if self.curr_data_len >= self.max_data_len:
                     print(f"Reached maximum data length of {self.max_data_len}. Stopping generation.")

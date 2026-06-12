@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 
-# 1. Global placeholder for the worker's private copy of the KB
+# Global placeholder for the worker's private copy of the KB
 worker_kb = None
 
 
@@ -44,7 +44,6 @@ def generate_concepts_parallel(kb, root, refinement_operator, max_example_percen
             refinements.update(refinement_operator.refine(subroot, max_length=max_length))
 
     unique_refinements = list(refinements)
-
 
     num_workers = max(1, (os.cpu_count() or 1) - 1)
     print(f"Spawning {num_workers} independent processes...")
@@ -115,7 +114,7 @@ def sample_examples(raw_pos, raw_neg, sample_ind_size):
         n_samples_pos = len(raw_pos)
         n_samples_neg = min(sample_ind_size - n_samples_pos, len(raw_neg))
     else:
-        # CATCH-ALL: len(raw_pos) == len(raw_neg) AND both are < sample_ind_size // 2
+        # len(raw_pos) == len(raw_neg) AND both are < sample_ind_size // 2
         n_samples_pos = len(raw_pos)
         n_samples_neg = len(raw_neg)
 
@@ -241,7 +240,10 @@ def get_ind_to_emb(embeddings, concept_dict):
     for i in concept_dict:
         pos = concept_dict[i]
         for p in pos:
-            p_name = p.str.split("/")[-1]
+            if type(p) == str:
+                p_name = p.split("/")[-1]
+            else:
+                p_name = p.str.split("/")[-1]
             if p_name in embeddings.index:
                 ind_to_emb[p_name] = embeddings.loc[p_name].values
     return ind_to_emb
