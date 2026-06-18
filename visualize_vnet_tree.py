@@ -109,10 +109,13 @@ def shorten(s: str, max_len: int = 36) -> str:
 
 
 def pred_color(p: float) -> str:
-    """Interpolate red (low) → yellow → green (high) for p in [0,1]."""
-    r = int(255 * (1.0 - p))
-    g = int(255 * p)
-    return f'#{r:02x}{g:02x}50'
+    """Interpolate dark green #0b7d0b (low) → #aad34b (high) for p in [0,1]."""
+    # low:  #0b7d0b  (r=11,  g=125, b=11)
+    # high: #aad34b  (r=170, g=211, b=75)
+    r = int(11  + (170 - 11)  * p)
+    g = int(125 + (211 - 125) * p)
+    b = int(11  + (75  - 11)  * p)
+    return f'#{r:02x}{g:02x}{b:02x}'
 
 
 def render_tree(nodes, vnet_preds, dp_best, top_k, max_depth, lp_name, out_dir,
@@ -174,7 +177,7 @@ def render_tree(nodes, vnet_preds, dp_best, top_k, max_depth, lp_name, out_dir,
         graph_attr={
             'rankdir':  'TB',
             'fontname': 'Helvetica',
-            'fontsize': '13',
+            'fontsize': '18',
             'nodesep':  '0.6',
             'ranksep':  '0.8',
             'splines':  'ortho',
@@ -183,7 +186,7 @@ def render_tree(nodes, vnet_preds, dp_best, top_k, max_depth, lp_name, out_dir,
             'shape':    'box',
             'style':    'filled,rounded',
             'fontname': 'Helvetica',
-            'fontsize': '30',
+            'fontsize': '20',
         },
         edge_attr={'arrowsize': '0.8'},
     )
