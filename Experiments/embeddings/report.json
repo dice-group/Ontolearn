@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 4064,
+    "num_entities": 230,
+    "num_relations": 12,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.32280874252319336,
+    "EstimatedSizeMB": 0.059082984924316406,
+    "NumParam": 61953,
+    "path_experiment_folder": "/home/dice/Downloads/Ontolearn/Experiments/2025-10-14 16-29-42.853276",
+    "Runtime": 4.161223649978638
+}
