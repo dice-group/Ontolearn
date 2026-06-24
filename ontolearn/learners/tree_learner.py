@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-
+import time
 from typing import Dict, Set, Tuple, List, Union, Callable
 import numpy as np
 import pandas as pd
@@ -214,7 +214,7 @@ class TDL:
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
-                 max_runtime: int = 1,
+                 max_runtime: int = None,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  kwargs_grid_search: dict = {},
@@ -321,7 +321,7 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
-    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
+    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual], start_time:float=None) -> (
             Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features = dict()
@@ -331,6 +331,10 @@ class TDL:
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
+            #check if max_runtime exceeded
+            if self.max_runtime and (time.time() - start_time > self.max_runtime):
+                raise RuntimeError(f"Execution terminated: max_runtime of {self.max_runtime} seconds exceeded.")
+
             # Extract base expressions from ABox
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
                 # Apply filters based on configuration flags
@@ -377,12 +381,15 @@ class TDL:
         
         # Convert features dict to list
         features_list = [v for k, v in features.items()]
-        
+       
         # Construct binary feature matrix
         X = []
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Constructing Training Data"):
+            if self.max_runtime and (time.time() - start_time > self.max_runtime):
+                raise RuntimeError(f"Execution terminated: max_runtime of {self.max_runtime} seconds exceeded.")
+
             binary_sparse_representation = []
             features_of_owl_named_individual = individuals_to_feature_mapping[owl_named_individual.str]
 
@@ -503,7 +510,7 @@ class TDL:
                 print(f"Warning: Error extracting cardinality features: {e}")
 
 
-    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def create_training_data(self, learning_problem: PosNegLPStandard, start_time:float=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # (1) Initialize ordering over positive and negative examples.
         if self.verbose > 0:
             print("Creating a Training Dataset")
@@ -516,7 +523,7 @@ class TDL:
         # (3) Iterate over examples to extract unique features.
         examples = positive_examples + negative_examples
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
-        X, features = self.extract_expressions_from_owl_individuals(examples)
+        X, features = self.extract_expressions_from_owl_individuals(examples, start_time)
         # (4) Creating a tabular data for the binary classification problem.
         # X = self.construct_sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
@@ -590,9 +597,11 @@ class TDL:
 
         if max_runtime is not None:
             self.max_runtime = max_runtime
+
+        start_time = time.time()
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
-        X, y = self.create_training_data(learning_problem=learning_problem)
+        X, y = self.create_training_data(learning_problem=learning_problem, start_time=start_time)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
         if self.plot_embeddings:

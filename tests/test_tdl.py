@@ -462,6 +462,20 @@ class TestTDLTraining(unittest.TestCase):
         self.assertIsNotNone(model.X)
         self.assertIsNotNone(model.y)
 
+    def test_max_runtime(self):
+        """Test that max_runtime parameter is respected."""
+        model = TDL(knowledge_base=self.kb, max_runtime=1, verbose=0, kwargs_classifier={"random_state": 42})
+        
+        examples = self.family_lps['problems']['Brother']
+        p = set(examples['positive_examples'])  
+        n = set(examples['negative_examples'])  
+        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+        
+        # Fit the model and ensure it respects max_runtime, Should raise RuntimeError if max_runtime exceeded
+        self.assertRaises(RuntimeError, model.fit, lp)
+
     def test_best_hypotheses(self):
         """Test retrieval of best hypotheses."""
         model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 42})

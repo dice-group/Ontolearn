@@ -39,7 +39,7 @@ class TestConceptLearning:
                       max_runtime=max_runtime)
         tdl = TDL(knowledge_base=KnowledgeBase(path=path_kb),
                   kwargs_classifier={"random_state": 0},
-                  max_runtime=max_runtime)
+                  max_runtime=None)
         # dictionary to store the data
         data = dict()
         for str_target_concept, examples in settings['problems'].items():
