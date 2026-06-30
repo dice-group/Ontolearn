@@ -42,7 +42,7 @@ from owlapy.class_expression import (
     OWLDataAllValuesFrom,
     OWLClass
 )
-from owlapy.utils import HasFiller
+from owlapy.utils import HasFiller, OWLDataOneOf
 from owlapy.owl_individual import OWLNamedIndividual
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
@@ -184,10 +184,14 @@ def contains_cardinality(expr: OWLClassExpression) -> bool:
     
     return False
 
-def contains_data_property(expr: OWLClassExpression) -> bool:
+def contains_boolean_data_property(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a data property."""
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
-        return True
+        filler = expr.get_filler()
+        if isinstance(filler, OWLDataOneOf):
+            for literal in filler.values():
+                if literal.is_boolean():
+                    return True
     
     # Check operands (for unions, intersections, complements)
     if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
@@ -205,12 +209,39 @@ def contains_data_property(expr: OWLClassExpression) -> bool:
     
     return False
 
+
+def contains_data_property(expr: OWLClassExpression, include_boolean:bool = False) -> bool:
+    """Returns True if the OWL expression contains a data property."""
+    if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
+        filler = expr.get_filler()
+        if isinstance(filler, OWLDataOneOf):
+            for literal in filler.values():
+                if not include_boolean and not(literal.is_boolean()):
+                    return True
+    
+    # Check operands (for unions, intersections, complements)
+    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
+        try:
+            return any(contains_data_property(op,include_boolean) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+    
+    # Check filler (for restrictions)
+    if isinstance(expr, HasFiller):
+        try:
+            return contains_data_property(expr.get_filler(), include_boolean)
+        except (AttributeError, TypeError):
+            pass
+    
+    return False
+
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
                  use_inverse: bool = True,
-                 use_data_properties: bool = True,
+                 use_data_properties_boolean:bool = True,
+                 use_data_properties_non_boolean: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
@@ -226,7 +257,8 @@ class TDL:
                  verbalize: bool = False):
 
         self.use_inverse = use_inverse
-        self.use_data_properties = use_data_properties
+        self.use_data_properties_non_boolean = use_data_properties_non_boolean
+        self.use_data_properties_boolean = use_data_properties_boolean
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
         self.verbose = verbose
@@ -297,8 +329,12 @@ class TDL:
         if not self.use_card_restrictions and contains_cardinality(owl_class_expression):
             return False
         
+        #exclude expressions containing boolean data properties if flag is disabled
+        if not self.use_data_properties_boolean and contains_boolean_data_property(owl_class_expression):
+            return False
+        
         # Exclude expressions containing data properties if flag is disabled
-        if not self.use_data_properties and contains_data_property(owl_class_expression):
+        if not self.use_data_properties_non_boolean and contains_data_property(owl_class_expression):
             return False
         
         return True
@@ -348,7 +384,7 @@ class TDL:
             if self.use_inverse:
                 self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
-            if self.use_data_properties:
+            if self.use_data_properties_non_boolean or self.use_data_properties_boolean:
                 self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
             if self.use_card_restrictions:
@@ -374,8 +410,10 @@ class TDL:
             print(f"Unique OWL Class Expressions as features: {len(features)}")
             if self.use_inverse:
                 print("  - Including inverse property features")
-            if self.use_data_properties:
-                print("  - Including data property features")
+            if self.use_data_properties_boolean:
+                print("  - Including boolean data property features")
+            if self.use_data_properties_non_boolean:
+                print("  - Including non boolean data property features")
             if self.use_card_restrictions:
                 print("  - Including cardinality restriction features")
         

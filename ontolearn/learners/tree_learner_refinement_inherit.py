@@ -44,10 +44,11 @@ class TDL_refinement(TDL):
     def __init__(self, knowledge_base,
                  use_inverse: bool = True,
                  use_data_properties: bool = True,
+                 use_boolean_data_properties:bool = False,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
-                 max_runtime: int = 1,
+                 max_runtime: int = None,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  kwargs_grid_search: dict = {},
@@ -58,10 +59,10 @@ class TDL_refinement(TDL):
                  verbose: int = 10,
                  verbalize: bool = False,
                  feature_refinement:bool = True,
-                 plot_importance_evo:bool = True,
+                 plot_importance_evo:bool = False,
                  refine_iterations: int = 3
                  ):
-        super().__init__(knowledge_base,use_inverse,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
+        super().__init__(knowledge_base,use_inverse,use_boolean_data_properties,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
                        plot_tree, plot_embeddings,plot_feature_importance,verbose, verbalize)
         self.feature_refinement = feature_refinement
         self.plot_importance_evo = plot_importance_evo
@@ -69,6 +70,7 @@ class TDL_refinement(TDL):
         self.concept_per_iteration:List = list()
         self.top_feature_dicts:List = list()
         self.initial_importance_dict:Dict = dict()
+        self.use_data_properties = use_data_properties
  
     def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple) -> str:
         """Repack the ranged data property into an DL Concept String"""
@@ -562,7 +564,7 @@ class TDL_refinement(TDL):
         X_nf = np.array(X_nf)
         X_new = pd.DataFrame(data=X_nf, index=examples, columns=new_features_list)
         X = pd.concat([X, X_new], axis=1)
-        self.features = X.columns.to_list()
+        self.features = X.columns.tolist()
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
         return X
@@ -673,7 +675,7 @@ class TDL_refinement(TDL):
             plot_topk_feature_importance(
                 feature_names=[owl_expression_to_dl(f) for f in self.features],
                 cart_tree=self.clf,
-                topk=100,
+                topk=10,
             )
         perm_feature_topk = False
         if perm_feature_topk:
