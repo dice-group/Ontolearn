@@ -1,20 +1,28 @@
 """
-VOCELL: Oracle Based V-learning for Class Expression Learning
+VOCELL: V-learning for Class Expression Learning
 
-Combines best-first search with V-Learning intelligent termination.
+Combines K-best Vocell search with V-Net beam pruning.
 
-Search (PruneCEL-S — Zhang et al., K-CAP 2025):
-  - Priority queue ordered by refinementScore = F1 - 0.01 * length
-  - Skip rule: D ∈ ρ(C) added to queue iff score(D) > score(C) OR D adds a role
-  - SPARQL-based scoring with DL reasoner fallback
-  - Complex negation via NNF push-down
+Search (Vocell — Zhang et al., K-CAP 2025):
+  - K-best priority queue (beam_width pops per round) ordered by refinementScore:
+      refinementScore = F1 - length * 0.01  (PruneCEL's LengthBasedRefinementScorer)
+  - Skip rule: child enqueued only if child_f1 > local_best OR child adds a new role
+      local_best ratchets up per batch, blocking same-F1 duplicates
+  - Vocell inline recursion: high-precision partial solutions trigger a limited
+      sub-search; best sub-result combined as D ⊔ sub and re-inserted into main heap
 
-RL Termination (V-Learning):
-  - V-network predicts expected improvement from continued search
-  - Learns from search trajectories to stop early when no improvement expected
-  - Gets smarter across runs on the same LP
+V-Net pruning (when a checkpoint is loaded):
+  - After operator.refine() evaluates all children (instances cached in _inst_cache)
+    and the skip rule is applied, ALL surviving children are scored by V-Net in one
+    batch.  get_concept_embedding() reuses _inst_cache → zero extra SPARQL calls.
+  - Hard prune: children scoring below the batch mean V-Net score are NOT pushed to
+    the heap.  This keeps the heap smaller → fewer future pops → fewer subtrees
+    expanded → real reduction in total concepts explored.
+  - Safety floor: concepts that beat the current best_f1 are never dropped.
 
-When use_termination=False, produces identical results to test_refinement_fix.py.
+V-Learning (online training):
+  - BeamVNet (mean/deepsets/settransformer) loaded from checkpoint at inference time
+  - Online training: collects (concept_emb, f1) pairs during search, trains after each LP
 """
 
 import hashlib
@@ -75,7 +83,7 @@ class BeamVNet(nn.Module):
     *** Architecture must match ConceptVNet in train_vocell_v_net.py ***
     """
 
-    def __init__(self, embedding_dim: int, device: str = 'cpu'):
+    def __init__(self, embedding_dim: int, device: str = 'gpu'):
         super().__init__()
         self.embedding_dim = embedding_dim
         in_dim = 3 * embedding_dim
@@ -127,10 +135,10 @@ class VOCELL:
     """
     
     def __init__(self, kb: KnowledgeBase, operator: PruneCELBasedRefinement,
-                 beam_width: int = 10,
-                 max_depth: int = 5,
+                 beam_width: int = 5,
+                 max_concepts: int = 500,
+                 v_net_weight: float = 0.5,
                  precision_threshold: float = 1.0,
-                 recall_threshold: float = 0.5,
                  time_limit: float = 300.0,
                  use_v_learning: bool = False,
                  v_epsilon: float = 0.3,
@@ -143,21 +151,23 @@ class VOCELL:
                  verbose: bool = False):
         """
         Initialize the learner.
-        
+
         Args:
             kb: Knowledge base
-            operator: Refinement operator (collects fragments automatically)
-            beam_width: Number of top concepts to refine each iteration (default: 10)
-            max_depth: Maximum refinement depth (default: 5)
-            time_limit: Time limit in seconds (default: 300)
+            operator: Refinement operator
+            beam_width: Concepts popped per round in K-best expansion (default: 5)
+            max_concepts: Total heap-pop budget per LP (default: 500)
+            v_net_weight: Blend weight for V-Net priority; 0 = pure refinement score (default: 0.5)
+            precision_threshold: Precision threshold for Vocell fragment detection (default: 1.0)
+            time_limit: Time budget per LP in seconds (default: 300)
         """
         self.kb = kb
         self.operator = operator
         self.beam_width = beam_width
-        self.max_depth = max_depth
+        self.max_concepts = max_concepts
+        self.v_net_weight = v_net_weight
         self.time_limit = time_limit
         self.precision_threshold = precision_threshold
-        self.recall_threshold = recall_threshold
         self.verbose = verbose
         self.renderer = DLSyntaxObjectRenderer()
         
@@ -248,32 +258,37 @@ class VOCELL:
         return f1, precision, recall, covered_pos
 
     # ── Embedding helpers ─────────────────────────────────────────────────────
-
     def _get_embedding_from_ind_set(self, individuals) -> torch.Tensor:
         """Mean embedding from a collection of OWLNamedIndividual. Returns (1, 1, dim) tensor."""
         if self.df_embeddings is None:
+            print("Warning: no embeddings DataFrame available — returning zero embedding")
             return torch.zeros(1, 1, self.embedding_dim)
         iris = [ind.str for ind in individuals]
         if not iris:
-            # Concept has no instances — normal during beam search, no warning needed.
             return torch.zeros(1, 1, self.embedding_dim)
         valid = [i for i in iris if i in self.df_embeddings.index]
         if not valid:
-            # IRIs exist but none are in the embedding index — likely an IRI format mismatch.
-            print(f"Warning: no valid embeddings found for individuals: {iris[:5]}"
-                  f"{'...' if len(iris) > 5 else ''} "
-                  f"— check that the embeddings file uses the same IRI format as the KB.")
             return torch.zeros(1, 1, self.embedding_dim)
         vals = self.df_embeddings.loc[valid].values
         emb = torch.from_numpy(vals.mean(axis=0)).float()
         return emb.view(1, 1, self.embedding_dim)
-        # except Exception:
-        #     return torch.zeros(1, 1, self.embedding_dim)
 
     def get_concept_embedding(self, concept: OWLClassExpression) -> Optional[torch.Tensor]:
-        """Mean embedding of concept instances. Returns (1, 1, dim) tensor, or None if no embeddings."""
+        """Mean embedding of concept instances. Returns (1, 1, dim) tensor, or None if no embeddings.
+
+        Checks the refinement operator's _inst_cache first to avoid a redundant
+        kb.individuals_set() call (refine() already populated it for every candidate).
+        """
         if self.df_embeddings is None:
             return None
+        # Reuse instances already fetched by the refinement operator (no extra KB call)
+        op_cache = getattr(self.operator, '_inst_cache', None)
+        if op_cache is not None:
+            key = str(concept)
+            instances = op_cache.get(key)
+            if instances is not None:
+                return self._get_embedding_from_ind_set(instances)
+        # Fallback: concept not yet in cache (e.g. OWLThing at root)
         return self._get_embedding_from_ind_set(self.get_instances(concept))
 
     def _get_concept_emb_matrix(self, concept: OWLClassExpression) -> torch.Tensor:
@@ -284,7 +299,7 @@ class VOCELL:
         iris = [ind.str for ind in self.get_instances(concept)]
         return _get_inst_emb_mat(iris, self.df_embeddings)
 
-    # ── V-learning (mirrors DrillV_Complex) ───────────────────────────────────
+    # ── V-learning ───────────────────────────────────
 
     def form_experiences(self, concept_embs: List, rewards: List) -> None:
         """Store (concept_emb, best_reachable_reward) in replay buffer.
@@ -363,376 +378,365 @@ class VOCELL:
 
     # ─────────────────────────────────────────────────────────────────────────
 
-    def beam_search(self, pos: Set, neg: Set, start, training: bool = False) -> Optional[OWLClassExpression]:
+    def best_first_search(self, pos: Set, neg: Set, start, max_concepts: int = 500,
+                          _subproblem_keys=None, _allow_recursion: bool = True,
+                          training: bool = False) -> OWLClassExpression:
         """
-        Beam search for best concept.
+        K-best search with Vocell inline recursion and V-Net batch hard-pruning.
 
-        The refinement operator automatically collects high-precision fragments
-        during the search.
+        Search priority = refinementScore = F1 - length * length_penalty
+          (pure refinement score — no V-Net blending in the priority)
 
-        Args:
-            training: If True, disable V-net and termination-agent early stopping
-                      so that the search explores fully and collects experiences.
+        Skip rule: child enqueued only if child_f1 > local_best OR adds a new role.
+          local_best ratchets up per batch, blocking same-F1 duplicates.
 
-        Returns:
-            Best F1 concept found
+        V-Net hard pruning (when v_net_weight > 0 and a V-Net is loaded):
+          After operator.refine() evaluates all children and the skip rule is applied,
+          ALL surviving children are batch-scored by the V-Net in a single forward pass.
+          get_concept_embedding() is FREE here: instances are already in _inst_cache.
+          Children below the batch mean V-Net score are NOT pushed to the heap.
+          Safety floor: any child that beats the current best_f1 is always kept.
+
+        Vocell recursion (when _allow_recursion=True):
+          After each K-best batch, high-precision fragment candidates trigger a limited
+          sub-search on (E+ \ E+', E-).  Best sub-result combined as D ⊔ sub_result
+          and pushed back into the main heap.
         """
+        if _subproblem_keys is None:
+            _subproblem_keys = set()
 
-        # Initialize beam with ⊤
-        beam = [OWLThing]
+        min_recursion_pos = max(2, int(len(pos) * 0.1 + 0.999))
+        _RECURSIVE_BUDGET = max(10, self.beam_width * 2)
 
-        best_concept = None
-        best_f1 = 0.0
-
-        visited = set()
-        visited.add(str(OWLThing))
+        # Pre-compute pos/neg embeddings for V-Net priority blending
+        if self.v_net is not None:
+            self.emb_pos = self._get_embedding_from_ind_set(pos)
+            self.emb_neg = self._get_embedding_from_ind_set(neg)
+        if self.agg_v_net is not None and self.df_embeddings is not None:
+            _get_inst_emb_mat([i.str for i in pos], self.df_embeddings).to(self.device)
+            _get_inst_emb_mat([i.str for i in neg], self.df_embeddings).to(self.device)
 
         # Reset termination agent for this episode
         if self.termination_agent is not None:
             self.termination_agent.reset_for_new_episode()
 
-        # Pre-compute pos/neg embeddings (reused across all depth levels)
-        if self.v_net is not None:
-            self.emb_pos = self._get_embedding_from_ind_set(pos)
-            self.emb_neg = self._get_embedding_from_ind_set(neg)
-
-        # Pre-compute raw pos/neg matrices for aggregator-based V-net
-        _agg_pos_mat: Optional[torch.Tensor] = None
-        _agg_neg_mat: Optional[torch.Tensor] = None
-        if self.agg_v_net is not None and self.df_embeddings is not None:
-            _agg_pos_mat = _get_inst_emb_mat(
-                [ind.str for ind in pos], self.df_embeddings
-            ).to(self.device)
-            _agg_neg_mat = _get_inst_emb_mat(
-                [ind.str for ind in neg], self.df_embeddings
-            ).to(self.device)
-
-        # Episode buffers (consumed by form_experiences in fit())
+        # Episode buffers for online V-Net training
         self._episode_pairs   = []
         self._episode_rewards = []
 
-        v_stop = False  # flag to exit nested loops when agent says stop
+        # Seed heap with ⊤
+        top_f1, _, _, top_covered = self.evaluate(OWLThing, pos, neg)
+        top_tp    = len(top_covered)
+        top_score = self.operator.refinement_score(OWLThing, top_f1, top_tp)
+
+        # Min-heap: (neg_priority, neg_f1, seq, concept, f1, tp)
+        # neg_priority = -priority  → highest priority pops first
+        # seq          = insertion counter → unique tiebreaker
+        _seq = 0
+        heap = [(-top_score, -top_f1, _seq, OWLThing, top_f1, top_tp)]
+        heapq.heapify(heap)
+
+        seen         = {str(OWLThing)}
+        best_concept = OWLThing
+        best_f1      = top_f1
+        pops         = 0
 
         if self.verbose:
-            mode_tag = ""
-            if self.v_net is not None:
-                mode_tag += " [BeamVNet ON]"
-            if self.termination_agent is not None:
+            label    = "" if _allow_recursion else " [sub-problem]"
+            v_active = ((self.v_net is not None and self.v_net_trained)
+                        or (self.agg_v_net is not None and self.agg_v_net_trained))
+            mode_tag = " [V-Net ON]" if (v_active and not training and self.v_net_weight > 0) else ""
+            if self.termination_agent is not None and not training:
                 mode_tag += " [TermAgent ON]"
-            print(f"\nStarting beam search (beam width={self.beam_width}, max depth={self.max_depth}){mode_tag}")
-            print("="*80)
+            print(f"\nK-best search{label} (budget={max_concepts}, beam={self.beam_width}, "
+                  f"|pos|={len(pos)}, penalty={self.operator.length_penalty}){mode_tag}")
+            print("=" * 80)
 
-        for depth in range(self.max_depth):
-
-            if v_stop:
-                break
-
+        while heap and pops < max_concepts:
             if (time.time() - start) >= self.time_limit:
-                elapsed = time.time() - start
-                if self.verbose:
-                    print(f"\nTime reached in {elapsed:.1f}s")
-                    print(f"Total refinements explored: {self.total_refinements_explored}")
                 break
 
-            if self.verbose:
-                print(f"\nDepth {depth}: Refining top {len(beam)} concepts...")
+            # ── K-best batch: pop beam_width concepts per round ───────────────
+            batch = []
+            while heap and len(batch) < self.beam_width:
+                batch.append(heapq.heappop(heap))
 
-            # Generate all refinements of current beam
-            all_refinements = []
-            all_child_embs  = []  # child_emb parallel to all_refinements
+            batch_fragments = []   # Vocell candidates collected this batch
+            done = False
 
-            for concept in beam:
+            for neg_priority, _, _, parent, parent_f1, parent_tp in batch:
+                pops += 1
+                if pops > max_concepts or (time.time() - start) >= self.time_limit:
+                    done = True
+                    break
+
+                parent_n_q = self.operator.count_quantifiers(parent)
+
+                if self.verbose:
+                    print(f"  [{pops:4d}] score={-neg_priority:.4f}  F1={parent_f1:.3f}  "
+                          f"{self.renderer.render(parent)[:70]}")
+
+                # local_best ratchets up within this expansion:
+                # once Female (F1=0.804) is accepted, ¬Male / ¬Father (also 0.804) are dropped.
+                local_best = best_f1
+                survivors  = []   # (child, child_f1, child_score, tp) — post-skip-rule
+
                 try:
-
-                    # Generate refinements
-                    candidates = []
-                    candidate_embs = []
-                    metrics = {}  # child_str → (f1, precision, recall, tp)
-
-                    for child, f1, _, precision, recall, tp in self.operator.refine(concept):
-                        # if self.verbose:
-                        #     print(f"Already generated {self.total_refinements_explored} refinements", end='\r')
-
+                    for child, child_f1, _, precision, recall, tp in self.operator.refine(parent):
                         child_str = str(child)
-                        if child_str in visited:
+                        if child_str in seen:
                             continue
-                        visited.add(child_str)
+                        seen.add(child_str)
+                        self.total_refinements_explored += 1
 
-                        metrics[child_str] = (f1, precision, recall, tp)
+                        # ── Vocell: collect fragment candidates ──────────────
+                        # Checked BEFORE skip rule so high-precision / low-recall
+                        # concepts aren't missed just because they don't beat local_best.
+                        if (_allow_recursion and not training
+                                and precision >= self.operator.precision_threshold
+                                and tp >= min_recursion_pos
+                                and tp < len(pos) - 1):
+                            inst_cache = getattr(self.operator, '_inst_cache', {})
+                            batch_fragments.append((child, child_f1, tp, inst_cache.get(child_str)))
 
-                        child_emb = None
+                        # ── Skip rule ────────────────────────────────────────
+                        child_n_q  = self.operator.count_quantifiers(child)
+                        added_role = child_n_q > parent_n_q
+                        if child_f1 <= local_best and not added_role:
+                            continue
+                        local_best = max(local_best, child_f1)
 
-                        if self.v_net is not None and self.v_net_trained:
-                            try:
-                                child_emb = self.get_concept_embedding(child)
-                            except Exception:
-                                child_emb = None
+                        # # Termination-agent observation
+                        # if self.termination_agent is not None:
+                        #     self.termination_agent.observe_quality(child_f1)
+                        #     if not training:
+                        #         should_stop, reason, confidence = \
+                        #             self.termination_agent.should_stop_exploring(verbose=0)
+                        #         if should_stop:
+                        #             print(f"\nTermination agent: {reason} "
+                        #                   f"(confidence: {confidence:.2f})")
+                        #             print(f"  Best F1: {best_f1:.3f} | "
+                        #                   f"Explored: {self.total_refinements_explored}")
+                        #             done = True
+                        #             break
 
-                        candidates.append((child, child_emb))
-                        if child_emb is not None:
-                            candidate_embs.append(child_emb)
+                        child_score = self.operator.refinement_score(child, child_f1, tp)
 
-                    # ---------------------------------------------------------
-                    # V-NET FILTER (before evaluation)
-                    # ---------------------------------------------------------
+                        if child_f1 == 1.0 and not training:
+                            print(f"\n✓ PERFECT F1 at pop {pops}!")
+                            print(f"  {self.renderer.render(child)}")
+                            if self.termination_agent is not None:
+                                self.termination_agent.learn_from_episode()
+                            return child
 
+                        if child_f1 > best_f1:
+                            best_concept = child
+                            best_f1      = child_f1
 
-                   
-                    if (
-                        self.v_net is not None
+                        # # Episode collection for online V-Net training
+                        # if training and self.v_net is not None:
+                        #     try:
+                        #         child_emb = self.get_concept_embedding(child)
+                        #         if child_emb is not None:
+                        #             self._episode_pairs.append(child_emb)
+                        #             self._episode_rewards.append(child_f1)
+                        #     except Exception:
+                        #         pass
+
+                        survivors.append((child, child_f1, child_score, tp))
+
+                except Exception as e:
+                    print(f"  Exception refining {self.renderer.render(parent)}: {e}")
+
+                # ── V-Net batch hard-pruning ──────────────────────────────────
+                # Score all post-skip-rule survivors at once, then drop the bottom
+                # half by V-Net score.  get_concept_embedding() is FREE here because
+                # instances are already in _inst_cache from operator.refine() —
+                # zero extra SPARQL calls.  Concepts not pushed to the heap are
+                # never popped, never expanded, and their subtrees never evaluated
+                # → real reduction in concepts explored in future rounds.
+                if (not training
+                        and self.v_net_weight > 0
+                        and self.v_net is not None
                         and self.v_net_trained
-                        and len(candidate_embs) == len(candidates)
                         and self.emb_pos is not None
-                    ):
-                        N = len(candidate_embs)
+                        and len(survivors) > 1):
+                    embs, valid_idxs = [], []
+                    for i, (child, _, _, _) in enumerate(survivors):
+                        emb = self.get_concept_embedding(child)
+                        if emb is not None:
+                            embs.append(emb)
+                            valid_idxs.append(i)
 
-                        child_batch = torch.cat(candidate_embs, dim=0)
-
+                    if embs:
+                        N           = len(embs)
+                        child_batch = torch.cat(embs, dim=0)           # (N, 1, dim)
                         X = torch.cat([
                             child_batch,
                             self.emb_pos.repeat(N, 1, 1),
                             self.emb_neg.repeat(N, 1, 1),
-                        ], dim=1)
-
+                        ], dim=1)                                       # (N, 3, dim)
                         self.v_net.eval()
                         with torch.no_grad():
                             v_scores = self.v_net(X).tolist()
+                            # print(v_scores)
+                            # exit(0)
 
-                        # print(v_scores)
-                    
+                        # Keep concepts scoring at or above the mean V-Net score.
+                        # Safety floor: never drop a concept that beat best_f1
+                        # (those are always worth expanding).
+                        threshold = max(float(np.mean(v_scores)), best_f1)
+                        keep_set  = {valid_idxs[i]
+                                     for i, v in enumerate(v_scores)
+                                     if v >= threshold}
+                        for i, (_, child_f1, _, _) in enumerate(survivors):
+                            if child_f1 >= best_f1:          # safety floor
+                                keep_set.add(i)
 
-                        DEAD_END_THRESHOLD = np.mean(v_scores)  # V-net score below this = dead end
-                        F1_SAFETY_FLOOR    = 0.8  # never prune a concept already this good
+                        n_before  = len(survivors)
+                        survivors = [s for i, s in enumerate(survivors) if i in keep_set]
+                        if self.verbose:
+                            print(f"    V-Net: kept {len(survivors)}/{n_before} "
+                                  f"(pruned {n_before - len(survivors)})")
+                # ─────────────────────────────────────────────────────────────
 
-                        filtered = [
-                            (c, emb)
-                            for (c, emb), v in zip(candidates, v_scores)
-                            if v >= DEAD_END_THRESHOLD and best_f1 >= F1_SAFETY_FLOOR
-                        ]
-                       
-                        # Only apply if enough survivors remain to fill the beam
-                        if len(filtered) >= self.beam_width:
-                            if self.verbose:
-                                pruned = N - len(filtered)
-                                if pruned > 0:
-                                    print(f"  V-net skipped {pruned}/{N} refinements before evaluation")
-                            candidates = filtered
+                for child, child_f1, child_score, tp in survivors:
+                    _seq += 1
+                    heapq.heappush(heap, (-child_score, -child_f1, _seq, child, child_f1, tp))
 
-
-                    # ---------------------------------------------------------
-                    # V-NET FILTER (aggregator-based: deepsets / settransformer)
-                    # ---------------------------------------------------------
-                   
-                    elif (
-                        self.agg_v_net is not None
-                        and self.agg_v_net_trained
-                        and len(candidates) > 0
-                        and _agg_pos_mat is not None
-                    ):  
-                        N              = len(candidates)
-                        candidate_mats = [
-                            self._get_concept_emb_matrix(c).to(self.device)
-                            for c, _ in candidates
-                        ]
-
-                        with torch.no_grad():
-                            v_scores = self.agg_v_net.score_candidates(
-                                candidate_mats, _agg_pos_mat, _agg_neg_mat
-                            ).tolist()
-
-                        
-
-                        DEAD_END_THRESHOLD = np.mean(v_scores)
-                        F1_SAFETY_FLOOR    = 0.8
-
-                        filtered = [
-                            (c, emb)
-                            for (c, emb), v in zip(candidates, v_scores)
-                            if v >= DEAD_END_THRESHOLD and best_f1 >= F1_SAFETY_FLOOR
-                        ]
-
-                        if len(filtered) >= self.beam_width:
-                            if self.verbose:
-                                pruned = N - len(filtered)
-                                if pruned > 0:
-                                    print(f"  V-net ({self.agg_v_net.agg_type}) skipped "
-                                          f"{pruned}/{N} refinements before evaluation")
-                            candidates = filtered
-
-                    # ---------------------------------------------------------
-                    # Evaluate remaining candidates
-                    # ---------------------------------------------------------
-                    
-                    for child, child_emb in candidates:
-
-                        self.total_refinements_explored += 1
-                        child_str = str(child)
-                        f1, precision, recall, tp = metrics[child_str]
-
-                        # termination agent
-                        if self.termination_agent is not None:
-                            self.termination_agent.observe_quality(f1)
-                            if not training:
-                                should_stop, reason, confidence = \
-                                    self.termination_agent.should_stop_exploring(verbose=0)
-                                if should_stop:
-                                    print(f"\nTermination agent: {reason} "
-                                          f"(confidence: {confidence:.2f})")
-                                    print(f"   Best F1: {best_f1:.3f} | "
-                                          f"Explored: {self.total_refinements_explored}")
-                                    v_stop = True
-                                    break
-
-                        # recursive fragment condition
-                        if (
-                            precision >= self.operator.precision_threshold
-                            and recall <= self.operator.recall_threshold
-                            and not training
-                        ):
-                            if self.termination_agent is not None:
-                                self.termination_agent.learn_from_episode()
-                            return child
-
-                        all_refinements.append(
-                            (child, f1, precision, recall, tp)
-                        )
-
-                        # perfect concept
-                        if f1 == 1.0 and not training:
-                            if self.termination_agent is not None:
-                                self.termination_agent.learn_from_episode()
-                            return child
-
-                        # update best
-                        if f1 > best_f1:
-                            best_concept = child
-                            best_f1 = f1
-                    # exit(0)
-
-
-                except Exception as e:
-                    print(f"Error refining {self.renderer.render(concept)}: {e}")
+                if done:
                     break
 
-                if v_stop:
-                    break  # break beam loop
-
-            if v_stop:
-                break  # break depth loop
-
-            if not all_refinements:
-                if self.verbose:
-                    print(f"  No new refinements generated")
+            if done:
                 break
 
-            # Beam selection: always sort by raw F1 — V-net never changes the order
-            all_refinements.sort(key=lambda x: x[1], reverse=True)
-            # ──────────────────────────────────────────────────────────────────
+            # ── Vocell: inline recursion after each batch ─────────────────
+            if _allow_recursion and not training and batch_fragments and best_f1 < 1.0:
+                for fragment, frag_f1, frag_tp, frag_instances in batch_fragments:
+                    if (time.time() - start) >= self.time_limit:
+                        break
 
-            # Print top concepts at this depth
-            if self.verbose:
-                print(f"  Generated {len(all_refinements)} unique refinements")
-                print(f"  Top 5:")
-                for i, (concept, f1, prec, rec, _) in enumerate(all_refinements[:5], 1):
-                    concept_str = self.renderer.render(concept)
-                    if len(concept_str) > 70:
-                        concept_str = concept_str[:70] + "..."
-                    print(f"    {i}. F1={f1:.3f} P={prec:.3f} R={rec:.3f} | {concept_str}")
+                    if frag_instances is None:
+                        frag_instances = self.get_instances(fragment)
 
-            # Update beam with top concepts
-            beam = [concept for concept, _, _, _, _ in all_refinements[:self.beam_width]]
+                    remaining_pos = pos - frag_instances
+                    if len(remaining_pos) < 2:
+                        continue
 
-            if self.verbose:
-                print(f"  Best F1 so far: {best_f1:.3f}")
+                    sub_key = frozenset(i.str for i in remaining_pos)
+                    if sub_key in _subproblem_keys:
+                        continue
+                    _subproblem_keys.add(sub_key)
+
+                    frag_label = self.renderer.render(fragment)[:50]
+                    print(f"\n  ↳ [Vocell] '{frag_label}' covers {frag_tp}/{len(pos)} pos"
+                          f" → sub-problem: {len(remaining_pos)} remaining")
+
+                    saved_cache = dict(getattr(self.operator, '_inst_cache', {}))
+                    self.operator.set_input_examples(frozenset(remaining_pos), frozenset(neg))
+
+                    sub_result = self.best_first_search(
+                        remaining_pos, neg, start,
+                        max_concepts=_RECURSIVE_BUDGET,
+                        _subproblem_keys=_subproblem_keys,
+                        _allow_recursion=False,
+                        training=False,
+                    )
+
+                    sub_cache = dict(getattr(self.operator, '_inst_cache', {}))
+                    self.operator.set_input_examples(frozenset(pos), frozenset(neg))
+                    if hasattr(self.operator, '_inst_cache'):
+                        self.operator._inst_cache.update(saved_cache)
+                        self.operator._inst_cache.update(sub_cache)
+
+                    if sub_result is None:
+                        continue
+
+                    combined     = OWLObjectUnionOf([fragment, sub_result])
+                    combined_str = str(combined)
+                    if combined_str in seen:
+                        continue
+                    seen.add(combined_str)
+
+                    c_f1, _, _, c_covered = self.evaluate(combined, pos, neg)
+                    c_tp    = len(c_covered)
+                    c_score = self.operator.refinement_score(combined, c_f1, c_tp)
+                    _seq += 1
+                    heapq.heappush(heap, (-c_score, -c_f1, _seq, combined, c_f1, c_tp))
+                    print(f"    ↳ Combined: F1={c_f1:.3f}  {self.renderer.render(combined)[:60]}")
+
+                    if c_f1 == 1.0:
+                        print(f"\n✓ PERFECT F1 via recursion!")
+                        if self.termination_agent is not None:
+                            self.termination_agent.learn_from_episode()
+                        return combined
+
+                    if c_f1 > best_f1:
+                        best_concept = combined
+                        best_f1      = c_f1
+            # ─────────────────────────────────────────────────────────────────
 
         elapsed = time.time() - start
         if self.verbose:
-            print(f"\nSearch completed in {elapsed:.1f}s")
-            print(f"Total refinements explored: {self.total_refinements_explored}")
+            print(f"\nDone in {elapsed:.1f}s  pops={pops}  "
+                  f"explored={self.total_refinements_explored}  best_f1={best_f1:.3f}")
 
         if self.termination_agent is not None:
             self.termination_agent.learn_from_episode()
 
-        return best_concept, self.total_refinements_explored
+        return best_concept
 
 
-    def fit(self, pos, neg):
-
-        # recursive learning
-
-        remaining_pos = set(pos)
-        fragments = []
-
+    def learn_recursive(self, pos, neg, training: bool = False, allow_recursion: bool = True):
+        """
+        Single-pass Vocell learning with optional online V-Net training.
+        Union construction is handled internally via inline recursive sub-problems.
+        """
         start = time.time()
-        while remaining_pos:
+        self.operator.set_input_examples(frozenset(pos), frozenset(neg))
 
-            self.operator.set_input_examples(frozenset(remaining_pos), frozenset(neg))
+        concept = self.best_first_search(
+            set(pos), set(neg), start,
+            max_concepts=self.max_concepts,
+            training=training,
+            _allow_recursion=allow_recursion,
+        )
 
-            if (time.time() - start) >= self.time_limit:
-                print(f"\n⏱ Time limit reached!")
-                break
+        # # Online V-Net training on episode experience collected during search
+        # if self.v_net is not None and self._episode_pairs:
+        #     self.form_experiences(self._episode_pairs, self._episode_rewards)
+        #     self.learn_from_replay_memory()
 
-            result = self.beam_search(
-                remaining_pos,
-                neg,
-                start
-            )
-            # beam_search returns (concept, total) on normal exit, bare concept on early exits
-            fragment = result[0] if isinstance(result, tuple) else result
+        f1 = 0.0
+        if concept is not None:
+            f1, _, _, _ = self.evaluate(concept, set(pos), set(neg))
 
-            # V-net: train on episode experience collected during beam_search
-            if self.v_net is not None and self._episode_pairs:
-                self.form_experiences(self._episode_pairs, self._episode_rewards)
-                self.learn_from_replay_memory()
+        print(f"\n{'=' * 80}")
+        print(f"FINAL RESULT")
+        print(f"{'=' * 80}")
+        print(f"{self.renderer.render(concept) if concept is not None else 'None'}")
+        print(f"\nF1: {f1:.3f}")
+        print(f"{'=' * 80}")
+        return concept, self.total_refinements_explored
 
-            if fragment is None:
-                break
-
-            f1, precision, recall, covered = self.evaluate(
-                fragment,
-                remaining_pos,
-                neg
-            )
-
-            fragments.append(fragment)
-            remaining_pos -= covered
-
-        if not fragments:
-            return None, self.total_refinements_explored
-
-        if len(fragments) > 1:
-            final_concepts = OWLObjectUnionOf(fragments)
-            f1, precision, recall, _ = self.evaluate(final_concepts, pos, neg)
-            print(f"\n{'=' * 80}")
-            print(f"FINAL RESULT")
-            print(f"{'=' * 80}")
-            print(f"{self.renderer.render(final_concepts)}")
-            print(f"\nF1: {f1:.3f}")
-            print(f"{'=' * 80}")
-            return OWLObjectUnionOf(fragments)
-
-        else:
-            f1, precision, recall, _ = self.evaluate(fragments[0], pos, neg)
-            print(f"\n{'=' * 80}")
-            print(f"FINAL RESULT")
-            print(f"{'=' * 80}")
-            print(f"{self.renderer.render(fragments[0])}")
-            print(f"\nF1: {f1:.3f}")
-            print(f"{'=' * 80}")
-            return fragments[0], self.total_refinements_explored
+    # keep fit() as an alias so external scripts don't break
+    def fit(self, pos, neg, allow_recursion: bool = True):
+        return self.learn_recursive(pos, neg, allow_recursion=allow_recursion)
 
 
 def _run_learner(kb, operator, pos, neg, use_v_learning, v_epsilon=1.,
                  v_memory_path='vocell_v_memory.pkl', beam_width=5,
-                 max_depth=15, time_limit=60.0, path_embeddings=None,
-                 v_net_path=None, verbose=False):
-    """Helper: create a fresh VOCELL instance and run fit.
+                 max_concepts=500, time_limit=60.0, path_embeddings=None,
+                 v_net_path=None, v_net_weight=0.5, verbose=False,
+                 allow_recursion=True):
+    """Helper: create a fresh VOCELL instance and run learn_recursive.
     Returns (concept_str, f1, concepts_explored)."""
     learner = VOCELL(
         kb=kb,
         operator=operator,
         beam_width=beam_width,
-        max_depth=max_depth,
+        max_concepts=max_concepts,
+        v_net_weight=v_net_weight,
         time_limit=time_limit,
         use_v_learning=use_v_learning,
         v_epsilon=v_epsilon,
@@ -741,7 +745,7 @@ def _run_learner(kb, operator, pos, neg, use_v_learning, v_epsilon=1.,
         v_net_path=v_net_path,
         verbose=verbose,
     )
-    result = learner.fit(pos=set(pos), neg=set(neg))
+    result = learner.learn_recursive(pos=set(pos), neg=set(neg), allow_recursion=allow_recursion)
     if isinstance(result, tuple):
         concept, total = result
     else:
@@ -786,8 +790,8 @@ def main():
                         help='Time budget per run in seconds.')
     parser.add_argument('--beam_width', type=int,   default=5,
                         help='Beam width.')
-    parser.add_argument('--max_depth',  type=int,   default=15,
-                        help='Maximum refinement depth.')
+    parser.add_argument('--max_concepts', type=int, default=500,
+                        help='Maximum heap pops per LP (search budget).')
     parser.add_argument('--precision_threshold', type=float, default=1.0,
                         help='Operator precision threshold.')
     parser.add_argument('--recall_threshold',    type=float, default=0.6,
@@ -808,6 +812,8 @@ def main():
     # ── Misc ──────────────────────────────────────────────────────────────────
     parser.add_argument('--no_baseline', action='store_true',
                         help='Skip the no-V-net baseline run.')
+    parser.add_argument('--allow_recursion', action='store_true',
+                        help='Enable PruneCEL-R inline recursion for both baseline and V-Net runs.')
     parser.add_argument('--verbose', action='store_true',
                         help='Print per-depth beam-search details.')
     args = parser.parse_args()
@@ -902,34 +908,38 @@ def main():
                 print(f"    [!] Checkpoint not found: {v_net_path} — skipping")
                 continue
 
+            _t0 = time.time()
             concept_str, f1, total = _run_learner(
                 kb, make_operator(), pos, neg,
                 use_v_learning=use_vl,
                 time_limit=args.time_limit,
                 beam_width=args.beam_width,
-                max_depth=args.max_depth,
+                max_concepts=args.max_concepts,
                 path_embeddings=args.embeddings if use_vl else None,
                 v_net_path=v_net_path,
                 verbose=args.verbose,
+                allow_recursion=args.allow_recursion,
             )
+            _runtime = time.time() - _t0
             lp_results.append({
                 "lp_name":  lp_name,
                 "label":    label,
                 "f1":       f1,
                 "concepts": total,
                 "concept":  concept_str,
+                "runtime":  _runtime,
             })
 
         # ── Per-LP summary table ───────────────────────────────────────────
         if lp_results:
             base_f1    = lp_results[0]["f1"]
             base_total = lp_results[0]["concepts"]
-            print(f"\n  {'Setup':<30} {'F1':>6}  {'Δ F1':>8}  {'Concepts':>10}  Concept")
-            print(f"  {'-' * 80}")
+            print(f"\n  {'Setup':<30} {'F1':>6}  {'Δ F1':>8}  {'Concepts':>10}  {'Time (s)':>9}  Concept")
+            print(f"  {'-' * 90}")
             for r in lp_results:
                 delta = f"{r['f1'] - base_f1:+.3f}" if r['f1'] != base_f1 else "      "
                 cstr  = r["concept"] if len(r["concept"]) <= 40 else r["concept"][:37] + "..."
-                print(f"  {r['label']:<30} {r['f1']:>6.3f}  {delta:>8}  {r['concepts']:>10}  {cstr}")
+                print(f"  {r['label']:<30} {r['f1']:>6.3f}  {delta:>8}  {r['concepts']:>10}  {r['runtime']:>8.1f}s  {cstr}")
 
         all_results.extend(lp_results)
 
@@ -939,19 +949,22 @@ def main():
         import numpy as _np
         agg_f1 = defaultdict(list)
         agg_ct = defaultdict(list)
+        agg_rt = defaultdict(list)
         for r in all_results:
             agg_f1[r["label"]].append(r["f1"])
             agg_ct[r["label"]].append(r["concepts"])
+            agg_rt[r["label"]].append(r["runtime"])
 
-        print(f"\n{'=' * 100}")
+        print(f"\n{'=' * 110}")
         print(f"GRAND SUMMARY  ({n_to_run} LPs)")
-        print(f"{'=' * 100}")
-        print(f"  {'Setup':<30} {'Avg F1':>8}  {'Std F1':>8}  {'Avg Concepts':>14}")
-        print(f"  {'-' * 65}")
+        print(f"{'=' * 110}")
+        print(f"  {'Setup':<30} {'Avg F1':>8}  {'Std F1':>8}  {'Avg Concepts':>14}  {'Avg Time (s)':>13}  {'Total Time':>11}")
+        print(f"  {'-' * 90}")
         for label, f1s in agg_f1.items():
             cts = agg_ct[label]
-            print(f"  {label:<30} {_np.mean(f1s):>8.3f}  {_np.std(f1s):>8.3f}  {_np.mean(cts):>14.0f}")
-        print("=" * 100)
+            rts = agg_rt[label]
+            print(f"  {label:<30} {_np.mean(f1s):>8.3f}  {_np.std(f1s):>8.3f}  {_np.mean(cts):>14.0f}  {_np.mean(rts):>12.1f}s  {sum(rts):>10.1f}s")
+        print("=" * 110)
 
     print("\n✓ Done!")
 
@@ -960,10 +973,7 @@ if __name__ == "__main__":
     main()
 
 # Family (all LPs):
-#   python vocell.py --lps_file LPs/Family/lps_difficult.json --kb KGs/Family/family.owl \
-#     --sparql http://localhost:3030/family/sparql \
-#     --embeddings Experiments/embeddings/Keci_entity_embeddings.csv \
-#     --agg_types mean --training_strategies loocv --num_lps 0 --verbose
+#   python vocell.py --lps_file LPs/Family/lps_difficult.json --kb KGs/Family/family.owl --sparql http://localhost:3030/family/sparql --embeddings Experiments/embeddings/Keci_entity_embeddings.csv --agg_types mean --training_strategies loocv --num_lps 0 --verbose
 #
 # Carcinogenesis (first 3 LPs, bootstrap, no baseline):
 #   python vocell.py --lps_file LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl \
