@@ -76,7 +76,7 @@ class PruneCELBasedRefinement(BaseRefinement):
                  max_concepts: int = 100,
                  random_seed: Optional[int] = None,
                  sparql_endpoint: Optional[str] = None,
-                 length_penalty: float = 0.1):
+                 length_penalty: float = 0.01):
         """
         Initialize PruneCEL recursive refinement operator.
 
@@ -118,6 +118,12 @@ class PruneCELBasedRefinement(BaseRefinement):
         # Define template as a global variable for now (can be improved by passing it through methods)
         # self.template = CONTEXT_POSITION_MARKER
         self._score_cache = {}
+        # Cache for g(template) and per-oracle results — keyed by str(template).
+        # Cleared whenever pos/neg examples change so cached SPARQL results stay valid.
+        self._g_cache: dict = {}
+        self._oracle_class_cache: dict = {}
+        self._oracle_neg_cache: dict = {}
+        self._oracle_role_cache: dict = {}
 
 
     def sparql(self, query: str) -> List[Dict[str, str]]:
@@ -144,8 +150,17 @@ class PruneCELBasedRefinement(BaseRefinement):
         self.top_refinements = set()
         # self.high_precision_fragments = high_precision_fragments
         # self.covered_positives = set()
+        self._g_cache = {}
+        self._oracle_class_cache = {}
+        self._oracle_neg_cache = {}
+        self._oracle_role_cache = {}
+        self._inst_cache = {}
+        self._inst_cache: dict = {}  # str(concept) → frozenset of instances
 
     def oracle_class_suggestor(self, template):
+        key = str(template)
+        if key in self._oracle_class_cache:
+            return self._oracle_class_cache[key]
 
         query = owl_expression_to_class_query(
             context=template,
@@ -195,9 +210,13 @@ class PruneCELBasedRefinement(BaseRefinement):
             print(f"Error in oracle_class_suggestor with template {self._renderer.render(template)}: {e}")
             exit(0)
 
+        self._oracle_class_cache[key] = results
         return results
 
     def oracle_role_suggestor(self, template: OWLClassExpression) -> Set[OWLObjectProperty]:
+        key = str(template)
+        if key in self._oracle_role_cache:
+            return self._oracle_role_cache[key]
 
         query = property_query_with_counts(
             context=template,
@@ -233,9 +252,13 @@ class PruneCELBasedRefinement(BaseRefinement):
             owl_class = OWLObjectProperty(IRI.create(uri))
             results.add(owl_class)
 
+        self._oracle_role_cache[key] = results
         return results
 
     def oracle_negation_class_suggestor(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
+        key = str(template)
+        if key in self._oracle_neg_cache:
+            return self._oracle_neg_cache[key]
 
         query = owl_expression_to_negated_class_query(
             context=template,
@@ -271,14 +294,43 @@ class PruneCELBasedRefinement(BaseRefinement):
             owl_class = OWLClass(IRI.create(uri))
             results.add(owl_class)
 
+        self._oracle_neg_cache[key] = results
         return results
 
+    @staticmethod
+    def _template_is_negation(template: OWLClassExpression) -> bool:
+        """Return True when the template's marker sits directly inside a complement (¬μ).
+
+        In that position:
+        - oracle_negation_class_suggestor would produce ¬(¬C) = C → redundant.
+        - oracle_role_suggestor would produce ¬(∃r.⊤) = ∀r.⊥ → almost never useful.
+        Both can be skipped safely.
+        """
+        return (
+            isinstance(template, OWLObjectComplementOf)
+            and template.get_operand() == CONTEXT_POSITION_MARKER
+        )
+
     def g(self, template: OWLClassExpression) -> Set[OWLClassExpression]:
+        # --- cache hit ---
+        key = str(template)
+        if key in self._g_cache:
+            return self._g_cache[key]
+
         results = set()
+        _neg_ctx = self._template_is_negation(template)
 
         classes = self.oracle_class_suggestor(template)
-        neg_classes = self.oracle_negation_class_suggestor(template)
-        roles = self.oracle_role_suggestor(template)
+        # Skip negated-class oracle when inside ¬(μ) — would yield ¬¬C = C (redundant).
+        neg_classes = (
+            set() if _neg_ctx
+            else self.oracle_negation_class_suggestor(template)
+        )
+        # Skip role oracle when inside ¬(μ) — would yield ¬(∃r.⊤) = ∀r.⊥ (rarely useful).
+        roles = (
+            set() if _neg_ctx
+            else self.oracle_role_suggestor(template)
+        )
 
         # m*(T, D)
         for c in classes:
@@ -295,6 +347,7 @@ class PruneCELBasedRefinement(BaseRefinement):
             exists = OWLObjectSomeValuesFrom(property=r, filler=OWLThing)
             results.add(self.m_star(template, exists))
 
+        self._g_cache[key] = results
         return results
 
     def m_star(self,
@@ -455,9 +508,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         # Calculate parent score (cache it)
         parent_key = str(concept)
         if parent_key not in self._score_cache:
-            parent_f1, parent_precision, parent_recall, parent_coverage = self.compute_f1(concept, self.kb, self.pos,
+            parent_f1, parent_precision, parent_recall, parent_coverage, parent_instances = self.compute_f1(concept, self.kb, self.pos,
                                                                                           self.neg)
-            parent_instances = set(self.kb.individuals(concept))
             parent_tp = len(parent_instances & self.pos)
             parent_score = self.refinement_score(concept, parent_f1, parent_tp)
             self._score_cache[parent_key] = parent_score
@@ -467,9 +519,8 @@ class PruneCELBasedRefinement(BaseRefinement):
         refinements = []
 
         for ref in candidates:
-            # Compute metrics for child
-            f1, precision, recall, coverage = self.compute_f1(ref, self.kb, self.pos, self.neg)
-            instances = set(self.kb.individuals(ref))
+            # Compute metrics for child — instances are cached inside compute_f1
+            f1, precision, recall, coverage, instances = self.compute_f1(ref, self.kb, self.pos, self.neg)
             tp = len(instances & self.pos)
 
             # Calculate child refinement score
@@ -486,6 +537,10 @@ class PruneCELBasedRefinement(BaseRefinement):
                     child_score >= parent_score or self.added_role(concept, ref):
                 refinements.append((ref, f1, child_score, precision, recall, tp))
 
+        # Sort deterministically: highest score first, tie-break by string representation.
+        # Without this, set iteration order (hash-randomised per process) causes completely
+        # different beam paths between runs on the same LP → unpredictable runtimes.
+        refinements.sort(key=lambda x: (-x[2], str(x[0])))
         return refinements
 
 
@@ -533,10 +588,20 @@ class PruneCELBasedRefinement(BaseRefinement):
         return concept == OWLThing or concept == OWLNothing
 
     def compute_f1(self, concept: OWLClassExpression, kb: KnowledgeBase,
-                   pos: Set, neg: Set) -> Tuple[float, float, float, int]:
-        """Compute F1, precision, recall, and coverage counts for a concept."""
+                   pos: Set, neg: Set) -> Tuple:
+        """Compute F1, precision, recall, coverage and the instance set.
+
+        Returns (f1, precision, recall, coverage, instances) so callers can
+        reuse the instance set without a second kb.individuals_set() call.
+        Results are cached in self._inst_cache keyed by str(concept).
+        """
+        key = str(concept)
         try:
-            instances = kb.individuals_set(concept)
+            if key in self._inst_cache:
+                instances = self._inst_cache[key]
+            else:
+                instances = kb.individuals_set(concept)
+                self._inst_cache[key] = instances
             tp = len(instances.intersection(pos))
             fp = len(instances.intersection(neg))
             fn = len(pos - instances)
@@ -545,9 +610,9 @@ class PruneCELBasedRefinement(BaseRefinement):
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
             f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
-            return f1, precision, recall, len(instances)
-        except Exception as e:
-            return 0.0, 0.0, 0.0, 0
+            return f1, precision, recall, len(instances), instances
+        except Exception:
+            return 0.0, 0.0, 0.0, 0, frozenset()
 
     def get_union_of_fragments(self) -> Optional[OWLClassExpression]:
         """
