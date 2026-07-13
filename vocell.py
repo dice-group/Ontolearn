@@ -462,6 +462,7 @@ class VOCELL:
                 batch.append(heapq.heappop(heap))
 
             batch_fragments = []   # Vocell candidates collected this batch
+            round_survivors = []   # all (child, child_f1, child_score, tp) across all parents this round
             done = False
 
             for neg_priority, _, _, parent, parent_f1, parent_tp in batch:
@@ -543,69 +544,63 @@ class VOCELL:
                         #     except Exception:
                         #         pass
 
+                        round_survivors.append((child, child_f1, child_score, tp))
                         survivors.append((child, child_f1, child_score, tp))
 
                 except Exception as e:
                     print(f"  Exception refining {self.renderer.render(parent)}: {e}")
 
-                # ── V-Net batch hard-pruning ──────────────────────────────────
-                # Score all post-skip-rule survivors at once, then drop the bottom
-                # half by V-Net score.  get_concept_embedding() is FREE here because
-                # instances are already in _inst_cache from operator.refine() —
-                # zero extra SPARQL calls.  Concepts not pushed to the heap are
-                # never popped, never expanded, and their subtrees never evaluated
-                # → real reduction in concepts explored in future rounds.
-                if (not training
-                        and self.v_net_weight > 0
-                        and self.v_net is not None
-                        and self.v_net_trained
-                        and self.emb_pos is not None
-                        and len(survivors) > 1):
-                    embs, valid_idxs = [], []
-                    for i, (child, _, _, _) in enumerate(survivors):
-                        emb = self.get_concept_embedding(child)
-                        if emb is not None:
-                            embs.append(emb)
-                            valid_idxs.append(i)
+            # ─────────────────────────────────────────────────────────────
+            # ── V-Net round-level pruning (global across all parents this round)
+            # Only fires when the round produced > beam_width*3 candidates so
+            # small batches are never pruned (avoids amplifying V-Net errors).
+            survivors = round_survivors
+            if (not done
+                    and not training
+                    and self.v_net_weight > 0
+                    and self.v_net is not None
+                    and self.v_net_trained
+                    and self.emb_pos is not None
+                    and len(survivors) > 1):
+                embs, valid_idxs = [], []
+                for i, (child, _, _, _) in enumerate(survivors):
+                    emb = self.get_concept_embedding(child)
+                    if emb is not None:
+                        embs.append(emb)
+                        valid_idxs.append(i)
 
-                    if embs:
-                        N           = len(embs)
-                        child_batch = torch.cat(embs, dim=0)           # (N, 1, dim)
-                        X = torch.cat([
-                            child_batch,
-                            self.emb_pos.repeat(N, 1, 1),
-                            self.emb_neg.repeat(N, 1, 1),
-                        ], dim=1)                                       # (N, 3, dim)
-                        self.v_net.eval()
-                        with torch.no_grad():
-                            v_scores = self.v_net(X).tolist()
-                            # print(v_scores)
-                            # exit(0)
+                if embs:
+                    N           = len(embs)
+                    child_batch = torch.cat(embs, dim=0)           # (N, 1, dim)
+                    X = torch.cat([
+                        child_batch,
+                        self.emb_pos.repeat(N, 1, 1),
+                        self.emb_neg.repeat(N, 1, 1),
+                    ], dim=1)                                       # (N, 3, dim)
+                    self.v_net.eval()
+                    with torch.no_grad():
+                        v_scores = self.v_net(X).tolist()
 
-                        # Keep concepts scoring at or above the mean V-Net score.
-                        # Safety floor: never drop a concept that beat best_f1
-                        # (those are always worth expanding).
-                        threshold = max(float(np.mean(v_scores)), best_f1)
-                        keep_set  = {valid_idxs[i]
-                                     for i, v in enumerate(v_scores)
-                                     if v >= threshold}
-                        for i, (_, child_f1, _, _) in enumerate(survivors):
-                            if child_f1 >= best_f1:          # safety floor
-                                keep_set.add(i)
+                    # Keep concepts scoring at or above the mean V-Net score.
+                    # Safety floor: never drop a concept that beat best_f1.
+                    threshold = float(np.mean(v_scores))
+                    keep_set  = {valid_idxs[i]
+                                 for i, v in enumerate(v_scores)
+                                 if v >= threshold}
+                    for i, (_, child_f1, _, _) in enumerate(survivors):
+                        if child_f1 >= best_f1:          # safety floor
+                            keep_set.add(i)
 
-                        n_before  = len(survivors)
-                        survivors = [s for i, s in enumerate(survivors) if i in keep_set]
-                        if self.verbose:
-                            print(f"    V-Net: kept {len(survivors)}/{n_before} "
-                                  f"(pruned {n_before - len(survivors)})")
-                # ─────────────────────────────────────────────────────────────
+                    n_before  = len(survivors)
+                    survivors = [s for i, s in enumerate(survivors) if i in keep_set]
+                    if self.verbose:
+                        print(f"    V-Net: kept {len(survivors)}/{n_before} "
+                              f"(pruned {n_before - len(survivors)})")
+            # ─────────────────────────────────────────────────────────────────
 
-                for child, child_f1, child_score, tp in survivors:
-                    _seq += 1
-                    heapq.heappush(heap, (-child_score, -child_f1, _seq, child, child_f1, tp))
-
-                if done:
-                    break
+            for child, child_f1, child_score, tp in survivors:
+                _seq += 1
+                heapq.heappush(heap, (-child_score, -child_f1, _seq, child, child_f1, tp))
 
             if done:
                 break
@@ -642,6 +637,9 @@ class VOCELL:
                         _allow_recursion=False,
                         training=False,
                     )
+                    if isinstance(sub_result, tuple):
+                        sub_result, _sub_pops = sub_result
+                        pops += _sub_pops
 
                     sub_cache = dict(getattr(self.operator, '_inst_cache', {}))
                     self.operator.set_input_examples(frozenset(pos), frozenset(neg))
@@ -684,7 +682,7 @@ class VOCELL:
         if self.termination_agent is not None:
             self.termination_agent.learn_from_episode()
 
-        return best_concept
+        return best_concept, pops
 
 
     def learn_recursive(self, pos, neg, training: bool = False, allow_recursion: bool = True):
@@ -701,6 +699,10 @@ class VOCELL:
             training=training,
             _allow_recursion=allow_recursion,
         )
+        if isinstance(concept, tuple):
+            concept, pops = concept
+        else:
+            pops = self.total_refinements_explored
 
         # # Online V-Net training on episode experience collected during search
         # if self.v_net is not None and self._episode_pairs:
@@ -717,7 +719,7 @@ class VOCELL:
         print(f"{self.renderer.render(concept) if concept is not None else 'None'}")
         print(f"\nF1: {f1:.3f}")
         print(f"{'=' * 80}")
-        return concept, self.total_refinements_explored
+        return concept, pops
 
     # keep fit() as an alias so external scripts don't break
     def fit(self, pos, neg, allow_recursion: bool = True):
