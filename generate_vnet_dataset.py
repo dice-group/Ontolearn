@@ -1,13 +1,15 @@
 """
 generate_vnet_dataset.py
 ========================
-Runs the BeamSearchLearner (from test_covering_algorithm.py) on every LP in
-LPs/Family/lps_difficult.json, records the beam-search tree at each depth
-level, and writes the results to vnet_search_data_difficult.json.
+Runs the Vocell K-best search (with inline recursion) on every LP and records
+every concept popped from the heap as a training data point.
 
-This is the expensive one-time pre-computation step (needs SPARQL + reasoner).
-The output JSON is then consumed by train_vocell_v_net.py for leave-one-LP-out
-V-Net training — no further KB queries are needed at training time.
+Unlike the old depth-by-depth beam search, this strategy:
+  - Finds the F1=1.0 solution via union (A ⊔ B) through Vocell recursion
+  - Records the actual winning path so the V-Net learns to distinguish
+    on-path nodes from dead-ends
+  - Labels are propagated by train_vocell_v_net.py: each node's label =
+    best F1 reachable in its subtree (not just its own F1)
 
 What is saved per LP
 --------------------
@@ -20,30 +22,22 @@ What is saved per LP
   nodes             : list   — recorded search-tree nodes, each with:
       concept_str   : str    — DL string of the concept
       f1            : float  — F1 w.r.t. full E+/E-
-      depth         : int    — search depth (root ⊤ = 0)
+      depth         : int    — quantifier depth of the concept
       parent_str    : str|null — DL string of the parent concept
       instance_iris : list   — IRI strings of every individual in I(C)
-
-Search tree structure
----------------------
-  depth 0  : root ⊤
-  depth 1  : top-K refinements of ⊤ (by F1)
-  depth 2  : top-K refinements of EACH concept that was in the beam at depth 1
-  ...
-  The beam advances with the global top beam_width concepts at each depth,
-  but we only record the top top_k_record (≤ beam_width) per depth step.
 
 Run as:
   python generate_vnet_dataset.py
 """
 
+import heapq
 import json
 import time
 from typing import Dict, List, Optional, Set, Tuple
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.refinement_operators import PruneCELBasedRefinement
-from owlapy.class_expression import OWLClassExpression, OWLThing
+from owlapy.class_expression import OWLClassExpression, OWLObjectUnionOf, OWLThing
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
@@ -57,175 +51,230 @@ from test_covering_algorithm import BeamSearchLearner
 
 class RecordingBeamSearchLearner(BeamSearchLearner):
     """
-    Subclass of BeamSearchLearner that records every node added to the beam
-    during search.
+    Runs the Vocell K-best search with inline recursion and records every
+    concept popped from the heap as a training data point.
 
-    After calling record_beam_search(), results are in self.recorded_nodes —
-    a list of dicts, one per recorded concept, with keys:
-        concept_str, f1, depth, parent_str, instance_iris.
+    The key difference from depth-by-depth beam search:
+      - Uses a priority heap sorted by refinement_score (F1 - depth*0.01)
+      - When a fragment covers a subset of pos with precision=1.0, recursively
+        solves the remaining pos and records those sub-problem nodes too
+      - This means union concepts (A ⊔ B) appear in the recorded data,
+        including the F1=1.0 solution for LPs like Cousin
 
-    Recording follows the user's description exactly:
-        depth 0  — root ⊤
-        depth d  — top top_k_record refinements of the current beam
-                   (parent_str points to the beam concept that generated them)
+    After calling record_vocell_search(), results are in self.recorded_nodes.
     """
 
-    def __init__(self, *args, top_k_record: int = 5, **kwargs):
-        """
-        Parameters
-        ----------
-        top_k_record : int
-            How many refinements (ranked by F1) to record at each depth step.
-            Must be ≤ beam_width.  These become the training data points.
-        """
+    def __init__(self, *args, top_k_record: int = 25,
+                 precision_threshold: float = 1.0,
+                 min_recursion_pos: int = 2, **kwargs):
         super().__init__(*args, **kwargs)
-        self.top_k_record   = top_k_record
+        self.top_k_record        = top_k_record
+        self.precision_threshold = precision_threshold
+        self.min_recursion_pos   = min_recursion_pos
         self.recorded_nodes: List[Dict] = []
 
     # ── internal helpers ──────────────────────────────────────────────────────
 
-    def _eval_with_instances(
-        self,
-        concept: OWLClassExpression,
-        pos: Set[OWLNamedIndividual],
-        neg: Set[OWLNamedIndividual],
-    ) -> List[str]:
-        """
-        Returns sorted instance IRIs for a concept.
-        F1 is NOT computed here — it is already returned by refine().
-        This is called only for the root node (⊤) and for the final best
-        concept in solve_lp, where refine() is not used.
-        """
-        instances = self.kb.individuals_set(concept)
-        iris = sorted(ind.str for ind in instances)   # sorted → deterministic
-        return iris
+    def _get_instances(self, concept: OWLClassExpression) -> frozenset:
+        return frozenset(self.kb.individuals_set(concept))
+
+    def _f1(self, instances, pos, neg) -> float:
+        tp = len(instances & pos)
+        fp = len(instances & neg)
+        fn = len(pos - instances)
+        p  = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        r  = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        return 2 * p * r / (p + r) if (p + r) > 0 else 0.0
 
     def _make_node(
         self,
-        concept: OWLClassExpression,
-        f1: float,
-        iris: List[str],
-        depth: int,
-        parent_str: Optional[str]
+        concept:    OWLClassExpression,
+        f1:         float,
+        iris:       List[str],
+        depth:      int,
+        parent_str: Optional[str],
     ) -> Dict:
         return {
             "concept_str":   self.renderer.render(concept),
             "f1":            round(f1, 6),
             "depth":         depth,
             "parent_str":    parent_str,
-            "instance_iris": iris,   # stored so train step needs no KB queries
+            "instance_iris": iris,
         }
 
     # ── main method ───────────────────────────────────────────────────────────
 
+    def record_vocell_search(
+        self,
+        pos:        Set[OWLNamedIndividual],
+        neg:        Set[OWLNamedIndividual],
+        start_time: float,
+        parent_str: Optional[str] = None,
+        _subproblem_keys: Optional[Set] = None,
+        _allow_recursion: bool = True,
+    ) -> Optional[OWLClassExpression]:
+        """
+        K-best search with Vocell recursion.  Records every popped concept.
+        """
+        if _subproblem_keys is None:
+            _subproblem_keys = set()
+
+        pos_f = frozenset(pos)
+        neg_f = frozenset(neg)
+        self.operator.set_input_examples(pos_f, neg_f)
+
+        renderer   = self.renderer
+        _seq       = 0
+        heap: list = []
+        seen:  Set[str] = set()
+        best_f1      = 0.0
+        best_concept = None
+        recorded     = 0
+
+        # ── seed heap with ⊤ ─────────────────────────────────────────────────
+        root_inst = self._get_instances(OWLThing)
+        root_f1   = self._f1(root_inst, pos_f, neg_f)
+        root_str  = renderer.render(OWLThing)
+        if parent_str is None:   # only record root for the top-level call
+            self.recorded_nodes.append(self._make_node(
+                OWLThing, root_f1,
+                sorted(i.str for i in root_inst), 0, None
+            ))
+            recorded += 1
+        heapq.heappush(heap, (-root_f1, 0, _seq, OWLThing, root_f1, root_str))
+        seen.add(root_str)
+
+        while heap and recorded < self.top_k_record:
+            if time.time() - start_time >= self.time_limit:
+                break
+
+            _, _, _, parent, parent_f1, par_str = heapq.heappop(heap)
+            parent_n_q = self.operator.count_quantifiers(parent)
+            local_best = best_f1
+            batch_fragments = []
+
+            try:
+                for child, child_f1, _, precision, recall, tp in self.operator.refine(parent):
+                    child_str = renderer.render(child)
+                    if child_str in seen:
+                        continue
+                    seen.add(child_str)
+
+                    # collect fragment candidates for recursion
+                    if (_allow_recursion
+                            and precision >= self.precision_threshold
+                            and tp >= self.min_recursion_pos
+                            and tp < len(pos_f) - 1):
+                        inst_cache = getattr(self.operator, '_inst_cache', {})
+                        batch_fragments.append((
+                            child, child_f1, tp,
+                            inst_cache.get(child_str)
+                        ))
+
+                    child_n_q  = self.operator.count_quantifiers(child)
+                    added_role = child_n_q > parent_n_q
+                    if child_f1 <= local_best and not added_role:
+                        continue
+                    local_best = max(local_best, child_f1)
+
+                    score = child_f1 - child_n_q * 0.01
+                    if child_f1 > best_f1:
+                        best_f1      = child_f1
+                        best_concept = child
+
+                    _seq += 1
+                    heapq.heappush(heap, (-score, -child_f1, _seq, child, child_f1, child_str))
+
+            except Exception:
+                pass
+
+            # ── Vocell recursion ─────────────────────────────────────────────
+            for fragment, frag_f1, frag_tp, frag_instances in batch_fragments:
+                if time.time() - start_time >= self.time_limit:
+                    break
+                if recorded >= self.top_k_record:
+                    break
+
+                if frag_instances is None:
+                    frag_instances = self._get_instances(fragment)
+
+                remaining_pos = pos_f - frag_instances
+                if len(remaining_pos) < 2:
+                    continue
+
+                sub_key = frozenset(i.str for i in remaining_pos)
+                if sub_key in _subproblem_keys:
+                    continue
+                _subproblem_keys.add(sub_key)
+
+                frag_str = renderer.render(fragment)
+                print(f"    ↳ recursion: '{frag_str[:50]}' covers {frag_tp}/{len(pos_f)} pos")
+
+                saved_cache = dict(getattr(self.operator, '_inst_cache', {}))
+                sub_result = self.record_vocell_search(
+                    set(remaining_pos), set(neg_f),
+                    start_time        = start_time,
+                    parent_str        = frag_str,
+                    _subproblem_keys  = _subproblem_keys,
+                    _allow_recursion  = False,
+                )
+                self.operator.set_input_examples(pos_f, neg_f)
+                if hasattr(self.operator, '_inst_cache'):
+                    self.operator._inst_cache.update(saved_cache)
+
+                if sub_result is None:
+                    continue
+
+                combined     = OWLObjectUnionOf([fragment, sub_result])
+                combined_str = renderer.render(combined)
+                combined_inst = self._get_instances(fragment) | self._get_instances(sub_result)
+                combined_f1   = self._f1(combined_inst, pos_f, neg_f)
+
+                # Record the union concept as a node (parent = fragment)
+                self.recorded_nodes.append(self._make_node(
+                    combined, combined_f1,
+                    sorted(i.str for i in combined_inst),
+                    self.operator.count_quantifiers(combined),
+                    frag_str,
+                ))
+                recorded += 1
+
+                if combined_f1 > best_f1:
+                    best_f1      = combined_f1
+                    best_concept = combined
+
+                if combined_f1 == 1.0:
+                    print(f"    ✓ F1=1.0 union: {combined_str[:60]}")
+                    return combined
+
+            # ── record this popped concept ────────────────────────────────────
+            inst_cache = getattr(self.operator, '_inst_cache', {})
+            child_inst = inst_cache.get(renderer.render(parent))
+            if child_inst is None:
+                try:
+                    child_inst = self._get_instances(parent)
+                except Exception:
+                    child_inst = frozenset()
+            self.recorded_nodes.append(self._make_node(
+                parent, parent_f1,
+                sorted(i.str for i in child_inst),
+                self.operator.count_quantifiers(parent),
+                par_str if par_str != root_str else None,
+            ))
+            recorded += 1
+
+        return best_concept
+
+    # keep old name as alias so solve_lp doesn't need changing
     def record_beam_search(
         self,
         pos: Set[OWLNamedIndividual],
         neg: Set[OWLNamedIndividual],
     ) -> Optional[OWLClassExpression]:
-        """
-        Beam search with recording.
-
-        At every depth d the method:
-          1. Generates all refinements of every concept currently in the beam.
-          2. Evaluates each candidate — one KB call per candidate.
-          3. Records the top top_k_record candidates as training data points,
-             storing their concept_str, f1, depth, parent_str, instance_iris.
-          4. Advances the beam with the global top beam_width candidates.
-
-        Returns the best OWLClassExpression found (highest F1).
-        """
         self.recorded_nodes = []
-
-        # ── root ⊤ ────────────────────────────────────────────────────────────
-        # refine() is not called on ⊤ itself, so we compute F1 manually.
-        root_instances = self.kb.individuals_set(OWLThing)
-        _tp = len(root_instances & pos)
-        _fp = len(root_instances & neg)
-        _fn = len(pos - root_instances)
-        _p  = _tp / (_tp + _fp) if (_tp + _fp) > 0 else 0.0
-        _r  = _tp / (_tp + _fn) if (_tp + _fn) > 0 else 0.0
-        root_f1  = 2 * _p * _r / (_p + _r) if (_p + _r) > 0 else 0.0
-        root_iris = sorted(ind.str for ind in root_instances)
-        self.recorded_nodes.append(
-            self._make_node(OWLThing, root_f1, root_iris, 0, None)
+        return self.record_vocell_search(
+            pos, neg, start_time=time.time()
         )
-
-        beam: List[Tuple[OWLClassExpression, str]] = [
-            (OWLThing, self.renderer.render(OWLThing))
-        ]
-        best_concept: Optional[OWLClassExpression] = None
-        best_f1   = root_f1
-        visited: Set[str] = {self.renderer.render(OWLThing)}
-
-        start = time.time()
-
-        for depth in range(self.max_depth):
-            if time.time() - start >= self.time_limit:
-                print(f"  ⏱  Time limit reached at depth {depth}")
-                break
-
-            # ── generate & evaluate all refinements of current beam ────────
-            all_candidates: List[Tuple[OWLClassExpression, str, float, str, List[str]]] = []
-
-            for concept, parent_str in beam:
-                try:
-                    for child, f1, _, precision, recall, tp in self.operator.refine(concept):
-                        child_str = self.renderer.render(child)
-                        if child_str in visited:
-                            continue
-                        visited.add(child_str)
-
-                        child_iris = self._eval_with_instances(child, pos, neg)
-                        all_candidates.append(
-                            (child, child_str, f1, parent_str, child_iris)
-                        )
-
-                        if f1 > best_f1:
-                            best_f1      = f1
-                            best_concept = child
-
-                        if f1 == 1.0:
-                            # Record and stop immediately
-                            self.recorded_nodes.append(
-                                self._make_node(child, f1, child_iris, depth + 1, parent_str)
-                            )
-                            print(f"  ✓  F1=1.0 at depth {depth + 1}: "
-                                  f"{child_str[:60]}")
-                            return child
-
-                except Exception:
-                    continue
-
-            if not all_candidates:
-                print(f"  No new refinements at depth {depth + 1}")
-                break
-
-            # ── sort, record top_k_record, advance beam ────────────────────
-            all_candidates.sort(key=lambda x: x[2], reverse=True)
-
-            best_candidates = all_candidates[:self.top_k_record]
-            bad_candidates  = []  # all_candidates[-self.top_k_record:]
-
-            # list (not set) — tuples contain OWLClassExpression objects that
-            # may not be hashable
-            to_record = best_candidates + bad_candidates
-            for child, child_str, f1, parent_str, iris in to_record:
-                self.recorded_nodes.append(
-                    self._make_node(child, f1, iris, depth + 1, parent_str)
-                )
-
-            beam = [
-                (child, child_str)
-                for child, child_str, _, _, _ in all_candidates[:self.beam_width]
-            ]
-
-            top_f1s = [f"{c[2]:.3f}" for c in to_record]
-            print(f"  depth {depth + 1:2d}: {len(all_candidates):4d} candidates"
-                  f" → recorded top-{len(to_record)}: [{', '.join(top_f1s)}]"
-                  f"  beam={len(beam)}  overall_best={best_f1:.4f}")
-
-        return best_concept
 
 
 # ─────────────────────────────────────────────────────────────────────────────
