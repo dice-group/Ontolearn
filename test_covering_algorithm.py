@@ -311,7 +311,7 @@ def main():
         lps = json.load(f)
     
     # Test on Grandgranddaughter problem
-    problem_name = 'Uncle'  # 'Aunt' or 'Uncle'
+    problem_name = 'Cousin'  # 'Aunt' or 'Uncle'
     problem = lps['problems'][problem_name]
     pos = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['positive_examples']})
     neg = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in problem['negative_examples']})
@@ -343,7 +343,7 @@ def main():
     learner = BeamSearchLearner(
         kb=kb,
         operator=operator,
-        beam_width=5,
+        beam_width=3,
         max_concepts=500,
         time_limit=60.0,
         verbose=True
