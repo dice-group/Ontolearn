@@ -591,7 +591,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Domains of the property.
         """
         if prop not in self.op_domains:
-            domains = list(self.reasoner.object_property_domains(prop, direct=True))
+            try:
+                domains = list(self.reasoner.object_property_domains(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the domain of object "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                domains = [OWLThing]
             self.op_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
         return self.op_domains[prop]
 
@@ -605,7 +610,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Ranges of the property.
         """
         if prop not in self.op_ranges:
-            ranges = list(self.reasoner.object_property_ranges(prop, direct=True))
+            try:
+                ranges = list(self.reasoner.object_property_ranges(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the range of object "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                ranges = [OWLThing]
             self.op_ranges[prop] = self.generator.intersection(ranges) if len(ranges) > 1 else ranges[0]
         return self.op_ranges[prop]
 
@@ -619,7 +629,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Domains of the property.
         """
         if prop not in self.dp_domains:
-            domains = list(self.reasoner.data_property_domains(prop, direct=True))
+            try:
+                domains = list(self.reasoner.data_property_domains(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the domain of data "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                domains = [OWLThing]
             self.dp_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
         return self.dp_domains[prop]
 
