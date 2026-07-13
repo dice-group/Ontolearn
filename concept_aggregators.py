@@ -206,8 +206,10 @@ class ConceptVNet(nn.Module):
         self.agg_type      = agg_type
         self.aggregator    = build_aggregator(agg_type, embedding_dim, device)
 
+        # print(f"Initializing ConceptVNet with embedding_dim={embedding_dim}, agg_type={agg_type}, device={device}")
+        # exit(0)
         in_dim = 3 * embedding_dim
-        h      = 2 * embedding_dim
+        h      = 1 * embedding_dim
         self.head = nn.Sequential(
             nn.Linear(in_dim, h, device=device),
             nn.LayerNorm(h, device=device),
