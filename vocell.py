@@ -73,6 +73,10 @@ from concept_aggregators import (
     get_instance_emb_matrix as _get_inst_emb_mat,
     ConceptVNet as AggConceptVNet,
 )
+from train_vocell_ranking import (
+    ConceptVNetRanking,
+    ConceptVNetRankingLarge,
+)
 
 class BeamVNet(nn.Module):
     """V-network for VOCELL beam scoring.
@@ -354,11 +358,34 @@ class VOCELL:
         'deepsets' / 'settransformer' checkpoints instantiate a ConceptVNet from
         concept_aggregators and store it in self.agg_v_net; self.v_net is left
         untouched so that online V-learning replay continues to work normally.
-        """
-        ckpt     = torch.load(path, weights_only=True)
-        agg_type = ckpt.get('agg_type', 'mean')
 
-        if agg_type == 'mean':
+        'ranking' checkpoints (loss='ranking', arch='same'|'large') instantiate
+        ConceptVNetRanking or ConceptVNetRankingLarge and store them in self.v_net
+        so the existing beam-scoring path works with no further changes.
+        """
+        ckpt     = torch.load(path, weights_only=True, map_location=self.device)
+        agg_type = ckpt.get('agg_type', 'mean')
+        loss     = ckpt.get('loss', 'mse')   # 'ranking' for new checkpoints
+
+        if loss == 'ranking':
+            # ── ranking V-net path ────────────────────────────────────────────
+            emb_dim    = ckpt.get('embedding_dim', self.embedding_dim)
+            arch       = ckpt.get('arch', 'same')
+            hidden_dim = ckpt.get('hidden_dim', 16)
+            margin     = ckpt.get('margin', 0.05)
+            if arch == 'large':
+                net = ConceptVNetRankingLarge(emb_dim, hidden_dim=hidden_dim,
+                                             device=self.device, margin=margin)
+            else:
+                net = ConceptVNetRanking(emb_dim, device=self.device, margin=margin)
+            net.load_state_dict(ckpt['model_state_dict'])
+            net.eval()
+            self.v_net         = net
+            self.v_net_trained = True
+            n_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
+            print(f"V-Net (ranking/{arch}, {n_params:,} params) loaded ← {path}")
+
+        elif agg_type == 'mean':
             # ── original mean path ────────────────────────────────────────────
             if self.v_net is None:
                 print("V-net not initialized (no embeddings provided).")
@@ -802,8 +829,10 @@ def main():
     parser.add_argument('--embeddings', default='Experiments/embeddings/Keci_entity_embeddings.csv',
                         help='Path to entity embeddings CSV.')
     parser.add_argument('--agg_types', nargs='+', default=['mean'],
-                        choices=['mean', 'deepsets', 'settransformer'],
-                        help='Aggregation strategies to compare (space-separated).')
+                        choices=['mean', 'deepsets', 'settransformer',
+                                 'ranking_same', 'ranking_large'],
+                        help='Aggregation strategies to compare (space-separated). '
+                             'ranking_same / ranking_large use MarginRankingLoss checkpoints.')
     parser.add_argument('--training_strategies', nargs='+', default=['loocv'],
                         choices=['loocv', 'bootstrap'],
                         help='Training strategies whose checkpoints to load.')
@@ -854,13 +883,25 @@ def main():
         variant_specs.append(("Baseline (no V-net)", None, None))
 
     for agg in args.agg_types:
-        ckpt_dir = args.checkpoint_dir or f'Family_{agg}'
+        # Derive checkpoint directory and filename suffix for this agg type.
+        # Ranking variants live in Family_ranking_{arch}/ with a different filename.
+        if agg.startswith('ranking_'):
+            arch     = agg[len('ranking_'):]          # 'same' or 'large'
+            ckpt_dir = args.checkpoint_dir or f'Family_ranking_{arch}'
+            _loocv_tpl     = 'vocell_v_net_{lp}_ranking_{arch}.pt'.replace('{arch}', arch)
+            _bootstrap_tpl = f'vocell_v_net_bootstrap_ranking_{arch}.pt'
+        else:
+            ckpt_dir       = args.checkpoint_dir or f'Family_{agg}'
+            _loocv_tpl     = f'vocell_v_net_{{lp}}_{agg}.pt'
+            _bootstrap_tpl = f'vocell_v_net_bootstrap_{agg}.pt'
+
         for strat in args.training_strategies:
             if strat == 'loocv':
                 # LOOCV checkpoint is LP-specific; path resolved per LP below
-                variant_specs.append((f'V-Net [{agg} / loocv]', agg, 'loocv'))
+                variant_specs.append((f'V-Net [{agg} / loocv]', agg,
+                                      ('loocv', ckpt_dir, _loocv_tpl)))
             else:
-                ckpt  = os.path.join(ckpt_dir, f'vocell_v_net_bootstrap_{agg}.pt')
+                ckpt = os.path.join(ckpt_dir, _bootstrap_tpl)
                 variant_specs.append((f'V-Net [{agg} / bootstrap]', agg, ckpt))
 
     # ── Accumulate results across all LPs ────────────────────────────────────
@@ -896,12 +937,11 @@ def main():
             # Resolve checkpoint path
             v_net_path = None
             if use_vl:
-                ckpt_dir = args.checkpoint_dir or f'Family_{agg}'
-                if strat_or_ckpt == 'loocv':
-                    # LOOCV checkpoint is named after the LP — not meaningful for
-                    # non-Family datasets, but we try anyway.
-                    safe_name = lp_name.replace(' ', '_').replace('/', '_')
-                    v_net_path = os.path.join(ckpt_dir, f'vocell_v_net_{safe_name}_{agg}.pt')
+                if isinstance(strat_or_ckpt, tuple) and strat_or_ckpt[0] == 'loocv':
+                    # ('loocv', ckpt_dir, filename_template)
+                    _, _ckpt_dir, _tpl = strat_or_ckpt
+                    safe_name  = lp_name.replace(' ', '_').replace('/', '_')
+                    v_net_path = os.path.join(_ckpt_dir, _tpl.replace('{lp}', safe_name))
                 else:
                     v_net_path = strat_or_ckpt   # already a full path
 
