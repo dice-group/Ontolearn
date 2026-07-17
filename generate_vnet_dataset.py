@@ -34,7 +34,7 @@ import heapq
 import json
 import time
 from typing import Dict, List, Optional, Set, Tuple
-
+import random
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.refinement_operators import PruneCELBasedRefinement
 from owlapy.class_expression import OWLClassExpression, OWLObjectUnionOf, OWLThing
@@ -480,9 +480,8 @@ def main():
 
 
     lps_data = lps_data.get('problems', lps_data) if isinstance(lps_data, dict) else {}
-    num_samples = min(args.num_lps, len(lps_data)) if hasattr(args, 'num_lps') else len(lps_data)
-    lps_data = random.sample(lps_data, num_samples)
-    # lps_data = list(lps_data.items())
+    num_samples = min(args.num_lps, len(lps_data)) if hasattr(args, 'num_lps') and args.num_lps > 0 else len(lps_data)
+    lps_data = dict(random.sample(list(lps_data.items()), num_samples))
 
     # Apply optional LP filter
     if args.lps:
