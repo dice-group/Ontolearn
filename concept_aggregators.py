@@ -160,6 +160,40 @@ class SetTransformerAggregator(nn.Module):
         out    = self.pma_norm(out + seed)           # residual + LN
         return self.ff(out.squeeze(0).squeeze(0))    # (dim,)
 
+    def forward_batch(self, Xs: list, chunk_size: int = 64) -> torch.Tensor:
+        """Process a list of variable-length sets in a single padded batch.
+
+        Each element of Xs is a (|S_i|, dim) tensor (may be on any device).
+        Returns (N, dim) — one embedding per input set.
+        Processes in chunks of chunk_size to keep peak memory bounded.
+        """
+        if not Xs:
+            return torch.zeros(0, self.dim, device=self.seed.device)
+
+        device  = self.seed.device
+        results = []
+        for start in range(0, len(Xs), chunk_size):
+            chunk   = Xs[start:start + chunk_size]
+            B       = len(chunk)
+            max_len = max(max(x.shape[0] for x in chunk), 1)
+            padded  = torch.zeros(B, max_len, self.dim, device=device)
+            key_pad = torch.ones(B, max_len, dtype=torch.bool, device=device)
+            for i, x in enumerate(chunk):
+                n = x.shape[0]
+                if n > 0:
+                    padded[i, :n] = x.to(device)
+                    key_pad[i, :n] = False
+            enc, _ = self.sab_attn(padded, padded, padded,
+                                   key_padding_mask=key_pad)         # (B, max_len, dim)
+            enc    = self.sab_norm(enc + padded)
+            seed   = self.seed.expand(B, -1, -1)                     # (B, 1, dim)
+            out, _ = self.pma_attn(seed, enc, enc,
+                                   key_padding_mask=key_pad)         # (B, 1, dim)
+            out    = self.pma_norm(out + seed)
+            results.append(self.ff(out.squeeze(1)))                  # (B, dim)
+
+        return torch.cat(results, dim=0)                             # (N, dim)
+
 
 def build_aggregator(agg_type: str, dim: int, device: str = 'cpu') -> nn.Module:
     """Factory: returns the aggregator module for the given agg_type."""
@@ -251,9 +285,18 @@ class ConceptVNet(nn.Module):
         Returns: (N,) score tensor in [0, 1]
         """
         N     = len(candidate_mats)
-        p_agg = self.aggregate(pos_mat)                               # (dim,)
-        n_agg = self.aggregate(neg_mat)                               # (dim,)
-        c_aggs = torch.stack([self.aggregate(m) for m in candidate_mats])  # (N, dim)
+        if hasattr(self.aggregator, 'forward_batch'):
+            # Batched path: one padded GPU call instead of N serial calls.
+            # Critical for SetTransformer where each forward() runs two MHA ops.
+            device  = next(self.parameters()).device
+            mats_d  = [m.to(device) for m in candidate_mats]
+            c_aggs  = self.aggregator.forward_batch(mats_d)           # (N, dim)
+            p_agg   = self.aggregator.forward_batch([pos_mat.to(device)]).squeeze(0)  # (dim,)
+            n_agg   = self.aggregator.forward_batch([neg_mat.to(device)]).squeeze(0)  # (dim,)
+        else:
+            p_agg  = self.aggregate(pos_mat)                          # (dim,)
+            n_agg  = self.aggregate(neg_mat)                          # (dim,)
+            c_aggs = torch.stack([self.aggregate(m) for m in candidate_mats])  # (N, dim)
         X = torch.cat(
             [c_aggs, p_agg.expand(N, -1), n_agg.expand(N, -1)],
             dim=1,
