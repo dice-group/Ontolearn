@@ -31,6 +31,17 @@ import os
 import time
 from typing import FrozenSet, Tuple, Dict, List, Set, Optional
 
+# # ── Tune the JVM that owlapy/JPype will start for the OWL reasoner ───────────
+# # Must happen BEFORE any owlapy / ontolearn import spawns the JVM.
+# # Gives HermiT a 4 GB heap and enables G1GC for lower pause times.
+# # Override via environment: JVM_MAX_HEAP=8g python vocell.py ...
+# _jvm_heap = os.environ.get("JVM_MAX_HEAP", "8g")
+# _jvm_init = os.environ.get("JVM_INIT_HEAP", "1g")
+# os.environ.setdefault("JAVA_TOOL_OPTIONS",
+#                       f"-Xmx{_jvm_heap} -Xms{_jvm_init} -XX:+UseG1GC "
+#                       "-XX:MaxGCPauseMillis=50")
+# ─────────────────────────────────────────────────────────────────────────────
+
 from owlapy import owl_expression_to_dl
 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -371,8 +382,19 @@ class VOCELL:
             # ── deepsets / settransformer path ─────────────────────────────
             emb_dim = ckpt.get('embedding_dim', self.embedding_dim)
             self.agg_v_net = AggConceptVNet(emb_dim, agg_type, self.device)
-            self.agg_v_net.load_state_dict(ckpt['model_state_dict'])
+            # Strip _orig_mod. prefix added by torch.compile during training
+            state_dict = ckpt['model_state_dict']
+            if any(k.startswith('_orig_mod.') for k in state_dict):
+                state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+            self.agg_v_net.load_state_dict(state_dict)
             self.agg_v_net.eval()
+            # Compile for CUDA kernel fusion AFTER loading weights
+            if self.device != 'cpu':
+                try:
+                    self.agg_v_net = torch.compile(self.agg_v_net)
+                    print(f"  torch.compile enabled for agg_v_net ({self.device})")
+                except Exception:
+                    pass
             self.agg_v_net_trained = True   # only this flag — mean filter stays off
             print(f"V-Net ({agg_type}) loaded ← {path}")
 
@@ -413,8 +435,8 @@ class VOCELL:
             self.emb_pos = self._get_embedding_from_ind_set(pos)
             self.emb_neg = self._get_embedding_from_ind_set(neg)
         if self.agg_v_net is not None and self.df_embeddings is not None:
-            _get_inst_emb_mat([i.str for i in pos], self.df_embeddings).to(self.device)
-            _get_inst_emb_mat([i.str for i in neg], self.df_embeddings).to(self.device)
+            self._agg_pos_mat = _get_inst_emb_mat([i.str for i in pos], self.df_embeddings).to(self.device)
+            self._agg_neg_mat = _get_inst_emb_mat([i.str for i in neg], self.df_embeddings).to(self.device)
 
         # Reset termination agent for this episode
         if self.termination_agent is not None:
@@ -504,6 +526,8 @@ class VOCELL:
                         child_n_q  = self.operator.count_quantifiers(child)
                         added_role = child_n_q > parent_n_q
                         if child_f1 <= local_best and not added_role:
+                            continue
+                        if tp == 0:
                             continue
                         local_best = max(local_best, child_f1)
 
@@ -595,6 +619,47 @@ class VOCELL:
                     survivors = [s for i, s in enumerate(survivors) if i in keep_set]
                     if self.verbose:
                         print(f"    V-Net: kept {len(survivors)}/{n_before} "
+                              f"(pruned {n_before - len(survivors)})")
+
+            # ── AggVNet pruning (SetTransformer / DeepSets) ───────────────
+            if (not done
+                    and not training
+                    and self.v_net_weight > 0
+                    and self.agg_v_net is not None
+                    and self.agg_v_net_trained
+                    and hasattr(self, '_agg_pos_mat')
+                    and len(survivors) > 5):
+                op_cache = getattr(self.operator, '_inst_cache', {})
+                concept_mats, valid_idxs = [], []
+                for i, (child, _, _, _) in enumerate(survivors):
+                    iris = [ind.str for ind in op_cache.get(str(child), self.get_instances(child))]
+                    mat  = _get_inst_emb_mat(iris, self.df_embeddings).to(self.device)
+                    concept_mats.append(mat)
+                    valid_idxs.append(i)
+
+                if concept_mats:
+                    _agg_t0 = time.time()
+                    with torch.no_grad():
+                        agg_scores = self.agg_v_net.score_candidates(
+                            concept_mats, self._agg_pos_mat, self._agg_neg_mat
+                        ).tolist()
+                    if self.verbose:
+                        print(f"    AggVNet scoring: {len(concept_mats)} candidates in "
+                              f"{time.time()-_agg_t0:.3f}s")
+
+                    threshold = float(np.mean(agg_scores))
+                    keep_set  = {valid_idxs[i]
+                                 for i, v in enumerate(agg_scores)
+                                 if v >= threshold}
+                    for i, (_, child_f1, _, _) in enumerate(survivors):
+                        if child_f1 >= best_f1:
+                            keep_set.add(i)
+
+                    n_before  = len(survivors)
+                    survivors = [s for i, s in enumerate(survivors) if i in keep_set]
+                    if self.verbose:
+                        print(f"    AggVNet [{type(self.agg_v_net.aggregator).__name__}]: "
+                              f"kept {len(survivors)}/{n_before} "
                               f"(pruned {n_before - len(survivors)})")
             # ─────────────────────────────────────────────────────────────────
 
@@ -730,7 +795,7 @@ def _run_learner(kb, operator, pos, neg, use_v_learning, v_epsilon=1.,
                  v_memory_path='vocell_v_memory.pkl', beam_width=5,
                  max_concepts=500, time_limit=60.0, path_embeddings=None,
                  v_net_path=None, v_net_weight=0.5, verbose=False,
-                 allow_recursion=True):
+                 allow_recursion=True, device='cpu'):
     """Helper: create a fresh VOCELL instance and run learn_recursive.
     Returns (concept_str, f1, concepts_explored)."""
     learner = VOCELL(
@@ -746,6 +811,7 @@ def _run_learner(kb, operator, pos, neg, use_v_learning, v_epsilon=1.,
         path_embeddings=path_embeddings,
         v_net_path=v_net_path,
         verbose=verbose,
+        device=device,
     )
     result = learner.learn_recursive(pos=set(pos), neg=set(neg), allow_recursion=allow_recursion)
     if isinstance(result, tuple):
@@ -788,7 +854,7 @@ def main():
                         dest='sparql_endpoint',
                         help='SPARQL endpoint URL.')
     # ── Search ────────────────────────────────────────────────────────────────
-    parser.add_argument('--time_limit', type=float, default=600.0,
+    parser.add_argument('--time_limit', type=float, default=30.0,
                         help='Time budget per run in seconds.')
     parser.add_argument('--beam_width', type=int,   default=5,
                         help='Beam width.')
@@ -812,6 +878,8 @@ def main():
                               'Default: Family_{agg_type} per aggregator '
                               '(matches train_vocell_v_net.py output_dir).'))
     # ── Misc ──────────────────────────────────────────────────────────────────
+    parser.add_argument('--device', default='cpu',
+                        help='Torch device for V-Net (cpu | cuda | cuda:0 …).')
     parser.add_argument('--no_baseline', action='store_true',
                         help='Skip the no-V-net baseline run.')
     parser.add_argument('--allow_recursion', action='store_true',
@@ -822,7 +890,9 @@ def main():
 
     # ── Load KB & LP file ─────────────────────────────────────────────────────
     print("Loading knowledge base...")
+    _kb_t0 = time.time()
     kb = KnowledgeBase(path=args.kb)
+    print(f"  KB loaded in {time.time() - _kb_t0:.2f}s")
 
     with open(args.lps_file, 'r') as f:
         lps = json.load(f)
@@ -867,6 +937,7 @@ def main():
     all_results = []   # list of {lp_name, label, f1, concepts, concept}
 
     for lp_idx, (lp_name, p) in enumerate(problems_to_run, 1):
+        
         pos = frozenset(_resolve_ind(i) for i in p['positive_examples'])
         neg = frozenset(_resolve_ind(i) for i in p['negative_examples'])
 
@@ -911,8 +982,13 @@ def main():
                 continue
 
             _t0 = time.time()
+            _op_t0 = time.time()
+            operator = make_operator()
+            _op_time = time.time() - _op_t0
+            print(f"    Operator init: {_op_time:.2f}s")
+            
             concept_str, f1, total = _run_learner(
-                kb, make_operator(), pos, neg,
+                kb, operator, pos, neg,
                 use_v_learning=use_vl,
                 time_limit=args.time_limit,
                 beam_width=args.beam_width,
@@ -921,8 +997,12 @@ def main():
                 v_net_path=v_net_path,
                 verbose=args.verbose,
                 allow_recursion=args.allow_recursion,
+                device=args.device,
             )
             _runtime = time.time() - _t0
+            _search_time = _runtime - _op_time
+            print(f"    Search time: {_search_time:.2f}s, Total: {_runtime:.2f}s")
+           
             lp_results.append({
                 "lp_name":  lp_name,
                 "label":    label,
