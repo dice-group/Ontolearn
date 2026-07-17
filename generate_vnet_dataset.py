@@ -357,7 +357,7 @@ def solve_lp(
     renderer = DLSyntaxObjectRenderer()
     if best is not None:
         best_str  = renderer.render(best)
-        best_iris = learner._eval_with_instances(best, set(pos), set(neg))
+        # best_iris = learner._eval_with_instances(best, set(pos), set(neg))
         # recompute F1 from the full pos/neg for the summary
         best_instances = set(learner.kb.individuals_set(best))
         _tp = len(best_instances & set(pos))
@@ -445,6 +445,10 @@ def main():
         help='Only process these LP names (default: all LPs in the file).',
     )
     parser.add_argument(
+        '--num_lps', type=int, default=0,
+        help='Number of LPs to process (0 = all in file).',
+    )
+    parser.add_argument(
         '--overwrite', action='store_true',
         help='Re-run LPs that are already present in the output file.',
     )
@@ -476,7 +480,8 @@ def main():
 
 
     lps_data = lps_data.get('problems', lps_data) if isinstance(lps_data, dict) else {}
-
+    num_samples = min(args.num_lps, len(lps_data)) if hasattr(args, 'num_lps') else len(lps_data)
+    lps_data = random.sample(lps_data, num_samples)
     # lps_data = list(lps_data.items())
 
     # Apply optional LP filter
@@ -552,6 +557,6 @@ def main():
 if __name__ == '__main__':
     main()
 
-# Carcinogenesis: python generate_vnet_dataset.py --lp_file LPs/Carcinogenesis/lps.json --output vnet_search_data_carcinogenesis.json --beam_width 10 --time_limit 180  --sparql http://localhost:3030/carcinogenesis/sparql --kb KGs/Carcinogenesis/carcinogenesis.owl
+# Carcinogenesis: python generate_vnet_dataset.py --lp_file LPs/Carcinogenesis/lps.json --output vnet_search_data_carcinogenesis.json --beam_width 10 --time_limit 180  --sparql http://localhost:3030/carcinogenesis/sparql --kb KGs/Carcinogenesis/carcinogenesis.owl --num_lps 3
 # Mutagenesis: python generate_vnet_dataset.py --lp_file LPs/Mutagenesis/lps.json --output vnet_search_data_mutagenesis.json --beam_width 10 --time_limit 180  --sparql http://localhost:3030/mutagenesis/sparql --kb KGs/Mutagenesis/mutagenesis.owl
 # Animals: python generate_vnet_dataset.py --lp_file ../Ontolearn_ISWC/datasets/animals/training_data/training_data_prep.json --kb  ../Ontolearn_ISWC/datasets/animals/kb/ontology.owl --output vnet_search_data_animals.json --beam_width 5 --time_limit 60 --sparql http://localhost:3030/animals/sparql
