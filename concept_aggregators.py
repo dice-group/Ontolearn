@@ -160,12 +160,14 @@ class SetTransformerAggregator(nn.Module):
         out    = self.pma_norm(out + seed)           # residual + LN
         return self.ff(out.squeeze(0).squeeze(0))    # (dim,)
 
-    def forward_batch(self, Xs: list, chunk_size: int = 64) -> torch.Tensor:
+    def forward_batch(self, Xs: list, chunk_size: int = 16,
+                      max_set_size: int = 256) -> torch.Tensor:
         """Process a list of variable-length sets in a single padded batch.
 
         Each element of Xs is a (|S_i|, dim) tensor (may be on any device).
         Returns (N, dim) — one embedding per input set.
         Processes in chunks of chunk_size to keep peak memory bounded.
+        Sets larger than max_set_size are randomly subsampled.
         """
         if not Xs:
             return torch.zeros(0, self.dim, device=self.seed.device)
@@ -174,10 +176,19 @@ class SetTransformerAggregator(nn.Module):
         results = []
         for start in range(0, len(Xs), chunk_size):
             chunk   = Xs[start:start + chunk_size]
+            # subsample oversized sets to cap sequence length;
+            # use device= to keep indices on the same device as x
+            chunk   = [x[torch.randperm(x.shape[0], device=x.device)[:max_set_size]]
+                       if x.shape[0] > max_set_size else x
+                       for x in chunk]
             B       = len(chunk)
             max_len = max(max(x.shape[0] for x in chunk), 1)
             padded  = torch.zeros(B, max_len, self.dim, device=device)
+            # Start fully masked; unmask real positions below.
+            # Safety: ensure at least position 0 is always unmasked per row
+            # so that softmax never sees an all-True mask (→ NaN).
             key_pad = torch.ones(B, max_len, dtype=torch.bool, device=device)
+            key_pad[:, 0] = False   # anchor: position 0 always visible
             for i, x in enumerate(chunk):
                 n = x.shape[0]
                 if n > 0:
