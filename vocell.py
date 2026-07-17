@@ -628,7 +628,7 @@ class VOCELL:
                     and self.agg_v_net is not None
                     and self.agg_v_net_trained
                     and hasattr(self, '_agg_pos_mat')
-                    and len(survivors) > 5):
+                    and len(survivors) > 1):
                 op_cache = getattr(self.operator, '_inst_cache', {})
                 concept_mats, valid_idxs = [], []
                 for i, (child, _, _, _) in enumerate(survivors):
