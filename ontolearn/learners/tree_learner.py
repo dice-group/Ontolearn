@@ -50,7 +50,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 import sklearn
 from sklearn import tree
 from collections import Counter
-
+from owlapy.owl_datatype import OWLDatatype
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
 
@@ -192,18 +192,21 @@ def contains_boolean_data_property(expr: OWLClassExpression) -> bool:
             for literal in filler.values():
                 if literal.is_boolean():
                     return True
+        if isinstance(filler, OWLDatatype):
+            if filler.iri.remainder == "boolean":
+                return True
     
     # Check operands (for unions, intersections, complements)
     if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
         try:
-            return any(contains_data_property(op) for op in expr.operands())
+            return any(contains_boolean_data_property(op) for op in expr.operands())
         except (AttributeError, TypeError):
             pass
     
     # Check filler (for restrictions)
     if isinstance(expr, HasFiller):
         try:
-            return contains_data_property(expr.get_filler())
+            return contains_boolean_data_property(expr.get_filler())
         except (AttributeError, TypeError):
             pass
     
@@ -218,6 +221,10 @@ def contains_data_property(expr: OWLClassExpression, include_boolean:bool = Fals
             for literal in filler.values():
                 if not include_boolean and not(literal.is_boolean()):
                     return True
+        if isinstance(filler, OWLDatatype):
+            if filler.iri.remainder != "boolean":
+                return True
+        
     
     # Check operands (for unions, intersections, complements)
     if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
@@ -496,7 +503,7 @@ class TDL:
                     # This method can be extended to add additional data property features
                     # such as numeric ranges, etc.
                     # TODO: Create new OWL CLassExpressions based on data property values
-                    print(f"Data property values for {data_prop}: {data_values}")
+                   # print(f"Data property values for {data_prop}: {data_values}")
                     pass
         except Exception as e:
             if self.verbose > 0:
