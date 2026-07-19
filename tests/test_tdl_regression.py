@@ -24,7 +24,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Family/lps.json") as json_file:
             settings = json.load(json_file)
         model = TDL(knowledge_base=kb, kwargs_classifier={"random_state": 1}, 
-                   use_nominals=True, use_inverse=False, use_data_properties=False, use_card_restrictions=False)
+                   use_nominals=True, use_inverse=False, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, use_card_restrictions=False)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])
@@ -60,7 +60,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Mutagenesis/lps.json") as json_file:
             settings = json.load(json_file)
         model = TDL(knowledge_base=kb, report_classification=True, kwargs_classifier={"random_state": 1, "max_depth": 3},
-                                     use_inverse= False, use_data_properties=False,
+                                     use_inverse= False, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False,
                                      use_nominals = False, use_card_restrictions = False)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
@@ -81,7 +81,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Carcinogenesis/lps.json") as json_file:
             settings = json.load(json_file)
             model = TDL(knowledge_base=kb, report_classification=True, kwargs_classifier={"random_state": 1, "max_depth": 3},
-                                     use_inverse= False, use_data_properties=False,
+                                     use_inverse= False, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False,
                                      use_nominals = False, use_card_restrictions = False)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
@@ -111,13 +111,16 @@ class TestTDLConfigurationComparison(unittest.TestCase):
         with open("LPs/Family/lps.json") as json_file:
             cls.family_lps = json.load(json_file)
 
-    def _evaluate_configuration(self, use_inverse, use_data_properties, use_nominals, 
+    def _evaluate_configuration(self, use_inverse, use_data_properties_numeric, use_data_properties_boolean, use_data_properties_string, use_data_properties_date, use_nominals, 
                                 use_card_restrictions, concept_name, max_examples=None):
         """Helper method to evaluate a TDL configuration on a specific concept."""
         model = TDL(
             knowledge_base=self.kb_family,
             use_inverse=use_inverse,
-            use_data_properties=use_data_properties,
+            use_data_properties_numeric=use_data_properties_numeric,
+            use_data_properties_boolean=use_data_properties_boolean,
+            use_data_properties_string=use_data_properties_string,
+            use_data_properties_date=use_data_properties_date,
             use_nominals=use_nominals,
             use_card_restrictions=use_card_restrictions,
             verbose=0,
@@ -153,7 +156,10 @@ class TestTDLConfigurationComparison(unittest.TestCase):
         # Default configuration (only use_nominals=True)
         f1_default = self._evaluate_configuration(
             use_inverse=False,
-            use_data_properties=False,
+            use_data_properties_numeric=False,
+            use_data_properties_boolean=False,
+            use_data_properties_string=False,
+            use_data_properties_date=False,
             use_nominals=True,
             use_card_restrictions=False,
             concept_name=concept
@@ -162,7 +168,10 @@ class TestTDLConfigurationComparison(unittest.TestCase):
         # All features enabled
         f1_all_features = self._evaluate_configuration(
             use_inverse=True,
-            use_data_properties=True,
+            use_data_properties_numeric=True,
+            use_data_properties_boolean=True,
+            use_data_properties_string=True,
+            use_data_properties_date=True,
             use_nominals=True,
             use_card_restrictions=True,
             concept_name=concept
@@ -183,14 +192,17 @@ class TestTDLConfigurationComparison(unittest.TestCase):
         
         # Test different combinations
         configs = [
-            ("default", False, False, True, False),
-            ("all_enabled", True, True, True, True),
+            ("default", False, False, False, False, False, True, False),
+            ("all_enabled", True, True, True, True, True, True, True),
         ]
         
-        for name, use_inv, use_data, use_nom, use_card in configs:
+        for name, use_inv, use_data_num, use_data_bool, use_data_str, use_data_date, use_nom, use_card in configs:
             f1 = self._evaluate_configuration(
                 use_inverse=use_inv,
-                use_data_properties=use_data,
+                use_data_properties_numeric=use_data_num,
+                use_data_properties_boolean=use_data_bool,
+                use_data_properties_string=use_data_str,
+                use_data_properties_date=use_data_date,
                 use_nominals=use_nom,
                 use_card_restrictions=use_card,
                 concept_name=concept
@@ -201,3 +213,5 @@ class TestTDLConfigurationComparison(unittest.TestCase):
         for config_name, f1_score in results.items():
             self.assertGreaterEqual(f1_score, 0.85, 
                                    f"Config '{config_name}' should achieve F1 >= 0.85, got {f1_score:.3f}")
+            
+

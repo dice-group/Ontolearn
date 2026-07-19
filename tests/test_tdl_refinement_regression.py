@@ -24,7 +24,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Family/lps.json") as json_file:
             settings = json.load(json_file)
         model = TDL_refinement(knowledge_base=kb, kwargs_classifier={"random_state": 1}, 
-                   use_nominals=True, use_inverse=False, use_data_properties=False, use_card_restrictions=False)
+                   use_nominals=True, use_inverse=False, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, use_card_restrictions=False)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])
@@ -60,7 +60,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Mutagenesis/lps.json") as json_file:
             settings = json.load(json_file)
         model = TDL_refinement(knowledge_base=kb, report_classification=True, kwargs_classifier={"random_state": 1, "max_depth": 3},
-                                     use_inverse= False, use_data_properties=True,
+                                     use_inverse= False, use_data_properties_numeric=True, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False,
                                      use_nominals = False, use_card_restrictions = False, feature_refinement=True, refine_iterations=3)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
@@ -80,7 +80,7 @@ class TestConceptLearnerReg(unittest.TestCase):
         with open("LPs/Carcinogenesis/lps.json") as json_file:
             settings = json.load(json_file)
             model = TDL_refinement(knowledge_base=kb, report_classification=True, kwargs_classifier={"random_state": 1, "max_depth": 3},
-                                     use_inverse= False, use_data_properties=True,
+                                     use_inverse= False, use_data_properties_numeric=True, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False,
                                      use_nominals = False, use_card_restrictions = False, feature_refinement=True, refine_iterations=3)
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
