@@ -53,7 +53,9 @@ class TestTDLBasics(unittest.TestCase):
             knowledge_base=self.kb_family,
             use_inverse=True,
             use_data_properties_boolean=True,
-            use_data_properties_non_boolean=True,
+            use_data_properties_string=True,
+            use_data_properties_date=True,
+            use_data_properties_numeric=True,
             use_nominals=True,
             use_card_restrictions=True,
             verbose=0,
@@ -62,7 +64,9 @@ class TestTDLBasics(unittest.TestCase):
         
         self.assertEqual(model.use_inverse, True)
         self.assertEqual(model.use_data_properties_boolean, True)
-        self.assertEqual(model.use_data_properties_non_boolean, True)
+        self.assertEqual(model.use_data_properties_string, True)
+        self.assertEqual(model.use_data_properties_date, True)
+        self.assertEqual(model.use_data_properties_numeric, True)
         self.assertEqual(model.use_nominals, True)
         self.assertEqual(model.use_card_restrictions, True)
         self.assertEqual(model.verbose, 0)
@@ -127,7 +131,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_data_properties_enabled(self):
         """Test expression filtering when data properties are enabled."""
-        model = TDL(knowledge_base=self.kb,use_data_properties_boolean=True, use_data_properties_non_boolean=True, verbose=0)
+        model = TDL(knowledge_base=self.kb,use_data_properties_boolean=True, use_data_properties_string=True, use_data_properties_date=True, use_data_properties_numeric=True, verbose=0)
         
         # Create a data property expression (if available in the KB)
         # For this test, we'll create a mock expression
@@ -138,23 +142,49 @@ class TestTDLFilterLogic(unittest.TestCase):
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
         data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
         
-        # Should be included when use_data_properties=True
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
         self.assertTrue(model._should_include_expression(data_expr))
 
     def test_should_include_expression_data_properties_disabled(self):
         """Test expression filtering when data properties are disabled."""
-        model = TDL(knowledge_base=self.kb, use_data_properties_non_boolean=False, use_data_properties_boolean=False, verbose=0)
+        model = TDL(knowledge_base=self.kb, use_data_properties_string=False, use_data_properties_date=False, use_data_properties_numeric=False, use_data_properties_boolean=False, verbose=0)
         
         # Create a data property expression
         from owlapy.owl_datatype import OWLDatatype
         from owlapy.iri import IRI as OWL_IRI
         
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(OWL_IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
         
-        # Should be excluded when use_data_properties=False
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
         self.assertFalse(model._should_include_expression(data_expr))
 
     def test_should_include_regular_class(self):

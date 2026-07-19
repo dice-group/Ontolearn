@@ -43,8 +43,10 @@ logging.getLogger("fitter").setLevel(logging.CRITICAL)
 class TDL_refinement(TDL):
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
-                 use_data_properties: bool = True,
-                 use_boolean_data_properties:bool = False,
+                 use_data_properties_numeric: bool = True,
+                 use_data_properties_boolean: bool = True,
+                 use_data_properties_string: bool = True,
+                 use_data_properties_date: bool = True,
                  use_nominals: bool = False,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
@@ -62,7 +64,7 @@ class TDL_refinement(TDL):
                  plot_importance_evo:bool = False,
                  refine_iterations: int = 3
                  ):
-        super().__init__(knowledge_base,use_inverse,use_boolean_data_properties,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
+        super().__init__(knowledge_base,use_inverse,use_data_properties_boolean,use_data_properties_string,use_data_properties_date, use_data_properties_numeric ,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
                        plot_tree, plot_embeddings,plot_feature_importance,verbose, verbalize)
         self.feature_refinement = feature_refinement
         self.plot_importance_evo = plot_importance_evo
@@ -70,7 +72,7 @@ class TDL_refinement(TDL):
         self.concept_per_iteration:List = list()
         self.top_feature_dicts:List = list()
         self.initial_importance_dict:Dict = dict()
-        self.use_data_properties = use_data_properties
+        self.use_data_properties = any([use_data_properties_numeric, use_data_properties_boolean, use_data_properties_string, use_data_properties_date])
  
     def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple, type) -> str:
         """Repack the ranged data property into an DL Concept String"""

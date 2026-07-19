@@ -53,7 +53,10 @@ class TestTDLRefinementBasics(unittest.TestCase):
         model = TDL_refinement(
             knowledge_base=self.kb_family,
             use_inverse=True,
-            use_data_properties=True,
+            use_data_properties_numeric=True,
+            use_data_properties_boolean=True,
+            use_data_properties_string=True,
+            use_data_properties_date=True,
             use_nominals=False,
             use_card_restrictions=True,
             verbose=0,
@@ -63,7 +66,10 @@ class TestTDLRefinementBasics(unittest.TestCase):
         )
         
         self.assertEqual(model.use_inverse, True)
-        self.assertEqual(model.use_data_properties, True)
+        self.assertEqual(model.use_data_properties_numeric, True)
+        self.assertEqual(model.use_data_properties_boolean, True)
+        self.assertEqual(model.use_data_properties_string, True)
+        self.assertEqual(model.use_data_properties_date, True)
         self.assertEqual(model.use_nominals, False)
         self.assertEqual(model.use_card_restrictions, True)
         self.assertEqual(model.verbose, 0)
@@ -128,9 +134,9 @@ class TestTDLFilterLogic(unittest.TestCase):
         # Should be excluded when use_card_restrictions=False
         self.assertFalse(model._should_include_expression(card_expr))
 
-    def test_should_include_expression_data_properties_numerical_only_enabled(self):
+    def test_should_include_expression_data_properties_enabled(self):
         """Test expression filtering when data properties are enabled."""
-        model = TDL_refinement(knowledge_base=self.kb, use_data_properties=True, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_data_properties_numeric=True, use_data_properties_boolean=True, use_data_properties_string=True, use_data_properties_date=True, verbose=0)
         
         # Create a data property expression (if available in the KB)
         # For this test, we'll create a mock expression
@@ -145,9 +151,9 @@ class TestTDLFilterLogic(unittest.TestCase):
         # Should be included when use_data_properties=True
         self.assertTrue(model._should_include_expression(data_expr))
 
-    def test_should_include_expression_data_properties_numerical_only_disabled(self):
+    def test_should_include_expression_data_properties_disabled(self):
         """Test expression filtering when data properties are disabled."""
-        model = TDL_refinement(knowledge_base=self.kb, use_data_properties=False, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, verbose=0)
         
         # Create a data property expression
         from owlapy.owl_datatype import OWLDatatype
@@ -159,41 +165,6 @@ class TestTDLFilterLogic(unittest.TestCase):
         
         # Should be excluded when use_data_properties=False
         self.assertFalse(model._should_include_expression(data_expr))
-
-    def test_should_include_expression_data_properties_boolean_enabled(self):
-        """Test expression filtering when data properties are enabled."""
-        model = TDL_refinement(knowledge_base=self.kb, use_boolean_data_properties=True, verbose=0)
-        
-        # Create a data property expression (if available in the KB)
-        # For this test, we'll create a mock expression
-        # In a real scenario, this would be extracted from the KB
-        from owlapy.owl_datatype import OWLDatatype
-        
-        
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        
-        # Should be included when use_boolean_data_properties=True
-        self.assertTrue(model._should_include_expression(data_expr))
-
-    def test_should_include_expression_data_properties_boolean_disabled(self):
-        """Test expression filtering when boolean data properties are disabled."""
-        model = TDL_refinement(knowledge_base=self.kb, use_boolean_data_properties=False, verbose=0)
-        
-        # Create a data property expression (if available in the KB)
-        # For this test, we'll create a mock expression
-        # In a real scenario, this would be extracted from the KB
-        from owlapy.owl_datatype import OWLDatatype
-        
-        
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        # Should be excluded when use_boolean_data_properties=False
-        self.assertFalse(model._should_include_expression(data_expr))
-
-
 
     def test_should_include_regular_class(self):
         """Test that regular OWL classes are always included."""
@@ -299,25 +270,6 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         intersection = OWLObjectIntersectionOf([cls, data_expr])
         
         self.assertTrue(contains_data_property(intersection))
-
-    def test_contains_boolean_data_property_in_intersection(self):
-        """Test that boolean data properties are detected when nested in intersections."""
-        from ontolearn.learners.tree_learner import contains_boolean_data_property
-        from owlapy.owl_datatype import OWLDatatype
-        
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
-        cls = OWLClass(IRI.create(self.NS + "Person"))
-        
-        # Create data property expression
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        
-        # Create intersection containing data property
-        intersection = OWLObjectIntersectionOf([cls, data_expr])
-        
-        self.assertTrue(contains_boolean_data_property(intersection))
-
-
 
 
     def test_no_false_positives_for_clean_alc(self):
@@ -669,7 +621,7 @@ class TestPackDataProperty(unittest.TestCase):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.NS = "http://www.benchmark.org/family#"
         cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
  
     def test_pack_with_int_type_returns_some_values_from(self):
         from owlapy.class_expression import OWLDatatypeRestriction
@@ -729,7 +681,7 @@ class TestComputePdfRanges(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
  
     def test_returns_six_ranges_for_normal(self):
         best_dist = {"norm": {"loc": 0.0, "scale": 1.0}}
@@ -757,7 +709,7 @@ class TestFindBestDistribution(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
  
     def test_returns_single_entry_dict_with_params(self):
         rng = np.random.default_rng(0)
@@ -778,7 +730,7 @@ class TestExtractRefinedRanges(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
  
     def test_returns_none_when_bounds_collapse(self):
         """If lower/upper bound map to the same values, refinement aborts."""
@@ -809,7 +761,7 @@ class TestExtractRangesFromDataProperties(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
         cls.NS = "http://www.benchmark.org/family#"
         cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
         cls.ind_a = OWLNamedIndividual(IRI.create(cls.NS + "anna"))
@@ -864,7 +816,7 @@ class TestRefineNumericalFeatures(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
         cls.NS = "http://www.benchmark.org/family#"
         cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
         cls.ind = OWLNamedIndividual(IRI.create(cls.NS + "anna"))

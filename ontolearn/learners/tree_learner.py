@@ -57,6 +57,7 @@ from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tre
 import itertools
 from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
+from enum import Enum, auto
 
 
 def explain_inference(clf, X: pd.DataFrame):
@@ -212,35 +213,89 @@ def contains_boolean_data_property(expr: OWLClassExpression) -> bool:
     
     return False
 
+class PropertyType(Enum):
+    BOOLEAN = auto()
+    STRING = auto()
+    DATE = auto()
+    NUMERIC = auto()
+    OTHER = auto()
+
+_NUMERIC_TYPES = {
+    "integer", "decimal", "float", "double", "long", "int", "short", "byte",
+    "nonNegativeInteger", "nonPositiveInteger", "positiveInteger",
+    "negativeInteger", "unsignedLong", "unsignedInt", "unsignedShort",
+    "unsignedByte", "real", "rational",
+}
+_STRING_TYPES = {
+    "string", "normalizedString", "token", "language",
+    "Name", "NCName", "NMTOKEN", "PlainLiteral",
+}
+_DATE_TYPES = {
+    "dateTime", "dateTimeStamp", "date", "time",
+    "gYear", "gYearMonth", "gMonthDay", "gDay", "gMonth",
+}
+
+def _classify_datatype_name(name: str) -> PropertyType:
+    """Map an XSD datatype IRI remainder to a DataPropertyType category."""
+    if name == "boolean":
+        return PropertyType.BOOLEAN
+    if name in _NUMERIC_TYPES:
+        return PropertyType.NUMERIC
+    if name in _STRING_TYPES:
+        return PropertyType.STRING
+    if name in _DATE_TYPES:
+        return PropertyType.DATE
+    return PropertyType.OTHER
+
+
+def _classify_literal(literal) -> PropertyType:
+    """Map an OWLLiteral to a DataPropertyType category."""
+    if literal.is_boolean():
+        return PropertyType.BOOLEAN
+    if literal.is_string():
+        return PropertyType.STRING
+    if literal.is_integer() or literal.is_double():
+        return PropertyType.NUMERIC
+    # Fall back to classifying by the literal's datatype IRI
+    try:
+        return _classify_datatype_name(literal.get_datatype().iri.remainder)
+    except AttributeError:
+        return PropertyType.OTHER
+
 
 def contains_data_property(expr: OWLClassExpression, include_boolean:bool = False) -> bool:
     """Returns True if the OWL expression contains a data property."""
+    found: Set[PropertyType] = set()
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
         filler = expr.get_filler()
         if isinstance(filler, OWLDataOneOf):
-            for literal in filler.values():
-                if not include_boolean and not(literal.is_boolean()):
-                    return True
-        if isinstance(filler, OWLDatatype):
-            if filler.iri.remainder != "boolean":
-                return True
-        
+            found.update(_classify_literal(literal) for literal in filler.values())
+        elif isinstance(filler, OWLDatatype):
+            found.add(_classify_datatype_name(filler.iri.remainder))
+        else:
+            found.add(PropertyType.OTHER)
+    elif isinstance(expr, OWLObjectHasValue):
+        found.add(_classify_literal(expr.get_filler()))
+
+    elif isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
+        for op in expr.operands():
+            sub = contains_data_property(op)
+            if sub:
+                found.update(sub)
     
-    # Check operands (for unions, intersections, complements)
-    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
+    elif isinstance(expr, OWLObjectComplementOf):
+        sub = contains_data_property(expr.get_operand())
+        if sub:
+            found.update(sub)
+    elif isinstance(expr, HasFiller):
         try:
-            return any(contains_data_property(op,include_boolean) for op in expr.operands())
+            sub = contains_data_property(expr.get_filler())
+            if sub:
+                found.update(sub)
         except (AttributeError, TypeError):
             pass
-    
-    # Check filler (for restrictions)
-    if isinstance(expr, HasFiller):
-        try:
-            return contains_data_property(expr.get_filler(), include_boolean)
-        except (AttributeError, TypeError):
-            pass
-    
-    return False
+    return found
+
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
@@ -248,7 +303,9 @@ class TDL:
     def __init__(self, knowledge_base,
                  use_inverse: bool = True,
                  use_data_properties_boolean:bool = True,
-                 use_data_properties_non_boolean: bool = True,
+                 use_data_properties_string: bool = True,
+                 use_data_properties_date: bool = True,
+                 use_data_properties_numeric: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
@@ -264,8 +321,10 @@ class TDL:
                  verbalize: bool = False):
 
         self.use_inverse = use_inverse
-        self.use_data_properties_non_boolean = use_data_properties_non_boolean
         self.use_data_properties_boolean = use_data_properties_boolean
+        self.use_data_properties_string = use_data_properties_string
+        self.use_data_properties_date = use_data_properties_date
+        self.use_data_properties_numeric = use_data_properties_numeric
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
         self.verbose = verbose
@@ -336,12 +395,15 @@ class TDL:
         if not self.use_card_restrictions and contains_cardinality(owl_class_expression):
             return False
         
-        #exclude expressions containing boolean data properties if flag is disabled
-        if not self.use_data_properties_boolean and contains_boolean_data_property(owl_class_expression):
-            return False
-        
-        # Exclude expressions containing data properties if flag is disabled
-        if not self.use_data_properties_non_boolean and contains_data_property(owl_class_expression):
+        # exclude expressions containing specific data properties
+        property_types = contains_data_property(owl_class_expression)
+        data_property_toggles = {
+                PropertyType.BOOLEAN:  self.use_data_properties_boolean,
+                PropertyType.STRING:   self.use_data_properties_string,
+                PropertyType.DATE: self.use_data_properties_date,
+                PropertyType.NUMERIC:  self.use_data_properties_numeric,
+            }
+        if not all(data_property_toggles.get(t, False) for t in property_types):
             return False
         
         return True
@@ -391,7 +453,7 @@ class TDL:
             if self.use_inverse:
                 self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
-            if self.use_data_properties_non_boolean or self.use_data_properties_boolean:
+            if self.use_data_properties_string or self.use_data_properties_date or self.use_data_properties_numeric or self.use_data_properties_boolean:
                 self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
             if self.use_card_restrictions:
@@ -415,14 +477,19 @@ class TDL:
             raise AssertionError(error_msg)
         if self.verbose > 0:
             print(f"Unique OWL Class Expressions as features: {len(features)}")
-            if self.use_inverse:
-                print("  - Including inverse property features")
-            if self.use_data_properties_boolean:
-                print("  - Including boolean data property features")
-            if self.use_data_properties_non_boolean:
-                print("  - Including non boolean data property features")
-            if self.use_card_restrictions:
-                print("  - Including cardinality restriction features")
+            feature_options = {
+                "inverse properties":        self.use_inverse,
+                "nominals":                  self.use_nominals,
+                "cardinality restrictions":  self.use_card_restrictions,
+                "boolean data properties":   self.use_data_properties_boolean,
+                "string data properties":    self.use_data_properties_string,
+                "date data properties":      self.use_data_properties_date,
+                "numeric data properties":   self.use_data_properties_numeric,
+                }
+            enabled = [name for name, flag in feature_options.items() if flag]
+
+            if enabled:
+                print(f"Enabled feature types: {', '.join(enabled)}")
         
         # Convert features dict to list
         features_list = [v for k, v in features.items()]
