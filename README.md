@@ -38,6 +38,8 @@ Uses `DrillVNet_Complex` (~92K parameters, ×55 smaller than Drill's `DrillNet`)
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
+#Install other dependencies
+pip install git+https://github.com/dice-group/owlapy@marked_entity_generator_converter
 # Unzip knowledge graphs and learning problems
 unzip KGs.zip && unzip LPs.zip
 ```
