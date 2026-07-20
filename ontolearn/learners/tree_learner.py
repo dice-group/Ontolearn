@@ -185,34 +185,6 @@ def contains_cardinality(expr: OWLClassExpression) -> bool:
     
     return False
 
-def contains_boolean_data_property(expr: OWLClassExpression) -> bool:
-    """Returns True if the OWL expression contains a data property."""
-    if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
-        filler = expr.get_filler()
-        if isinstance(filler, OWLDataOneOf):
-            for literal in filler.values():
-                if literal.is_boolean():
-                    return True
-        if isinstance(filler, OWLDatatype):
-            if filler.iri.remainder == "boolean":
-                return True
-    
-    # Check operands (for unions, intersections, complements)
-    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
-        try:
-            return any(contains_boolean_data_property(op) for op in expr.operands())
-        except (AttributeError, TypeError):
-            pass
-    
-    # Check filler (for restrictions)
-    if isinstance(expr, HasFiller):
-        try:
-            return contains_boolean_data_property(expr.get_filler())
-        except (AttributeError, TypeError):
-            pass
-    
-    return False
-
 class PropertyType(Enum):
     BOOLEAN = auto()
     STRING = auto()
@@ -263,7 +235,7 @@ def _classify_literal(literal) -> PropertyType:
         return PropertyType.OTHER
 
 
-def contains_data_property(expr: OWLClassExpression, include_boolean:bool = False) -> bool:
+def contains_data_property(expr: OWLClassExpression, include_boolean:bool = False) -> PropertyType:
     """Returns True if the OWL expression contains a data property."""
     found: Set[PropertyType] = set()
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
