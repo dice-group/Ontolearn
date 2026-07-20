@@ -38,7 +38,7 @@ class TestTriplestore(unittest.TestCase):
 
     def test_triplestore_runs_error_free(self):
         kb = TripleStore(url="http://localhost:3030/mutagenesis/sparql")
-        model = TDL(knowledge_base=kb, use_inverse=False, use_data_properties=False, use_card_restrictions=False)
+        model = TDL(knowledge_base=kb, use_inverse=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, use_data_properties_numeric=False, use_card_restrictions=False)
         with open('LPs/Mutagenesis/lps.json') as json_file:
             settings = json.load(json_file)
         p = set(settings['problems']['NotKnown']['positive_examples'])

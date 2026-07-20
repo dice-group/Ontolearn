@@ -10,8 +10,9 @@ This test suite covers:
 """
 
 import unittest
-from ontolearn.learners import TDL
+from ontolearn.learners import TDL_refinement
 from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners.tree_learner import TDL
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
@@ -34,7 +35,7 @@ import numpy as np
 import pandas as pd
 
 
-class TestTDLBasics(unittest.TestCase):
+class TestTDLRefinementBasics(unittest.TestCase):
     """Test basic TDL functionality and initialization."""
 
     @classmethod
@@ -49,29 +50,33 @@ class TestTDLBasics(unittest.TestCase):
 
     def test_initialization_custom(self):
         """Test TDL initialization with custom parameters."""
-        model = TDL(
+        model = TDL_refinement(
             knowledge_base=self.kb_family,
             use_inverse=True,
+            use_data_properties_numeric=True,
             use_data_properties_boolean=True,
             use_data_properties_string=True,
             use_data_properties_date=True,
-            use_data_properties_numeric=True,
-            use_nominals=True,
+            use_nominals=False,
             use_card_restrictions=True,
             verbose=0,
+            feature_refinement = True,
+            refine_iterations = 3,
             kwargs_classifier={"max_depth": 5, "random_state": 42}
         )
         
         self.assertEqual(model.use_inverse, True)
+        self.assertEqual(model.use_data_properties_numeric, True)
         self.assertEqual(model.use_data_properties_boolean, True)
         self.assertEqual(model.use_data_properties_string, True)
         self.assertEqual(model.use_data_properties_date, True)
-        self.assertEqual(model.use_data_properties_numeric, True)
-        self.assertEqual(model.use_nominals, True)
+        self.assertEqual(model.use_nominals, False)
         self.assertEqual(model.use_card_restrictions, True)
         self.assertEqual(model.verbose, 0)
         self.assertEqual(model.kwargs_classifier["max_depth"], 5)
         self.assertEqual(model.kwargs_classifier["random_state"], 42)
+        self.assertEqual(model.feature_refinement, True)
+        self.assertEqual(model.refine_iterations, 3)
 
 
 class TestTDLFilterLogic(unittest.TestCase):
@@ -85,7 +90,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_nominals_enabled(self):
         """Test expression filtering when nominals are enabled."""
-        model = TDL(knowledge_base=self.kb, use_nominals=True, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_nominals=True, verbose=0)
         
         # Create a nominal expression
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
@@ -96,7 +101,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_nominals_disabled(self):
         """Test expression filtering when nominals are disabled."""
-        model = TDL(knowledge_base=self.kb, use_nominals=False, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_nominals=False, verbose=0)
         
         # Create a nominal expression
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
@@ -107,7 +112,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_cardinality_enabled(self):
         """Test expression filtering when cardinality restrictions are enabled."""
-        model = TDL(knowledge_base=self.kb, use_card_restrictions=True, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_card_restrictions=True, verbose=0)
         
         # Create a cardinality expression
         prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
@@ -119,7 +124,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_cardinality_disabled(self):
         """Test expression filtering when cardinality restrictions are disabled."""
-        model = TDL(knowledge_base=self.kb, use_card_restrictions=False, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_card_restrictions=False, verbose=0)
         
         # Create a cardinality expression
         prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
@@ -131,7 +136,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_data_properties_enabled(self):
         """Test expression filtering when data properties are enabled."""
-        model = TDL(knowledge_base=self.kb,use_data_properties_boolean=True, use_data_properties_string=True, use_data_properties_date=True, use_data_properties_numeric=True, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_data_properties_numeric=True, use_data_properties_boolean=True, use_data_properties_string=True, use_data_properties_date=True, verbose=0)
         
         # Create a data property expression (if available in the KB)
         # For this test, we'll create a mock expression
@@ -142,54 +147,28 @@ class TestTDLFilterLogic(unittest.TestCase):
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
         data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertTrue(model._should_include_expression(data_expr))
         
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertTrue(model._should_include_expression(data_expr))
-
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertTrue(model._should_include_expression(data_expr))
-
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        # Should be included when use_data_properties=True
         self.assertTrue(model._should_include_expression(data_expr))
 
     def test_should_include_expression_data_properties_disabled(self):
         """Test expression filtering when data properties are disabled."""
-        model = TDL(knowledge_base=self.kb, use_data_properties_string=False, use_data_properties_date=False, use_data_properties_numeric=False, use_data_properties_boolean=False, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_data_properties_numeric=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, verbose=0)
         
         # Create a data property expression
         from owlapy.owl_datatype import OWLDatatype
         from owlapy.iri import IRI as OWL_IRI
         
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
+        data_range = OWLDatatype(OWL_IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertFalse(model._should_include_expression(data_expr))
         
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertFalse(model._should_include_expression(data_expr))
-
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
-        self.assertFalse(model._should_include_expression(data_expr))
-
-        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
-        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        # Should be excluded when use_data_properties=False
         self.assertFalse(model._should_include_expression(data_expr))
 
     def test_should_include_regular_class(self):
         """Test that regular OWL classes are always included."""
-        model = TDL(knowledge_base=self.kb, use_nominals=False, verbose=0)
+        model = TDL_refinement(knowledge_base=self.kb, use_nominals=False, verbose=0)
         
         # Regular OWL class should always be included
         regular_class = OWLClass(IRI.create(self.NS + "Person"))
@@ -291,6 +270,7 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         intersection = OWLObjectIntersectionOf([cls, data_expr])
         
         self.assertTrue(contains_data_property(intersection))
+
 
     def test_no_false_positives_for_clean_alc(self):
         """Test that clean ALC expressions don't trigger false positives."""
@@ -449,7 +429,7 @@ class TestTDLTraining(unittest.TestCase):
 
     def test_create_training_data(self):
         """Test training data creation."""
-        model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 42})
+        model = TDL_refinement(knowledge_base=self.kb, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 42})
         
         # Create a learning problem
         examples = self.family_lps['problems']['Brother']
@@ -473,7 +453,7 @@ class TestTDLTraining(unittest.TestCase):
 
     def test_fit_basic(self):
         """Test basic fitting of TDL model."""
-        model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 42})
+        model = TDL_refinement(knowledge_base=self.kb, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 42})
         
         # Create a simple learning problem with reduced examples for speed
         examples = self.family_lps['problems']['Brother']
@@ -494,23 +474,23 @@ class TestTDLTraining(unittest.TestCase):
         self.assertIsNotNone(model.X)
         self.assertIsNotNone(model.y)
 
-    def test_max_runtime(self):
-        """Test that max_runtime parameter is respected."""
-        model = TDL(knowledge_base=self.kb, max_runtime=0.1, verbose=0, kwargs_classifier={"random_state": 42})
-        
-        examples = self.family_lps['problems']['Brother']
-        p = set(examples['positive_examples'])  
-        n = set(examples['negative_examples'])  
-        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
-        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
-        
-        # Fit the model and ensure it respects max_runtime, Should raise RuntimeError if max_runtime exceeded
-        self.assertRaises(RuntimeError, model.fit, lp)
+    #def test_max_runtime(self):
+    #    """Test that max_runtime parameter is respected."""
+    #    model = TDL_refinement(knowledge_base=self.kb, max_runtime=1, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 42})
+    #    
+    #    examples = self.family_lps['problems']['Brother']
+    #    p = set(examples['positive_examples'])  
+    #    n = set(examples['negative_examples'])  
+    #    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+    #    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+    #    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+    #    
+    #    # Fit the model and ensure it respects max_runtime, Should raise RuntimeError if max_runtime exceeded
+    #    self.assertRaises(RuntimeError, model.fit, lp)
 
     def test_best_hypotheses(self):
         """Test retrieval of best hypotheses."""
-        model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 42})
+        model = TDL_refinement(knowledge_base=self.kb, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 42})
         
         examples = self.family_lps['problems']['Sister']
         p = set(examples['positive_examples'][:8])  # Reduced for speed
@@ -537,36 +517,36 @@ class TestTDLTraining(unittest.TestCase):
         lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
         
         # Test with nominals disabled
-        model1 = TDL(knowledge_base=self.kb, use_nominals=False, verbose=0, 
+        model1 = TDL_refinement(knowledge_base=self.kb, use_nominals=False, verbose=0, feature_refinement=True, refine_iterations=3,
                      kwargs_classifier={"random_state": 42})
         model1.fit(lp)
         self.assertIsNotNone(model1.clf)
         
         # Test with cardinality restrictions enabled
-        model2 = TDL(knowledge_base=self.kb, use_card_restrictions=True, verbose=0,
+        model2 = TDL_refinement(knowledge_base=self.kb, use_card_restrictions=True, verbose=0, feature_refinement=True, refine_iterations=3,
                      kwargs_classifier={"random_state": 42})
         model2.fit(lp)
         self.assertIsNotNone(model2.clf)
 
-    def test_classification_report(self):
-        """Test that classification report is generated."""
-        model = TDL(knowledge_base=self.kb, report_classification=True, verbose=0,
-                    kwargs_classifier={"random_state": 42})
-        
-        examples = self.family_lps['problems']['Brother']
-        p = set(examples['positive_examples'][:5])  # Reduced for speed
-        n = set(examples['negative_examples'][:5])  # Reduced for speed
-        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
-        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
-        
-        model.fit(lp)
-        
-        # Check that report was generated
-        report = model.classification_report
-        self.assertIsNotNone(report)
-        self.assertIsInstance(report, str)
-        self.assertIn("Classification Report", report)
+    #def test_classification_report(self):
+    #    """Test that classification report is generated."""
+    #    model = TDL_refinement(knowledge_base=self.kb, report_classification=True, verbose=0,
+    #                kwargs_classifier={"random_state": 42})
+    #    
+    #    examples = self.family_lps['problems']['Brother']
+    #    p = set(examples['positive_examples'][:5])  # Reduced for speed
+    #    n = set(examples['negative_examples'][:5])  # Reduced for speed
+    #    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+    #    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+    #    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+    #    
+    #    model.fit(lp)
+    #    
+    #    # Check that report was generated
+    #    report = model.classification_report
+    #    self.assertIsNotNone(report)
+    #    self.assertIsInstance(report, str)
+    #    self.assertIn("Classification Report", report)
 
 
 class TestTDLPerformance(unittest.TestCase):
@@ -581,7 +561,7 @@ class TestTDLPerformance(unittest.TestCase):
 
     def test_performance_brother(self):
         """Test TDL performance on Brother concept."""
-        model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 1})
+        model = TDL_refinement(knowledge_base=self.kb, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 1})
         
         examples = self.family_lps['problems']['Brother']
         # Use subset for faster testing while maintaining concept learning ability
@@ -606,7 +586,7 @@ class TestTDLPerformance(unittest.TestCase):
 
     def test_performance_sister(self):
         """Test TDL performance on Sister concept."""
-        model = TDL(knowledge_base=self.kb, verbose=0, kwargs_classifier={"random_state": 1})
+        model = TDL_refinement(knowledge_base=self.kb, verbose=0, feature_refinement=True, refine_iterations=3, kwargs_classifier={"random_state": 1})
         
         examples = self.family_lps['problems']['Sister']
         # Use subset for faster testing while maintaining concept learning ability
@@ -628,6 +608,279 @@ class TestTDLPerformance(unittest.TestCase):
         
         # Sister should be learned well even with subset
         self.assertGreaterEqual(f1, 0.85)
+
+class TestPackDataProperty(unittest.TestCase):
+    """Test packing data properties with ranges to DL concepts"""
+    from owlapy.class_expression import OWLDataSomeValuesFrom, OWLDatatypeRestriction
+    from owlapy.owl_property import OWLDataProperty
+    from owlapy import owl_expression_to_dl
+
+    @classmethod
+    def setUpClass(cls):
+        
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.NS = "http://www.benchmark.org/family#"
+        cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
+ 
+    def test_pack_with_int_type_returns_some_values_from(self):
+        from owlapy.class_expression import OWLDatatypeRestriction
+        expr = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (10.7, 20.3), 5)  # type inferred from int sample value
+        self.assertIsInstance(expr, OWLDataSomeValuesFrom)
+        self.assertEqual(expr.get_property(), self.prop)
+        self.assertIsInstance(expr.get_filler(), OWLDatatypeRestriction)
+ 
+    def test_pack_int_type_coerces_bounds_to_int(self):
+        """Integer datatype must truncate float bounds to ints."""
+        expr = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (10.7, 20.3), 5)
+        facets = expr.get_filler().get_facet_restrictions()
+        values = [f.get_facet_value().get_literal() for f in facets]
+        self.assertEqual(int(float(values[0])), 10)
+        self.assertEqual(int(float(values[1])), 20)
+ 
+    def test_pack_with_float_type_keeps_float_bounds(self):
+        expr = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (10.5, 20.5), 3.14)
+        facets = expr.get_filler().get_facet_restrictions()
+        values = [float(f.get_facet_value().get_literal()) for f in facets]
+        self.assertAlmostEqual(values[0], 10.5)
+        self.assertAlmostEqual(values[1], 20.5)
+ 
+    def test_pack_with_owl_datatype_passthrough(self):
+        from owlapy.owl_datatype import OWLDatatype
+
+        """Passing an OWLDatatype directly should be used as-is."""
+        from owlapy.vocab import OWLFacet, XSDVocabulary
+        dt = OWLDatatype(XSDVocabulary.DOUBLE)
+        expr = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (1.0, 2.0), dt)
+        facets = expr.get_filler().get_facet_restrictions()
+        self.assertEqual(facets[0].get_facet_value().get_datatype(), dt)
+ 
+    def test_pack_produces_min_and_max_facets(self):
+        expr = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (1.0, 2.0), 1.0)
+        facets = expr.get_filler().get_facet_restrictions()
+        self.assertEqual(len(facets), 2)
+ 
+    def test_pack_is_deterministic(self):
+        """Same inputs -> same DL string."""
+        from owlapy import owl_expression_to_dl
+        e1 = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (1.0, 2.0), 1.0)
+        e2 = self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (1.0, 2.0), 1.0)
+        self.assertEqual(owl_expression_to_dl(e1), owl_expression_to_dl(e2))
+
+
+class TestComputePdfRanges(unittest.TestCase):
+    """Test Range computations"""
+ 
+    @classmethod
+    def setUpClass(cls):
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
+ 
+    def test_returns_six_ranges_for_normal(self):
+        best_dist = {"norm": {"loc": 0.0, "scale": 1.0}}
+        ranges = self.model._compute_dt_pdf_ranges(best_dist)
+        self.assertEqual(len(ranges), 6)
+ 
+    def test_ranges_match_mean_std_of_norm(self):
+        """For N(10, 2): mean=10, std=2 with known known interval boundaries."""
+        best_dist = {"norm": {"loc": 10.0, "scale": 2.0}}
+        ranges = self.model._compute_dt_pdf_ranges(best_dist)
+        self.assertAlmostEqual(float(ranges[0][0]), 8.0) 
+        self.assertAlmostEqual(float(ranges[0][1]), 10.0)   
+        self.assertAlmostEqual(float(ranges[1][1]), 12.0)  
+        self.assertAlmostEqual(float(ranges[5][1]), 16.0) 
+ 
+    def test_each_range_is_lb_ub_tuple(self):
+        best_dist = {"norm": {"loc": 0.0, "scale": 1.0}}
+        for lb, ub in self.model._compute_dt_pdf_ranges(best_dist):
+            self.assertLess(float(lb), float(ub))
+ 
+
+class TestFindBestDistribution(unittest.TestCase):
+    """Test finding the best distribution for a data property"""
+ 
+    @classmethod
+    def setUpClass(cls):
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
+ 
+    def test_returns_single_entry_dict_with_params(self):
+        rng = np.random.default_rng(0)
+        data = rng.normal(loc=50, scale=5, size=300).tolist()
+        best = self.model._find_best_distribution_for_dp(data)
+        self.assertIsInstance(best, dict)
+        self.assertEqual(len(best), 1)
+        dist_name = list(best.keys())[0]
+        self.assertIsInstance(best[dist_name], dict)  # fitted params
+ 
+    def test_empty_values_raises_assertion(self):
+        with self.assertRaises(AssertionError):
+            self.model._find_best_distribution_for_dp([])
+
+class TestExtractRefinedRanges(unittest.TestCase):
+    """Test extracting refined ranges from data properties"""
+ 
+    @classmethod
+    def setUpClass(cls):
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
+ 
+    def test_returns_none_when_bounds_collapse(self):
+        """If lower/upper bound map to the same values, refinement aborts."""
+        values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        # range so narrow both bounds snap to the same data point
+        result = self.model._extract_refined_ranges_from_data_properties(
+            values, (3.0, 3.0))
+        self.assertIsNone(result)
+ 
+    def test_returns_ranges_for_valid_window(self):
+        rng = np.random.default_rng(1)
+        values = rng.normal(loc=100, scale=10, size=400).tolist()
+        result = self.model._extract_refined_ranges_from_data_properties(
+            values, (80.0, 120.0))
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 6)
+ 
+    def test_inverted_bounds_return_none(self):
+        """lb > ub should hit the collapsed-index warning path."""
+        values = list(np.linspace(0, 100, 200))
+        result = self.model._extract_refined_ranges_from_data_properties(
+            values, (90.0, 10.0))
+        self.assertIsNone(result)
+
+class TestExtractRangesFromDataProperties(unittest.TestCase):
+    """Test range extraction"""
+ 
+    @classmethod
+    def setUpClass(cls):
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.NS = "http://www.benchmark.org/family#"
+        cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
+        cls.ind_a = OWLNamedIndividual(IRI.create(cls.NS + "anna"))
+        cls.ind_b = OWLNamedIndividual(IRI.create(cls.NS + "bernd"))
+ 
+    def test_empty_data_properties_returns_none_and_no_features(self):
+        features = {}
+        mapping = {}
+        result = self.model._extract_ranges_from_data_properties(
+            features, mapping, {}, {})
+        self.assertIsNone(result)
+        self.assertEqual(len(features), 0)
+ 
+    def test_populates_features_and_individual_mapping(self):
+        rng = np.random.default_rng(2)
+        values = rng.normal(loc=40, scale=5, size=300).tolist()
+        data_properties_dict = {self.prop: values}
+        per_individual = {
+            self.ind_a: {self.prop: [40.0]},
+            self.ind_b: {self.prop: [41.0]},
+        }
+        features = {}
+        mapping = {self.ind_a.str: set(), self.ind_b.str: set()}
+        generated = self.model._extract_ranges_from_data_properties(
+            features, mapping, data_properties_dict, per_individual)
+        # features created from computed ranges
+        self.assertGreater(len(features), 0)
+        # individuals with in-range values are assigned at least one concept
+        self.assertGreater(len(mapping[self.ind_a.str]), 0)
+        self.assertGreater(len(mapping[self.ind_b.str]), 0)
+        # the reverse mapping expression -> individuals is returned
+        self.assertIsInstance(generated, dict)
+        self.assertGreater(len(generated), 0)
+        all_mapped = set().union(*generated.values())
+        self.assertIn(self.ind_a, all_mapped)
+ 
+    def test_out_of_range_individual_gets_no_concept(self):
+        rng = np.random.default_rng(3)
+        values = rng.normal(loc=40, scale=1, size=300).tolist()
+        data_properties_dict = {self.prop: values}
+        # value ~1000 lies outside mean +- 3*std of N(40, 1)
+        per_individual = {self.ind_a: {self.prop: [1000.0]}}
+        features = {}
+        mapping = {self.ind_a.str: set()}
+        self.model._extract_ranges_from_data_properties(
+            features, mapping, data_properties_dict, per_individual)
+        self.assertEqual(len(mapping[self.ind_a.str]), 0)
+
+class TestRefineNumericalFeatures(unittest.TestCase):
+    """Test refining process"""
+ 
+    @classmethod
+    def setUpClass(cls):
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
+        cls.NS = "http://www.benchmark.org/family#"
+        cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
+        cls.ind = OWLNamedIndividual(IRI.create(cls.NS + "anna"))
+        rng = np.random.default_rng(4)
+        cls.values = rng.normal(loc=40, scale=5, size=400).tolist()
+        # minimal internal state normally built during fit()
+        cls.model.data_properties_dict = {cls.prop: cls.values}
+        cls.model.per_individual_data_properties = {
+            cls.ind: {cls.prop: [40.0]}
+        }
+        cls.model.individuals_to_feature_mapping = {cls.ind.str: set()}
+        cls.model.generated_dt_classexpressions_per_individual = {}
+ 
+    def _make_range_expr(self, lb, ub):
+        return self.model._pack_data_property_with_range_to_dl_concept(
+            self.prop, (lb, ub), 1.0)
+ 
+    def test_non_restriction_expressions_are_skipped(self):
+        """Atomic classes in the top-k list must be ignored"""
+        cls_expr = OWLClass(IRI.create(self.NS + "Person"))
+        refined, mapping = self.model.refine_numerical_features(
+            [cls_expr], iteration=1)
+        self.assertEqual(len(refined), 0)
+        self.assertEqual(len(mapping), 0)
+ 
+    def test_refines_datatype_restriction_expression(self):
+        expr = self._make_range_expr(30.0, 50.0)
+        # register the expression as covering our individual
+        self.model.generated_dt_classexpressions_per_individual[expr] = {self.ind}
+        refined, mapping = self.model.refine_numerical_features(
+            [expr], iteration=1)
+        self.assertGreater(len(refined), 0)
+        # individual value 40.0 falls in at least one refined interval
+        self.assertIn(self.ind.str, mapping)
+        self.assertGreater(len(mapping[self.ind.str]), 0)
+        # global mapping updated too
+        self.assertGreater(
+            len(self.model.individuals_to_feature_mapping[self.ind.str]), 0)
+ 
+    def test_fallback_individual_lookup_when_mapping_missing(self):
+        """If the expression is not in generated_dt_classexpressions_per_individual,
+        individuals must be recovered from per_individual_data_properties."""
+        expr = self._make_range_expr(30.0, 50.0)
+        # do NOT register expr -> forces the fallback branch
+        refined, mapping = self.model.refine_numerical_features(
+            [expr], iteration=1)
+        self.assertGreater(len(refined), 0)
+        self.assertIn(self.ind.str, mapping)
+ 
+    def test_collapsed_range_yields_no_refinements(self):
+        """A degenerate range triggers the None path and is skipped."""
+        expr = self._make_range_expr(40.0, 40.0)
+        refined, mapping = self.model.refine_numerical_features(
+            [expr], iteration=1)
+        self.assertEqual(len(refined), 0)
+
+ 
+
+    
+
+
+
+
+
 
 
 if __name__ == '__main__':

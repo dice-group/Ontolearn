@@ -1,6 +1,6 @@
 from owlapy.vocab import OWLFacet, XSDVocabulary
 from owlapy.owl_property import OWLDataProperty
-from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_literal import Decimal, OWLLiteral
 from owlapy.owl_datatype import OWLDatatype
 from owlapy import owl_expression_to_dl
 from sklearn.inspection import permutation_importance
@@ -42,12 +42,15 @@ logging.getLogger("fitter").setLevel(logging.CRITICAL)
 
 class TDL_refinement(TDL):
     def __init__(self, knowledge_base,
-                 use_inverse: bool = True,
-                 use_data_properties: bool = True,
-                 use_nominals: bool = True,
+                 use_inverse: bool = False,
+                 use_data_properties_numeric: bool = True,
+                 use_data_properties_boolean: bool = True,
+                 use_data_properties_string: bool = True,
+                 use_data_properties_date: bool = True,
+                 use_nominals: bool = False,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
-                 max_runtime: int = 1,
+                 max_runtime: int = None,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  kwargs_grid_search: dict = {},
@@ -55,13 +58,13 @@ class TDL_refinement(TDL):
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
-                 verbose: int = 10,
+                 verbose: int = 0,
                  verbalize: bool = False,
                  feature_refinement:bool = True,
-                 plot_importance_evo:bool = True,
+                 plot_importance_evo:bool = False,
                  refine_iterations: int = 3
                  ):
-        super().__init__(knowledge_base,use_inverse,use_data_properties,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
+        super().__init__(knowledge_base,use_inverse,use_data_properties_boolean,use_data_properties_string,use_data_properties_date, use_data_properties_numeric ,use_nominals,use_card_restrictions,kwargs_classifier,max_runtime,grid_search_over,grid_search_apply,kwargs_grid_search,report_classification,
                        plot_tree, plot_embeddings,plot_feature_importance,verbose, verbalize)
         self.feature_refinement = feature_refinement
         self.plot_importance_evo = plot_importance_evo
@@ -69,29 +72,44 @@ class TDL_refinement(TDL):
         self.concept_per_iteration:List = list()
         self.top_feature_dicts:List = list()
         self.initial_importance_dict:Dict = dict()
+        self.use_data_properties = any([use_data_properties_numeric, use_data_properties_boolean, use_data_properties_string, use_data_properties_date])
  
-    def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple) -> str:
+    def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple, type) -> str:
         """Repack the ranged data property into an DL Concept String"""
+        if isinstance(type, OWLDatatype):
+            xsdtype = type
+        elif isinstance(type, int):
+            xsdtype = OWLDatatype(XSDVocabulary.INTEGER)
+        elif isinstance(type, float):
+            xsdtype = OWLDatatype(XSDVocabulary.DOUBLE)
+        elif isinstance(type, Decimal):
+            xsdtype = OWLDatatype(XSDVocabulary.DECIMAL)
+
+        
+
+        if xsdtype == OWLDatatype(XSDVocabulary.INTEGER):
+            literal_range = (int(literal_range[0]), int(literal_range[1]))
+
         min_restr = OWLFacetRestriction(
             OWLFacet.MIN_INCLUSIVE,
-            OWLLiteral(literal_range[0], OWLDatatype(XSDVocabulary.DOUBLE)),
+            OWLLiteral(literal_range[0], xsdtype),
             #OWLLiteral(literal_range[0], property),
         )
         if literal_range is None:
             max_restr = OWLFacetRestriction(
                 OWLFacet.MAX_INCLUSIVE,
-                OWLLiteral(literal_range[0], OWLDatatype(XSDVocabulary.DOUBLE)),
+                OWLLiteral(literal_range[0], xsdtype),
                 #OWLLiteral(literal_range[0], property),
             )
         else:
             max_restr = OWLFacetRestriction(
                 OWLFacet.MAX_INCLUSIVE,
-                OWLLiteral(literal_range[1], OWLDatatype(XSDVocabulary.DOUBLE)),
+                OWLLiteral(literal_range[1], xsdtype),
             )
 
         dt_range = OWLDatatypeRestriction(
             # here some way to auto detect datatype is needed
-            type_=OWLDatatype(XSDVocabulary.DOUBLE),
+            type_=xsdtype,
             facet_restrictions=[min_restr, max_restr],
         )
 
@@ -113,8 +131,11 @@ class TDL_refinement(TDL):
             (mean - std, mean),
             (mean, mean + std),
             (mean - 2 * std, mean - 1 * std),
-            (mean + std, mean + 2 * std),
+            (mean + std, mean + 2 * std), 
+            (mean - 3 * std, mean -2 * std),
+            (mean + 2 * std, mean + 3 * std)
         ]
+
         return ranges
     
     def _find_best_distribution_for_dp(self, dt_values:List[float], plot:bool = False )->dict:
@@ -155,7 +176,7 @@ class TDL_refinement(TDL):
         ub_index = np.where(prop_values[np.abs(prop_values-ub).argmin()] == prop_values)
         #if self.verbose>10:
         print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
-        if lb_index[0][0] >= ub_index[0][0]:
+        if (lb_index[0][0] >= ub_index[0][0]):
             if self.verbose > 0:
                 print("Warning: Lower bound and upper bound indices are the same. Refinement may not be effective.")
             return None
@@ -182,11 +203,13 @@ class TDL_refinement(TDL):
             print("prop" + prop.__repr__())
             print(best_dist)
             best_dists[prop._iri] = best_dist
-            ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(best_dist),)
+            ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(best_dist))
 
         for r in ranges_dict:
             for interval in range(len(ranges_dict[r])):
-                new_class_expression = self._pack_data_property_with_range_to_dl_concept(r, ranges_dict[r][interval])
+                if (np.isnan(ranges_dict[r][interval][0]) or np.isinf(ranges_dict[r][interval][0])) or (np.isnan(ranges_dict[r][interval][1]) or np.isinf(ranges_dict[r][interval][1])):
+                    continue
+                new_class_expression = self._pack_data_property_with_range_to_dl_concept(r, ranges_dict[r][interval], data_properties_dict[r][0])
                 str_dl_concept = owl_expression_to_dl(new_class_expression)
                 # add concept to features
                 if str_dl_concept not in features:
@@ -197,8 +220,10 @@ class TDL_refinement(TDL):
             if prop in per_individual_data_properties.get(ind, {}):
                 for v in per_individual_data_properties[ind][prop]:
                     for interval in ranges_dict[prop]:
+                        if (np.isnan(interval[0]) or np.isinf(interval[0])) or (np.isnan(interval[1]) or np.isinf(interval[1])):
+                            continue
                         if interval[0] <= v and v <= interval[1]:
-                            new_class_expression = self._pack_data_property_with_range_to_dl_concept(prop, interval)
+                            new_class_expression = self._pack_data_property_with_range_to_dl_concept(prop, interval, v)
                             str_dl_concept = owl_expression_to_dl(new_class_expression)
                             individuals_to_feature_mapping[ind.str].add(str_dl_concept)
                             if new_class_expression not in generated_dt_class_expressions:
@@ -219,21 +244,25 @@ class TDL_refinement(TDL):
         """Extract features based on data properties."""
         try:
             # Get data properties for this individual
-
             for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
                 # Get data property values
                 data_values = list(self.knowledge_base.get_data_property_values(individual, data_prop))
-
                 if data_values:
                     # For each data value, we already have features from abox(mode="expression")
-                    # This method can be extended to add additional data property features
-                    # such as numeric ranges, etc.
-                    # TODO: Create new OWL CLassExpressions based on data property values
                     if numeric_ranges:
                         for v in data_values:
                             # check if literal is a numeric
                             if v.is_decimal() or v.is_float() or v.is_integer() or v.is_double():
-                                literal = float(v.get_literal())
+                                literal = v.get_literal()
+                                if v.is_decimal():
+                                    literal = Decimal(v.get_literal())
+                                elif v.is_float():
+                                    literal = float(v.get_literal())
+                                elif v.is_integer():
+                                    literal = int(v.get_literal())
+                                elif v.is_double():
+                                    literal = float(v.get_literal())
+
 
                                 # save data_properties per individual
                                 if individual not in per_individual_data_properties:
@@ -246,9 +275,6 @@ class TDL_refinement(TDL):
                                 if data_prop not in data_properties_dict:
                                     data_properties_dict[data_prop] = list()
                                 data_properties_dict[data_prop].append(literal)
-                    # print(f"Data property values for {data_prop}: {data_values}")
-
-        #     print("DEBUG")
         except Exception as e:
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
@@ -395,7 +421,7 @@ class TDL_refinement(TDL):
             if type(e) is OWLDataSomeValuesFrom:
                 filler = e.get_filler()
                 if type(filler) is OWLDatatypeRestriction:
-                    borders = tuple(r.get_facet_value().parse_double() for r in filler.get_facet_restrictions())
+                    borders = tuple(float(r.get_facet_value().get_literal()) for r in filler.get_facet_restrictions())
                     if self.verbose > 10:
                         print("Range to be refined :", borders)
                         print(e)
@@ -408,7 +434,9 @@ class TDL_refinement(TDL):
                         continue
                     
                     for r in refined_ranges:
-                        new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), r)
+                        if (np.isnan(r[0]) or np.isinf(r[0])) or (np.isnan(r[1]) or np.isinf(r[1])):
+                            continue
+                        new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), r, e.get_filler().get_facet_restrictions()[0].get_facet_value().get_datatype())
                         str_dl_concept = owl_expression_to_dl(new_class_expression)
                         refined_features[str_dl_concept] = new_class_expression
 
@@ -427,8 +455,10 @@ class TDL_refinement(TDL):
                     for ind in individuals_for_e:
                         for v in self.per_individual_data_properties[ind][e.get_property()]:
                             for interval in refined_ranges:
+                                if (np.isnan(interval[0]) or np.isinf(interval[0])) or (np.isnan(interval[1]) or np.isinf(interval[1])):
+                                    continue
                                 if interval[0] <= v <= interval[1]:
-                                    new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), interval)
+                                    new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), interval, e.get_filler().get_facet_restrictions()[0].get_facet_value().get_datatype())
                                     string_dl_new_concept = owl_expression_to_dl(new_class_expression)
                                     individuals_to_refined_feature_mapping.setdefault(ind.str, set()).add(string_dl_new_concept)
                                     self.individuals_to_feature_mapping[ind.str].add(string_dl_new_concept)
@@ -562,7 +592,7 @@ class TDL_refinement(TDL):
         X_nf = np.array(X_nf)
         X_new = pd.DataFrame(data=X_nf, index=examples, columns=new_features_list)
         X = pd.concat([X, X_new], axis=1)
-        self.features = X.columns.to_list()
+        self.features = X.columns.tolist()
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
         return X
@@ -589,9 +619,10 @@ class TDL_refinement(TDL):
 
         if max_runtime is not None:
             self.max_runtime = max_runtime
-        self.concept_per_iteration = []
-        self.top_feature_dicts = []
-        self.initial_importance_dict = {}
+        if self.verbose >= 10:
+            self.concept_per_iteration = []
+            self.top_feature_dicts = []
+            self.initial_importance_dict = {}
 
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
@@ -612,11 +643,13 @@ class TDL_refinement(TDL):
         if self.verbose > 0:
             print("Training starts!")
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
-        self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+        if self.verbose >= 10:
+            self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
         if self.feature_refinement:
             tree_explainer = TreeExplainer(self.clf)
             sVal = tree_explainer.shap_values(self.X.values)
-            self.initial_importance_dict = self._get_shap_importance_dict(X)
+            if self.verbose >= 10:
+                self.initial_importance_dict = self._get_shap_importance_dict(X)
             # map individuals to additional data property features
             #refine base features here ( extract from data properties)
             dp_features:dict = dict()
@@ -625,8 +658,9 @@ class TDL_refinement(TDL):
             X = self._merge_binary_feature_matrices(learning_problem, X, dp_features, self.individuals_to_feature_mapping)
             self.X = X
             self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-            self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
-            self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+            if self.verbose >= 10:
+                self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+                self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
             topk = 30
             refined_expressions:Set[OWLClassExpression] = set()
             for i in range(1,self.refine_iterations):
@@ -650,9 +684,12 @@ class TDL_refinement(TDL):
                 X = self._merge_binary_feature_matrices(learning_problem, X, refined_features, refined_individuals_to_feature_mapping)
                 self.X = X
                 self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-                self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
-                self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
-            if self.plot_importance_evo:
+                
+                if self.verbose >= 10:
+                    self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+                    self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+
+            if self.plot_importance_evo and self.verbose >= 10:
                 self.plot_importance_evolution(self.initial_importance_dict, self.top_feature_dicts, top_k=10)
 
         if self.report_classification:
@@ -673,7 +710,7 @@ class TDL_refinement(TDL):
             plot_topk_feature_importance(
                 feature_names=[owl_expression_to_dl(f) for f in self.features],
                 cart_tree=self.clf,
-                topk=100,
+                topk=10,
             )
         perm_feature_topk = False
         if perm_feature_topk:
