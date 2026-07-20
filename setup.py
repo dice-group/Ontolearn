@@ -47,7 +47,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.6.3",
+    "owlapy @ git+https://github.com/dice-group/owlapy.git@class_generator_converter",
     "dicee==0.3.2",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
@@ -66,7 +66,9 @@ _deps = [
     "asciitree==0.3.3",
     "fitter>=1.7.0",
     "shap==0.49.1",
-    "more-itertools>=10.0.0"]
+    "more-itertools>=10.0.0",
+    "ordered-set>=4.1.0"
+]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
