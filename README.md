@@ -85,6 +85,21 @@ by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remai
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 
+### Other Algorithms
+
+We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+
+#### Drill
+
+Drill needs an embedding model for each knowledge base. 
+The models we used can be found at [DOI: 10.5281/zenodo.21457284](https://zenodo.org/records/21457284). 
+We also provide a pre-trained model for Drill [DOI: 10.5281/zenodo.21457432](https://zenodo.org/records/21457433)
+
+#### NCES2
+
+NCES2 needs a trained model for each knowledge base.
+The trained models we used can be found at [DOI: 10.5281/zenodo.21457609](https://zenodo.org/records/21457609).
+
 
 
 ## 3, Run Experiment II 
@@ -104,7 +119,23 @@ They are also included in this repository and can be found in the directory `lps
 The knowledge bases of the three QALD-based benchmarking datasets used in Experiment II 
 are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
 
-## 7. References
+### Other Algorithms
+
+Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+
+DRILL requires a knowledge graph embedding model for each knowledge base.
+The embedding models used in our experiments are provided by the previous
+paper[PruneCEL] and are available at
+[DOI: 10.5281/zenodo.14720609](https://doi.org/10.5281/zenodo.14720609).
+
+In addition, the pre-trained embedding model for DRILL used in the previous
+paper[PruneCEL] can be downloaded from
+[DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
+
+
+
+
+## 4. References
 
 [Ontolearn] Demir, Caglar, Alkid Baci, N'Dah Jean Kouagou, Leonie Nora Sieger, Stefan Heindorf, Simon Bin, Lukas Blübaum, Alexander Bigerl, and Axel-Cyrille Ngonga Ngomo.
 *Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python*. Journal of Machine Learning Research 26, no. 63 (2025): 1-6.
