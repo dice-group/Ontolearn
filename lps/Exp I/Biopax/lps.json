@@ -1,0 +1,2566 @@
+{
+   "problems": {
+      "(complex \u2293 (\u2200PMG.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref118",
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#modulation232",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant138",
+            "http://www.biopax.org/examples/glycolysis#modulation147",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#publicationXref14",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant177",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule111"
+         ]
+      },
+      "(complex \u2293 (\u2200DELTA-H.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule160",
+            "http://www.biopax.org/examples/glycolysis#modulation316",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#unificationXref199",
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#unificationXref70",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule178",
+            "http://www.biopax.org/examples/glycolysis#publicationXref222",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure135"
+         ]
+      },
+      "((\u2200PMG.Thing) \u2293 (complex \u2293 (\u2200STRUCTURE-FORMAT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex121"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#pathway305",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction205",
+            "http://www.biopax.org/examples/glycolysis#unificationXref146",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction297",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant195",
+            "http://www.biopax.org/examples/glycolysis#modulation314",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary40",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant159"
+         ]
+      },
+      "((\u2200PMG.Thing) \u2293 (complex \u2293 (\u2200TEMPERATURE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex121"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#publicationXref11",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary17",
+            "http://www.biopax.org/examples/glycolysis#modulation147",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant323",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant95",
+            "http://www.biopax.org/examples/glycolysis#modulation216",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant16"
+         ]
+      },
+      "((\u2200DELTA-H.Thing) \u2293 (complex \u2293 (\u2200STEP-INTERACTIONS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex121"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant65",
+            "http://www.biopax.org/examples/glycolysis#unificationXref25",
+            "http://www.biopax.org/examples/glycolysis#unificationXref213",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#protein66",
+            "http://www.biopax.org/examples/glycolysis#publicationXref193",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule62",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure88"
+         ]
+      },
+      "(relationshipXref \u2293 (\u2200SPONTANEOUS.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref214",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref169",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#unificationXref286",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule106",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant110",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule268",
+            "http://www.biopax.org/examples/glycolysis#publicationXref239",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#publicationXref322",
+            "http://www.biopax.org/examples/glycolysis#unificationXref182",
+            "http://www.biopax.org/examples/glycolysis#catalysis2"
+         ]
+      },
+      "(relationshipXref \u2293 (\u2200EXPERIMENTAL-FORM-TYPE.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref214",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref169",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#dataSource319",
+            "http://www.biopax.org/examples/glycolysis#publicationXref192",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant26",
+            "http://www.biopax.org/examples/glycolysis#unificationXref31",
+            "http://www.biopax.org/examples/glycolysis#unificationXref166",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure116",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant5",
+            "http://www.biopax.org/examples/glycolysis#unificationXref119",
+            "http://www.biopax.org/examples/glycolysis#unificationXref59",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#publicationXref94",
+            "http://www.biopax.org/examples/glycolysis#unificationXref167"
+         ]
+      },
+      "((\u2200SPONTANEOUS.Thing) \u2293 (relationshipXref \u2293 (\u2200LEFT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref214",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref169",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#publicationXref322",
+            "http://www.biopax.org/examples/glycolysis#unificationXref80",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule134",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant233",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure150",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71"
+         ]
+      },
+      "((\u2200SPONTANEOUS.Thing) \u2293 (relationshipXref \u2293 (\u2200K-PRIME.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref214",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref169",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#modulation136",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule86",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant16",
+            "http://www.biopax.org/examples/glycolysis#publicationXref294",
+            "http://www.biopax.org/examples/glycolysis#modulation317",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant76",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant180",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule229",
+            "http://www.biopax.org/examples/glycolysis#publicationXref243"
+         ]
+      },
+      "((\u2200EXPERIMENTAL-FORM-TYPE.Thing) \u2293 (relationshipXref \u2293 (\u2200STOICHIOMETRIC-COEFFICIENT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref214",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref169",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant120",
+            "http://www.biopax.org/examples/glycolysis#unificationXref211",
+            "http://www.biopax.org/examples/glycolysis#modulation153",
+            "http://www.biopax.org/examples/glycolysis#publicationXref10",
+            "http://www.biopax.org/examples/glycolysis#publicationXref3",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule111",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule234",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant29",
+            "http://www.biopax.org/examples/glycolysis#modulation316",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule185",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306"
+         ]
+      },
+      "(pathwayStep \u2293 (\u2200SOURCE.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref126",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#unificationXref129",
+            "http://www.biopax.org/examples/glycolysis#unificationXref79",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67",
+            "http://www.biopax.org/examples/glycolysis#unificationXref143",
+            "http://www.biopax.org/examples/glycolysis#modulation302",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant173",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant39"
+         ]
+      },
+      "(pathwayStep \u2293 (\u2200EXPERIMENTAL-FORM.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref117",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant300",
+            "http://www.biopax.org/examples/glycolysis#unificationXref256",
+            "http://www.biopax.org/examples/glycolysis#unificationXref227",
+            "http://www.biopax.org/examples/glycolysis#unificationXref68",
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction297",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant240",
+            "http://www.biopax.org/examples/glycolysis#publicationXref9"
+         ]
+      },
+      "((\u2200SOURCE.Thing) \u2293 (pathwayStep \u2293 (\u2200ID.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant180",
+            "http://www.biopax.org/examples/glycolysis#unificationXref144",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant289",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant217",
+            "http://www.biopax.org/examples/glycolysis#unificationXref146",
+            "http://www.biopax.org/examples/glycolysis#unificationXref272",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure20"
+         ]
+      },
+      "((\u2200SOURCE.Thing) \u2293 (pathwayStep \u2293 (\u2200FEATURE-TYPE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation318",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant315",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction13",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure157",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant303",
+            "http://www.biopax.org/examples/glycolysis#modulation216"
+         ]
+      },
+      "((\u2200EXPERIMENTAL-FORM.Thing) \u2293 (pathwayStep \u2293 (\u2200EC-NUMBER.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref187",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure179",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#unificationXref202",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant217",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule51",
+            "http://www.biopax.org/examples/glycolysis#publicationXref243",
+            "http://www.biopax.org/examples/glycolysis#unificationXref213"
+         ]
+      },
+      "(protein \u2293 (\u2200SEQUENCE-INTERVAL-BEGIN.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#protein66"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref25",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule149",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant85",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant114",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant173",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant110",
+            "http://www.biopax.org/examples/glycolysis#unificationXref279",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure157",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259"
+         ]
+      },
+      "(protein \u2293 (\u2200LEFT.Thing))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#protein66"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation153",
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary17",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#publicationXref8",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure28",
+            "http://www.biopax.org/examples/glycolysis#publicationXref280",
+            "http://www.biopax.org/examples/glycolysis#unificationXref87",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure219",
+            "http://www.biopax.org/examples/glycolysis#unificationXref127",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule106",
+            "http://www.biopax.org/examples/glycolysis#unificationXref199",
+            "http://www.biopax.org/examples/glycolysis#unificationXref126"
+         ]
+      },
+      "((\u2200SEQUENCE-INTERVAL-BEGIN.Thing) \u2293 (protein \u2293 (\u2200EVIDENCE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#protein66"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref212",
+            "http://www.biopax.org/examples/glycolysis#publicationXref3",
+            "http://www.biopax.org/examples/glycolysis#unificationXref68",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant240",
+            "http://www.biopax.org/examples/glycolysis#unificationXref103",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#unificationXref199",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule301",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure269",
+            "http://www.biopax.org/examples/glycolysis#unificationXref168",
+            "http://www.biopax.org/examples/glycolysis#modulation215"
+         ]
+      },
+      "((\u2200SEQUENCE-INTERVAL-BEGIN.Thing) \u2293 (protein \u2293 (\u2200EC-NUMBER.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#protein66"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#modulation158",
+            "http://www.biopax.org/examples/glycolysis#unificationXref272",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant154",
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure269",
+            "http://www.biopax.org/examples/glycolysis#unificationXref202",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure32",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant61",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#modulation310",
+            "http://www.biopax.org/examples/glycolysis#modulation314",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#unificationXref44"
+         ]
+      },
+      "((\u2200SEQUENCE-INTERVAL-BEGIN.interaction) \u2293 (protein \u2293 (\u2200EVIDENCE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#protein66"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant65",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#unificationXref166",
+            "http://www.biopax.org/examples/glycolysis#modulation206",
+            "http://www.biopax.org/examples/glycolysis#unificationXref44",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary40",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure230",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule111",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant180",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary17"
+         ]
+      },
+      "(complex \u2294 sequenceInterval)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex121"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure236",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule134",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant90",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule149",
+            "http://www.biopax.org/examples/glycolysis#modulation318",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15"
+         ]
+      },
+      "(sequenceInterval \u2294 (complex \u2293 (\u2200TITLE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure28",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule268",
+            "http://www.biopax.org/examples/glycolysis#publicationXref8",
+            "http://www.biopax.org/examples/glycolysis#publicationXref12",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#modulation152",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule155",
+            "http://www.biopax.org/examples/glycolysis#unificationXref78",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule234"
+         ]
+      },
+      "(sequenceInterval \u2294 (complex \u2293 (\u2200KEQ.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation215",
+            "http://www.biopax.org/examples/glycolysis#publicationXref222",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant312",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant177",
+            "http://www.biopax.org/examples/glycolysis#unificationXref126",
+            "http://www.biopax.org/examples/glycolysis#modulation216",
+            "http://www.biopax.org/examples/glycolysis#unificationXref117",
+            "http://www.biopax.org/examples/glycolysis#dataSource319",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#unificationXref81"
+         ]
+      },
+      "((complex \u2293 (\u2200TITLE.Thing)) \u2294 (sequenceInterval \u2293 (\u2203SEQUENCE-INTERVAL-END.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72",
+            "http://www.biopax.org/examples/glycolysis#unificationXref119",
+            "http://www.biopax.org/examples/glycolysis#unificationXref118",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule51",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant264",
+            "http://www.biopax.org/examples/glycolysis#modulation215",
+            "http://www.biopax.org/examples/glycolysis#publicationXref243",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure63"
+         ]
+      },
+      "((complex \u2293 (\u2200TITLE.Thing)) \u2294 (sequenceInterval \u2293 (\u2203URL.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule34",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure112",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#unificationXref81",
+            "http://www.biopax.org/examples/glycolysis#catalysis55"
+         ]
+      },
+      "((complex \u2293 (\u2200KEQ.Thing)) \u2294 (sequenceInterval \u2293 (\u2203CONTROLLER.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex265",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#complex139",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref101",
+            "http://www.biopax.org/examples/glycolysis#unificationXref78",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant133",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant90",
+            "http://www.biopax.org/examples/glycolysis#unificationXref124",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant26",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant177"
+         ]
+      },
+      "(dna \u2294 pathwayStep)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref235",
+            "http://www.biopax.org/examples/glycolysis#unificationXref168",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure112",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant114",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant162",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant154",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84"
+         ]
+      },
+      "(pathwayStep \u2294 (dna \u2293 (\u2203DELTA-H.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#unificationXref200",
+            "http://www.biopax.org/examples/glycolysis#unificationXref246",
+            "http://www.biopax.org/examples/glycolysis#unificationXref253",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure116",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#unificationXref271",
+            "http://www.biopax.org/examples/glycolysis#unificationXref103",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant114"
+         ]
+      },
+      "(pathwayStep \u2294 (dna \u2293 (\u2200CONTROLLED.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref68",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant250",
+            "http://www.biopax.org/examples/glycolysis#publicationXref94",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#modulation136",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant315",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#unificationXref79"
+         ]
+      },
+      "((dna \u2293 (\u2203DELTA-H.Thing)) \u2294 (pathwayStep \u2293 (\u2200DB-VERSION.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant114",
+            "http://www.biopax.org/examples/glycolysis#unificationXref270",
+            "http://www.biopax.org/examples/glycolysis#unificationXref156",
+            "http://www.biopax.org/examples/glycolysis#unificationXref81",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#modulation237",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure219",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant138",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164"
+         ]
+      },
+      "((dna \u2293 (\u2203DELTA-H.Thing)) \u2294 (pathwayStep \u2293 (\u2200TEMPERATURE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule27",
+            "http://www.biopax.org/examples/glycolysis#unificationXref202",
+            "http://www.biopax.org/examples/glycolysis#pathway305",
+            "http://www.biopax.org/examples/glycolysis#unificationXref199",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant162",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#unificationXref213",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84"
+         ]
+      },
+      "((dna \u2293 (\u2200CONTROLLED.Thing)) \u2294 (pathwayStep \u2293 (\u2200CELLULAR-LOCATION.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref145",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule6",
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#publicationXref203",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60",
+            "http://www.biopax.org/examples/glycolysis#unificationXref270",
+            "http://www.biopax.org/examples/glycolysis#publicationXref220",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure35"
+         ]
+      },
+      "(evidence \u2294 pathwayStep)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#publicationXref239",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction205",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule247",
+            "http://www.biopax.org/examples/glycolysis#unificationXref288",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#unificationXref100",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60"
+         ]
+      },
+      "(pathwayStep \u2294 (evidence \u2293 (\u2200ID.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#unificationXref197",
+            "http://www.biopax.org/examples/glycolysis#unificationXref245",
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#modulation215",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#unificationXref198",
+            "http://www.biopax.org/examples/glycolysis#unificationXref143",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259"
+         ]
+      },
+      "(pathwayStep \u2294 (evidence \u2293 (\u2200SEQUENCE-FEATURE-LIST.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref175",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#publicationXref203",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule58",
+            "http://www.biopax.org/examples/glycolysis#unificationXref151",
+            "http://www.biopax.org/examples/glycolysis#publicationXref192",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure176",
+            "http://www.biopax.org/examples/glycolysis#unificationXref246",
+            "http://www.biopax.org/examples/glycolysis#complex75"
+         ]
+      },
+      "((evidence \u2293 (\u2200ID.Thing)) \u2294 (pathwayStep \u2293 (\u2200IONIC-STRENGTH.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule304",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule178",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47",
+            "http://www.biopax.org/examples/glycolysis#publicationXref275",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule58",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200IONIC-STRENGTH.Thing)) \u2294 ((\u2200ID.Thing) \u2293 (evidence \u2293 (\u2200TEMPERATURE.Thing))))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule62",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure269",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule23",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure63",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant264"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200IONIC-STRENGTH.Thing)) \u2294 ((\u2200ID.Thing) \u2293 (evidence \u2293 (\u2200SEQUENCE-INTERVAL-END.Thing))))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref256",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#publicationXref239",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule23",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure186",
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule181",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure28"
+         ]
+      },
+      "(complexAssembly \u2294 pathwayStep)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant289",
+            "http://www.biopax.org/examples/glycolysis#unificationXref272",
+            "http://www.biopax.org/examples/glycolysis#modulation132",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure263",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure35",
+            "http://www.biopax.org/examples/glycolysis#unificationXref187",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure248"
+         ]
+      },
+      "(pathwayStep \u2294 (complexAssembly \u2293 (\u2200PATHWAY-COMPONENTS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction172",
+            "http://www.biopax.org/examples/glycolysis#unificationXref198",
+            "http://www.biopax.org/examples/glycolysis#unificationXref255",
+            "http://www.biopax.org/examples/glycolysis#protein251",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure24",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant154",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7"
+         ]
+      },
+      "(pathwayStep \u2294 (complexAssembly \u2293 (\u2200TISSUE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant97",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant33",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction113",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction205",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#publicationXref4",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule106",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule34",
+            "http://www.biopax.org/examples/glycolysis#unificationXref213"
+         ]
+      },
+      "((complexAssembly \u2293 (\u2200PATHWAY-COMPONENTS.Thing)) \u2294 (pathwayStep \u2293 (\u2200SPONTANEOUS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref168",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction113",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant228",
+            "http://www.biopax.org/examples/glycolysis#unificationXref146",
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#unificationXref126",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant97",
+            "http://www.biopax.org/examples/glycolysis#protein284"
+         ]
+      },
+      "((complexAssembly \u2293 (\u2200PATHWAY-COMPONENTS.Thing)) \u2294 (pathwayStep \u2293 (\u2200LEFT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation313",
+            "http://www.biopax.org/examples/glycolysis#unificationXref117",
+            "http://www.biopax.org/examples/glycolysis#publicationXref12",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#publicationXref192",
+            "http://www.biopax.org/examples/glycolysis#unificationXref145",
+            "http://www.biopax.org/examples/glycolysis#unificationXref100",
+            "http://www.biopax.org/examples/glycolysis#publicationXref170",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule234"
+         ]
+      },
+      "((complexAssembly \u2293 (\u2200TISSUE.Thing)) \u2294 (pathwayStep \u2293 (\u2200DELTA-G.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure93",
+            "http://www.biopax.org/examples/glycolysis#unificationXref117",
+            "http://www.biopax.org/examples/glycolysis#unificationXref127",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure35",
+            "http://www.biopax.org/examples/glycolysis#publicationXref322",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47"
+         ]
+      },
+      "(pathwayStep \u2294 rna)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#protein66",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#publicationXref8",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#unificationXref18"
+         ]
+      },
+      "(rna \u2294 (pathwayStep \u2293 (\u2200SPONTANEOUS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#modulation311",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#unificationXref168",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant250",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant74",
+            "http://www.biopax.org/examples/glycolysis#unificationXref271",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure28"
+         ]
+      },
+      "(rna \u2294 (pathwayStep \u2293 (\u2200PARTICIPANT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7",
+            "http://www.biopax.org/examples/glycolysis#unificationXref256",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule304",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure135",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant208",
+            "http://www.biopax.org/examples/glycolysis#publicationXref9",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200SPONTANEOUS.Thing)) \u2294 (rna \u2293 (\u2200PH.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure24",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure93",
+            "http://www.biopax.org/examples/glycolysis#unificationXref212",
+            "http://www.biopax.org/examples/glycolysis#unificationXref81",
+            "http://www.biopax.org/examples/glycolysis#unificationXref288",
+            "http://www.biopax.org/examples/glycolysis#complex241",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant85",
+            "http://www.biopax.org/examples/glycolysis#unificationXref79",
+            "http://www.biopax.org/examples/glycolysis#unificationXref278"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200SPONTANEOUS.Thing)) \u2294 (rna \u2293 (\u2200AVAILABILITY.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant323",
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#unificationXref99",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure186",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#unificationXref272",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#unificationXref202"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200PARTICIPANT.Thing)) \u2294 (rna \u2293 (\u2200STOICHIOMETRIC-COEFFICIENT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49",
+            "http://www.biopax.org/examples/glycolysis#modulation158",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant184",
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant289",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule218",
+            "http://www.biopax.org/examples/glycolysis#unificationXref167",
+            "http://www.biopax.org/examples/glycolysis#unificationXref69"
+         ]
+      },
+      "(catalysis \u2293 physicalInteraction)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule34",
+            "http://www.biopax.org/examples/glycolysis#unificationXref119",
+            "http://www.biopax.org/examples/glycolysis#unificationXref168",
+            "http://www.biopax.org/examples/glycolysis#modulation317",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant97",
+            "http://www.biopax.org/examples/glycolysis#publicationXref12",
+            "http://www.biopax.org/examples/glycolysis#unificationXref249",
+            "http://www.biopax.org/examples/glycolysis#modulation313",
+            "http://www.biopax.org/examples/glycolysis#protein42",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant140",
+            "http://www.biopax.org/examples/glycolysis#modulation147"
+         ]
+      },
+      "(physicalInteraction \u2293 (catalysis \u2293 (\u2200K-PRIME.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#unificationXref18",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#modulation317",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant289",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#unificationXref52",
+            "http://www.biopax.org/examples/glycolysis#pathway305",
+            "http://www.biopax.org/examples/glycolysis#unificationXref99",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure20",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction113"
+         ]
+      },
+      "(physicalInteraction \u2293 (catalysis \u2293 (\u2200LEFT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref246",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#publicationXref192",
+            "http://www.biopax.org/examples/glycolysis#publicationXref194",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure93",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant188",
+            "http://www.biopax.org/examples/glycolysis#publicationXref10",
+            "http://www.biopax.org/examples/glycolysis#unificationXref101",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant159",
+            "http://www.biopax.org/examples/glycolysis#unificationXref267",
+            "http://www.biopax.org/examples/glycolysis#unificationXref257"
+         ]
+      },
+      "(catalysis \u2293 (catalysis \u2293 (\u2200K-PRIME.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#modulation302",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure88",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure269",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule268",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant217",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule155",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant120",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure236",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant188",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295"
+         ]
+      },
+      "(control \u2293 (catalysis \u2293 (\u2200K-PRIME.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction13",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#unificationXref125",
+            "http://www.biopax.org/examples/glycolysis#unificationXref166",
+            "http://www.biopax.org/examples/glycolysis#unificationXref89",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant33",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#unificationXref224",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction205",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#unificationXref249"
+         ]
+      },
+      "(pathwayStep \u2294 transport)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#unificationXref286",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#unificationXref278",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant180",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant57",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction172",
+            "http://www.biopax.org/examples/glycolysis#publicationXref192",
+            "http://www.biopax.org/examples/glycolysis#unificationXref187"
+         ]
+      },
+      "(transport \u2294 (pathwayStep \u2293 (\u2200ORGANISM.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant283",
+            "http://www.biopax.org/examples/glycolysis#publicationXref94",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure88",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule155",
+            "http://www.biopax.org/examples/glycolysis#modulation136",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant228"
+         ]
+      },
+      "(transport \u2294 (pathwayStep \u2293 (\u2200PATHWAY-COMPONENTS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#unificationXref225",
+            "http://www.biopax.org/examples/glycolysis#modulation132",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure24",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant5",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule262",
+            "http://www.biopax.org/examples/glycolysis#modulation158",
+            "http://www.biopax.org/examples/glycolysis#unificationXref257",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule149"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200ORGANISM.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref143",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#unificationXref124",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant39",
+            "http://www.biopax.org/examples/glycolysis#publicationXref244",
+            "http://www.biopax.org/examples/glycolysis#unificationXref59",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref164",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287",
+            "http://www.biopax.org/examples/glycolysis#protein123"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200ORGANISM.Thing)) \u2294 (transport \u2293 (\u2200ID-VERSION.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant300",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction172",
+            "http://www.biopax.org/examples/glycolysis#unificationXref245",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant162",
+            "http://www.biopax.org/examples/glycolysis#openControlledVocabulary40",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200PATHWAY-COMPONENTS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#unificationXref70",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#unificationXref182",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#unificationXref151",
+            "http://www.biopax.org/examples/glycolysis#unificationXref25",
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#protein98"
+         ]
+      },
+      "(pathway \u2294 pathwayStep)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320",
+            "http://www.biopax.org/examples/glycolysis#pathway305"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant122",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule58",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule185",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#unificationXref70",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule247"
+         ]
+      },
+      "(pathwayStep \u2294 (pathway \u2293 (\u2200DATA-SOURCE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320",
+            "http://www.biopax.org/examples/glycolysis#pathway305"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex96",
+            "http://www.biopax.org/examples/glycolysis#publicationXref294",
+            "http://www.biopax.org/examples/glycolysis#publicationXref12",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#publicationXref243",
+            "http://www.biopax.org/examples/glycolysis#unificationXref144",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure35",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287"
+         ]
+      },
+      "(pathwayStep \u2294 (pathway \u2293 (\u2200STRUCTURE-DATA.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320",
+            "http://www.biopax.org/examples/glycolysis#pathway305"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref253",
+            "http://www.biopax.org/examples/glycolysis#unificationXref79",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant228",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#unificationXref255",
+            "http://www.biopax.org/examples/glycolysis#unificationXref69",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#dataSource319",
+            "http://www.biopax.org/examples/glycolysis#protein196",
+            "http://www.biopax.org/examples/glycolysis#unificationXref198"
+         ]
+      },
+      "(transport \u2294 (pathwayStep \u2293 (\u2200DB.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#publicationXref222",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure230",
+            "http://www.biopax.org/examples/glycolysis#modulation104",
+            "http://www.biopax.org/examples/glycolysis#publicationXref11",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure179",
+            "http://www.biopax.org/examples/glycolysis#unificationXref18",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant57"
+         ]
+      },
+      "(pathwayStep \u2294 transportWithBiochemicalReaction)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant33",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60",
+            "http://www.biopax.org/examples/glycolysis#unificationXref128",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule262",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure179",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant85"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200DB.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure269",
+            "http://www.biopax.org/examples/glycolysis#publicationXref203",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant95",
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure179",
+            "http://www.biopax.org/examples/glycolysis#modulation132",
+            "http://www.biopax.org/examples/glycolysis#modulation317"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200DELTA-G-PRIME-O.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref142",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule51",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant184",
+            "http://www.biopax.org/examples/glycolysis#unificationXref92",
+            "http://www.biopax.org/examples/glycolysis#publicationXref222"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200DB.Thing)) \u2294 (transportWithBiochemicalReaction \u2293 (\u2200ID.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref143",
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#complex191",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule247",
+            "http://www.biopax.org/examples/glycolysis#publicationXref193",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule174",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200DB.Thing)) \u2294 (transportWithBiochemicalReaction \u2293 (\u2200INTERACTION-TYPE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#modulation152",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant65",
+            "http://www.biopax.org/examples/glycolysis#publicationXref259",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule23",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure60",
+            "http://www.biopax.org/examples/glycolysis#modulation313"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200DELTA-G-PRIME-O.Thing)) \u2294 (transportWithBiochemicalReaction \u2293 (\u2200IONIC-STRENGTH.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction13",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#catalysis299",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#unificationXref167",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant188",
+            "http://www.biopax.org/examples/glycolysis#protein141",
+            "http://www.biopax.org/examples/glycolysis#unificationXref235"
+         ]
+      },
+      "(catalysis \u2294 experimentalForm)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule178",
+            "http://www.biopax.org/examples/glycolysis#modulation310",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure28",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule19",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#complex75",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#unificationXref249",
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#unificationXref119",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#unificationXref87",
+            "http://www.biopax.org/examples/glycolysis#modulation1"
+         ]
+      },
+      "(experimentalForm \u2294 (catalysis \u2293 (\u2200DELTA-H.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule301",
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant190",
+            "http://www.biopax.org/examples/glycolysis#unificationXref118",
+            "http://www.biopax.org/examples/glycolysis#unificationXref211",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant138",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure53",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant312",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule234",
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#unificationXref64",
+            "http://www.biopax.org/examples/glycolysis#unificationXref125",
+            "http://www.biopax.org/examples/glycolysis#unificationXref278"
+         ]
+      },
+      "(experimentalForm \u2294 (catalysis \u2293 (\u2200CONTROLLED.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule178",
+            "http://www.biopax.org/examples/glycolysis#bioSource43",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant283",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure88",
+            "http://www.biopax.org/examples/glycolysis#unificationXref166",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant312",
+            "http://www.biopax.org/examples/glycolysis#publicationXref275",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#unificationXref81",
+            "http://www.biopax.org/examples/glycolysis#modulation147",
+            "http://www.biopax.org/examples/glycolysis#unificationXref197",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref258",
+            "http://www.biopax.org/examples/glycolysis#protein196"
+         ]
+      },
+      "((catalysis \u2293 (\u2200DELTA-H.Thing)) \u2294 (experimentalForm \u2293 (\u2200SHORT-NAME.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant95",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule27",
+            "http://www.biopax.org/examples/glycolysis#unificationXref89",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#unificationXref92",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#publicationXref322",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant159",
+            "http://www.biopax.org/examples/glycolysis#unificationXref68",
+            "http://www.biopax.org/examples/glycolysis#unificationXref253",
+            "http://www.biopax.org/examples/glycolysis#unificationXref278",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure24",
+            "http://www.biopax.org/examples/glycolysis#unificationXref165",
+            "http://www.biopax.org/examples/glycolysis#unificationXref245"
+         ]
+      },
+      "((catalysis \u2293 (\u2200DELTA-H.Thing)) \u2294 (experimentalForm \u2293 (\u2200MOLECULAR-WEIGHT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure186",
+            "http://www.biopax.org/examples/glycolysis#unificationXref50",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant315",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant120",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule174",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule30",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant242",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule86",
+            "http://www.biopax.org/examples/glycolysis#protein221",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure219",
+            "http://www.biopax.org/examples/glycolysis#unificationXref255"
+         ]
+      },
+      "((catalysis \u2293 (\u2200CONTROLLED.Thing)) \u2294 (experimentalForm \u2293 (\u2200SEQUENCE-INTERVAL-BEGIN.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref45",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant315",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule115",
+            "http://www.biopax.org/examples/glycolysis#unificationXref235",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule301",
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#unificationXref211",
+            "http://www.biopax.org/examples/glycolysis#unificationXref52",
+            "http://www.biopax.org/examples/glycolysis#unificationXref118",
+            "http://www.biopax.org/examples/glycolysis#unificationXref50",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure53",
+            "http://www.biopax.org/examples/glycolysis#unificationXref44"
+         ]
+      },
+      "(pathwayStep \u2294 sequenceParticipant)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant281",
+            "http://www.biopax.org/examples/glycolysis#modulation310",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72",
+            "http://www.biopax.org/examples/glycolysis#unificationXref99",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure88",
+            "http://www.biopax.org/examples/glycolysis#modulation313",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285"
+         ]
+      },
+      "(sequenceParticipant \u2294 (pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis299",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction297",
+            "http://www.biopax.org/examples/glycolysis#modulation147",
+            "http://www.biopax.org/examples/glycolysis#modulation310",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant110",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule178",
+            "http://www.biopax.org/examples/glycolysis#modulation1",
+            "http://www.biopax.org/examples/glycolysis#modulation152"
+         ]
+      },
+      "(sequenceParticipant \u2294 (pathwayStep \u2293 (\u2200KEQ.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref41",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule181",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule23",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule301",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule30",
+            "http://www.biopax.org/examples/glycolysis#modulation104",
+            "http://www.biopax.org/examples/glycolysis#unificationXref166",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)) \u2294 (sequenceParticipant \u2293 (\u2200RIGHT.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant261",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant323",
+            "http://www.biopax.org/examples/glycolysis#modulation317",
+            "http://www.biopax.org/examples/glycolysis#protein290",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant105",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant195",
+            "http://www.biopax.org/examples/glycolysis#unificationXref79",
+            "http://www.biopax.org/examples/glycolysis#unificationXref117"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)) \u2294 (sequenceParticipant \u2293 (\u2200DELTA-G-PRIME-O.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure32",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure179",
+            "http://www.biopax.org/examples/glycolysis#unificationXref253",
+            "http://www.biopax.org/examples/glycolysis#unificationXref292",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#publicationXref9"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200KEQ.Thing)) \u2294 (sequenceParticipant \u2293 (\u2200STRUCTURE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant312",
+            "http://www.biopax.org/examples/glycolysis#complex273",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule301",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49",
+            "http://www.biopax.org/examples/glycolysis#complex282",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure150",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant140",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref285",
+            "http://www.biopax.org/examples/glycolysis#catalysis293"
+         ]
+      },
+      "(conversion \u2293 physicalInteraction)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction260",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction172",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction205",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction56",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction295",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction113",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction13",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction84",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction297"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#modulation147",
+            "http://www.biopax.org/examples/glycolysis#modulation298",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant312",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure53",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule72",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#unificationXref130",
+            "http://www.biopax.org/examples/glycolysis#catalysis2"
+         ]
+      },
+      "(experimentalForm \u2294 (catalysis \u2293 (\u2200PARTICIPANTS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#modulation216",
+            "http://www.biopax.org/examples/glycolysis#protein98",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant74",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref46",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref67",
+            "http://www.biopax.org/examples/glycolysis#publicationXref4",
+            "http://www.biopax.org/examples/glycolysis#unificationXref118",
+            "http://www.biopax.org/examples/glycolysis#unificationXref127",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule155",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule30",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant264",
+            "http://www.biopax.org/examples/glycolysis#unificationXref45"
+         ]
+      },
+      "((catalysis \u2293 (\u2200DELTA-H.Thing)) \u2294 (experimentalForm \u2293 (\u2200DB-VERSION.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#protein284",
+            "http://www.biopax.org/examples/glycolysis#unificationXref202",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref223",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant148",
+            "http://www.biopax.org/examples/glycolysis#publicationXref322",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure230",
+            "http://www.biopax.org/examples/glycolysis#modulation302",
+            "http://www.biopax.org/examples/glycolysis#unificationXref287",
+            "http://www.biopax.org/examples/glycolysis#publicationXref10",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant133",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131"
+         ]
+      },
+      "((catalysis \u2293 (\u2200DELTA-H.Thing)) \u2294 (experimentalForm \u2293 (\u2200SPONTANEOUS.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#catalysis189",
+            "http://www.biopax.org/examples/glycolysis#catalysis73",
+            "http://www.biopax.org/examples/glycolysis#catalysis2",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#catalysis321",
+            "http://www.biopax.org/examples/glycolysis#catalysis161",
+            "http://www.biopax.org/examples/glycolysis#catalysis293",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#catalysis109",
+            "http://www.biopax.org/examples/glycolysis#catalysis296",
+            "http://www.biopax.org/examples/glycolysis#catalysis55",
+            "http://www.biopax.org/examples/glycolysis#catalysis137",
+            "http://www.biopax.org/examples/glycolysis#catalysis207",
+            "http://www.biopax.org/examples/glycolysis#catalysis299"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule58",
+            "http://www.biopax.org/examples/glycolysis#complex38",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant190",
+            "http://www.biopax.org/examples/glycolysis#publicationXref11",
+            "http://www.biopax.org/examples/glycolysis#protein123",
+            "http://www.biopax.org/examples/glycolysis#publicationXref15",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure248",
+            "http://www.biopax.org/examples/glycolysis#unificationXref224",
+            "http://www.biopax.org/examples/glycolysis#publicationXref274",
+            "http://www.biopax.org/examples/glycolysis#modulation108",
+            "http://www.biopax.org/examples/glycolysis#unificationXref129",
+            "http://www.biopax.org/examples/glycolysis#modulation314",
+            "http://www.biopax.org/examples/glycolysis#unificationXref103",
+            "http://www.biopax.org/examples/glycolysis#publicationXref244"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200DELTA-G.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref127",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure116",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant177",
+            "http://www.biopax.org/examples/glycolysis#unificationXref50",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant29",
+            "http://www.biopax.org/examples/glycolysis#unificationXref78",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref131",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant281"
+         ]
+      },
+      "(transportWithBiochemicalReaction \u2294 (pathwayStep \u2293 (\u2200SEQUENCE-INTERVAL-END.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref101",
+            "http://www.biopax.org/examples/glycolysis#protein77",
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule23",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule262",
+            "http://www.biopax.org/examples/glycolysis#unificationXref47",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule185",
+            "http://www.biopax.org/examples/glycolysis#unificationXref80",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200DELTA-G.Thing)) \u2294 (transportWithBiochemicalReaction \u2293 (\u2200COFACTOR.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#smallMolecule58",
+            "http://www.biopax.org/examples/glycolysis#unificationXref69",
+            "http://www.biopax.org/examples/glycolysis#unificationXref182",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure112",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102",
+            "http://www.biopax.org/examples/glycolysis#protein163",
+            "http://www.biopax.org/examples/glycolysis#protein209",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction297",
+            "http://www.biopax.org/examples/glycolysis#unificationXref235"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200DELTA-G.Thing)) \u2294 (transportWithBiochemicalReaction \u2293 (\u2200CONFIDENCE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#unificationXref231",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant65",
+            "http://www.biopax.org/examples/glycolysis#unificationXref271",
+            "http://www.biopax.org/examples/glycolysis#unificationXref78",
+            "http://www.biopax.org/examples/glycolysis#unificationXref245",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant303",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant122",
+            "http://www.biopax.org/examples/glycolysis#protein277",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure230"
+         ]
+      },
+      "(pathwayStep \u2294 sequenceInterval)": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant228",
+            "http://www.biopax.org/examples/glycolysis#unificationXref253",
+            "http://www.biopax.org/examples/glycolysis#publicationXref4",
+            "http://www.biopax.org/examples/glycolysis#unificationXref49",
+            "http://www.biopax.org/examples/glycolysis#catalysis238",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant57",
+            "http://www.biopax.org/examples/glycolysis#unificationXref21",
+            "http://www.biopax.org/examples/glycolysis#publicationXref3",
+            "http://www.biopax.org/examples/glycolysis#unificationXref50"
+         ]
+      },
+      "(sequenceInterval \u2294 (pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant159",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure7",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#modulation313",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure263",
+            "http://www.biopax.org/examples/glycolysis#modulation104",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref291",
+            "http://www.biopax.org/examples/glycolysis#dataSource319"
+         ]
+      },
+      "(sequenceInterval \u2294 (pathwayStep \u2293 (\u2200STRUCTURE-DATA.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant283",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure186",
+            "http://www.biopax.org/examples/glycolysis#catalysis83",
+            "http://www.biopax.org/examples/glycolysis#unificationXref182",
+            "http://www.biopax.org/examples/glycolysis#biochemicalReaction172",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant16",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure32",
+            "http://www.biopax.org/examples/glycolysis#unificationXref254",
+            "http://www.biopax.org/examples/glycolysis#modulation298"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)) \u2294 (sequenceInterval \u2293 (\u2200CONFIDENCE-VALUE.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant264",
+            "http://www.biopax.org/examples/glycolysis#unificationXref156",
+            "http://www.biopax.org/examples/glycolysis#complex121",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant37",
+            "http://www.biopax.org/examples/glycolysis#unificationXref249",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant26",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule86",
+            "http://www.biopax.org/examples/glycolysis#modulation314",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref102"
+         ]
+      },
+      "((pathwayStep \u2293 (\u2200INTERACTION-TYPE.Thing)) \u2294 (sequenceInterval \u2293 (\u2200ID-VERSION.Thing)))": {
+         "positive_examples": [
+            "http://www.biopax.org/examples/glycolysis#pathwayStep204",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep307",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep171",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep107",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep306",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep82",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep54",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep309",
+            "http://www.biopax.org/examples/glycolysis#pathwayStep320"
+         ],
+         "negative_examples": [
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant177",
+            "http://www.biopax.org/examples/glycolysis#smallMolecule106",
+            "http://www.biopax.org/examples/glycolysis#dataSource319",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant154",
+            "http://www.biopax.org/examples/glycolysis#relationshipXref266",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant71",
+            "http://www.biopax.org/examples/glycolysis#modulation308",
+            "http://www.biopax.org/examples/glycolysis#physicalEntityParticipant180",
+            "http://www.biopax.org/examples/glycolysis#chemicalStructure32"
+         ]
+      }
+   }
+}

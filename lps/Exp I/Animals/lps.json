@@ -1,0 +1,49 @@
+{
+  "problems": {
+    "bird": {
+         "positive_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#eagle01",
+            "http://dl-learner.org/benchmark/dataset/animals#ostrich01",
+            "http://dl-learner.org/benchmark/dataset/animals#penguin01"
+         ],
+         "negative_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#dog01", "http://dl-learner.org/benchmark/dataset/animals#dolphin01", "http://dl-learner.org/benchmark/dataset/animals#platypus01", "http://dl-learner.org/benchmark/dataset/animals#bat01", "http://dl-learner.org/benchmark/dataset/animals#trout01", "http://dl-learner.org/benchmark/dataset/animals#herring01", "http://dl-learner.org/benchmark/dataset/animals#shark01", "http://dl-learner.org/benchmark/dataset/animals#lizard01", "http://dl-learner.org/benchmark/dataset/animals#croco01", "http://dl-learner.org/benchmark/dataset/animals#trex01", "http://dl-learner.org/benchmark/dataset/animals#turtle01"
+         ]
+      },
+      "Fish": {
+         "positive_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#trout01",
+            "http://dl-learner.org/benchmark/dataset/animals#herring01",
+            "http://dl-learner.org/benchmark/dataset/animals#shark01",
+            "http://dl-learner.org/benchmark/dataset/animals#eel01"
+         ],
+         "negative_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#dog01", "http://dl-learner.org/benchmark/dataset/animals#dolphin01", "http://dl-learner.org/benchmark/dataset/animals#platypus01", "http://dl-learner.org/benchmark/dataset/animals#bat01", "http://dl-learner.org/benchmark/dataset/animals#lizard01", "http://dl-learner.org/benchmark/dataset/animals#croco01", "http://dl-learner.org/benchmark/dataset/animals#trex01", "http://dl-learner.org/benchmark/dataset/animals#turtle01", "http://dl-learner.org/benchmark/dataset/animals#eagle01", "http://dl-learner.org/benchmark/dataset/animals#ostrich01", "http://dl-learner.org/benchmark/dataset/animals#penguin01"
+         ]
+      },
+      "mammal": {
+         "positive_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#dog01",
+            "http://dl-learner.org/benchmark/dataset/animals#dolphin01",
+            "http://dl-learner.org/benchmark/dataset/animals#platypus01",
+            "http://dl-learner.org/benchmark/dataset/animals#bat01"
+         ],
+         "negative_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#trout01", "http://dl-learner.org/benchmark/dataset/animals#herring01", "http://dl-learner.org/benchmark/dataset/animals#shark01", "http://dl-learner.org/benchmark/dataset/animals#lizard01", "http://dl-learner.org/benchmark/dataset/animals#croco01", "http://dl-learner.org/benchmark/dataset/animals#trex01", "http://dl-learner.org/benchmark/dataset/animals#turtle01", "http://dl-learner.org/benchmark/dataset/animals#eagle01", "http://dl-learner.org/benchmark/dataset/animals#ostrich01", "http://dl-learner.org/benchmark/dataset/animals#penguin01"
+         ]
+      },
+      "reptile": {
+         "positive_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#lizard01",
+            "http://dl-learner.org/benchmark/dataset/animals#croco01",
+            "http://dl-learner.org/benchmark/dataset/animals#trex01",
+            "http://dl-learner.org/benchmark/dataset/animals#snake01",
+            "http://dl-learner.org/benchmark/dataset/animals#turtle01"
+         ],
+         "negative_examples": [
+            "http://dl-learner.org/benchmark/dataset/animals#dog01", "http://dl-learner.org/benchmark/dataset/animals#dolphin01", "http://dl-learner.org/benchmark/dataset/animals#platypus01", "http://dl-learner.org/benchmark/dataset/animals#bat01", "http://dl-learner.org/benchmark/dataset/animals#trout01", "http://dl-learner.org/benchmark/dataset/animals#herring01", "http://dl-learner.org/benchmark/dataset/animals#shark01", "http://dl-learner.org/benchmark/dataset/animals#eagle01", "http://dl-learner.org/benchmark/dataset/animals#ostrich01", "http://dl-learner.org/benchmark/dataset/animals#penguin01"
+         ]
+      }
+  }
+}
+
