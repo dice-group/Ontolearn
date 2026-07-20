@@ -1,485 +1,151 @@
-[![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
-[![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
-[![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.10.0-blue)](https://pypi.org/project/ontolearn/0.10.0/)
-[![Docs](https://img.shields.io/badge/documentation-0.10.0-yellow)](https://dice-group.github.io/Ontolearn/)
-[![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/Ontolearn)
-&nbsp;
+# PruneCEL2: Scalable Concept Learning in ALCIQD
 
-![Ontolearn](docs/_static/images/Ontolearn_logo.png)
-
-# Ontolearn: Learning OWL Class Expressions
-
-*Ontolearn* is an open-source software library for learning owl class expressions at large scale.
-
-Given positive and negative [OWL named individual](https://www.w3.org/TR/owl2-syntax/#Individuals) examples
-$E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-syntax/#Class_Expressions) problem refers to the following supervised Machine Learning problem
-
-$$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
-
-To address this supervised learning problem, OntoLearn provides a diverse suite of learning algorithms, 
-including symbolic, neuro-symbolic, and deep learning-based approaches:
-- **TDL** &rarr; [Tree-based OWL Class Expression Learner for Large Graphs](https://rdcu.be/eJDlY)
-- **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
-- **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
-- **NCES2** &rarr; [Neural Class Expression Synthesis in $\mathcal{ALCHIQ^{(D)}}$](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
-- **ROCES** &rarr; [Robust Class Expression Synthesis in Description Logics via Iterative Sampling](https://www.ijcai.org/proceedings/2024/0479.pdf)
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
-- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
-- **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in $\mathcal{ALC}$](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
-- **OCEL** &rarr; A limited version of CELOE
-- **SPELL** &rarr; [SAT-Based PAC Learning of Description Logic Concepts](https://www.ijcai.org/proceedings/2023/0373.pdf)
-- **ALCSAT** &rarr; [SAT-Based Bounded Fitting for the Description Logic $\mathcal{ALC}$](https://arxiv.org/pdf/2507.21752)
-
-Find more in the [Documentation](https://dice-group.github.io/Ontolearn/).
-
-[DeepWiki](https://deepwiki.com/dice-group/Ontolearn) can also help you get started with Ontolearn.
+> **Acknowledgement** — This project is built upon the open-source framework [Ontolearn](https://github.com/dice-group/Ontolearn).  
+> We sincerely thank the Ontolearn development team for their excellent and highly readable codebase, which made this work possible.
 
 
-## Installation
 
-For CPU-only (recommended for most users):
-```shell
-pip install ontolearn --extra-index-url https://download.pytorch.org/whl/cpu
+## Overview
+
+This repository contains the supplementary material for the paper
+"PruneCEL2 in ALCIQD" 
+
+It provides:
+
+* The implementation of PruneCEL2, a scalable concept learning approach for
+  OWL class expressions in the description logic ALCIQD.
+* The learning problems and knowledge bases required to reproduce our experiments.
+* The configurations and scripts used for comparing PruneCEL2 with
+  state-of-the-art concept learning approaches.
+
+
+
+## 1. Repository Structure
+The following directories and files can be found within this project:
+```
+- pic:                   Pictures used in this README
+- lps:                   The learning problems of Experiment I and Experiment II in json format
+- examples:              Implementations and configurations of state-of-the-art concept learners used for comparison experiments.
+- pruneCEL2_ALCIQD:      The source code of PruneCEL2
 ```
 
-For NVIDIA CUDA-enabled GPUs (full installation):
+## 2. Running Experiments
+
+### Experiment Setup
+
+PruneCEL2 uses SPARQL queries to retrieve data from the underlying knowledge base. 
+For our experiments, we used the triple store [Tentris](https://github.com/dice-group/Tentris). However, the experiments can be run with any other triple store ([Fuseki](https://jena.apache.org/documentation/fuseki2/)).
+However, using a different triple store can lead to different results since PruneCEL2 moves a large amount of the work to the triple store, serving as oracle.
+
+For our experiments, you can find the implementations of the approaches CELOE, Drill, EvoLearner, NCES2, TDL, ALCSAT, and PruneCEL from the example dir, all implementations are provided by the Ontolearn project.[Ontolearn](https://github.com/dice-group/ontolearn) project. We refer to this project with respect to the execution of these approaches. During our experiments, CELOE, DRILL, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. However, the implementations of EvoLearner and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start. Note that we did not take this loading time into consideration when measuring the runtime of these approaches.
+
+
+## 3, Installation
+ from source:
+
 ```shell
-pip install ontolearn 
+git clone https://github.com/dice-group/Ontolearn.git
+conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
+#Install other dependencies
+pip install git+https://github.com/dice-group/owlapy@marked_entity_generator_converter
+# Unzip knowledge graphs and learning problems
+unzip KGs.zip && unzip LPs.zip
 ```
 
-or
+
+
+## 4, Run Experiment I 
+### Overview
+
+We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets Family, BioPax, Animal, Mutagenesis, Carcinogenesis, Lymphography, Nctrer, Premier League, Pyrimidine, Hepatitis, Mammographic and Suramin.
+The knowledge base and learning problems are provided by [SMLBench, Ontolearn, DLFoil].
+We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 60 seconds.
+
+### Learning problems
+
+The learning problems of the 12 benchmarking datasets used in Experiment I are 
+available from different sources. 10 out of the 12 learning problems are provided 
+by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remaining 
+2 learning problems can be downloaded using the following command:
+
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git 
-# To create a virtual python env with conda 
-conda create -n venv python=3.11 --no-default-packages && conda activate venv && pip install -e .
-# To download knowledge graphs
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
+```
+
+They are also included in this repository and can be found in the directory `lps/Exp I`.
+
+### Knowledge Bases
+
+The knowledge bases of the 12 benchmarking datasets used for experiment I are 
+available from different sources. 10 out of the 12 knowledge bases are provided 
+by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remaining 
+2 knowledge bases can be downloaded using the following command:
+
+```shell
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
-# To download learning problems
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
-```
-
-## Learning OWL Class Expressions
-```python
-from ontolearn.learners import TDL
-from ontolearn.triple_store import TripleStore
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.owl_individual import OWLNamedIndividual
-from owlapy import owl_expression_to_sparql, owl_expression_to_dl
-# (1) Initialize Triplestore or KnowledgeBase
-# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
-# Login http://localhost:3030/#/ with admin and pw123 and upload KGs/Family/family.owl
-# kb = TripleStore(url="http://localhost:3030/family")
-kb = KnowledgeBase(path="KGs/Family/father.owl")
-# (2) Initialize a learner.
-model = TDL(knowledge_base=kb, use_nominals=True)
-# (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
-                      neg={OWLNamedIndividual("http://example.com/father#heinz"),
-                           OWLNamedIndividual("http://example.com/father#anna"),
-                           OWLNamedIndividual("http://example.com/father#michelle")})
-# (4) Learn description logic concepts best fitting (3).
-h = model.fit(learning_problem=lp).best_hypotheses()
-print(h) 
-print(owl_expression_to_dl(h))
-print(owl_expression_to_sparql(expression=h)) 
-"""
-OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://example.com/father#','hasChild')),filler=OWLObjectOneOf((OWLNamedIndividual(IRI('http://example.com/father#','markus')),)))
-
-∃ hasChild.{markus}
-
-SELECT
- DISTINCT ?x WHERE { 
-?x <http://example.com/father#hasChild> ?s_1 . 
- FILTER ( ?s_1 IN ( 
-<http://example.com/father#markus>
- ) )
- }
-"""
-print(model.classification_report)
-"""
-Classification Report: Negatives: -1 and Positives 1 
-              precision    recall  f1-score   support
-
-    Negative       1.00      1.00      1.00         3
-    Positive       1.00      1.00      1.00         1
-
-    accuracy                           1.00         4
-   macro avg       1.00      1.00      1.00         4
-weighted avg       1.00      1.00      1.00         4
-"""
-```
-
-## Learning OWL Class Expressions over DBpedia
-```python
-from ontolearn.learners import TDL, Drill
-from ontolearn.triple_store import TripleStore
-from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.owl_individual import OWLNamedIndividual
-from owlapy import owl_expression_to_sparql, owl_expression_to_dl
-from ontolearn.utils.static_funcs import save_owl_class_expressions
-# (1) Initialize Triplestore
-kb = TripleStore(url="https://dbpedia.data.dice-research.org/sparql")
-# (3) Initialize a learner.
-model = Drill(knowledge_base=kb) #  or  TDL(knowledge_base=kb)
-# (4) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual("http://dbpedia.org/resource/Angela_Merkel")},
-                      neg={OWLNamedIndividual("http://dbpedia.org/resource/Barack_Obama")})
-# (5) Learn description logic concepts best fitting (4).
-h = model.fit(learning_problem=lp).best_hypotheses()
-print(h)
-print(owl_expression_to_dl(h))
-print(owl_expression_to_sparql(expression=h))
-save_owl_class_expressions(expressions=h,path="#owl_prediction")
-```
-
-Fore more please refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
-
-## ontolearn-webservice 
-
-<details><summary> Click me! </summary>
-
-The webservice exposes a lightweight HTTP/JSON API for running Ontolearn learners remotely. 
-Start it with a local knowledge base or a remote triplestore. 
-Submit learning problems as JSON to the `/cel` endpoint 
-(e.g., `POST http://<host>:8000/cel` with `pos`, `neg`, `model` 
-and optional parameters for the particular model like `path_embeddings`, `max_runtime`, etc.).
-The service returns learned OWL class expressions (DL and SPARQL/OWL serializations) 
-and performance metrics in the JSON response.
-
-### Local Dataset
-
-```shell
-ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
-```
-
-### Remote Dataset
-
-```shell
-ontolearn-webservice --endpoint_triple_store <your_triples_store_sparql_endpoint>
-```
-
-Some leads to hosting your own triplestore endpoint:
-- https://docs.tentris.io/binary/load.html
-- https://ontolearn-docs-dice-group.netlify.app/usage/04_knowledge_base#loading-and-launching-a-triplestore
-
-### Using the Webservice
-
-#### DRILL
-
-The below code trains DRILL with 6 randomly generated learning problems
-provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
-Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
-Finally, trained DRILL will learn an OWL class expression.
-```python
-import json
-import requests
-with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    learning_problems = json.load(json_file)["problems"]
-for str_target_concept, examples in learning_problems.items():
-    response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={"pos": examples['positive_examples'],
-                                  "neg": examples['negative_examples'],
-                                  "model": "Drill",
-                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-                                  "path_to_pretrained_drill": "pretrained_drill",
-                                  # if pretrained_drill exists, upload, otherwise train one and save it there
-                                  "num_of_training_learning_problems": 2,
-                                  "num_of_target_concepts": 3,
-                                  "max_runtime": 60000,  # seconds
-                                  "iter_bound": 1  # number of iterations/applied refinement opt.
-                                  })
-    print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
-```
-
-#### TDL
-
-TDL (a more scalable learner) can also be used as follows
-```python
-import json
-import requests
-response = requests.get('http://0.0.0.0:8000/cel',
-                        headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                        json={"pos": examples['positive_examples'],
-                              "neg": examples['negative_examples'],
-                              "model": "TDL"})
-print(response.json())
-```
-
-#### NCES
-
-NCES (another scalable learner). The following will first train NCES if the provided path `path_to_pretrained_nces` does not exist
-```python
-import json
-import requests
-with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    learning_problems = json.load(json_file)["problems"]
-## This trains NCES before solving the provided learning problems. Expect poor performance for this number of epochs, and this training data size.
-## If GPU is available, set `num_of_training_learning_problems` t0 10_000 or more. Set `nces_train_epochs` to 300 or more, and increase `nces_batch_size`.
-for str_target_concept, examples in learning_problems.items():
-    response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={"pos": examples['positive_examples'],
-                                  "neg": examples['negative_examples'],
-                                  "model": "NCES",
-                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-                                  "path_to_pretrained_nces": None,
-                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
-                                  "num_of_training_learning_problems": 100,
-                                  "nces_train_epochs": 5,
-                                  "nces_batch_size": 16
-                                  })
-    print(response.json())
-```
-
-Now this will use pretrained weights for NCES
-
-```python
-import json
-import requests
-with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    learning_problems = json.load(json_file)["problems"]
-for str_target_concept, examples in learning_problems.items():
-    response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={"pos": examples['positive_examples'],
-                                  "neg": examples['negative_examples'],
-                                  "model": "NCES",
-                                  "path_embeddings": "./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv",
-                                  "path_to_pretrained_nces": "./NCESData/mutagenesis/trained_models/",
-                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
-                                  "num_of_training_learning_problems": 100,
-                                  "nces_train_epochs": 5,
-                                  "nces_batch_size": 16
-                                  })
-    print(response.json())
-```
-
-</details>
-
-## Benchmark Results
-
-<details> <summary> To see the results </summary>
-
-```shell
-# To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
-```
-
-### 10-Fold Cross Validation Family Benchmark Results
-
-Here we apply 10-fold cross validation technique on each benchmark learning problem with max runtime of 60 seconds to measure the training and testing performance of learners.
-In the evaluation, from a given single learning problem (a set of positive and negative examples), a learner learns an OWL Class Expression (H) on a given 9 fold of positive and negative examples.
-To compute the training performance, We compute F1-score of H train positive and negative examples.
-To compute the test performance, we compute F1-score of H w.r.t. test positive and negative examples.
-  
-```shell
-# To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
-```
-
-You can also select specific learners by using the flag `--learner_types` followed by the learner short names separated by space. E.g., `--learner_types ocel drill tdl nces`
-
-In the following python script, the results are summarized and the markdown displayed below generated.
-```python
-import pandas as pd
-df=pd.read_csv("family_results.csv").groupby("LP").mean()
-print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')]].to_markdown(floatfmt=".3f"))
-```
-**Note that DRILL is untrained and we simply used accuracy driven heuristics to learn an OWL class expression.**
-
-Below, we report the average test F1 score and the average runtimes of learners.
-
-|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES | Test-F1-NCES2 | RT-NCES2 | Test-F1-ROCES | RT-ROCES | Test-F1-CLIP | RT-CLIP | Test-F1-NERO | RT-NERO | Test-F1-ALCSAT | RT-ALCSAT | Test-F1-SPELL | RT-SPELL |
-|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|--------------:|---------:|--------------:|---------:|-------------:|--------:|--------------|---------|----------------|-----------|---------------|----------|
-|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.805 |   0.632 |         0.812 |    1.136 |         0.812 |    1.119 |        0.855 |  14.059 | 0.834        | 0.095   | 1.000          | 0.618     | 0.690         | 4.121    |
-|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.608 |   0.628 |         0.680 |    1.177 |         0.695 |    1.086 |        0.779 |   9.050 | 0.704        | 0.113   | 1.000          | 0.749     | 0.715         | 5.346    |
-| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.507 |         1.000 |    0.955 |         1.000 |    0.917 |        1.000 |   0.639 | 1.000        | 0.092   | 1.000          | 0.081     | 1.000         | < 0.001  |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.505 |         0.947 |    0.944 |         0.927 |    0.924 |        1.000 |   0.746 | 1.000        | 0.101   | 1.000          | 0.144     | 1.000         | 0.002    |
-|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.947 |   0.633 |         0.933 |    1.323 |         0.947 |    1.306 |        1.000 |   0.817 | 0.980        | 0.065   | 0.980          | 0.141     | 0.980         | 0.003    |
-|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.909 |   0.598 |         0.931 |    1.171 |         0.931 |    1.146 |        1.000 |   0.939 | 0.980        | 0.095   | 1.000          | 0.171     | 1.000         | 0.003    |
-|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.854 |   0.538 |         0.891 |    0.948 |         0.891 |    0.905 |        0.928 |  17.682 | 0.881        | 0.098   | 0.985          | 0.609     | 0.890         | 3.297    |
-
-
-|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-NCES2 |   Train-F1-ROCES |   Train-F1-CLIP | Train-F1-NERO | Train-F1-ALCSAT | Train-F1-SPELL |
-|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|-----------------:|-----------------:|----------------:|---------------|-----------------|----------------|
-|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.759 |            0.804 |            0.804 |           0.918 | 0.828         | 1.000           | 0.756          |
-|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.680 |            0.696 |            0.728 |           0.798 | 0.702         | 1.000           | 0.720          |
-| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |            1.000 |            1.000 |           1.000 | 1.000         | 1.000           | 1.000          |
-|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.910 |            0.944 |            0.942 |           1.000 | 1.000         | 1.000           | 1.000          |
-|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.923 |            0.941 |            0.944 |           1.000 | 1.000         | 1.000           | 1.000          |
-|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.911 |            0.923 |            0.923 |           1.000 | 0.979         | 1.000           | 1.000          |
-|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.823 |            0.886 |            0.884 |           0.940 | 0.884         | 1.000           | 0.883          |
-
-
-### 10-Fold Cross Validation Mutagenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Mutagenesis/mutagenesis.owl --lps ./LPs/Mutagenesis/lps.json --path_of_nces_embeddings ./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report mutagenesis_results.csv 
-```
-
-| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-NCES2 |   Test-F1-NCES2 |   RT-NCES2 |   Train-F1-ROCES |   Test-F1-ROCES |   RT-ROCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
-|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|-----------------:|----------------:|-----------:|--------------:|-------------:|--------:|
-| NotKnown |         0.916 |        0.918 |  60.705 |          0.916 |         0.918 |   60.705 |        0.975 |       0.970 | 51.870 |          0.809 |         0.804 |   60.140 |        1.000 |       0.852 | 13.569 |           0.704 |          0.704 |     2.605 |            0.704 |           0.704 |      1.841 |            0.704 |           0.704 |      1.711 |         0.916 |        0.918 |   26.312|
-
-
-
-### 10-Fold Cross Validation Carcinogenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Carcinogenesis/carcinogenesis.owl --lps ./LPs/Carcinogenesis/lps.json --path_of_nces_embeddings ./NCESData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report carcinogenesis_results.csv 
-```
-
-| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-NCES2 |   Test-F1-NCES2 |   RT-NCES2 |   Train-F1-ROCES |   Test-F1-ROCES |   RT-ROCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
-|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|-----------------:|----------------:|-----------:|--------------:|-------------:|--------:|
-| NOTKNOWN |         0.737 |        0.711 |  62.048 |          0.740 |         0.701 |   62.048 |        0.822 |       0.628 | 64.508 |          0.740 |         0.707 |   60.120 |        1.000 |       0.616 |  5.196 |           0.709 |          0.709 |     2.718 |            0.705 |           0.704 |      1.912 |            0.705 |           0.704 |      1.774 |        0.740 |        0.701 |   48.475|
-
-
-### Benchmark Results on DBpedia. Results are based on the training examples only
-
-```shell
-python examples/owl_class_expression_learning_dbpedia.py --model Drill && python examples/owl_class_expression_learning_dbpedia.py --model TDL 
-```
-|           LP-Type         | Train-F1-Drill |   RT-Drill   |  Train-F1-TDL  |     RT-TDL    |
-|:--------------------------|---------------:|-------------:|---------------:|--------------:|
-|  OWLObjectAllValuesFrom   |          0.438 |  240.331     |          1.000 |       206.288 |
-|  OWLObjectIntersectionOf  |          0.213 |  202.558     |          0.717 |        91.660 |
-|  OWLObjectUnionOf         |          0.546 |  187.144     |          0.967 |       129.700 |
-
-</details>
-
-## Development
-
-
-<details> <summary> To see the results </summary>
-
-Creating a feature branch **refactoring** from development branch
-
-```shell
-git branch refactoring develop
-```
-
-Each feature branch must be merged to develop branch. To this end, the tests must run without a problem:
-```shell
-# To download knowledge graphs
-wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
-# To download learning problems
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
-# Download weights for some model for few tests
-wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip && unzip NCESData.zip && rm NCESData.zip
-wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip && unzip CLIPData.zip && rm CLIPData.zip 
-pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 
-</details>
 
-## References
-If you find our work useful in your research, please consider citing the respective paper:
-```
-# Ontolearn
-@article{demir2025ontolearn,
-  title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
-  author={Demir, Caglar and Baci, Alkid and Kouagou, N'Dah Jean and Sieger, Leonie Nora and Heindorf, Stefan and Bin, Simon and Bl{\"u}baum, Lukas and Bigerl, Alexander and Ngomo, Axel-Cyrille Ngonga},
-  journal={Journal of Machine Learning Research},
-  volume={26},
-  number={63},
-  pages={1--6},
-  year={2025}
-}
+## 3, Run Experiment II 
+### Overview
 
-# TDL
-@InProceedings{10.1007/978-3-032-06066-2_29,
-author={Demir, Caglar and Yekini, Moshood and R{\"o}der, Michael and Mahmood, Yasir and Ngonga Ngomo, Axel-Cyrille},
-editor={Ribeiro, Rita P. and Pfahringer, Bernhard and Japkowicz, Nathalie and Larra{\~{n}}aga, Pedro and Jorge, Al{\'i}pio M. and Soares, Carlos and Abreu, Pedro H. and Gama, Jo{\~a}o},
-title={Tree-Based OWL Class Expression Learner over Large Graphs},
-booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track},
-year={2026},
-publisher={Springer Nature Switzerland},
-address={Cham},
-pages={495--511},
-isbn={978-3-032-06066-2}
-}
+We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 3 QALD-based benchmarking datasets QALD10, QALD9+DB and QALD9+WK with the learning problems provided by [PruneCEL].
+We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 600 seconds.
 
-# ROCES
-@inproceedings{kouagou2024roces,
-  title     = {ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling},
-  author    = {Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-  booktitle = {Proceedings of the Thirty-Third International Joint Conference on
-               Artificial Intelligence, {IJCAI-24}},
-  publisher = {International Joint Conferences on Artificial Intelligence Organization},
-  editor    = {Kate Larson},
-  pages     = {4335--4343},
-  year      = {2024},
-  month     = {8},
-  note      = {Main Track},
-  doi       = {10.24963/ijcai.2024/479},
-  url       = {https://doi.org/10.24963/ijcai.2024/479},
-}
+### Learning problems
 
-# DRILL
-@inproceedings{demir2023drill,
-  author = {Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
-  booktitle = {The 32nd International Joint Conference on Artificial Intelligence, IJCAI 2023},
-  title = {Neuro-Symbolic Class Expression Learning},
-  url = {https://www.ijcai.org/proceedings/2023/0403.pdf},
- year={2023}
-}
+The learning problems of the three QALD-based datasets used in Experiment II are 
+available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
+They are also included in this repository and can be found in the directory `lps/Exp II`.
 
-# NCES2
-@inproceedings{kouagou2023nces2,
-author={Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-title={Neural Class Expression Synthesis in ALCHIQ(D)},
-url = {https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf},
-booktitle={Machine Learning and Knowledge Discovery in Databases},
-year={2023},
-publisher={Springer Nature Switzerland},
-address="Cham"
-}
+### Knowledge Bases
 
-# NCES
-@inproceedings{kouagou2023neural,
-  title={Neural class expression synthesis},
-  author={Kouagou, N’Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-  booktitle={European Semantic Web Conference},
-  pages={209--226},
-  year={2023},
-  publisher={Springer Nature Switzerland}
-}
+The knowledge bases of the three QALD-based benchmarking datasets used in Experiment II 
+are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
 
-# EvoLearner
-@inproceedings{heindorf2022evolearner,
-  title={Evolearner: Learning description logics with evolutionary algorithms},
-  author={Heindorf, Stefan and Bl{\"u}baum, Lukas and D{\"u}sterhus, Nick and Werner, Till and Golani, Varun Nandkumar and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-  booktitle={Proceedings of the ACM Web Conference 2022},
-  pages={818--828},
-  year={2022}
-}
+## 7. References
 
+[Ontolearn] Demir, Caglar, Alkid Baci, N'Dah Jean Kouagou, Leonie Nora Sieger, Stefan Heindorf, Simon Bin, Lukas Blübaum, Alexander Bigerl, and Axel-Cyrille Ngonga Ngomo.
+*Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python*. Journal of Machine Learning Research 26, no. 63 (2025): 1-6.
+Available at: https://www.jmlr.org/papers/v26/24-1113.html
 
-# CLIP
-@inproceedings{kouagou2022learning,
-  title={Learning Concept Lengths Accelerates Concept Learning in ALC},
-  author={Kouagou, N’Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-  booktitle={European Semantic Web Conference},
-  pages={236--252},
-  year={2022},
-  publisher={Springer Nature Switzerland}
-}
+[SMLBench] Westphal, Patrick, Lorenz Bühmann, Simon Bin, Hajira Jabeen, and Jens Lehmann.
+*SML-Bench–A benchmarking framework for structured machine learning*. Semantic Web 10, no. 2 (2019): 231-245. 
+Available at: https://journals.sagepub.com/doi/full/10.3233/SW-180308
 
-# NERO
-@InProceedings{10.1007/978-3-031-30047-9_9,
-author="Demir, Caglar and Ngonga Ngomo, Axel-Cyrille",
-title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
-booktitle="Advances in Intelligent Data Analysis XXI",
-year="2023",
-publisher="Springer Nature Switzerland",
-address="Cham",
-pages="103--115"
-}
+[PruneCEL] Zhang, Quannian, Michael Röder, Nikit Srivastava, N'Dah Jean Kouagou, and Axel-Cyrille Ngonga Ngomo. 
+*Explainable Benchmarking through the Lense of Concept Learning*. In Proceedings of the 13th Knowledge Capture Conference 2025, pp. 139-147. 2025. 
+Available at: https://dl.acm.org/doi/full/10.1145/3731443.3771359
 
-```
+[NCES2] N’Dah Jean Kouagou, Stefan Heindorf, Caglar Demir, and Axel-Cyrille Ngonga Ngomo.  
+*Neural Class Expression Synthesis in ALCHIQ(D) *. In Joint European Conference on Machine Learning and Knowledge Discovery in Databases. Cham: Springer Nature Switzerland, 2023. pp. 196–212.  
+Available at: https://link.springer.com/chapter/10.1007/978-3-031-43421-1_12
 
-In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
+[CELOE] Jens Lehmann, Sören Auer, Lorenz Bühmann, and Sebastian Tramp.  
+*Class expression learning for ontology engineering*. Journal of Web Semantics, 9(1):71–81, 2011.  
+https://doi.org/10.1016/j.websem.2011.01.001  
+Available at: https://www.sciencedirect.com/science/article/pii/S1570826811000023
+
+[Drill] Caglar Demir and Axel-Cyrille Ngonga Ngomo.  
+*Neuro-symbolic class expression learning*.  
+In *Proceedings of the Thirty-Second International Joint Conference on Artificial Intelligence (IJCAI '23)*, Macao, P.R. China, 2023.
+Available at: https://doi.org/10.24963/ijcai.2023/403
+
+[Evolearner] Stefan Heindorf, Lukas Blübaum, Nick Düsterhus, Till Werner, Varun Nandkumar Golani, Caglar Demir, and Axel-Cyrille Ngonga Ngomo.  
+*EvoLearner: Learning Description Logics with Evolutionary Algorithms*.  
+In *Proceedings of the ACM Web Conference 2022 (WWW '22)*, Virtual Event, Lyon, France, pp. 818–828. Association for Computing Machinery, New York, NY, USA, 2022.
+Available at: https://doi.org/10.1145/3485447.3511925
+
+[TDL] Demir, Caglar, Moshood Yekini, Michael Röder, Yasir Mahmood, and Axel-Cyrille Ngonga Ngomo
+*Tree-Based OWL Class Expression Learner over Large Graphs*. In Joint European Conference on Machine Learning and Knowledge Discovery in Databases, pp. 495-511. Cham: Springer Nature Switzerland, 2025. 
+Available at: https://link.springer.com/chapter/10.1007/978-3-032-06066-2_29
+
+[ALCSAT] Maurice Funk, Jean Christoph Jung, Tom Voellmer.  
+*SAT-Based Bounded Fitting for the Description Logic ALC*.  
+In *TInternational Semantic Web Conference 2025*, Springer Nature Switzerland, 2025. pp. 42-60
+Available at: https://link.springer.com/chapter/10.1007/978-3-032-09527-5_3
+
+[DLFoil] Fanizzi, Nicola, Giuseppe Rizzo, Claudia d’Amato, and Floriana Esposito.
+*DLFoil: Class expression learning revisited*. In European Knowledge Acquisition Workshop, pp. 98-113. Cham: Springer International Publishing, 2018.
+Available at: https://link.springer.com/chapter/10.1007/978-3-030-03667-6_7
