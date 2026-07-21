@@ -4,9 +4,9 @@
 # Please execute the following SPARQL update queries in the given order on a
 # triple store containing the loaded knowledge graph.
 #
-# Some inference rules (e.g., transitive properties, subclass propagation, and
-# domain/range inference) require iterative execution. Therefore, repeat the
-# update queries several times until no new triples are generated.
+# Some inference rules (e.g., transitive properties) require iterative execution. 
+# Therefore, repeat the update queries several times until no new triples are 
+# generated.
 #
 # Recommended execution order:
 # =============================================================================
