@@ -96,7 +96,8 @@ extras["min"] = deps_list(
     "asciitree",
     "fitter",
     "shap",
-    "more-itertools")
+    "more-itertools",
+    "ordered-set")
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
