@@ -347,7 +347,7 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
-    __slots__ = '_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+    __slots__ = '_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root', '_parent_ref', '__weakref__', 'instances'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None,
                  embeddings=None, is_root: bool = False, length=None):
