@@ -1,0 +1,141 @@
+# =============================================================================
+# Knowledge Graph Materialization
+# =============================================================================
+# Please execute the following SPARQL update queries in the given order on a
+# triple store containing the loaded knowledge graph.
+#
+# Some inference rules (e.g., transitive properties, subclass propagation, and
+# domain/range inference) require iterative execution. Therefore, repeat the
+# update queries several times until no new triples are generated.
+#
+# Recommended execution order:
+# =============================================================================
+1,  Insert default information
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT DATA {
+	owl:Class a owl:Class .
+	rdfs:Class a owl:Class .
+	owl:NamedIndividual a owl:Class .
+	rdf:type rdfs:range owl:Class .
+	rdfs:subClassOf a owl:TransitiveProperty;
+		rdfs:domain owl:Class;
+		rdfs:range owl:Class .
+};
+# =============================================================================
+2,  Add symmetric edges
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?o ?p ?s .
+} WHERE {
+	?p a/rdfs:subPropertyOf* owl:SymmetricProperty .
+	?s ?p ?o .
+};
+# =============================================================================
+3,  Add transitive edges
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?s ?p ?o .
+} WHERE {
+	?p a/rdfs:subPropertyOf* owl:TransitiveProperty .
+	?s ?p ?x .
+    ?x ?p ?o .
+};
+# =============================================================================
+4,  Make all super properties explicit
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?s ?p2 ?o .
+} WHERE {
+	?p rdfs:subPropertyOf+ ?p2 .
+	?s ?p ?o .
+};
+# =============================================================================
+5,  Add object property
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?p a owl:ObjectProperty .
+} WHERE {
+	SELECT ?p WHERE {
+		?s ?p ?o .
+    FILTER (!isLiteral(?o))
+	} GROUP BY ?p
+};
+# =============================================================================
+6,  Add datatype property
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?p a owl:DatatypeProperty .
+} WHERE {
+	SELECT ?p WHERE {
+		?s ?p ?o .
+		FILTER isLiteral(?o)
+	} GROUP BY ?p
+};
+# =============================================================================
+7,  Use domain and range knowledge
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+INSERT {
+	?s a ?c .
+} WHERE {
+	?p rdfs:domain ?c .
+	?s ?p ?o .
+};
+
+INSERT {
+	?o a ?c .
+} WHERE {
+	?p rdfs:range ?c .
+	?s ?p ?o .
+  FILTER (!isLiteral(?o))
+};
+# =============================================================================
+8,  Make all super classes explicit
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+INSERT {
+	?s a ?c2 .
+} WHERE {
+	?c rdfs:subClassOf+ ?c2 .
+	?s a ?c .
+};
+# =============================================================================
+9,  Add the owl:NamedIndividuals class
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+INSERT {
+  ?x a owl:NamedIndividual .
+}
+WHERE {
+  {
+    ?x ?p ?o .
+  }
+  UNION
+  {
+    ?s ?p ?x .
+  }
+
+  FILTER(isIRI(?x))
+  FILTER NOT EXISTS { ?x a owl:Class }
+  FILTER NOT EXISTS { ?x a owl:ObjectProperty }
+  FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
+  FILTER NOT EXISTS { ?x a owl:NamedIndividual }
+}
+
