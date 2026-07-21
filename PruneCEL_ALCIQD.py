@@ -352,51 +352,16 @@ class BeamSearchLearner:
 
 def main():
 
+    # load the knowledge base via triple store, give a endpoint
     print("Loading knowledge base...")
-    # kb = KnowledgeBase(path='/home/quannian/PycharmProjects/Explainable_QA_benchmarking/PruneCEL_python/LPs/Animals/animals.owl')
-
-    # Family 9080   F1:1.0 Done
-    # Mutagenesis 9010   F1:0.980 Done
-    # Carcinogenesis 9050   F1:0.75 Done
-    # lymphography 8080   F1:0.909 Done
-    # Nctrer 8050   F1:0.996 Done
-    # BioTax 8010   F1:1.0 Done
-    # Premierleague 7080   F1:0.988 Done
-    # Animals 7050    BUG
-    # Hepatitis 7010   F1:0.754 Done
-    # Mammographic 6080    F1: 0.794 Done
-    # Pyrimidine 6050   F1: 1.000 Done
-    # Suramin 6010
-
-    # QALD10 http://expl-gerbil-qa.cs.uni-paderborn.de:9010/sparql
-
-    ts = 'http://expl-gerbil-qa.cs.uni-paderborn.de:9070/sparql'
-
+    ts = 'http://example:9070/sparql'
     kb = TripleStore(url=ts)
+
+    # load the learning problems
     print("Loading learning problems...")
-
-
-    # LPs/QALD10/QALD10_TandF_MST5.json
-
-    # LPs/Family/lps_difficult.json
-    # LPs/Mutagenesis/lps.json
-    # LPs/Carcinogenesis/lps.json
-    # LPs/lymphography/lps.json
-    # LPs/Premierleague/lps.json
-    # LPs/Nctrer/lps.json
-    # LPs/Biopax/lps.json
-    # LPs/Pyrimidine/lps.json
-    # LPs/Hepatitis/lps.json
-    # LPs/Mammographic/lps.json
-    # LPs/Animals/lps.json
-    # LPs/BioTax/lps.json
-    # LPs/Suramin/lps.json
-
-    with open('/home/quannian/PycharmProjects/Explainable_QA_benchmarking/PruneCEL_python/LPs/QALD9WK/QALD9_wk_TandF_MST5.json', 'r') as f:
+    with open('lps/Exp II/QALD9WK/QALD9_wk_TandF_MST5.json', 'r') as f:
         lps = json.load(f)
 
-    # 'Aunt' or 'Uncle' or 'Cousin' or 'Grandgrandmother' or ' Grandgrandson' or 'Grandgrandfather' or 'Grandgranddaughter'
-    # 'NotKnown'
 
     for str_target_concept, examples in lps['problems'].items():
         pos = frozenset({OWLNamedIndividual(IRI.create(iri)) for iri in examples['positive_examples']})
@@ -409,30 +374,30 @@ def main():
         # Create refinement operator
         print("\nInitializing refinement operator...")
         operator = PruneCELBasedRefinement(
-            knowledge_base=kb,
-            sparql_endpoint=ts,
-            length_penalty=0.01,
-            enable_negation=True,
-            enable_inverse_roles=True,
-            enable_data_properties=True,
-            enable_qualified_cardinality=True
+            knowledge_base=kb,    # knowledge base endpoint
+            sparql_endpoint=ts,    # knowledge base endpoint
+            length_penalty=0.01,    # length penalty for heuristic
+            enable_negation=True,    # negation
+            enable_inverse_roles=True,    # inverse roles (I)
+            enable_data_properties=True,    # Domain (D)
+            enable_qualified_cardinality=True    # Quantifier cardinality restrictions(Q)
         )
 
         operator.set_input_examples(pos, neg)
 
         # Configure fragment collection thresholds
         if isinstance(operator, PruneCELBasedRefinement):
-            operator.precision_threshold = 1.0
-            operator.min_positive_coverage = 2
+            operator.precision_threshold = 1.0    # Precision
+            operator.min_positive_coverage = 2    # minimum number of positive examples covered by a fragment
             operator.min_positive_percentage = 0.1
 
 
         # Create learner
         learner = BeamSearchLearner(
-            kb=kb,
-            operator=operator,
-            time_limit=600,
-            length_penalty=0.01
+            kb=kb,    # knowledge base endpoint
+            operator=operator,    # Refinement operator
+            time_limit=600,    # time in second
+            length_penalty=0.01   # length penalty for heuristic
         )
 
         # Run learning with timing
