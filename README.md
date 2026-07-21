@@ -1,4 +1,4 @@
-# PruneCEL2: Scalable Concept Learning in ALCIQD
+# PruneCEL2: An Efficient Recursive Concept Learner for ALCIQ(D)
 
 > **Acknowledgement** — This project is built upon the open-source framework [Ontolearn](https://github.com/dice-group/Ontolearn).  
 > We sincerely thank the Ontolearn development team for their excellent and highly readable codebase, which made this work possible.
@@ -8,16 +8,15 @@
 ## Overview
 
 This repository contains the supplementary material for the paper
-"PruneCEL2 in ALCIQD" 
+"An Efficient Recursive Concept Learner for ALCIQ(D)" 
 
 It provides:
 
 * The implementation of PruneCEL2, a scalable concept learning approach for
-  OWL class expressions in the description logic ALCIQD.
+  OWL class expressions in the description logic ALCIQ(D).
+* The implementation of state-of-the-art concept learning approaches: 
+  CELOE, Drill, EvoLearner, NCES2, TDL, ALCSAT.
 * The learning problems and knowledge bases required to reproduce our experiments.
-* The configurations and scripts used for comparing PruneCEL2 with
-  state-of-the-art concept learning approaches.
-
 
 
 ## 1. Repository Structure
@@ -27,6 +26,7 @@ The following directories and files can be found within this project:
 - lps:                   The learning problems of Experiment I and Experiment II in json format
 - examples:              Implementations and configurations of state-of-the-art concept learners used for comparison experiments.
 - pruneCEL2_ALCIQD:      The source code of PruneCEL2
+- ontolearn:             Required dependency code from Ontolearn.
 ```
 
 ## 2. Running Experiments
@@ -34,10 +34,17 @@ The following directories and files can be found within this project:
 ### Experiment Setup
 
 PruneCEL2 uses SPARQL queries to retrieve data from the underlying knowledge base. 
-For our experiments, we used the triple store [Tentris](https://github.com/dice-group/Tentris). However, the experiments can be run with any other triple store ([Fuseki](https://jena.apache.org/documentation/fuseki2/)).
+For our experiments, we used the triple store [Tentris](https://github.com/dice-group/Tentris). 
+However, the experiments can be run with any other triple store ([Fuseki](https://jena.apache.org/documentation/fuseki2/)).
 However, using a different triple store can lead to different results since PruneCEL2 moves a large amount of the work to the triple store, serving as oracle.
+**Note:** Before running the experiments, the knowledge graph must be fully materialized in the triple store. 
 
-For our experiments, you can find the implementations of the approaches CELOE, Drill, EvoLearner, NCES2, TDL, ALCSAT, and PruneCEL from the example dir, all implementations are provided by the Ontolearn project.[Ontolearn](https://github.com/dice-group/ontolearn) project. We refer to this project with respect to the execution of these approaches. During our experiments, CELOE, DRILL, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. However, the implementations of EvoLearner and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start. Note that we did not take this loading time into consideration when measuring the runtime of these approaches.
+
+For the experiments, implementations of the compared approaches (CELOE, DRILL, EvoLearner, NCES2, TDL, and ALCSAT) are provided in the `examples` directory.
+All implementations are provided by the [Ontolearn](https://github.com/dice-group/ontolearn) project. 
+During our experiments, CELOE, DRILL, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. 
+However, the implementations of EvoLearner and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start.
+Note that we did not take this loading time into consideration when measuring the runtime of these approaches.
 
 
 ## 3. Installation
@@ -65,7 +72,8 @@ pip install -e .
 ## 4, Run Experiment I 
 ### Overview
 
-We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets Family, BioPax, Animal, Mutagenesis, Carcinogenesis, Lymphography, Nctrer, Premier League, Pyrimidine, Hepatitis, Mammographic and Suramin.
+We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets 
+Family, BioPax, Animal, Mutagenesis, Carcinogenesis, Lymphography, Nctrer, Premier League, Pyrimidine, Hepatitis, Mammographic and Suramin.
 The knowledge base and learning problems are provided by [SMLBench, Ontolearn, DLFoil].
 We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 60 seconds.
 
@@ -100,12 +108,15 @@ We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/
 #### Drill
 
 Drill needs an embedding model for each knowledge base. 
+
 The models we used can be found at [DOI: 10.5281/zenodo.21457284](https://zenodo.org/records/21457284). 
+
 We also provide a pre-trained model for Drill [DOI: 10.5281/zenodo.21457432](https://zenodo.org/records/21457433)
 
 #### NCES2
 
 NCES2 needs a trained model for each knowledge base.
+
 The trained models we used can be found at [DOI: 10.5281/zenodo.21457609](https://zenodo.org/records/21457609).
 
 
@@ -131,6 +142,7 @@ are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/147
 
 Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
 
+#### Drill
 DRILL requires a knowledge graph embedding model for each knowledge base.
 The embedding models used in our experiments are provided by the previous
 paper[PruneCEL] and are available at
@@ -139,7 +151,6 @@ paper[PruneCEL] and are available at
 In addition, the pre-trained embedding model for DRILL used in the previous
 paper[PruneCEL] can be downloaded from
 [DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
-
 
 
 
