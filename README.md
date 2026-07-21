@@ -25,7 +25,7 @@ The following directories and files can be found within this project:
 - pic:                   Pictures used in this README
 - lps:                   The learning problems of Experiment I and Experiment II in json format
 - examples:              Implementations and configurations of state-of-the-art concept learners used for comparison experiments.
-- pruneCEL2_ALCIQD:      The source code of PruneCEL2
+- PruneCEL_ALCIQD.py:    The source code of PruneCEL2
 - ontolearn:             Required dependency code from Ontolearn.
 ```
 
@@ -49,7 +49,7 @@ Note that we did not take this loading time into consideration when measuring th
 
 ## 3. Installation
 
-### Download the source code
+### 3.1 Download the source code
 
 The anonymized source code is available at:
 
@@ -57,7 +57,7 @@ https://anonymous.4open.science/r/Ontolearn-C58D
 
 Please download the repository as a ZIP archive from the anonymous repository page and extract it to a local directory.
 
-### Install from source
+### 3.2 Install from source
 
 After extracting the project, open a terminal in the project root directory and run:
 
@@ -70,14 +70,14 @@ pip install -e .
 
 
 ## 4, Run Experiment I 
-### Overview
+### 4.1 Overview
 
 We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets 
 Family, BioPax, Animal, Mutagenesis, Carcinogenesis, Lymphography, Nctrer, Premier League, Pyrimidine, Hepatitis, Mammographic and Suramin.
 The knowledge base and learning problems are provided by [SMLBench, Ontolearn, DLFoil].
 We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 60 seconds.
 
-### Learning problems
+### 4.2 Learning problems
 
 The learning problems of the 12 benchmarking datasets used in Experiment I are 
 available from different sources. 10 out of the 12 learning problems are provided 
@@ -90,7 +90,7 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 
 They are also included in this repository and can be found in the directory `lps/Exp I`.
 
-### Knowledge Bases
+### 4.3 Knowledge Bases
 
 The knowledge bases of the 12 benchmarking datasets used for experiment I are 
 available from different sources. 10 out of the 12 knowledge bases are provided 
@@ -101,9 +101,10 @@ by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remai
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 
-### Other Algorithms
+### 4.4 Other Algorithms
 
 We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+
 
 #### Drill
 
@@ -113,6 +114,7 @@ The models we used can be found at [DOI: 10.5281/zenodo.21457284](https://zenodo
 
 We also provide a pre-trained model for Drill [DOI: 10.5281/zenodo.21457432](https://zenodo.org/records/21457433)
 
+
 #### NCES2
 
 NCES2 needs a trained model for each knowledge base.
@@ -121,40 +123,49 @@ The trained models we used can be found at [DOI: 10.5281/zenodo.21457609](https:
 
 
 
-## 3, Run Experiment II 
-### Overview
+## 5, Run Experiment II 
+### 5.1 Overview
 
 We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 3 QALD-based benchmarking datasets QALD10, QALD9+DB and QALD9+WK with the learning problems provided by [PruneCEL].
 We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 600 seconds.
 
-### Learning problems
+### 5.2 Learning problems
 
 The learning problems of the three QALD-based datasets used in Experiment II are 
 available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
 They are also included in this repository and can be found in the directory `lps/Exp II`.
 
-### Knowledge Bases
+### 5.3 Knowledge Bases
 
 The knowledge bases of the three QALD-based benchmarking datasets used in Experiment II 
 are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
 
-### Other Algorithms
+For convenience, the authors of [PruneCEL] provide SPARQL endpoints for querying the 
+corresponding knowledge graphs:
+
+| Dataset | SPARQL Endpoint |
+|---|---|
+| QALD10 | http://expl-gerbil-qa.cs.uni-paderborn.de:9080/sparql |
+| QALD9+DB | http://expl-gerbil-qa.cs.uni-paderborn.de:9050/sparql |
+| QALD9+WK | http://expl-gerbil-qa.cs.uni-paderborn.de:9070/sparql |
+
+### 5.4 Other Algorithms
 
 Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
 
 #### Drill
 DRILL requires a knowledge graph embedding model for each knowledge base.
 The embedding models used in our experiments are provided by the previous
-paper[PruneCEL] and are available at
+paper [PruneCEL] and are available at:
 [DOI: 10.5281/zenodo.14720609](https://doi.org/10.5281/zenodo.14720609).
 
 In addition, the pre-trained embedding model for DRILL used in the previous
-paper[PruneCEL] can be downloaded from
+paper [PruneCEL] can be downloaded from:
 [DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
 
 
 
-## 4. References
+## 6. References
 
 [Ontolearn] Demir, Caglar, Alkid Baci, N'Dah Jean Kouagou, Leonie Nora Sieger, Stefan Heindorf, Simon Bin, Lukas Blübaum, Alexander Bigerl, and Axel-Cyrille Ngonga Ngomo.
 *Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python*. Journal of Machine Learning Research 26, no. 63 (2025): 1-6.
