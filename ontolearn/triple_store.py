@@ -469,7 +469,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
     #         print(self.query(sparql_query).text)
     #         raise RuntimeError
 
-    def instances(self, ce: OWLClassExpression, direct: bool = False, seen_set: Set = None) \
+    def instances(self, ce: OWLClassExpression, direct: bool = True, seen_set: Set = None) \
             -> Iterable[OWLNamedIndividual]:
         if not seen_set:
             seen_set = set()
