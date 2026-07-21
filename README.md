@@ -22,11 +22,11 @@ It provides:
 ## 1. Repository Structure
 The following directories and files can be found within this project:
 ```
-- pic:                   Pictures used in this README
 - lps:                   The learning problems of Experiment I and Experiment II in json format
 - examples:              Implementations and configurations of state-of-the-art concept learners used for comparison experiments.
 - PruneCEL_ALCIQD.py:    The source code of PruneCEL2
-- ontolearn:             Required dependency code from Ontolearn.
+- ontolearn:             The required dependency code from Ontolearn.
+- Update_Query.txt       The SPARQL update queries for materializing the knowledge graph in a triple store.
 ```
 
 ## 2. Running Experiments
@@ -37,7 +37,9 @@ PruneCEL2 uses SPARQL queries to retrieve data from the underlying knowledge bas
 For our experiments, we used the triple store [Tentris](https://github.com/dice-group/Tentris). 
 However, the experiments can be run with any other triple store ([Fuseki](https://jena.apache.org/documentation/fuseki2/)).
 However, using a different triple store can lead to different results since PruneCEL2 moves a large amount of the work to the triple store, serving as oracle.
-**Note:** Before running the experiments, the knowledge graph must be fully materialized in the triple store. 
+**Note:** Before running the experiments, the knowledge graph must be fully materialized 
+in the triple store. The required SPARQL update queries for materialization are provided 
+in the file `Update_Query.txt`.
 
 
 For the experiments, implementations of the compared approaches (CELOE, DRILL, EvoLearner, NCES2, TDL, and ALCSAT) are provided in the `examples` directory.
