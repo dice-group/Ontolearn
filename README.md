@@ -40,16 +40,24 @@ However, using a different triple store can lead to different results since Prun
 For our experiments, you can find the implementations of the approaches CELOE, Drill, EvoLearner, NCES2, TDL, ALCSAT, and PruneCEL from the example dir, all implementations are provided by the Ontolearn project.[Ontolearn](https://github.com/dice-group/ontolearn) project. We refer to this project with respect to the execution of these approaches. During our experiments, CELOE, DRILL, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. However, the implementations of EvoLearner and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start. Note that we did not take this loading time into consideration when measuring the runtime of these approaches.
 
 
-## 3, Installation
- from source:
+## 3. Installation
+
+### Download the source code
+
+The anonymized source code is available at:
+
+https://anonymous.4open.science/r/Ontolearn-C58D
+
+Please download the repository as a ZIP archive from the anonymous repository page and extract it to a local directory.
+
+### Install from source
+
+After extracting the project, open a terminal in the project root directory and run:
 
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git
-conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
-#Install other dependencies
-pip install git+https://github.com/dice-group/owlapy@marked_entity_generator_converter
-# Unzip knowledge graphs and learning problems
-unzip KGs.zip && unzip LPs.zip
+conda create -n venv python=3.10.14 --no-default-packages
+conda activate venv
+pip install -e .
 ```
 
 
