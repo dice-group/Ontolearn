@@ -55,7 +55,7 @@ Please download the repository as a ZIP archive from the anonymous repository pa
 After extracting the project, open a terminal in the project root directory and run:
 
 ```shell
-conda create -n venv python=3.10.14 --no-default-packages
+conda create -n venv python=3.11 --no-default-packages
 conda activate venv
 pip install -e .
 ```
