@@ -82,7 +82,7 @@ class BeamSearchLearner:
 
         # Q
         if isinstance(concept, (OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality)):
-            return 3 + self.concept_length(concept.get_filler())
+            return 2 + self.concept_length(concept.get_filler())
         # D
         if isinstance(concept, OWLDataSomeValuesFrom):
             return 2 + self.concept_length(concept.get_filler())
