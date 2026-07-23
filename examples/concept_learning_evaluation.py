@@ -14,7 +14,7 @@ import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import CELOE, OCEL
 from ontolearn.learners import EvoLearner
-from ontolearn.learners import Drill, TDL
+from ontolearn.learners import Drill, TDL, TDL_refinement
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -35,6 +35,10 @@ def dl_concept_learning(args):
     tdl = TDL(knowledge_base=KnowledgeBase(path=args.kb),
               kwargs_classifier={"random_state": 0},
               max_runtime=args.max_runtime)
+    tdl_refinement = TDL_refinement(knowledge_base=KnowledgeBase(path=args.kb),
+                                    kwargs_classifier={"random_state": 0},
+                                    max_runtime=args.max_runtime, topk=30, refine_iterations=3, feature_refinement=True, use_data_properties_numeric=True,
+                                    use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False)
     # dictionary to store the data
     data = dict()
     for str_target_concept, examples in settings['problems'].items():
@@ -110,6 +114,25 @@ def dl_concept_learning(args):
         data.setdefault("RT-TDL", []).append(rt_tdl)
         print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
         print(f"TDL Runtime: {rt_tdl:.3f}")
+
+        print("TDL refinement starts..", end="\t")
+        start_time = time.time()
+        # () Fit model training dataset
+        pred_tdl_refinement = tdl_refinement.fit(lp).best_hypotheses(n=1)
+        print("TDL refinement ends..", end="\t")
+        rt_tdl_refinement = time.time() - start_time
+
+        # () Quality on the training data
+        f1_tdl_refinement = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl_refinement)}),
+                                                   pos=lp.pos,
+                                                   neg=lp.neg)
+
+        data.setdefault("F1-TDL_refinement", []).append(f1_tdl_refinement)
+        data.setdefault("RT-TDL_refinement", []).append(rt_tdl_refinement)
+        print(f"TDL_refinement Quality: {f1_tdl_refinement:.3f}", end="\t")
+        print(f"TDL_refinement Runtime: {rt_tdl_refinement:.3f}")
+
+
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
