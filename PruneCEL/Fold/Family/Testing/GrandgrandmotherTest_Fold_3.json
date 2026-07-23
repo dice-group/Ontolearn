@@ -1,0 +1,14 @@
+{
+  "problems": {
+    "Grandgrandmother": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F3F46",
+        "http://www.benchmark.org/family#F3F41"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F10F174",
+        "http://www.benchmark.org/family#F7M102"
+      ]
+    }
+  }
+}

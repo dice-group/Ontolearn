@@ -1,0 +1,22 @@
+{
+  "problems": {
+    "Father": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F7M122",
+        "http://www.benchmark.org/family#F10M188",
+        "http://www.benchmark.org/family#F3M47",
+        "http://www.benchmark.org/family#F2M29",
+        "http://www.benchmark.org/family#F10M171",
+        "http://www.benchmark.org/family#F9M162"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F2F15",
+        "http://www.benchmark.org/family#F6F77",
+        "http://www.benchmark.org/family#F10M190",
+        "http://www.benchmark.org/family#F10F192",
+        "http://www.benchmark.org/family#F7M113",
+        "http://www.benchmark.org/family#F7F111"
+      ]
+    }
+  }
+}

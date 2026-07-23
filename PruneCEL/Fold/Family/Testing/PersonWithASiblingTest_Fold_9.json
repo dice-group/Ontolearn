@@ -1,0 +1,24 @@
+{
+  "problems": {
+    "PersonWithASibling": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F7F106",
+        "http://www.benchmark.org/family#F9F148",
+        "http://www.benchmark.org/family#F7M113",
+        "http://www.benchmark.org/family#F7M123",
+        "http://www.benchmark.org/family#F9F164",
+        "http://www.benchmark.org/family#F9F143",
+        "http://www.benchmark.org/family#F9F145"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F7F114",
+        "http://www.benchmark.org/family#F2M16",
+        "http://www.benchmark.org/family#F6F76",
+        "http://www.benchmark.org/family#F3F42",
+        "http://www.benchmark.org/family#F6M85",
+        "http://www.benchmark.org/family#F7M112",
+        "http://www.benchmark.org/family#F9F152"
+      ]
+    }
+  }
+}

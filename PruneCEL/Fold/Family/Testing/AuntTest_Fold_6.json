@@ -1,0 +1,18 @@
+{
+  "problems": {
+    "Aunt": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F7F116",
+        "http://www.benchmark.org/family#F6F91",
+        "http://www.benchmark.org/family#F7F126",
+        "http://www.benchmark.org/family#F3F53"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F4M59",
+        "http://www.benchmark.org/family#F9F164",
+        "http://www.benchmark.org/family#F4F55",
+        "http://www.benchmark.org/family#F9M170"
+      ]
+    }
+  }
+}

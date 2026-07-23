@@ -1,0 +1,20 @@
+{
+  "problems": {
+    "Son": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F9M167",
+        "http://www.benchmark.org/family#F8M134",
+        "http://www.benchmark.org/family#F10M183",
+        "http://www.benchmark.org/family#F10M197",
+        "http://www.benchmark.org/family#F6M71"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F9M142",
+        "http://www.benchmark.org/family#F6F83",
+        "http://www.benchmark.org/family#F7M109",
+        "http://www.benchmark.org/family#F9M149",
+        "http://www.benchmark.org/family#F9F152"
+      ]
+    }
+  }
+}

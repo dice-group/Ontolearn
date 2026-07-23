@@ -1,0 +1,50 @@
+{
+  "problems": {
+    "QALD10": {
+      "positive_examples": [
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q59",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q63",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q300",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q6",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q64",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q195",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q202",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q362",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q32",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q287",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q378",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q218",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q319",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q15",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q367",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q158",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q165",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q193",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q156",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q107",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q43",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q124",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q131",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q20",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q120",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q253",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q228",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q51",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q387",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q77",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q72",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q267",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q31",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q58"
+      ],
+      "negative_examples": [
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q346",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q260",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q254",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q324",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q261",
+        "https://github.com/KGQA/QALD-10/blob/main/data/qald_10/qald_10.json#Q67"
+      ]
+    }
+  }
+}

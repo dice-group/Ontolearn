@@ -1,0 +1,16 @@
+{
+  "problems": {
+    "Grandgrandson": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F7M113",
+        "http://www.benchmark.org/family#F7M131",
+        "http://www.benchmark.org/family#F6M99"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F6M85",
+        "http://www.benchmark.org/family#F7M115",
+        "http://www.benchmark.org/family#F3F53"
+      ]
+    }
+  }
+}

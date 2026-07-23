@@ -1,0 +1,16 @@
+{
+  "problems": {
+    "Brother": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F9M157",
+        "http://www.benchmark.org/family#F9M167",
+        "http://www.benchmark.org/family#F9M153"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F2F12",
+        "http://www.benchmark.org/family#F7M104",
+        "http://www.benchmark.org/family#F3M47"
+      ]
+    }
+  }
+}
