@@ -612,19 +612,30 @@ class TestTDLPerformance(unittest.TestCase):
 class TestPackDataProperty(unittest.TestCase):
     """Test packing data properties with ranges to DL concepts"""
     from owlapy.class_expression import OWLDataSomeValuesFrom, OWLDatatypeRestriction
+    from owlapy.owl_datatype import OWLDatatype
+    from owlapy.vocab import XSDVocabulary
     from owlapy.owl_property import OWLDataProperty
+    from owlapy.vocab import XSDVocabulary
     from owlapy import owl_expression_to_dl
 
     @classmethod
     def setUpClass(cls):
-        
+        from owlapy.owl_datatype import OWLDatatype
+        from owlapy.vocab import XSDVocabulary
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.NS = "http://www.benchmark.org/family#"
         cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
         cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
+        cls.model.data_property_datatype_dict = { cls.prop: OWLDatatype(XSDVocabulary.DOUBLE)}
+
+    def _use_datatype(self, vocab):
+        from owlapy.owl_datatype import OWLDatatype
+        self.model.data_property_datatype_dict[self.prop] = OWLDatatype(vocab)
  
     def test_pack_with_int_type_returns_some_values_from(self):
         from owlapy.class_expression import OWLDatatypeRestriction
+        from owlapy.vocab import XSDVocabulary
+        self._use_datatype(XSDVocabulary.INTEGER)
         expr = self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (10.7, 20.3), 5)  # type inferred from int sample value
         self.assertIsInstance(expr, OWLDataSomeValuesFrom)
@@ -633,6 +644,8 @@ class TestPackDataProperty(unittest.TestCase):
  
     def test_pack_int_type_coerces_bounds_to_int(self):
         """Integer datatype must truncate float bounds to ints."""
+        from owlapy.vocab import XSDVocabulary
+        self._use_datatype(XSDVocabulary.INTEGER)
         expr = self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (10.7, 20.3), 5)
         facets = expr.get_filler().get_facet_restrictions()
@@ -641,6 +654,8 @@ class TestPackDataProperty(unittest.TestCase):
         self.assertEqual(int(float(values[1])), 20)
  
     def test_pack_with_float_type_keeps_float_bounds(self):
+        from owlapy.vocab import XSDVocabulary
+        self._use_datatype(XSDVocabulary.FLOAT)
         expr = self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (10.5, 20.5), 3.14)
         facets = expr.get_filler().get_facet_restrictions()
@@ -648,18 +663,9 @@ class TestPackDataProperty(unittest.TestCase):
         self.assertAlmostEqual(values[0], 10.5)
         self.assertAlmostEqual(values[1], 20.5)
  
-    def test_pack_with_owl_datatype_passthrough(self):
-        from owlapy.owl_datatype import OWLDatatype
-
-        """Passing an OWLDatatype directly should be used as-is."""
-        from owlapy.vocab import OWLFacet, XSDVocabulary
-        dt = OWLDatatype(XSDVocabulary.DOUBLE)
-        expr = self.model._pack_data_property_with_range_to_dl_concept(
-            self.prop, (1.0, 2.0), dt)
-        facets = expr.get_filler().get_facet_restrictions()
-        self.assertEqual(facets[0].get_facet_value().get_datatype(), dt)
- 
     def test_pack_produces_min_and_max_facets(self):
+        from owlapy.vocab import XSDVocabulary
+        self._use_datatype(XSDVocabulary.INTEGER)
         expr = self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (1.0, 2.0), 1.0)
         facets = expr.get_filler().get_facet_restrictions()
@@ -667,6 +673,8 @@ class TestPackDataProperty(unittest.TestCase):
  
     def test_pack_is_deterministic(self):
         """Same inputs -> same DL string."""
+        from owlapy.vocab import XSDVocabulary
+        self._use_datatype(XSDVocabulary.INTEGER)
         from owlapy import owl_expression_to_dl
         e1 = self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (1.0, 2.0), 1.0)
@@ -760,13 +768,15 @@ class TestExtractRangesFromDataProperties(unittest.TestCase):
  
     @classmethod
     def setUpClass(cls):
+        from owlapy.owl_datatype import OWLDatatype
+        from owlapy.vocab import XSDVocabulary
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
         cls.NS = "http://www.benchmark.org/family#"
         cls.prop = OWLDataProperty(IRI.create(cls.NS + "hasAge"))
         cls.ind_a = OWLNamedIndividual(IRI.create(cls.NS + "anna"))
         cls.ind_b = OWLNamedIndividual(IRI.create(cls.NS + "bernd"))
- 
+        cls.model.data_property_datatype_dict = { cls.prop: OWLDatatype(XSDVocabulary.DOUBLE)}
     def test_empty_data_properties_returns_none_and_no_features(self):
         features = {}
         mapping = {}
@@ -815,6 +825,8 @@ class TestRefineNumericalFeatures(unittest.TestCase):
  
     @classmethod
     def setUpClass(cls):
+        from owlapy.owl_datatype import OWLDatatype
+        from owlapy.vocab import XSDVocabulary  
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, feature_refinement=True, refine_iterations=3, verbose=0)
         cls.NS = "http://www.benchmark.org/family#"
@@ -829,8 +841,13 @@ class TestRefineNumericalFeatures(unittest.TestCase):
         }
         cls.model.individuals_to_feature_mapping = {cls.ind.str: set()}
         cls.model.generated_dt_classexpressions_per_individual = {}
+        cls.model.data_property_datatype_dict = {
+        cls.prop: OWLDatatype(XSDVocabulary.DOUBLE),
+        }
  
     def _make_range_expr(self, lb, ub):
+        from owlapy.vocab import XSDVocabulary
+        
         return self.model._pack_data_property_with_range_to_dl_concept(
             self.prop, (lb, ub), 1.0)
  
