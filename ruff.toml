@@ -1,0 +1,7 @@
+line-length = 200
+
+[lint]
+# Pin the enforced rule set explicitly rather than relying on ruff's shipped
+# default, which changed drastically between 0.15.x and 0.16.0 (from ~60
+# rules to ~415) and broke CI without any code change on our side.
+select = ["E4", "E7", "E9", "F"]
