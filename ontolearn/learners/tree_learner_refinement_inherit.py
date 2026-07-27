@@ -97,6 +97,7 @@ class TDL_refinement(TDL):
         self.top_feature_dicts: List = list()
         self.initial_importance_dict: Dict = dict()
         self.use_data_properties = any([use_data_properties_numeric, use_data_properties_boolean, use_data_properties_string, use_data_properties_date])
+        self.data_property_datatype_dict: Dict[OWLDataProperty, OWLDatatype] = dict()
 
     def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple, type) -> str:
         """Repack the ranged data property into an DL Concept String"""
@@ -249,7 +250,7 @@ class TDL_refinement(TDL):
         numeric_ranges: bool = True,
     ):
         """Extract features based on data properties."""
-        self.data_property_datatype_dict: Dict[OWLDataProperty, OWLDatatype] = dict()
+        
         try:
             # Get data properties for this individual
             for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
