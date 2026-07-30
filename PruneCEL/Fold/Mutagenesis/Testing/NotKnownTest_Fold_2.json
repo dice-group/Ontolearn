@@ -1,0 +1,34 @@
+{
+  "problems": {
+    "NotKnown": {
+      "positive_examples": [
+        "http://dl-learner.org/mutagenesis#d101",
+        "http://dl-learner.org/mutagenesis#d166",
+        "http://dl-learner.org/mutagenesis#d71",
+        "http://dl-learner.org/mutagenesis#d115",
+        "http://dl-learner.org/mutagenesis#d106",
+        "http://dl-learner.org/mutagenesis#d157",
+        "http://dl-learner.org/mutagenesis#d32",
+        "http://dl-learner.org/mutagenesis#d83",
+        "http://dl-learner.org/mutagenesis#d137",
+        "http://dl-learner.org/mutagenesis#d23",
+        "http://dl-learner.org/mutagenesis#d93",
+        "http://dl-learner.org/mutagenesis#d149",
+        "http://dl-learner.org/mutagenesis#d165"
+      ],
+      "negative_examples": [
+        "http://dl-learner.org/mutagenesis#e12",
+        "http://dl-learner.org/mutagenesis#e21",
+        "http://dl-learner.org/mutagenesis#d2",
+        "http://dl-learner.org/mutagenesis#e4",
+        "http://dl-learner.org/mutagenesis#d38",
+        "http://dl-learner.org/mutagenesis#d130",
+        "http://dl-learner.org/mutagenesis#d147",
+        "http://dl-learner.org/mutagenesis#d116",
+        "http://dl-learner.org/mutagenesis#d98",
+        "http://dl-learner.org/mutagenesis#e25",
+        "http://dl-learner.org/mutagenesis#f4"
+      ]
+    }
+  }
+}

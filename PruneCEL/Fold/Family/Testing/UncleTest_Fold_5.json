@@ -1,0 +1,18 @@
+{
+  "problems": {
+    "Uncle": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F6M90",
+        "http://www.benchmark.org/family#F2M29",
+        "http://www.benchmark.org/family#F9M157",
+        "http://www.benchmark.org/family#F9M162"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F9F160",
+        "http://www.benchmark.org/family#F5M60",
+        "http://www.benchmark.org/family#F9F148",
+        "http://www.benchmark.org/family#F2M9"
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "problems": {
+    "NOTKNOWN": {
+      "positive_examples": [
+        "http://dl-learner.org/carcinogenesis#d228",
+        "http://dl-learner.org/carcinogenesis#d193",
+        "http://dl-learner.org/carcinogenesis#d239",
+        "http://dl-learner.org/carcinogenesis#d236",
+        "http://dl-learner.org/carcinogenesis#d141",
+        "http://dl-learner.org/carcinogenesis#d10"
+      ],
+      "negative_examples": [
+        "http://dl-learner.org/carcinogenesis#d154",
+        "http://dl-learner.org/carcinogenesis#d163",
+        "http://dl-learner.org/carcinogenesis#d128",
+        "http://dl-learner.org/carcinogenesis#d184",
+        "http://dl-learner.org/carcinogenesis#d121"
+      ]
+    }
+  }
+}

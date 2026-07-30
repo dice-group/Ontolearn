@@ -1,0 +1,22 @@
+{
+  "problems": {
+    "QALD9_plus_dbpedia": {
+      "positive_examples": [
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q164"
+      ],
+      "negative_examples": [
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q68",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q64",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q15",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q39",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q73",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q149",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q66",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q190",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q43",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q114",
+        "https://github.com/KGQA/QALD_9_plus/blob/main/data/qald_9_plus/qald_9_plus_dbpedia.json#Q37"
+      ]
+    }
+  }
+}

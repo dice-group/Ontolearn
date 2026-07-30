@@ -1,0 +1,14 @@
+{
+  "problems": {
+    "Grandgranddaughter": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F6F97",
+        "http://www.benchmark.org/family#F2F17"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F6M88",
+        "http://www.benchmark.org/family#F10F179"
+      ]
+    }
+  }
+}

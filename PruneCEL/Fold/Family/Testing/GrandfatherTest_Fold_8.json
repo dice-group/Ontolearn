@@ -1,0 +1,16 @@
+{
+  "problems": {
+    "Grandfather": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F7M122",
+        "http://www.benchmark.org/family#F3M43",
+        "http://www.benchmark.org/family#F3M45"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F10F175",
+        "http://www.benchmark.org/family#F6M73",
+        "http://www.benchmark.org/family#F9F148"
+      ]
+    }
+  }
+}

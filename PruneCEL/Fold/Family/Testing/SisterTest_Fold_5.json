@@ -1,0 +1,18 @@
+{
+  "problems": {
+    "Sister": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F9F141",
+        "http://www.benchmark.org/family#F3F52",
+        "http://www.benchmark.org/family#F2F15",
+        "http://www.benchmark.org/family#F7F127"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F9F168",
+        "http://www.benchmark.org/family#F9M153",
+        "http://www.benchmark.org/family#F6F82",
+        "http://www.benchmark.org/family#F8F133"
+      ]
+    }
+  }
+}

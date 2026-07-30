@@ -1,0 +1,26 @@
+{
+  "problems": {
+    "Cousin": {
+      "positive_examples": [
+        "http://www.benchmark.org/family#F9M161",
+        "http://www.benchmark.org/family#F10M183",
+        "http://www.benchmark.org/family#F10M188",
+        "http://www.benchmark.org/family#F2F30",
+        "http://www.benchmark.org/family#F2F15",
+        "http://www.benchmark.org/family#F7M123",
+        "http://www.benchmark.org/family#F10F177",
+        "http://www.benchmark.org/family#F6M81"
+      ],
+      "negative_examples": [
+        "http://www.benchmark.org/family#F6F93",
+        "http://www.benchmark.org/family#F10F195",
+        "http://www.benchmark.org/family#F3F42",
+        "http://www.benchmark.org/family#F4M57",
+        "http://www.benchmark.org/family#F8M134",
+        "http://www.benchmark.org/family#F9M142",
+        "http://www.benchmark.org/family#F2M11",
+        "http://www.benchmark.org/family#F9F168"
+      ]
+    }
+  }
+}
