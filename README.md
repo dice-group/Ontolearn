@@ -1,6 +1,6 @@
 # VOCEL — Value-oriented Class Expression Learning
 
-> **VOCEL is a concept-learning algorithms that use a lightweight
+> **VOCEL** is a concept-learning algorithms that use a lightweight
 > offline-trained **V-Network** to guide beam search, dramatically reducing the number
 > of concepts explored while maintaining high solution quality.
 
