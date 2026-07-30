@@ -124,11 +124,22 @@ class SATBaseLearner:
                 for ind in all_individuals:
                     if ind in self._owl_to_ind:
                         ind_idx = self._owl_to_ind[ind]
-                        # Get property values for this individual
-                        for value in self.reasoner.object_property_values(ind, prop):
-                            if value in self._owl_to_ind:
-                                value_idx = self._owl_to_ind[value]
-                                rn_ext[ind_idx].add((value_idx, prop_name))
+                        # Get property values for this individual.
+                        # Guard against malformed ontologies (e.g. cyclic subclass
+                        # definitions) where Owlready2 may return complex class
+                        # expressions (Or, And, …) instead of named individuals,
+                        # causing AttributeError: 'Or' object has no attribute 'iri'.
+                        try:
+                            values = list(self.reasoner.object_property_values(ind, prop))
+                        except AttributeError:
+                            continue
+                        for value in values:
+                            try:
+                                if value in self._owl_to_ind:
+                                    value_idx = self._owl_to_ind[value]
+                                    rn_ext[ind_idx].add((value_idx, prop_name))
+                            except (AttributeError, TypeError):
+                                pass
 
         # Create individual name mapping
         indmap = {ind.iri.as_str(): idx for ind, idx in self._owl_to_ind.items()}

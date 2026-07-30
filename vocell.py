@@ -273,16 +273,16 @@ class VOCELL:
         """Mean embedding from a collection of OWLNamedIndividual. Returns (1, 1, dim) tensor."""
         if self.df_embeddings is None:
             print("Warning: no embeddings DataFrame available — returning zero embedding")
-            return torch.zeros(1, 1, self.embedding_dim)
+            return torch.zeros(1, 1, self.embedding_dim, device=self.device)
         iris = [ind.str for ind in individuals]
         if not iris:
-            return torch.zeros(1, 1, self.embedding_dim)
+            return torch.zeros(1, 1, self.embedding_dim, device=self.device)
         valid = [i for i in iris if i in self.df_embeddings.index]
         if not valid:
-            return torch.zeros(1, 1, self.embedding_dim)
+            return torch.zeros(1, 1, self.embedding_dim, device=self.device)
         vals = self.df_embeddings.loc[valid].values
         emb = torch.from_numpy(vals.mean(axis=0)).float()
-        return emb.view(1, 1, self.embedding_dim)
+        return emb.view(1, 1, self.embedding_dim).to(self.device)
 
     def get_concept_embedding(self, concept: OWLClassExpression) -> Optional[torch.Tensor]:
         """Mean embedding of concept instances. Returns (1, 1, dim) tensor, or None if no embeddings.
@@ -306,9 +306,9 @@ class VOCELL:
         """Raw (K, dim) embedding matrix of concept instances, used by DeepSets / SetTransformer V-nets.
         Returns (0, dim) when no embeddings are available or the concept has no known instances."""
         if self.df_embeddings is None:
-            return torch.zeros(0, self.embedding_dim)
+            return torch.zeros(0, self.embedding_dim, device=self.device)
         iris = [ind.str for ind in self.get_instances(concept)]
-        return _get_inst_emb_mat(iris, self.df_embeddings)
+        return _get_inst_emb_mat(iris, self.df_embeddings).to(self.device)
 
     # ── V-learning ───────────────────────────────────
 
@@ -366,7 +366,7 @@ class VOCELL:
         concept_aggregators and store it in self.agg_v_net; self.v_net is left
         untouched so that online V-learning replay continues to work normally.
         """
-        ckpt     = torch.load(path, weights_only=True)
+        ckpt     = torch.load(path, weights_only=True, map_location=self.device)
         agg_type = ckpt.get('agg_type', 'mean')
 
         if agg_type == 'mean':
@@ -375,6 +375,7 @@ class VOCELL:
                 print("V-net not initialized (no embeddings provided).")
                 return
             self.v_net.load_state_dict(ckpt['model_state_dict'])
+            self.v_net.to(self.device)
             self.v_net_trained = ckpt.get('v_net_trained', True)
             self.v_net.eval()
             print(f"V-Net (mean) loaded ← {path}  (trained={self.v_net_trained})")
@@ -871,8 +872,8 @@ def main():
                         choices=['mean', 'deepsets', 'settransformer'],
                         help='Aggregation strategies to compare (space-separated).')
     parser.add_argument('--training_strategies', nargs='+', default=['loocv'],
-                        choices=['loocv', 'bootstrap'],
-                        help='Training strategies whose checkpoints to load.')
+                        help='Training strategies whose checkpoints to load '
+                             '("loocv", "bootstrap", or a full path to a .pt file).')
     parser.add_argument('--checkpoint_dir', default=None,
                         help=('Override checkpoint directory for all variants. '
                               'Default: Family_{agg_type} per aggregator '
@@ -886,6 +887,8 @@ def main():
                         help='Enable PruneCEL-R inline recursion for both baseline and V-Net runs.')
     parser.add_argument('--verbose', action='store_true',
                         help='Print per-depth beam-search details.')
+    parser.add_argument('--results_csv', default=None,
+                        help='If set, append per-LP results to this CSV file.')
     args = parser.parse_args()
 
     # ── Load KB & LP file ─────────────────────────────────────────────────────
@@ -1047,6 +1050,30 @@ def main():
             rts = agg_rt[label]
             print(f"  {label:<30} {_np.mean(f1s):>8.3f}  {_np.std(f1s):>8.3f}  {_np.mean(cts):>14.0f}  {_np.mean(rts):>12.1f}s  {sum(rts):>10.1f}s")
         print("=" * 110)
+
+    # ── Save results to CSV if requested ─────────────────────────────────────
+    if all_results and args.results_csv:
+        import csv as _csv
+        fieldnames = ["dataset", "lp_name", "target_concept", "agg_method",
+                      "f1", "concepts_explored", "runtime_s", "best_concept"]
+        write_header = not os.path.exists(args.results_csv)
+        with open(args.results_csv, 'a', newline='') as _cf:
+            writer = _csv.DictWriter(_cf, fieldnames=fieldnames)
+            if write_header:
+                writer.writeheader()
+            dataset_name = os.path.splitext(os.path.basename(args.kb))[0]
+            for r in all_results:
+                writer.writerow({
+                    "dataset":           dataset_name,
+                    "lp_name":           r["lp_name"],
+                    "target_concept":    r["lp_name"],
+                    "agg_method":        r["label"],
+                    "f1":                round(r["f1"], 4),
+                    "concepts_explored": r["concepts"],
+                    "runtime_s":         round(r["runtime"], 2),
+                    "best_concept":      r["concept"],
+                })
+        print(f"Results appended to {args.results_csv}")
 
     print("\n✓ Done!")
 

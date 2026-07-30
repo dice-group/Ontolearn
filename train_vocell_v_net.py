@@ -272,6 +272,7 @@ def train_v_net(
     print(f"{'Epoch':>6}  {'Loss':>10}  {'LR':>10}")
     print("-" * 32)
 
+    loss_history = []
     net.train()
     for epoch in range(1, epochs + 1):
         perm       = torch.randperm(N, device=device)
@@ -293,10 +294,11 @@ def train_v_net(
         avg = epoch_loss / max(steps, 1)
         sch.step(avg)
         current_lr = opt.param_groups[0]['lr']
+        loss_history.append({'epoch': epoch, 'loss': avg, 'lr': current_lr})
         print(f"{epoch:>6}  {avg:>10.6f}  {current_lr:>10.2e}")
 
     net.eval()
-    return net
+    return net, loss_history
 
 
 def train_v_net_agg(
@@ -322,15 +324,22 @@ def train_v_net_agg(
     import random as _random
     _random.seed(seed)
 
-    # Determine embedding dim from first available positive-example matrix
+    # Determine embedding dim from any available matrix.
+    # pos_mat / neg_mat / concept_mats may have 0 rows when none of the
+    # example IRIs appear in the embeddings CSV, but shape[1] (the dim) is
+    # always correct even for empty tensors.
     embedding_dim = None
-    for _, pos_mat, _, _ in lp_datasets_raw.values():
-        if pos_mat.shape[0] > 0:
-            embedding_dim = pos_mat.shape[1]
+    for concept_mats, pos_mat, neg_mat, _ in lp_datasets_raw.values():
+        for mat in [pos_mat, neg_mat] + list(concept_mats):
+            if mat.ndim == 2 and mat.shape[1] > 0:
+                embedding_dim = mat.shape[1]
+                break
+        if embedding_dim is not None:
             break
     if embedding_dim is None:
-        raise ValueError("All LP positive-example matrices are empty — "
-                         "cannot determine embedding_dim.")
+        raise ValueError("Could not determine embedding_dim — all matrices "
+                         "are empty. Check that the embeddings CSV covers "
+                         "the individuals in this dataset.")
 
     net = AggConceptVNet(embedding_dim, agg_type, device)
     opt = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=1e-5)
@@ -343,6 +352,7 @@ def train_v_net_agg(
     print(f"{'Epoch':>6}  {'Loss':>10}  {'LR':>10}")
     print("-" * 32)
 
+    loss_history = []
     for epoch in range(1, epochs + 1):
         net.train()
         epoch_loss = 0.0
@@ -370,10 +380,11 @@ def train_v_net_agg(
         avg        = epoch_loss / max(epoch_n, 1)
         sch.step(avg)
         current_lr = opt.param_groups[0]['lr']
+        loss_history.append({'epoch': epoch, 'loss': avg, 'lr': current_lr})
         print(f"{epoch:>6}  {avg:>10.6f}  {current_lr:>10.2e}")
 
     net.eval()
-    return net
+    return net, loss_history
 
 
 def build_bootstrap_datasets(
@@ -498,18 +509,18 @@ def train_bootstrap(
 
     if agg_type == 'mean':
         X, y   = data
-        net    = train_v_net(X, y, epochs=epochs, device=device, seed=seed)
+        net, loss_history = train_v_net(X, y, epochs=epochs, device=device, seed=seed)
         best_f1 = float(y.max()) if y.numel() > 0 else 0.0
     else:
         lp_datasets_raw = data
-        net    = train_v_net_agg(agg_type, lp_datasets_raw,
+        net, loss_history = train_v_net_agg(agg_type, lp_datasets_raw,
                                  epochs=epochs, device=device, seed=seed)
         best_f1 = max(
             (float(v[3].max()) for v in lp_datasets_raw.values() if v[3].numel() > 0),
             default=0.0,
         )
 
-    return net, best_f1
+    return net, best_f1, loss_history
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -574,8 +585,8 @@ def train_for_lp(lp_name, dataset, df, EPOCHS, DEVICE, agg_type='mean'):
         X = torch.cat(X_all, dim=0)
         y = torch.cat(y_all, dim=0)
 
-        net = train_v_net(X, y, epochs=EPOCHS, device=DEVICE)
-        return net, list(training_lps.keys()), float(y.max())
+        net, loss_history = train_v_net(X, y, epochs=EPOCHS, device=DEVICE)
+        return net, list(training_lps.keys()), float(y.max()), loss_history
 
     else:
         # ── DeepSets / SetTransformer path ─────────────────────────────────
@@ -598,8 +609,8 @@ def train_for_lp(lp_name, dataset, df, EPOCHS, DEVICE, agg_type='mean'):
             if y.numel() > 0:
                 best_f1_all = max(best_f1_all, float(y.max()))
 
-        net = train_v_net_agg(agg_type, lp_datasets_raw, epochs=EPOCHS, device=DEVICE)
-        return net, list(training_lps.keys()), best_f1_all
+        net, loss_history = train_v_net_agg(agg_type, lp_datasets_raw, epochs=EPOCHS, device=DEVICE)
+        return net, list(training_lps.keys()), best_f1_all, loss_history
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -709,7 +720,7 @@ def main():
             print(f"Held-out LP: {lp_name}")
             print("=" * 60)
 
-            net, training_lps, best_f1 = train_for_lp(
+            net, training_lps, best_f1, loss_history = train_for_lp(
                 lp_name, dataset, df, EPOCHS, DEVICE, agg_type=AGG_TYPE
             )
             save_path = os.path.join(output_dir, f'vocell_v_net_{lp_name}_{AGG_TYPE}.pt')
@@ -722,14 +733,18 @@ def main():
                 'training_lps':        training_lps,
                 'best_f1_in_training': best_f1,
             }, save_path)
+            loss_path = save_path.replace('.pt', '_loss.json')
+            with open(loss_path, 'w') as _f:
+                json.dump(loss_history, _f, indent=2)
             print(f"Saved → {save_path}")
+            print(f"Saved → {loss_path}")
 
     else:
         # ── Bootstrap: one shared checkpoint ─────────────────
         n = len(all_lp_names)
         print(f"Strategy: Bootstrap  ({n} LP{'s' if n != 1 else ''})")
 
-        net, best_f1 = train_bootstrap(
+        net, best_f1, loss_history = train_bootstrap(
             dataset, all_lp_names, df, EPOCHS, DEVICE,
             agg_type       = AGG_TYPE,
             sample_lp_frac = SAMPLE_LP_FRAC,
@@ -748,7 +763,11 @@ def main():
             'n_rounds':            N_BOOTSTRAP_ROUNDS,
             'best_f1_in_training': best_f1,
         }, save_path)
+        loss_path = save_path.replace('.pt', '_loss.json')
+        with open(loss_path, 'w') as _f:
+            json.dump(loss_history, _f, indent=2)
         print(f"Saved → {save_path}")
+        print(f"Saved → {loss_path}")
 
 
 if __name__ == '__main__':
