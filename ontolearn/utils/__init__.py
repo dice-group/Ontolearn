@@ -36,6 +36,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
 import pandas as pd
 from .static_funcs import compute_f1_score, f1_set_similarity, concept_reducer, concept_reducer_properties
+from ._lazy_owlready2 import import_owlready2  # noqa: F401
 
 Factory = Callable
 from typing import Set

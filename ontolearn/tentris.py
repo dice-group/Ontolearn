@@ -37,7 +37,8 @@ from owlapy.owl_axiom import OWLDataPropertyRangeAxiom, OWLObjectPropertyRangeAx
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_object import OWLEntity
-from owlapy.owl_ontology import OWLOntology, OWLOntologyID, _M
+from owlapy.abstracts import AbstractOWLOntology
+from owlapy.owl_ontology import OWLOntologyID
 from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectProperty, OWLDataProperty
 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -51,7 +52,7 @@ from ontolearn.utils import oplogging, Factory
 from ontolearn.base.ext import OWLReasonerEx
 from ontolearn.base import OntologyManager, OntologyReasoner
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
-from owlapy.util import LRUCache
+from owlapy.utils import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ class EncodedPosNegLPStandardTentris(EncodedPosNegLPStandardKind):
         return f'EncodedPosNegLPStandardTentris(id={self.id})'
 
 
-class TentrisOntology(OWLOntology):
+class TentrisOntology(AbstractOWLOntology):
     __slots__ = '_path', '_endpoint_url', '_backing_mgr', '_backing_onto', '_endpoint_timeout'
 
     def __init__(self, path: str, endpoint_url: str, timeout: float):
@@ -130,7 +131,7 @@ class TentrisOntology(OWLOntology):
         logger.debug("Calling object_property_range_axioms from backing onto")
         yield from self._backing_onto.object_property_range_axioms(property)
 
-    def get_owl_ontology_manager(self) -> _M:
+    def get_owl_ontology_manager(self) -> OntologyManager:
         raise NotImplementedError
 
     def get_ontology_id(self) -> OWLOntologyID:
