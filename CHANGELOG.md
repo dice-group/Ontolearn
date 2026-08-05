@@ -11,6 +11,12 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Removed
+- `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
+  else in the codebase. It imported `ontolearn.base`, a module removed back
+  in the owlapy 1.1.0 migration, so it hadn't been importable for a long
+  time. (#599)
+
 ### Added
 - Example for generating learning problems with numeric data properties
   (`examples/generate_numeric_lps.py`). (#593)
