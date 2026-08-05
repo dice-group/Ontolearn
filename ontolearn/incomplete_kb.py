@@ -21,9 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-from owlready2 import *
 import random
 from typing import Set
+
+from ontolearn.utils import import_owlready2
 
 
 def make_kb_incomplete_ass(kb_path, output_path, rate, seed):
@@ -46,9 +47,11 @@ def make_kb_incomplete_ass(kb_path, output_path, rate, seed):
 
     random.seed(seed)
 
+    owlready2 = import_owlready2()
+
     # Load the ontology
-    kb = get_ontology(kb_path).load()
-    
+    kb = owlready2.get_ontology(kb_path).load()
+
     # Get all individuals in the ontology
     all_individuals = list(kb.individuals())
     
@@ -98,21 +101,23 @@ def make_kb_incomplete(kb_path, output_path, rate, seed)-> Set[str]:
 
     random.seed(seed)
 
+    owlready2 = import_owlready2()
+
     # Load the ontology
-    kb = get_ontology(kb_path).load()
-    
+    kb = owlready2.get_ontology(kb_path).load()
+
     # Get all individuals (instances) in the ABox
     all_individuals = list(kb.individuals())
-    
+
     # Calculate the number of individuals to remove based on the rate
     num_to_remove = int(len(all_individuals) * (rate / 100))
-    
+
     # Randomly select individuals to remove
     individuals_to_remove = random.sample(all_individuals, num_to_remove)
-    
+
     # Remove the selected individuals
     for individual in individuals_to_remove:
-        destroy_entity(individual)
+        owlready2.destroy_entity(individual)
     
     # Save the modified ontology to a new file
     kb.save(file=output_path, format="rdfxml")
@@ -132,9 +137,11 @@ def make_kb_inconsistent(kb_path, output_path, rate, seed, max_attempts=100):
     
     # Set the random seed for reproducibility
     random.seed(seed)
-    
+
+    owlready2 = import_owlready2()
+
     # Load the ontology
-    onto = get_ontology(kb_path).load()
+    onto = owlready2.get_ontology(kb_path).load()
 
     # Get all individuals, classes, and properties
     all_individuals = list(onto.individuals())

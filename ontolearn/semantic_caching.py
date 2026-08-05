@@ -47,12 +47,14 @@ from owlapy import owl_expression_to_dl
 from itertools import chain
 import os
 import random
+import re
 import itertools
-from owlready2 import *
 from collections import OrderedDict
 from owlapy.owl_reasoner import SyncReasoner
 import pickle
 from tqdm import tqdm
+
+from ontolearn.utils import import_owlready2
 
 
 def concept_generator(path_kg):
@@ -320,7 +322,7 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
         # Load ontology and individuals if not already cached
         path_onto = args[1]
         if path_onto not in loaded_ontologies:
-            loaded_ontologies[path_onto] = get_ontology(path_onto).load()
+            loaded_ontologies[path_onto] = import_owlready2().get_ontology(path_onto).load()
             loaded_individuals[path_onto] = {a.iri for a in list(loaded_ontologies[path_onto].individuals())}
         onto = loaded_ontologies[path_onto]
         All_individuals = loaded_individuals[path_onto]
