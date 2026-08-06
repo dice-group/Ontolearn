@@ -36,6 +36,12 @@ date) and use that section as the basis for the GitHub release notes.
   `_enforce` repaired malformed token sequences via `random.choice(...)`, making
   parser output non-deterministic across runs on identical input; replaced with
   a deterministic (sorted) tie-break.
+- `EvoLearner` registered its DEAP `Fitness`/`Quality`/`Individual` types under
+  fixed names in DEAP's process-global `creator` module and tore them down in
+  `clean()` behind a bare `except AttributeError: pass`; concurrent
+  `EvoLearner` instances (e.g. `fit()` calls interleaved across threads) could
+  silently clobber each other's DEAP type definitions. Each instance now
+  registers its own uniquely-named types. (#609)
 - `DRILLSearchTreePriorityQueue.get_top_n()` raised `AttributeError`/`TypeError`
   on the never-assigned `self.refined_nodes` attribute; now builds its node
   list from `self.nodes.values()`. (#605)

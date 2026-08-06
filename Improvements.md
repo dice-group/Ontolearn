@@ -16,12 +16,6 @@ broader refactor.
   exist). Hitting this branch raises `AttributeError` instead of the intended
   descriptive error, hiding the real problem from users. (`TDL_refinement`
   does define this attribute, so only the base `TDL` class is affected.)
-- **`ontolearn/learners/evolearner.py:312-314,472-479`** — DEAP's `creator`
-  module is process-global; `EvoLearner` registers `Fitness`/`Quality`/
-  `Individual` types into it and tears them down in `clean()` behind a bare
-  `except AttributeError: pass`. Two `EvoLearner` instances used concurrently,
-  or `fit()` calls interleaved across threads, will clobber each other's DEAP
-  type definitions. Not thread-safe, and the failure mode is silent.
 
 ## 2. Code duplication
 
@@ -176,8 +170,8 @@ broader refactor.
 
 ## Suggested priority order
 
-1. Fix the remaining two correctness bugs in §1 (cheap, high-value, some are
-   one-liners).
+1. Fix the remaining correctness bug in §1 (cheap, high-value, likely a
+   one-liner).
 2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
 3. Delete or restore the two fully-commented-out test files in §6.
 4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
