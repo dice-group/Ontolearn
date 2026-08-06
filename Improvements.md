@@ -10,12 +10,8 @@ Prioritized roughly high → low impact within each section.
 These are actual defects, not style nits — worth fixing regardless of any
 broader refactor.
 
-- **`ontolearn/learners/tree_learner.py:441`** — the "no features extracted"
-  error message references `self.use_data_properties`, an attribute
-  `TDL.__init__` never sets (only `use_data_properties_boolean/string/date/numeric`
-  exist). Hitting this branch raises `AttributeError` instead of the intended
-  descriptive error, hiding the real problem from users. (`TDL_refinement`
-  does define this attribute, so only the base `TDL` class is affected.)
+All correctness bugs originally found in this pass have been fixed; none
+remain open as of this writing.
 
 ## 2. Code duplication
 
@@ -170,8 +166,7 @@ broader refactor.
 
 ## Suggested priority order
 
-1. Fix the remaining correctness bug in §1 (cheap, high-value, likely a
-   one-liner).
+1. All three correctness bugs originally listed in §1 are fixed; none remain.
 2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
 3. Delete or restore the two fully-commented-out test files in §6.
 4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
