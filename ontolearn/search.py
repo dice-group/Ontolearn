@@ -795,8 +795,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         -------
         top_n_predictions: A list of node objects
         """
-        all_nodes = self.refined_nodes + self.nodes.values()
-        all_nodes.union(self.nodes)
+        all_nodes = list(self.nodes.values())
 
         if key == 'quality':
             top_n_predictions = sorted(all_nodes, key=lambda node: node.quality, reverse=True)[:n]
