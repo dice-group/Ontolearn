@@ -32,6 +32,13 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `DRILLSearchTreePriorityQueue.get_top_n()` raised `AttributeError`/`TypeError`
+  on the never-assigned `self.refined_nodes` attribute; now builds its node
+  list from `self.nodes.values()`. (#605)
+- `LengthBasedRefinement.refine_atomic_concept`'s disjointness check was dead
+  logic — both branches of the `if`/`else` built the same expression, so
+  refinements into a class disjoint with the current concept were never
+  actually skipped. (#604)
 - `LearningProblemGenerator` was not working; `tests/test_learning_problem_generator.py`
   re-enabled. (#589)
 - TDL++ integer-typed expression handling; two more intervals added to range
