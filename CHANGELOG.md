@@ -32,6 +32,10 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `ConceptAbstractSyntaxTreeBuilder._fix_mid_tokens_errors`/`_postprocess_tail_fix`/
+  `_enforce` repaired malformed token sequences via `random.choice(...)`, making
+  parser output non-deterministic across runs on identical input; replaced with
+  a deterministic (sorted) tie-break.
 - `DRILLSearchTreePriorityQueue.get_top_n()` raised `AttributeError`/`TypeError`
   on the never-assigned `self.refined_nodes` attribute; now builds its node
   list from `self.nodes.values()`. (#605)
