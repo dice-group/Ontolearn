@@ -172,10 +172,10 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
-                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
-                    yield OWLObjectIntersectionOf((class_expression, i))
-                else:
-                    yield OWLObjectIntersectionOf((class_expression, i))
+                # Skip named classes disjoint with class_expression: their intersection is unsatisfiable.
+                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i):
+                    continue
+                yield OWLObjectIntersectionOf((class_expression, i))
 
     def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Generator[
         OWLObjectComplementOf, None, None]:
