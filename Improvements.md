@@ -22,12 +22,6 @@ broader refactor.
   `except AttributeError: pass`. Two `EvoLearner` instances used concurrently,
   or `fit()` calls interleaved across threads, will clobber each other's DEAP
   type definitions. Not thread-safe, and the failure mode is silent.
-- **`ontolearn/concept_abstract_syntax_tree.py`** (e.g. lines 181, 200, 227,
-  233, 239, 248, 267…) — `_fix_mid_tokens_errors`/`_postprocess_tail_fix`
-  repair malformed token sequences via `random.choice(...)`, making parser
-  output non-deterministic across runs on identical input. Replace with a
-  deterministic tie-break (e.g. first sorted candidate) unless the randomness
-  is intentional.
 
 ## 2. Code duplication
 
@@ -182,7 +176,7 @@ broader refactor.
 
 ## Suggested priority order
 
-1. Fix the remaining three correctness bugs in §1 (cheap, high-value, some are
+1. Fix the remaining two correctness bugs in §1 (cheap, high-value, some are
    one-liners).
 2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
 3. Delete or restore the two fully-commented-out test files in §6.

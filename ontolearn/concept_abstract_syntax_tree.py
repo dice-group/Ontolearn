@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-import random
-from random import choice
 from typing import List, Optional
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.render import DLSyntaxObjectRenderer
@@ -144,6 +142,11 @@ class ConceptAbstractSyntaxTreeBuilder:
         self.vocabs = self.unique_atom_concept_names | self.unique_roles | self.binary_ops | self.negation | self.quantifiers | self.parenthesis | self.dot | self.cardinals | self.digits
         self.atom_concepts_with_negation = None
 
+    def _deterministic_choice(self, candidates):
+        """Pick a candidate deterministically (first when sorted by string form),
+        so parser repair/completion is reproducible across runs on identical input."""
+        return sorted(candidates, key=str)[0]
+
     def _negate_unique_atomic_concepts(self, replace_with_negation=False):
         if replace_with_negation:
             return self.unique_atom_concept_names | {("¬", atom) for atom in self.unique_atom_concept_names}
@@ -178,7 +181,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                 if next_next_token in self.unique_atom_concept_names | self.negation:
                     i += 2
                 else:
-                    container.append(choice(list(self.unique_atom_concept_names)))
+                    container.append(self._deterministic_choice(self.unique_atom_concept_names))
                     container.append(token)
                     i += 1
                 i += 1
@@ -197,7 +200,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                     continue
 
             if prev_token == '(' and token == '.' and next_token == ')':
-                container.append(choice(list(self.unique_atom_concept_names)))
+                container.append(self._deterministic_choice(self.unique_atom_concept_names))
                 i += 1
                 continue
             
@@ -224,19 +227,19 @@ class ConceptAbstractSyntaxTreeBuilder:
                 continue
 
             if prev_token == ')' and token == '(':
-                container.append(choice(list(self.binary_ops)))
+                container.append(self._deterministic_choice(self.binary_ops))
                 container.append(token)
                 i += 1
                 continue
            
             if (prev_token == ')' and token not in self.binary_ops and next_token == '('):
-                container.append(choice(list(self.binary_ops)))
+                container.append(self._deterministic_choice(self.binary_ops))
                 i += 1  
                 continue
 
             if (prev_token in self.unique_atom_concept_names | {')'} and 
                 token in self.unique_atom_concept_names | self.negation | {'('} | self.dot):
-                container.append(choice(list(self.binary_ops)))
+                container.append(self._deterministic_choice(self.binary_ops))
                 if token in self.dot:
                     i += 1
                 else:
@@ -245,7 +248,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                 continue
 
             if prev_token in self.binary_ops and token in self.quantifiers and next_token in self.binary_ops:
-                container.append(choice(list(self.unique_atom_concept_names)))
+                container.append(self._deterministic_choice(self.unique_atom_concept_names))
                 i += 1
                 continue
 
@@ -264,35 +267,35 @@ class ConceptAbstractSyntaxTreeBuilder:
             remaining = max_length - len(toks)
 
             if last is None:
-                return [choice(list(self.unique_atom_concept_names))]
+                return [self._deterministic_choice(self.unique_atom_concept_names)]
 
             if last in self.binary_ops:
-                return [choice(list(self.unique_atom_concept_names))] if remaining >= 1 else []
+                return [self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 1 else []
 
             if last in self.quantifiers:
-                return [choice(list(self.unique_roles)), '.', choice(list(self.unique_atom_concept_names))] if remaining >= 3 else []
+                return [self._deterministic_choice(self.unique_roles), '.', self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 3 else []
 
             # if last in self.digits:
-            #     return [choice(list(self.unique_roles)), '.', choice(list(self.unique_atom_concept_names))] if remaining >= 3 else []
+            #     return [self._deterministic_choice(self.unique_roles), '.', self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 3 else []
 
             # if last in self.cardinals:
-            #     return ['1', choice(list(self.unique_roles)), '.', choice(list(self.unique_atom_concept_names))]
+            #     return ['1', self._deterministic_choice(self.unique_roles), '.', self._deterministic_choice(self.unique_atom_concept_names)]
 
             if last in self.unique_roles:
                 if len(toks) >= 2 and toks[-2] in self.quantifiers:
-                    return ['.', choice(list(self.unique_atom_concept_names))] if remaining >= 2 else []
+                    return ['.', self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 2 else []
                 return []
 
             if last == '.':
                 if len(toks) >= 2 and toks[-2] in self.unique_roles:
-                    return [choice(list(self.unique_atom_concept_names))] if remaining >= 1 else []
+                    return [self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 1 else []
                 return []
 
             if last in self.negation:
-                return [choice(list(self.unique_atom_concept_names))] if remaining >= 1 else []
+                return [self._deterministic_choice(self.unique_atom_concept_names)] if remaining >= 1 else []
 
             if last == '(':
-                return [choice(list(self.unique_atom_concept_names)), ')'] if remaining >= 2 else []
+                return [self._deterministic_choice(self.unique_atom_concept_names), ')'] if remaining >= 2 else []
 
             return []
 
@@ -554,24 +557,24 @@ class ConceptAbstractSyntaxTreeBuilder:
                 if indx != 0 and prev_token:
                     if token in self.negation:
                         if prev_token in self.negation | self.unique_atom_concept_names:
-                            ops_choice = random.choice(list(self.binary_ops))
+                            ops_choice = self._deterministic_choice(self.binary_ops)
                             corrected_tokens.extend([ops_choice, token])
                             indx +=1
                             continue
                     elif token in self.dot and prev_token not in self.unique_roles:
                             if ahead_token and ahead_token not in {')'}:
                                 if ahead_token in self.unique_atom_concept_names | self.negation | {'('}:
-                                    ops_choice = random.choice(list(self.binary_ops))
+                                    ops_choice = self._deterministic_choice(self.binary_ops)
                                     corrected_tokens.append(ops_choice)
                                     indx +=1
                                     continue
                     elif token in self.unique_roles and prev_token not in self.quantifiers:
                         if ahead_token and prev_token in {')'}:
-                            ops_choice = random.choice(list(self.binary_ops))
+                            ops_choice = self._deterministic_choice(self.binary_ops)
                             corrected_tokens.append(ops_choice)
 
                             if ahead_token in self.dot:
-                                quant_choice = random.choice(list(self.quantifiers))
+                                quant_choice = self._deterministic_choice(self.quantifiers)
                                 corrected_tokens.extend([quant_choice, token, ahead_token])
                                 curr_valid_cum.extend([token, ahead_token])
                                 cap = 3
@@ -589,7 +592,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     indx += 1
                                     continue
                     elif token in self.quantifiers and prev_token not in self.binary_ops:
-                        ops_choice = random.choice(list(self.binary_ops))
+                        ops_choice = self._deterministic_choice(self.binary_ops)
 
                         if prev_token in self.unique_atom_concept_names and (ahead_token in self.unique_roles or 
                         (next_ahead_token and next_ahead_token in self.unique_roles)):
@@ -602,7 +605,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             self.tokens.pop(indx)
                             continue
                     elif token in {'('} and prev_token in {')'} | self.unique_atom_concept_names:
-                        ops_choice = random.choice(list(self.binary_ops))
+                        ops_choice = self._deterministic_choice(self.binary_ops)
                         corrected_tokens.extend([ops_choice, token])
                         choices = self.atom_concepts_with_negation
                         indx += 1
@@ -611,7 +614,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                 if ahead_token:
                     if token in self.quantifiers:
                         if ahead_token in self.dot:
-                            role_choice = random.choice(list(self.unique_roles))
+                            role_choice = self._deterministic_choice(self.unique_roles)
                             corrected_tokens.extend([token, role_choice])
                             curr_valid_cum.append(role_choice)
                             cap = 3
@@ -619,9 +622,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                             continue
                         elif ahead_token in self.parenthesis:
                             if prev_token and prev_token in {')'}:
-                                corrected_tokens.append(random.choice(list(self.binary_ops)))
+                                corrected_tokens.append(self._deterministic_choice(self.binary_ops))
 
-                            role_choice = random.choice(list(self.unique_roles))
+                            role_choice = self._deterministic_choice(self.unique_roles)
                             corrected_tokens.extend([token, role_choice])
                             curr_valid_cum.append(role_choice)
                             cap = 3
@@ -629,7 +632,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx += 1
                             continue
                         elif ahead_token in self.binary_ops:
-                            atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                            atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
                             if isinstance(atomic_choice, tuple):
                                 corrected_tokens.extend(atomic_choice)
                             else:
@@ -642,7 +645,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                     if token in self.binary_ops:
                         if ahead_token in self.binary_ops:
-                            atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                            atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
                             if isinstance(atomic_choice, tuple):
                                 _token = [token] + list(atomic_choice)
                             else:
@@ -652,7 +655,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx += 2
                             continue
                         elif ahead_token == ')':
-                            atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                            atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
                             if isinstance(atomic_choice, tuple):
                                 _token = [token] + list(atomic_choice)
                             else:
@@ -680,7 +683,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     indx += 1
                                     continue
 
-                                ops_choice = random.choice(list(self.binary_ops))
+                                ops_choice = self._deterministic_choice(self.binary_ops)
                                 corrected_tokens.extend([token, ops_choice])
                                 indx += 1
                                 continue
@@ -690,7 +693,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 indx +=1
                                 continue
                             elif ahead_token in self.binary_ops:
-                                atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                                atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
                                 if isinstance(atomic_choice, tuple):
                                     _token = list(atomic_choice)
                                 else:
@@ -702,34 +705,34 @@ class ConceptAbstractSyntaxTreeBuilder:
                     if token in self.negation:
                         if ahead_token in self.quantifiers:
                             if next_ahead_token and next_ahead_token in self.unique_roles:
-                                atomic_choice = random.choice(list(self.unique_atom_concept_names))
-                                ops_choice = random.choice(list(self.binary_ops))
+                                atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
+                                ops_choice = self._deterministic_choice(self.binary_ops)
                                 corrected_tokens.extend([token, atomic_choice, ops_choice])
                                 indx += 1
                                 continue
                             else:
                                 corrected_tokens.append(token)
                                 if ahead_token not in self.unique_atom_concept_names | self.negation:
-                                    self.tokens[indx + 1] = random.choice(list(self.unique_atom_concept_names))
+                                    self.tokens[indx + 1] = self._deterministic_choice(self.unique_atom_concept_names)
                                 indx += 1
                                 continue
                         elif ahead_token in self.unique_roles:
                             if next_ahead_token and next_ahead_token in {'.'}:
-                                quant_choice = random.choice(list(self.quantifiers))
+                                quant_choice = self._deterministic_choice(self.quantifiers)
                                 self.tokens[indx] = quant_choice
                                 corrected_tokens.append(quant_choice)
                                 indx +=1
                                 continue
                             
                             corrected_tokens.append(token)
-                            atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                            atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
                             self.tokens[indx+1] = atomic_choice
                             indx +=1
                             continue
                     
                     if token in self.unique_roles and prev_token not in self.quantifiers:
                         if prev_token in self.unique_atom_concept_names and ahead_token in self.unique_atom_concept_names:
-                            ops_choice = random.choice(list(self.binary_ops))
+                            ops_choice = self._deterministic_choice(self.binary_ops)
                             corrected_tokens.append(ops_choice)
                             indx +=1
                             continue
@@ -737,7 +740,7 @@ class ConceptAbstractSyntaxTreeBuilder:
             if token in self.quantifiers:
                 if curr_valid_cum:
                     if cap == 3 and len(curr_valid_cum) == 2:
-                        atomic_choice = random.choice(list(choices))
+                        atomic_choice = self._deterministic_choice(choices)
 
                         if isinstance(atomic_choice, tuple):
                             corrected_tokens.extend(atomic_choice)
@@ -756,7 +759,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                         if not curr_valid_cum:
                             if indx == 0:
                                 if ahead_token not in self.negation | self.unique_atom_concept_names:
-                                    token = random.choice(list(self.atom_concepts_with_negation))
+                                    token = self._deterministic_choice(self.atom_concepts_with_negation)
                                     if isinstance(token, tuple):
                                         corrected_tokens.extend(token)
                                     else:
@@ -768,13 +771,13 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                                         if ahead_token in self.negation:
                                             if next_ahead_token not in self.unique_atom_concept_names:
-                                                atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                                                atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
 
                                                 if next_ahead_token in self.binary_ops:
                                                     corrected_tokens.extend([token, atomic_choice])
                                                     ahead_token = atomic_choice
                                                 elif next_ahead_token in self.quantifiers:
-                                                    ops_choice = random.choice(list(self.binary_ops))
+                                                    ops_choice = self._deterministic_choice(self.binary_ops)
                                                     corrected_tokens.extend([token, atomic_choice, ops_choice])
                                                     ahead_token = ops_choice
                                                 indx +=2
@@ -786,8 +789,8 @@ class ConceptAbstractSyntaxTreeBuilder:
                                             indx +=2
                                             continue
                                 elif ahead_token in {')'} | self.dot :
-                                    atomic_choice = random.choice(list(self.atom_concepts_with_negation))
-                                    ops_choice = random.choice(list(self.binary_ops))
+                                    atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
+                                    ops_choice = self._deterministic_choice(self.binary_ops)
 
                                     if isinstance(atomic_choice, tuple):
                                         _token = list(atomic_choice)
@@ -805,9 +808,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                         else:
                             if ahead_token in {')'}:
                                 if all(choice in self.atom_concepts_with_negation for choice in choices):
-                                    atomic_choice = random.choice(list(choices))
+                                    atomic_choice = self._deterministic_choice(choices)
                                 else:
-                                    atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                                    atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
 
                                 if isinstance(atomic_choice, tuple):
                                     _token = [token] + list(atomic_choice)
@@ -843,7 +846,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     dot_choice = list(choices) if choices in self.dot else '.'
                                     corrected_tokens.append(dot_choice)
 
-                                atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                                atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
                                 corrected_tokens.extend([token, ahead_token, atomic_choice])
                                 cap, choices, curr_valid_cum = None, None, []
 
@@ -852,9 +855,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                     elif ahead_token in self.quantifiers:
                         if curr_valid_cum:
                             if all(choice in self.atom_concepts_with_negation for choice in choices):
-                                atomic_choice = random.choice(list(choices))
+                                atomic_choice = self._deterministic_choice(choices)
                             else:
-                                atomic_choice = random.choice(list(self.atom_concepts_with_negation)) 
+                                atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation) 
 
                             if isinstance(atomic_choice, tuple):
                                 _token = [token] + list(atomic_choice)
@@ -867,7 +870,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             cap, choices, curr_valid_cum = None, None, []
 
                             if next_ahead_token and next_ahead_token in self.unique_roles:
-                                ops_choice = random.choice(list(self.binary_ops))
+                                ops_choice = self._deterministic_choice(self.binary_ops)
                                 corrected_tokens.append(ops_choice)
                                 indx +=1
                                 continue
@@ -876,14 +879,14 @@ class ConceptAbstractSyntaxTreeBuilder:
                             continue
                         else:
                             if not next_ahead_token:
-                                atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                                atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
                                 corrected_tokens.append(token)
                                 self.tokens[indx+1] = atomic_choice
                                 indx +=1
                                 continue
                     elif prev_token:
                         if prev_token in self.unique_atom_concept_names:
-                            ops_choice = random.choice(list(self.binary_ops))
+                            ops_choice = self._deterministic_choice(self.binary_ops)
                             corrected_tokens.extend([ops_choice, token])
                             indx +=1
                             continue
@@ -891,7 +894,7 @@ class ConceptAbstractSyntaxTreeBuilder:
             if token == ')':
                 if curr_valid_cum:
                     if cap == 3 and len(curr_valid_cum) == 2:
-                        atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                        atomic_choice = self._deterministic_choice(self.unique_atom_concept_names)
                         corrected_tokens.append(atomic_choice)
                         cap, choices, curr_valid_cum = None, None, []
                         indx +=1
@@ -899,14 +902,14 @@ class ConceptAbstractSyntaxTreeBuilder:
             
             if not curr_valid_cum and token in self.unique_atom_concept_names | self.unique_roles and ahead_token:
                 if token in self.unique_atom_concept_names:
-                    ops_choice = random.choice(list(self.binary_ops))
+                    ops_choice = self._deterministic_choice(self.binary_ops)
 
                     if ahead_token in self.unique_atom_concept_names and prev_token not in {')'}:
                         corrected_tokens.extend([token, ops_choice])
                         indx +=1
                         continue
                     elif ahead_token in self.unique_roles:
-                        quant_choice = random.choice(list(self.quantifiers))
+                        quant_choice = self._deterministic_choice(self.quantifiers)
                         corrected_tokens.extend([token, ops_choice, quant_choice])
                         indx +=1
                         continue
@@ -917,7 +920,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                         indx +=2
                         continue
                     elif ahead_token and ahead_token in self.binary_ops:
-                        atomic_choice = random.choice(list(self.atom_concepts_with_negation))
+                        atomic_choice = self._deterministic_choice(self.atom_concepts_with_negation)
 
                         if isinstance(atomic_choice, tuple):
                             choice = list(atomic_choice)
@@ -957,7 +960,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                 curr_valid_cum.append(_token)
 
             if not self._is_valid_next_token(token, corrected_tokens):
-                token = random.choice(list(choices))
+                token = self._deterministic_choice(choices)
                 curr_valid_cum.append(token)
 
             if isinstance(token, tuple):
