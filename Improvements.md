@@ -10,16 +10,6 @@ Prioritized roughly high → low impact within each section.
 These are actual defects, not style nits — worth fixing regardless of any
 broader refactor.
 
-- **`ontolearn/search.py:798`** — `DRILLSearchTreePriorityQueue.get_top_n()`
-  does `self.refined_nodes + self.nodes.values()`. `self.refined_nodes` is
-  never assigned anywhere in the codebase, and `dict_values` doesn't support
-  `+` anyway — this raises `AttributeError`/`TypeError` if the method is ever
-  called. Fix: `list(self.nodes.values())`.
-- **`ontolearn/refinement_operators.py:173-178`** —
-  `LengthBasedRefinement.refine_atomic_concept`: the `if`/`else` branches
-  yield the exact same expression, so the disjointness check on line 175 is
-  dead logic with no effect. Either differentiate the branches or drop the
-  conditional.
 - **`ontolearn/learners/tree_learner.py:441`** — the "no features extracted"
   error message references `self.use_data_properties`, an attribute
   `TDL.__init__` never sets (only `use_data_properties_boolean/string/date/numeric`
@@ -192,7 +182,8 @@ broader refactor.
 
 ## Suggested priority order
 
-1. Fix the five correctness bugs in §1 (cheap, high-value, some are one-liners).
+1. Fix the remaining three correctness bugs in §1 (cheap, high-value, some are
+   one-liners).
 2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
 3. Delete or restore the two fully-commented-out test files in §6.
 4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
