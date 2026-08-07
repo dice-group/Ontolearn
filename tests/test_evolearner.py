@@ -62,6 +62,42 @@ class TestEvoLearner(unittest.TestCase):
         best_pred = returned_model.best_hypotheses(n=1, return_node=True)
         assert best_pred.quality == 1.00
 
+    def test_concurrent_instances_do_not_clobber_deap_creator_types(self):
+        # Regression test: EvoLearner used to register DEAP's `Fitness`/`Quality`/`Individual`
+        # types under fixed names into DEAP's process-global `creator` module, so two
+        # `EvoLearner` instances fitting concurrently (e.g. from different threads) could
+        # clobber each other's types, and `clean()`'s bare `except AttributeError: pass`
+        # could silently delete a type another still-running instance depended on.
+        import threading
+
+        with open('examples/synthetic_problems.json') as json_file:
+            settings = json.load(json_file)
+        kb = KnowledgeBase(path=settings['data_path'][3:])
+
+        problems = list(settings['problems'].items())[:2]
+        results = {}
+        errors = []
+
+        def run(str_target_concept, examples):
+            try:
+                model = EvoLearner(knowledge_base=kb, max_runtime=10, population_size=50, num_generations=5)
+                pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
+                neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
+                lp = PosNegLPStandard(pos=pos, neg=neg)
+                model.fit(learning_problem=lp)
+                results[str_target_concept] = model.best_hypotheses(n=1, return_node=True).quality
+            except Exception as e:
+                errors.append((str_target_concept, e))
+
+        threads = [threading.Thread(target=run, args=(name, examples)) for name, examples in problems]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors, f"concurrent EvoLearner fit() raised: {errors}"
+        assert len(results) == len(problems)
+
     def test_example(self):
 
         with open('examples/synthetic_problems.json') as json_file:
