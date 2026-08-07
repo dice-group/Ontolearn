@@ -32,6 +32,13 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `NCESTrainer.train()` created a fresh `DataLoader(num_workers=...)` worker
+  pool per architecture in a loop; the existing `os.cpu_count()`-based cap on
+  `num_workers` only engaged when `cpu_count <= num_workers`, so it silently
+  did nothing on machines with more cores than the default of 8, and repeated
+  worker-pool creation at that count could deadlock under `coverage run`
+  (`NCES`/`NCES2`/`ROCES` training, e.g. `test_nces_trainer.py`). Now capped
+  unconditionally to `min(requested, cpu_count-1, 4)`. (#610)
 - `ConceptAbstractSyntaxTreeBuilder._fix_mid_tokens_errors`/`_postprocess_tail_fix`/
   `_enforce` repaired malformed token sequences via `random.choice(...)`, making
   parser output non-deterministic across runs on identical input; replaced with
