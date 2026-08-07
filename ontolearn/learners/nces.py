@@ -431,8 +431,12 @@ class NCES(BaseNCES):
               refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        if os.cpu_count() <= num_workers:
-            num_workers = max(0,os.cpu_count()-1)
+        # Cap unconditionally: on machines with many cores this previously stayed
+        # uncapped at the requested value, and repeatedly spawning that many
+        # DataLoader worker processes (one fresh pool per architecture in
+        # NCESTrainer.train()) can deadlock under `coverage run` regardless of
+        # how many cores are available (see issue #610).
+        num_workers = max(0, min(num_workers, (os.cpu_count() or 1) - 1, 4))
         if storage_path is None:
             currentDateAndTime = datetime.now()
             storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
