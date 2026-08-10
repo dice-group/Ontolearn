@@ -528,25 +528,25 @@ class TestTDLTraining(unittest.TestCase):
         model2.fit(lp)
         self.assertIsNotNone(model2.clf)
 
-    #def test_classification_report(self):
-    #    """Test that classification report is generated."""
-    #    model = TDL_refinement(knowledge_base=self.kb, report_classification=True, verbose=0,
-    #                kwargs_classifier={"random_state": 42})
-    #    
-    #    examples = self.family_lps['problems']['Brother']
-    #    p = set(examples['positive_examples'][:5])  # Reduced for speed
-    #    n = set(examples['negative_examples'][:5])  # Reduced for speed
-    #    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
-    #    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-    #    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
-    #    
-    #    model.fit(lp)
-    #    
-    #    # Check that report was generated
-    #    report = model.classification_report
-    #    self.assertIsNotNone(report)
-    #    self.assertIsInstance(report, str)
-    #    self.assertIn("Classification Report", report)
+    def test_classification_report(self):
+        """Test that classification report is generated."""
+        model = TDL_refinement(knowledge_base=self.kb, report_classification=True, verbose=0,
+                    kwargs_classifier={"random_state": 42})
+
+        examples = self.family_lps['problems']['Brother']
+        p = set(examples['positive_examples'][:5])  # Reduced for speed
+        n = set(examples['negative_examples'][:5])  # Reduced for speed
+        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+
+        model.fit(lp)
+
+        # Check that report was generated
+        report = model.classification_report
+        self.assertIsNotNone(report)
+        self.assertIsInstance(report, str)
+        self.assertIn("Classification Report", report)
 
 
 class TestTDLPerformance(unittest.TestCase):

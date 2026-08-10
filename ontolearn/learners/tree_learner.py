@@ -661,6 +661,63 @@ class TDL:
         prediction_per_example = {pred for pred, positive_example in prediction_per_example}
         return list(prediction_per_example)
 
+    def _maybe_plot_embeddings(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Plot a UMAP-reduced view of the training features, if enabled. Shared by TDL and TDL_refinement."""
+        if self.plot_embeddings:
+            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
+
+    def _fit_decision_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Optionally grid-search classifier hyperparameters, then train self.clf on (X, y).
+        Shared by TDL and TDL_refinement."""
+        if self.grid_search_over:
+            grid_search = sklearn.model_selection.GridSearchCV(
+                tree.DecisionTreeClassifier(**self.kwargs_classifier),
+                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
+            print(grid_search.best_params_)
+            self.kwargs_classifier.update(grid_search.best_params_)
+        # Training
+        if self.verbose > 0:
+            print("Training starts!")
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
+
+    def _report_and_plot(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Report classification metrics and render the configured tree/feature-importance plots.
+        Shared by TDL and TDL_refinement."""
+        if self.report_classification:
+            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+            self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                  self.clf.predict(X.values),
+                                                                                  target_names=["Negative",
+                                                                                                "Positive"])
+            if self.verbose > 0:
+                print(self.__classification_report)
+        if self.plot_tree:
+            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                                              cart_tree=self.clf)
+        if self.plot_feature_importance:
+            plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                                         cart_tree=self.clf)
+
+    def _finalize_predictions(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Build the conjunctive/disjunctive OWL predictions from the trained tree and optionally verbalize them.
+        Shared by TDL and TDL_refinement."""
+        self.owl_class_expressions.clear()
+        # Each item can be considered is a path of OWL Class Expressions
+        # starting from the root node in the decision tree and
+        # ending in a leaf node.
+        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+        if self.verbose > 0:
+            print("Computing conjunctive_concepts...")
+        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
+        for i in self.conjunctive_concepts:
+            self.owl_class_expressions.add(i)
+        if self.verbose > 0:
+            print("Computing disjunction_of_conjunctive_concepts...")
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
+
+        if self.verbalize:
+            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
+
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
@@ -691,50 +748,10 @@ class TDL:
         X, y = self.create_training_data(learning_problem=learning_problem, start_time=start_time)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
-        if self.plot_embeddings:
-            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
-        if self.grid_search_over:
-            grid_search = sklearn.model_selection.GridSearchCV(
-                tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
-            print(grid_search.best_params_)
-            self.kwargs_classifier.update(grid_search.best_params_)
-        # Training
-        if self.verbose>0:
-            print("Training starts!")
-        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
-
-        if self.report_classification:
-            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-            self.__classification_report += sklearn.metrics.classification_report(y.values,
-                                                                                  self.clf.predict(X.values),
-                                                                                  target_names=["Negative",
-                                                                                                "Positive"])
-            if self.verbose > 0:
-                print(self.__classification_report)
-        if self.plot_tree:
-            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                              cart_tree=self.clf)
-        if self.plot_feature_importance:
-            plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                         cart_tree=self.clf)
-
-        self.owl_class_expressions.clear()
-        # Each item can be considered is a path of OWL Class Expressions
-        # starting from the root node in the decision tree and
-        # ending in a leaf node.
-        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
-        if self.verbose >0:
-            print("Computing conjunctive_concepts...")
-        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
-        for i in self.conjunctive_concepts:
-            self.owl_class_expressions.add(i)
-        if self.verbose >0:
-            print("Computing disjunction_of_conjunctive_concepts...")
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
-
-        if self.verbalize:
-            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
+        self._maybe_plot_embeddings(X, y)
+        self._fit_decision_tree(X, y)
+        self._report_and_plot(X, y)
+        self._finalize_predictions(X, y)
 
         return self
 

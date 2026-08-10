@@ -6,13 +6,7 @@ from owlapy import owl_expression_to_dl
 from sklearn.inspection import permutation_importance
 from .tree_learner import concepts_reducer
 from ontolearn.learning_problem import PosNegLPStandard
-from ..utils.static_funcs import (
-    plot_umap_reduced_embeddings,
-    plot_decision_tree_of_expressions,
-    plot_topk_feature_importance,
-)
 from owlapy.class_expression import (
-    OWLObjectIntersectionOf,
     OWLClassExpression,
     OWLObjectUnionOf,
     OWLDataSomeValuesFrom,
@@ -23,10 +17,8 @@ from owlapy.class_expression.restriction import (
     OWLDatatypeRestriction,
 )
 from owlapy.owl_individual import OWLNamedIndividual
-from ontolearn.verbalizer import verbalize_learner_prediction
 import numpy as np
 import pandas as pd
-import sklearn
 from sklearn import tree
 import itertools
 from shap import TreeExplainer
@@ -288,7 +280,10 @@ class TDL_refinement(TDL):
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
 
-    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
+    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual], start_time: float = None) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
+        # start_time is accepted (but unused) so this override keeps the same call
+        # signature as TDL.extract_expressions_from_owl_individuals, letting
+        # create_training_data() be shared via inheritance instead of duplicated here.
         # () Store mappings from str dl concept to owl class expression objects.
         features_dict = dict()
 
@@ -470,32 +465,8 @@ class TDL_refinement(TDL):
                                     self.generated_dt_classexpressions_per_individual[new_class_expression].add(ind)
         return refined_features, individuals_to_refined_feature_mapping
 
-    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
-        if self.verbose > 0:
-            print("Creating a Training Dataset")
-        positive_examples: List[OWLNamedIndividual]
-        negative_examples: List[OWLNamedIndividual]
-        positive_examples = [i for i in learning_problem.pos]
-        negative_examples = [i for i in learning_problem.neg]
-        # (2) Initialize labels for (1).
-        y = [1.0 for _ in positive_examples] + [0.0 for _ in negative_examples]
-        # (3) Iterate over examples to extract unique features.
-        examples = positive_examples + negative_examples
-        # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
-
-        X, features = self.extract_expressions_from_owl_individuals(examples)
-
-        # (4) Creating a tabular data for the binary classification problem.
-        # X = self.sparse_binary_representations(features, examples, examples_to_features)
-        self.features = features
-        X = pd.DataFrame(data=X, index=examples, columns=self.features)
-        y = pd.DataFrame(data=y, index=examples, columns=["label"])
-        # Remove redundant columns
-        same_value_columns = X.apply(lambda col: col.nunique() == 1)
-        X = X.loc[:, ~same_value_columns]
-        self.features = X.columns.values.tolist()
-        return X, y
+    # create_training_data() is inherited from TDL: identical logic aside from
+    # which extract_expressions_from_owl_individuals() override it dispatches to.
 
     def plot_importance_evolution(self, initial_dict, refined_dicts, top_k=10):
         # prepare data
@@ -601,6 +572,67 @@ class TDL_refinement(TDL):
         X = X.loc[:, ~same_value_columns]
         return X
 
+    def _refine_features_with_shap(self, X: pd.DataFrame, y: pd.DataFrame, learning_problem: PosNegLPStandard) -> pd.DataFrame:
+        """Iteratively extend the feature set with SHAP-guided, distribution-based numeric data-property ranges.
+
+        Retrains self.clf after every feature-set extension and returns the final binary feature matrix.
+        """
+        tree_explainer = TreeExplainer(self.clf)
+        sVal = tree_explainer.shap_values(self.X.values)
+        if self.verbose >= 10:
+            self.initial_importance_dict = self._get_shap_importance_dict(X)
+        # map individuals to additional data property features
+        # refine base features here ( extract from data properties)
+        dp_features: dict = dict()
+        generated_dt_class_expressions = self._extract_ranges_from_data_properties(dp_features, self.individuals_to_feature_mapping, self.data_properties_dict, self.per_individual_data_properties)
+        self.generated_dt_classexpressions_per_individual = generated_dt_class_expressions
+        X = self._merge_binary_feature_matrices(learning_problem, X, dp_features, self.individuals_to_feature_mapping)
+        self.X = X
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
+        if self.verbose >= 10:
+            self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+            self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+        refined_expressions: Set[OWLClassExpression] = set()
+        for i in range(1, self.refine_iterations):
+            if self.verbose > 0:
+                print(f"Refinement iteration {i + 1}/{self.refine_iterations}")
+            # calculate SHAP global feature importance
+            tree_explainer = TreeExplainer(self.clf)
+            sVal = tree_explainer.shap_values(self.X.values)
+            if isinstance(sVal, np.ndarray):
+                if sVal.ndim == 3:
+                    global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
+                else:
+                    global_importance = np.abs(sVal).mean(axis=0)
+            topk_id = np.argsort(global_importance)
+            # top expressions sorted low to high
+            top_expressions: list[OWLClassExpression]
+            top_expressions = [self.features[i] for i in topk_id[-self.topk :].tolist()]
+
+            # print(top_expressions[-5:])
+            features_to_refine: set[OWLClassExpression] = (set(top_expressions) - refined_expressions)
+            refined_features, refined_individuals_to_feature_mapping = self.refine_numerical_features(features_to_refine, iteration=i + 1)
+            if self.verbose >0:
+                print("Expressions to be refined:" + str(len(features_to_refine)))
+
+            if(len(features_to_refine) == 0):
+                if self.verbose > 0:
+                    print("No new expressions to refine. Stopping refinement.")
+                break
+            refined_expressions = refined_expressions.union(set(top_expressions))
+            X = self._merge_binary_feature_matrices(learning_problem, X, refined_features, refined_individuals_to_feature_mapping)
+            self.X = X
+            self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
+
+            if self.verbose >= 10:
+                self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
+                self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
+
+        if self.plot_importance_evo and self.verbose >= 10:
+            self.plot_importance_evolution(self.initial_importance_dict, self.top_feature_dicts, top_k=10)
+
+        return X
+
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
@@ -634,97 +666,15 @@ class TDL_refinement(TDL):
         X, y = self.create_training_data(learning_problem=learning_problem)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
-        if self.plot_embeddings:
-            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
-        if self.grid_search_over:
-            grid_search = sklearn.model_selection.GridSearchCV(
-                tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over,
-                **self.kwargs_grid_search,
-            ).fit(X.values, y.values)
-            print(grid_search.best_params_)
-            self.kwargs_classifier.update(grid_search.best_params_)
-        # Training
-        if self.verbose > 0:
-            print("Training starts!")
-        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
+        self._maybe_plot_embeddings(X, y)
+        self._fit_decision_tree(X, y)
         if self.verbose >= 10:
             self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
         if self.feature_refinement:
-            tree_explainer = TreeExplainer(self.clf)
-            sVal = tree_explainer.shap_values(self.X.values)
-            if self.verbose >= 10:
-                self.initial_importance_dict = self._get_shap_importance_dict(X)
-            # map individuals to additional data property features
-            # refine base features here ( extract from data properties)
-            dp_features: dict = dict()
-            generated_dt_class_expressions = self._extract_ranges_from_data_properties(dp_features, self.individuals_to_feature_mapping, self.data_properties_dict, self.per_individual_data_properties)
-            self.generated_dt_classexpressions_per_individual = generated_dt_class_expressions
-            X = self._merge_binary_feature_matrices(learning_problem, X, dp_features, self.individuals_to_feature_mapping)
-            self.X = X
-            self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-            if self.verbose >= 10:
-                self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
-                self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
-            refined_expressions: Set[OWLClassExpression] = set()
-            for i in range(1, self.refine_iterations):
-                if self.verbose > 0:
-                    print(f"Refinement iteration {i + 1}/{self.refine_iterations}")
-                # calculate SHAP global feature importance
-                tree_explainer = TreeExplainer(self.clf)
-                sVal = tree_explainer.shap_values(self.X.values)
-                if isinstance(sVal, np.ndarray):
-                    if sVal.ndim == 3:
-                        global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
-                    else:
-                        global_importance = np.abs(sVal).mean(axis=0)
-                topk_id = np.argsort(global_importance)
-                # top expressions sorted low to high
-                top_expressions: list[OWLClassExpression]
-                top_expressions = [self.features[i] for i in topk_id[-self.topk :].tolist()]
+            X = self._refine_features_with_shap(X, y, learning_problem)
 
-                # print(top_expressions[-5:])
-                features_to_refine: set[OWLClassExpression] = (set(top_expressions) - refined_expressions)
-                refined_features, refined_individuals_to_feature_mapping = self.refine_numerical_features(features_to_refine, iteration=i + 1)
-                if self.verbose >0:
-                    print("Expressions to be refined:" + str(len(features_to_refine)))
+        self._report_and_plot(X, y)
 
-                if(len(features_to_refine) == 0):
-                    if self.verbose > 0:
-                        print("No new expressions to refine. Stopping refinement.")
-                    break
-                refined_expressions = refined_expressions.union(set(top_expressions))
-                X = self._merge_binary_feature_matrices(learning_problem, X, refined_features, refined_individuals_to_feature_mapping)
-                self.X = X
-                self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=self.X.values, y=self.y.values)
-
-                if self.verbose >= 10:
-                    self.top_feature_dicts.append(self._get_shap_importance_dict(self.X))
-                    self.concept_per_iteration.append(concepts_reducer(concepts=self.construct_owl_expression_from_tree(X, y), reduced_cls=OWLObjectUnionOf))
-
-            if self.plot_importance_evo and self.verbose >= 10:
-                self.plot_importance_evolution(self.initial_importance_dict, self.top_feature_dicts, top_k=10)
-
-        if self.report_classification:
-            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-            self.__classification_report += sklearn.metrics.classification_report(
-                y.values,
-                self.clf.predict(X.values),
-                target_names=["Negative", "Positive"],
-            )
-            if self.verbose > 0:
-                print(self.__classification_report)
-        if self.plot_tree:
-            plot_decision_tree_of_expressions(
-                feature_names=[owl_expression_to_dl(f) for f in self.features],
-                cart_tree=self.clf,
-            )
-        if self.plot_feature_importance:
-            plot_topk_feature_importance(
-                feature_names=[owl_expression_to_dl(f) for f in self.features],
-                cart_tree=self.clf,
-                topk=10,
-            )
         perm_feature_topk = False
         if perm_feature_topk:
             # plot permutation feature importance
@@ -742,20 +692,7 @@ class TDL_refinement(TDL):
                     global_importance = np.abs(sVal).mean(axis=0)
 
             self.plot_shap_feature_importances(global_importance, [owl_expression_to_dl(f) for f in self.features])
-        self.owl_class_expressions.clear()
-        # Each item can be considered is a path of OWL Class Expressions
-        # starting from the root node in the decision tree and
-        # ending in a leaf node.
-        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
-        if self.verbose > 0:
-            print("Computing conjunctive_concepts...")
-        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
-        for i in self.conjunctive_concepts:
-            self.owl_class_expressions.add(i)
-        if self.verbose > 0:
-            print("Computing disjunction_of_conjunctive_concepts...")
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts, reduced_cls=OWLObjectUnionOf)
-        if self.verbalize:
-            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
+
+        self._finalize_predictions(X, y)
 
         return self
