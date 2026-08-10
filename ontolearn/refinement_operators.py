@@ -23,10 +23,9 @@
 # -----------------------------------------------------------------------------
 
 """Refinement Operators for refinement-based concept learners."""
-from collections import defaultdict
 from itertools import chain
 import random
-from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator, Tuple
+from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator, Tuple
 
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, \
     OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, OWLObjectUnionOf, OWLClass, \
@@ -305,6 +304,35 @@ class LengthBasedRefinement(BaseRefinement):
         return results
 
 
+class _LazyMaxNrFillers(dict):
+    """Lazily computes and caches, per object property, the maximum number of
+    distinct fillers (capped at ``card_limit``) any individual has for that property.
+
+    Computing this eagerly for every property in the KB's signature against every
+    individual is an O(properties x individuals) reasoner sweep paid up front at
+    refinement-operator construction time, even though most properties are never
+    involved in a cardinality refinement during search. Instead, the value for a
+    given property is computed on first lookup (``__missing__``) and cached.
+    """
+
+    __slots__ = 'kb', 'card_limit'
+
+    def __init__(self, kb: AbstractKnowledgeBase, card_limit: int):
+        super().__init__()
+        self.kb = kb
+        self.card_limit = card_limit
+
+    def __missing__(self, prop: OWLObjectPropertyExpression) -> int:
+        num_max = 0
+        for ind in self.kb.individuals():
+            num = sum(1 for _ in zip(self.kb.get_object_property_values(ind, prop), range(self.card_limit)))
+            num_max = max(num_max, num)
+            if num_max == self.card_limit:
+                break
+        self[prop] = num_max
+        return num_max
+
+
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
      A top down/downward refinement operator in SHIQ(D).
@@ -326,7 +354,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     use_boolean_datatype: bool
     card_limit: int
 
-    max_nr_fillers: DefaultDict[OWLObjectPropertyExpression, int]
+    max_nr_fillers: Dict[OWLObjectPropertyExpression, int]
     dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
     generator: ConceptGenerator
 
@@ -361,17 +389,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             self.value_splitter = BinningValueSplitter()
 
         if self.use_card_restrictions:
-            obj_properties = list(self.kb.get_object_properties())
-            if self.use_inverse:
-                obj_properties.extend(list(map(OWLObjectInverseOf, obj_properties)))
-
-            self.max_nr_fillers = defaultdict(int)
-            for prop in obj_properties:
-                for ind in self.kb.individuals():
-                    num = sum(1 for _ in zip(self.kb.get_object_property_values(ind, prop), range(self.card_limit)))
-                    self.max_nr_fillers[prop] = max(self.max_nr_fillers[prop], num)
-                    if num == self.card_limit:
-                        break
+            self.max_nr_fillers = _LazyMaxNrFillers(self.kb, self.card_limit)
 
         split_dps = []
         if self.use_numeric_datatypes:
