@@ -49,6 +49,10 @@ date) and use that section as the basis for the GitHub release notes.
   `EvoLearner` instances (e.g. `fit()` calls interleaved across threads) could
   silently clobber each other's DEAP type definitions. Each instance now
   registers its own uniquely-named types. (#609)
+- `TDL`'s "no features extracted" error message referenced `self.use_data_properties`,
+  an attribute `TDL.__init__` never sets, raising `AttributeError` instead of the
+  intended descriptive error; now reports the actual
+  `use_data_properties_boolean/string/date/numeric` flags.
 - `DRILLSearchTreePriorityQueue.get_top_n()` raised `AttributeError`/`TypeError`
   on the never-assigned `self.refined_nodes` attribute; now builds its node
   list from `self.nodes.values()`. (#605)
