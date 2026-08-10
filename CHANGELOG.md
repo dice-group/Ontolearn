@@ -24,6 +24,9 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- `quality_funcs.f1`/`acc` reimplemented the tp/tn/fp/fn and precision/recall
+  arithmetic already implemented in `metrics.py`'s `F1`/`Accuracy` classes; now
+  delegate to those classes instead of duplicating the math.
 - Ruff upgraded to `>=0.16.0`. (#594)
 - `TDL`/`TDL_refinement` data-property filtering extended to exclude boolean
   data properties, with a toggle to enable/disable boolean data properties.
