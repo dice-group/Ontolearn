@@ -24,6 +24,15 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- `TDL_refinement.fit()` (`ontolearn/learners/tree_learner_refinement_inherit.py`)
+  duplicated `TDL.fit()` (`ontolearn/learners/tree_learner.py`) almost
+  line-for-line for grid search, classifier training, classification
+  reporting, and plotting, with only the SHAP-based refinement loop spliced
+  in; likewise `create_training_data` was a byte-for-byte copy of `TDL`'s.
+  Extracted the shared steps into `_fit_decision_tree`/`_report_and_plot`/
+  `_finalize_predictions`/`_maybe_plot_embeddings` hooks on the base `TDL`
+  class, and `TDL_refinement` now inherits `create_training_data` instead of
+  redefining it. (#616)
 - Ruff upgraded to `>=0.16.0`. (#594)
 - `TDL`/`TDL_refinement` data-property filtering extended to exclude boolean
   data properties, with a toggle to enable/disable boolean data properties.
@@ -32,6 +41,14 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `TDL_refinement.classification_report` always raised `AttributeError`:
+  `TDL_refinement.fit()` set `self.__classification_report` from within its
+  own class body, which Python name-mangles to a different attribute than
+  the one the `classification_report` property (defined on `TDL`) reads.
+  Fixed as part of deduplicating `fit()` into shared `TDL` hooks, above; the
+  report is now always set from the base class's `_report_and_plot`, so both
+  classes agree on the mangled name. `tests/test_tdl_refinement.py`'s
+  `test_classification_report` re-enabled. (#616)
 - `NCESTrainer.train()` created a fresh `DataLoader(num_workers=...)` worker
   pool per architecture in a loop; the existing `os.cpu_count()`-based cap on
   `num_workers` only engaged when `cpu_count <= num_workers`, so it silently

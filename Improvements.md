@@ -19,18 +19,6 @@ broader refactor.
 
 ## 2. Code duplication
 
-- **`ontolearn/learners/tree_learner_refinement_inherit.py` vs
-  `tree_learner.py`** — `TDL_refinement(TDL)` is ~70% copy-pasted rather than
-  extended. `fit()` (tree_learner_refinement_inherit.py:604-761) duplicates
-  `TDL.fit()` (tree_learner.py:661-736) almost line-for-line (grid search,
-  classifier training, `report_classification`, plotting) with only the
-  refinement loop spliced in; `extract_expressions_from_owl_individuals`,
-  `create_training_data`, and `_extract_data_property_features` are likewise
-  wholesale overrides. A template-method refactor — pulling
-  `_train_classifier`/`_report`/`_plot` into the base `TDL` as hooks — would
-  remove on the order of 300 duplicated lines. (`OCEL(CELOE)` in
-  `ontolearn/learners/celoe.py`/`ocel.py` is a good counter-example of doing
-  this inheritance correctly — worth using as the template.)
 - **`ontolearn/quality_funcs.py:31-56`** duplicates the tp/tn/fp/fn and
   precision/recall math already implemented in `ontolearn/metrics.py:67-92`'s
   `F1`/`Accuracy` classes. Have `quality_funcs.py` delegate to those classes
