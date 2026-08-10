@@ -24,6 +24,14 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- `ModifiedCELOERefinement._setup()` (`ontolearn/refinement_operators.py`, used by
+  `CELOE`/`OCEL`/`ExpressRefinement`) eagerly swept every object property against
+  every individual in the knowledge base at construction time, purely to precompute
+  `max_nr_fillers` for cardinality-restriction refinements — an O(properties x
+  individuals) reasoner cost paid up front regardless of whether cardinality
+  refinements on a given property were ever explored during search. `max_nr_fillers`
+  is now a lazily-populated mapping (`_LazyMaxNrFillers`) that computes and caches a
+  property's value on first lookup instead. (#612)
 - `TDL_refinement.fit()` (`ontolearn/learners/tree_learner_refinement_inherit.py`)
   duplicated `TDL.fit()` (`ontolearn/learners/tree_learner.py`) almost
   line-for-line for grid search, classifier training, classification
