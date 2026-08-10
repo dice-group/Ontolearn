@@ -10,12 +10,8 @@ Prioritized roughly high → low impact within each section.
 These are actual defects, not style nits — worth fixing regardless of any
 broader refactor.
 
-- **`ontolearn/learners/tree_learner.py:441`** — the "no features extracted"
-  error message references `self.use_data_properties`, an attribute
-  `TDL.__init__` never sets (only `use_data_properties_boolean/string/date/numeric`
-  exist). Hitting this branch raises `AttributeError` instead of the intended
-  descriptive error, hiding the real problem from users. (`TDL_refinement`
-  does define this attribute, so only the base `TDL` class is affected.)
+All correctness bugs originally found in this pass have been fixed; none
+remain open as of this writing.
 
 ## 2. Code duplication
 
@@ -23,6 +19,18 @@ broader refactor.
   precision/recall math already implemented in `ontolearn/metrics.py:67-92`'s
   `F1`/`Accuracy` classes. Have `quality_funcs.py` delegate to those classes
   instead of reimplementing the arithmetic.
+- **`ontolearn/learners/tree_learner_refinement_inherit.py` vs
+  `tree_learner.py`** — `TDL_refinement(TDL)` is ~70% copy-pasted rather than
+  extended. `fit()` (tree_learner_refinement_inherit.py:604-761) duplicates
+  `TDL.fit()` (tree_learner.py:661-736) almost line-for-line (grid search,
+  classifier training, `report_classification`, plotting) with only the
+  refinement loop spliced in; `extract_expressions_from_owl_individuals`,
+  `create_training_data`, and `_extract_data_property_features` are likewise
+  wholesale overrides. A template-method refactor — pulling
+  `_train_classifier`/`_report`/`_plot` into the base `TDL` as hooks — would
+  remove on the order of 300 duplicated lines. (`OCEL(CELOE)` in
+  `ontolearn/learners/celoe.py`/`ocel.py` is a good counter-example of doing
+  this inheritance correctly — worth using as the template.)
 - **`ontolearn/knowledge_base.py:191-262`** — `abox()` repeats the same
   triple-traversal ~70 lines of near-identical branching, once per
   `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
@@ -158,8 +166,7 @@ broader refactor.
 
 ## Suggested priority order
 
-1. Fix the remaining correctness bug in §1 (cheap, high-value, likely a
-   one-liner).
+1. All three correctness bugs originally listed in §1 are fixed; none remain.
 2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
 3. Delete or restore the two fully-commented-out test files in §6.
 4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a

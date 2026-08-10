@@ -33,6 +33,9 @@ date) and use that section as the basis for the GitHub release notes.
   `_finalize_predictions`/`_maybe_plot_embeddings` hooks on the base `TDL`
   class, and `TDL_refinement` now inherits `create_training_data` instead of
   redefining it. (#616)
+- `quality_funcs.f1`/`acc` reimplemented the tp/tn/fp/fn and precision/recall
+  arithmetic already implemented in `metrics.py`'s `F1`/`Accuracy` classes; now
+  delegate to those classes instead of duplicating the math.
 - Ruff upgraded to `>=0.16.0`. (#594)
 - `TDL`/`TDL_refinement` data-property filtering extended to exclude boolean
   data properties, with a toggle to enable/disable boolean data properties.
@@ -66,6 +69,10 @@ date) and use that section as the basis for the GitHub release notes.
   `EvoLearner` instances (e.g. `fit()` calls interleaved across threads) could
   silently clobber each other's DEAP type definitions. Each instance now
   registers its own uniquely-named types. (#609)
+- `TDL`'s "no features extracted" error message referenced `self.use_data_properties`,
+  an attribute `TDL.__init__` never sets, raising `AttributeError` instead of the
+  intended descriptive error; now reports the actual
+  `use_data_properties_boolean/string/date/numeric` flags.
 - `DRILLSearchTreePriorityQueue.get_top_n()` raised `AttributeError`/`TypeError`
   on the never-assigned `self.refined_nodes` attribute; now builds its node
   list from `self.nodes.values()`. (#605)
