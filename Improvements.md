@@ -27,10 +27,6 @@ remain open as of this writing.
   remove on the order of 300 duplicated lines. (`OCEL(CELOE)` in
   `ontolearn/learners/celoe.py`/`ocel.py` is a good counter-example of doing
   this inheritance correctly — worth using as the template.)
-- **`ontolearn/quality_funcs.py:31-56`** duplicates the tp/tn/fp/fn and
-  precision/recall math already implemented in `ontolearn/metrics.py:67-92`'s
-  `F1`/`Accuracy` classes. Have `quality_funcs.py` delegate to those classes
-  instead of reimplementing the arithmetic.
 - **`ontolearn/knowledge_base.py:191-262`** — `abox()` repeats the same
   triple-traversal ~70 lines of near-identical branching, once per
   `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
