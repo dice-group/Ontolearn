@@ -32,6 +32,12 @@ date) and use that section as the basis for the GitHub release notes.
   refinements on a given property were ever explored during search. `max_nr_fillers`
   is now a lazily-populated mapping (`_LazyMaxNrFillers`) that computes and caches a
   property's value on first lookup instead. (#612)
+- `TDL_refinement._merge_binary_feature_matrices` re-rendered each candidate
+  feature's DL syntax string from scratch inside the per-example loop
+  (`owl_expression_to_dl` scales with expression complexity), giving
+  O(examples × features × expression-size) work instead of O(features ×
+  expression-size); now precomputed once per feature before the example
+  loop. (#611)
 - `TDL_refinement.fit()` (`ontolearn/learners/tree_learner_refinement_inherit.py`)
   duplicated `TDL.fit()` (`ontolearn/learners/tree_learner.py`) almost
   line-for-line for grid search, classifier training, classification

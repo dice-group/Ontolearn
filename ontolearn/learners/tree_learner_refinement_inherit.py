@@ -549,6 +549,7 @@ class TDL_refinement(TDL):
     def _merge_binary_feature_matrices(self, lp: PosNegLPStandard, X: pd.DataFrame, new_features: list, new_individuals_to_feature_mapping) -> pd.DataFrame:
         """Merge the original binary feature matrix with new features extracted from data properties."""
         new_features_list = [v for k, v in new_features.items()]
+        dl_by_feature = {f: owl_expression_to_dl(f) for f in new_features_list}
         positive_examples = [i for i in lp.pos]
         negative_examples = [i for i in lp.neg]
         examples = positive_examples + negative_examples
@@ -559,7 +560,7 @@ class TDL_refinement(TDL):
             if owl_named_individual.str in new_individuals_to_feature_mapping:
                 features_of_owl_named_individual = new_individuals_to_feature_mapping[owl_named_individual.str]
             for owl_class_expression in new_features_list:
-                if features_of_owl_named_individual is not None and owl_expression_to_dl(owl_class_expression) in features_of_owl_named_individual:
+                if features_of_owl_named_individual is not None and dl_by_feature[owl_class_expression] in features_of_owl_named_individual:
                     binary_sparse_representation.append(1.0)
                 else:
                     binary_sparse_representation.append(0.0)
