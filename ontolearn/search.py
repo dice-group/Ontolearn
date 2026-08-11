@@ -28,7 +28,7 @@ from _weakref import ReferenceType
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from queue import PriorityQueue
-from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
+from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict, Callable
 from owlapy.owl_object import OWLObjectRenderer
 from owlapy.class_expression import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
@@ -532,6 +532,25 @@ def _node_and_all_children(n: _N) -> Iterable[_N]:  # pragma: no cover
         yield from _node_and_all_children(c)
 
 
+def _get_top_n_nodes(nodes: Iterable[_N], n: int, key: str, length_func: Callable[[_N], float]) -> List[_N]:
+    """Sort nodes by quality, heuristic or length and return the top n.
+
+    Shared by SearchTreePriorityQueue.get_top_n and DRILLSearchTreePriorityQueue.get_top_n, which
+    only differ in how the "length" of a node is obtained.
+    """
+    key_funcs: Dict[str, Callable[[_N], float]] = {
+        'quality': lambda node: node.quality,
+        'heuristic': lambda node: node.heuristic,
+        'length': length_func,
+    }
+    try:
+        score_func = key_funcs[key]
+    except KeyError:
+        print('Wrong Key:{0}\tProgram exist.'.format(key))
+        raise KeyError(key)
+    return sorted(nodes, key=score_func, reverse=True)[:n]
+
+
 class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
     """
 
@@ -649,17 +668,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         Returns:
             top_n_predictions: A list of node objects
         """
-
-        if key == 'quality':
-            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.quality, reverse=True)[:n]
-        elif key == 'heuristic':
-            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.heuristic, reverse=True)[:n]
-        elif key == 'length':
-            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.len, reverse=True)[:n]
-        else:
-            print('Wrong Key:{0}\tProgram exist.'.format(key))
-            raise KeyError
-        return top_n_predictions
+        return _get_top_n_nodes(self.nodes.values(), n, key, length_func=lambda node: node.len)
 
     def clean(self):
         self.items_in_queue = PriorityQueue()
@@ -795,18 +804,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         -------
         top_n_predictions: A list of node objects
         """
-        all_nodes = list(self.nodes.values())
-
-        if key == 'quality':
-            top_n_predictions = sorted(all_nodes, key=lambda node: node.quality, reverse=True)[:n]
-        elif key == 'heuristic':
-            top_n_predictions = sorted(all_nodes, key=lambda node: node.heuristic, reverse=True)[:n]
-        elif key == 'length':
-            top_n_predictions = sorted(self.nodes.values(), key=lambda node: len(node), reverse=True)[:n]
-        else:
-            print('Wrong Key:{0}\tProgram exist.'.format(key))
-            raise KeyError
-        return top_n_predictions
+        return _get_top_n_nodes(self.nodes.values(), n, key, length_func=lambda node: len(node))
 
     def clean(self):
         self.items_in_queue = PriorityQueue()

@@ -50,6 +50,10 @@ date) and use that section as the basis for the GitHub release notes.
 - `quality_funcs.f1`/`acc` reimplemented the tp/tn/fp/fn and precision/recall
   arithmetic already implemented in `metrics.py`'s `F1`/`Accuracy` classes; now
   delegate to those classes instead of duplicating the math.
+- `SearchTreePriorityQueue.get_top_n` and `DRILLSearchTreePriorityQueue.get_top_n`
+  (`ontolearn/search.py`) duplicated the same `key == 'quality'/'heuristic'/'length'`
+  dispatch; extracted into a shared `_get_top_n_nodes` helper that both now call,
+  parameterized by how each tree obtains a node's length.
 - Ruff upgraded to `>=0.16.0`. (#594)
 - `TDL`/`TDL_refinement` data-property filtering extended to exclude boolean
   data properties, with a toggle to enable/disable boolean data properties.

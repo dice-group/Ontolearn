@@ -20,10 +20,6 @@ remain open as of this writing.
   `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
   Factor a single internal `(subject, predicate, object)` generator with
   per-mode formatters applied on top.
-- **`ontolearn/search.py:645-662` and `:790-810`** — `get_top_n` in
-  `SearchTreePriorityQueue` and `DRILLSearchTreePriorityQueue` duplicate the
-  same `key == 'quality'/'heuristic'/'length'` dispatch. Extract a shared
-  strategy map/helper.
 
 ## 3. Error handling & logging
 
