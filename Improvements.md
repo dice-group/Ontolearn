@@ -15,11 +15,8 @@ remain open as of this writing.
 
 ## 2. Code duplication
 
-- **`ontolearn/knowledge_base.py:191-262`** — `abox()` repeats the same
-  triple-traversal ~70 lines of near-identical branching, once per
-  `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
-  Factor a single internal `(subject, predicate, object)` generator with
-  per-mode formatters applied on top.
+All code duplication issues originally found in this pass have been fixed;
+none remain open as of this writing.
 
 ## 3. Error handling & logging
 

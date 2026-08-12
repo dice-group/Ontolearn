@@ -28,6 +28,11 @@ date) and use that section as the basis for the GitHub release notes.
   `tests/test_nces2.py`, and `tests/test_nces_trainer.py` from the test run.
   These intermittently hang for 1h+ (pretrained-model loading), stalling CI
   until manually cancelled, unrelated to the code under test. See #622.
+- `KnowledgeBase.abox()` (`ontolearn/knowledge_base.py`) repeated the same
+  rdf:type/data-property/object-property triple traversal once per
+  `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
+  Factored into a shared `_abox_native_triples` generator with per-mode
+  formatter methods applied on top.
 - `ModifiedCELOERefinement._setup()` (`ontolearn/refinement_operators.py`, used by
   `CELOE`/`OCEL`/`ExpressRefinement`) eagerly swept every object property against
   every individual in the knowledge base at construction time, purely to precompute
