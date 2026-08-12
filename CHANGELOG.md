@@ -24,6 +24,10 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- CI (`.github/workflows/test.yml`) temporarily excludes `tests/test_nces.py`,
+  `tests/test_nces2.py`, and `tests/test_nces_trainer.py` from the test run.
+  These intermittently hang for 1h+ (pretrained-model loading), stalling CI
+  until manually cancelled, unrelated to the code under test. See #622.
 - `ModifiedCELOERefinement._setup()` (`ontolearn/refinement_operators.py`, used by
   `CELOE`/`OCEL`/`ExpressRefinement`) eagerly swept every object property against
   every individual in the knowledge base at construction time, purely to precompute
