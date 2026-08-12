@@ -30,6 +30,12 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- Upgraded to owlapy 1.6.6, which makes owlready2 an optional install extra
+  rather than a hard dependency; `ontolearn/incomplete_kb.py` and
+  `ontolearn/semantic_caching.py` switched from module-load-time
+  `from owlready2 import *` to a lazy `ontolearn.utils.import_owlready2()`
+  helper so importing them no longer requires owlready2 unless
+  owlready2-backed functionality is actually used. (#600)
 - `tests/test_example_concept_learning_evaluation.py::TestConceptLearning::test_learning`
   intermittently failed DRILL's mean-F1 assertion (`assert x > 0.9`) in CI. Now
   passes `random_state=42` to `Drill` and gives it a larger dedicated runtime
@@ -83,6 +89,17 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `ALCSAT`/`SPELL` (`SATBaseLearner._convert_kb_to_structure`,
+  `ontolearn/learners/sat_base.py`) crashed with
+  `AttributeError: 'Or' object has no attribute 'iri'` while initializing
+  over ontologies that illegally pun an entity as multiple property types
+  (e.g. `KGs/Biopax/biopax.owl`'s `DELTA-G`, declared as both
+  `ObjectProperty` and `AnnotationProperty`), because owlready2's load-time
+  punning repair returned internal class-expression nodes as object-property
+  values. Resolved as a side effect of the owlapy 1.6.6 upgrade above
+  (`#600`), which routes `StructuralReasoner.object_property_values()`
+  through a helper that skips such malformed values with a warning instead
+  of crashing; not previously credited for this fix. (#598)
 - `TDL_refinement.classification_report` always raised `AttributeError`:
   `TDL_refinement.fit()` set `self.__classification_report` from within its
   own class body, which Python name-mangles to a different attribute than
