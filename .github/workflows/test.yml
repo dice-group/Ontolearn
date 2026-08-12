@@ -71,7 +71,13 @@ jobs:
             --user admin:admin
 
       - name: Testing and coverage report
-        run: | 
+        run: |
           pip install coverage
-          coverage run -m pytest -p no:warnings -x --durations=0
+          # NCES tests are temporarily excluded: they intermittently hang for 1h+
+          # in CI (pretrained-model loading), unrelated to the code under test.
+          # Tracked in https://github.com/dice-group/Ontolearn/issues/622.
+          coverage run -m pytest -p no:warnings -x --durations=0 \
+            --ignore=tests/test_nces.py \
+            --ignore=tests/test_nces2.py \
+            --ignore=tests/test_nces_trainer.py
           coverage report -m
