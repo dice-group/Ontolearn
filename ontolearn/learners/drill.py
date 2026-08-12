@@ -83,11 +83,22 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                  max_runtime=None,
                  num_of_sequential_actions=3,
                  stop_at_goal=True,
-                 num_episode: int = 10):
+                 num_episode: int = 10,
+                 random_state: int = None):
 
         self.name = "DRILL"
         self.verbose = verbose
         self.learning_problem = None
+        self.random_state = random_state
+        # Dedicated RNG for exploration/example sampling below, instead of the
+        # global `random` module, so runs are reproducible given the same seed
+        # without perturbing unrelated code's use of the global RNG.
+        self._rnd = random.Random(random_state)
+        if random_state is not None:
+            torch.manual_seed(random_state)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(random_state)
+                torch.cuda.manual_seed_all(random_state)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -645,8 +656,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         (2) Exploitation.
         """
         self.assign_embeddings(current_state)
-        if random.random() < self.epsilon:
-            next_state = random.choice(next_states)
+        if self._rnd.random() < self.epsilon:
+            next_state = self._rnd.choice(next_states)
         else:
             next_state = self.exploitation(current_state, next_states)
         self.assign_embeddings(next_state)
@@ -741,10 +752,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 # Generate Learning problems from a single target
                 for _ in range(num_of_target_concepts):
                     # Randomly sample positive examples from concept i
-                    sampled_positives = set(random.sample(individuals_i, size_of_examples))
-                    
+                    sampled_positives = set(self._rnd.sample(individuals_i, size_of_examples))
+
                     # Randomly sample negative examples from concept j
-                    sampled_negatives = set(random.sample(individuals_j, size_of_examples))
+                    sampled_negatives = set(self._rnd.sample(individuals_j, size_of_examples))
                     
                     # Validate that positive and negative examples are different
                     if sampled_negatives == sampled_positives:

@@ -64,13 +64,12 @@ none remain open as of this writing.
 
 ## 5. Reproducibility
 
-- **`learners/drill.py`** uses unseeded `random.random()`/`random.choice()`/
-  `random.sample()` (lines 648-649, 744-784) with no `random_state`/`seed`
-  constructor parameter and no `torch.manual_seed()` anywhere in
-  `Drill.__init__`. Runs aren't reproducible, and there's no way to make
-  them so via the public API. `EvoLearner`'s DEAP-driven GA has the same
-  gap — no seed parameter exposed. Worth adding a `random_state` param
-  threaded through to `random`/`numpy`/`torch`/DEAP, consistent with the
+- **`learners/drill.py`** — fixed: `Drill.__init__` now accepts a
+  `random_state` param, seeding a dedicated `random.Random` instance (used
+  for exploration/example sampling instead of the global `random` module)
+  plus `torch`/CUDA. `EvoLearner`'s DEAP-driven GA still has the same
+  gap — no seed parameter exposed. Worth adding the same `random_state`
+  treatment there, threaded through to `numpy`/DEAP, consistent with the
   sklearn convention this codebase otherwise follows (e.g. its
   `fit`/`predict` naming).
 - GPU/CUDA handling itself is fine — `clip.py:138`, `nero.py:107`,
