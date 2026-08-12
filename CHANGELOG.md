@@ -18,6 +18,12 @@ date) and use that section as the basis for the GitHub release notes.
   time. (#599)
 
 ### Added
+- `Drill.__init__` (`ontolearn/learners/drill.py`) accepts a `random_state`
+  param, seeding a dedicated `random.Random` instance (used for exploration/
+  example sampling instead of the global `random` module) plus `torch`/CUDA,
+  so runs are reproducible given the same seed. Previously unseeded with no
+  way to make runs reproducible via the public API. `EvoLearner`'s
+  DEAP-driven GA has the same gap, still open. (#624)
 - Example for generating learning problems with numeric data properties
   (`examples/generate_numeric_lps.py`). (#593)
 - Explicit `ruff.toml` pinning the enforced lint rule set (`E4`, `E7`, `E9`,
@@ -25,10 +31,11 @@ date) and use that section as the basis for the GitHub release notes.
 
 ### Changed
 - `tests/test_example_concept_learning_evaluation.py::TestConceptLearning::test_learning`
-  intermittently failed DRILL's mean-F1 assertion (`assert x > 0.9`) in CI, since
-  DRILL is time-boxed (`max_runtime`) with an unseeded RNG, so its result varies
-  with runner load. Now seeds `random`/`numpy`/`torch`, gives DRILL a larger
-  dedicated runtime budget, and lowers its threshold to `0.85` for margin. See #624.
+  intermittently failed DRILL's mean-F1 assertion (`assert x > 0.9`) in CI. Now
+  passes `random_state=42` to `Drill` and gives it a larger dedicated runtime
+  budget; its threshold is lowered to `0.85` since the search is still
+  wall-clock time-boxed, so outcome still varies somewhat with runner load
+  even with a fixed seed. See #624.
 - CI (`.github/workflows/test.yml`) temporarily excludes `tests/test_nces.py`,
   `tests/test_nces2.py`, and `tests/test_nces_trainer.py` from the test run.
   These intermittently hang for 1h+ (pretrained-model loading), stalling CI

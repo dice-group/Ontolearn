@@ -29,9 +29,6 @@ pd.set_option("display.precision", 5)
 
 
 def seed_everything(seed=42):
-    # DRILL's exploration (ontolearn/learners/drill.py) draws from the global
-    # `random` module with no seed parameter of its own (dice-group/Ontolearn#624),
-    # so this is the only lever available here to cut down run-to-run variance.
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -62,7 +59,8 @@ class TestConceptLearning:
         celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
         drill = Drill(knowledge_base=KnowledgeBase(path=path_kb),
                       quality_func=F1(),
-                      max_runtime=max_runtime_drill)
+                      max_runtime=max_runtime_drill,
+                      random_state=42)
         tdl = TDL(knowledge_base=KnowledgeBase(path=path_kb),
                   kwargs_classifier={"random_state": 0},
                   max_runtime=None)
@@ -155,10 +153,10 @@ class TestConceptLearning:
         RT-TDL      0.35019
         """
         # DRILL's threshold (index 6, F1-DRILL) carries extra margin below the
-        # ~0.90-0.95 it typically reaches: it's the only learner here whose
-        # search is still wall-clock time-boxed with an unseeded RNG, so its
-        # outcome is sensitive to CI runner load even with a fixed seed and a
-        # larger budget above. See dice-group/Ontolearn#624.
+        # ~0.90-0.95 it typically reaches: even with `random_state` fixed above,
+        # its search is still wall-clock time-boxed (`max_runtime_drill`), so how
+        # many exploration steps complete - and thus the outcome - still varies
+        # with CI runner load. See dice-group/Ontolearn#624.
         for i, (x,y) in enumerate(zip(df.select_dtypes(include="number").mean().values.tolist(), [0.94,
                                                                                                   0.3,
                                                                                                   0.95,
