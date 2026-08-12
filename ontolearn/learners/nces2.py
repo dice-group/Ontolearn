@@ -98,7 +98,10 @@ class NCES2(BaseNCES):
                   f"and auto_train is True. Will quickly train neural synthesizers. "
                   f"However, it is advisable that you properly train {self.name} using the "
                   f"example script in `examples/train_nces.py`.\x1b[0m\n")
-            self.train(epochs=5, num_workers = self.num_workers)
+            # num_workers=0: see the comment on the equivalent call in
+            # NCES._set_prerequisites (nces.py) - same quick-training,
+            # coverage-run-deadlock-risk rationale (#610/#622).
+            self.train(epochs=5, num_workers=0)
             self.refresh(self.path_of_trained_models)
         else:
             self.model = self.get_synthesizer(self.path_of_trained_models)

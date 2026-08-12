@@ -96,20 +96,24 @@ date) and use that section as the basis for the GitHub release notes.
   unconditionally to `min(requested, cpu_count-1, 4)`. (#610)
 - `tests/test_nces.py`, `test_nces2.py` (and `ROCES`, which subclasses
   `NCES2`) intermittently hung for 1h+ in CI (#622), stalling PRs until
-  manually cancelled. Root cause: `NCES.fit_one`/`fit_from_iterable` and
-  `NCES2.fit_one`/`fit_from_iterable` (`ontolearn/learners/nces.py`,
-  `nces2.py`) built inference-only `DataLoader`s with a multiprocessing
+  manually cancelled. Root cause: several `DataLoader` construction sites in
+  `ontolearn/learners/nces.py`/`nces2.py` still built a multiprocessing
   worker pool (`num_workers=self.num_workers`, `NCES2` even doing so once
-  per architecture in a loop) purely to fetch one or a few batches — the
-  same fresh-worker-pool-under-`coverage run` deadlock pattern as #610,
-  just missed in the inference path. Now `num_workers=0` for all four
-  inference call sites (no throughput benefit from multiprocessing there
-  anyway). Also added a `timeout=600` to the untimed `dicee`
-  embedding-training subprocess in `NCES._set_prerequisites` as defense in
-  depth, and a job-level `timeout-minutes: 90` safety net in
-  `.github/workflows/test.yml` so any future hang fails fast instead of
-  running for hours. The three NCES test files, temporarily excluded from
-  CI while this was diagnosed (#623), are re-enabled.
+  per architecture in a loop) — the same fresh-worker-pool-under-
+  `coverage run` deadlock pattern already found and fixed for
+  `NCESTrainer.train()` in #610, just missed elsewhere: the four
+  inference-only call sites (`NCES`/`NCES2` `fit_one`/`fit_from_iterable`,
+  no throughput benefit from multiprocessing when fetching one or a few
+  batches) and the "quick, low-fidelity" `auto_train` convenience path in
+  both classes' `_set_prerequisites` (5-epoch training on a tiny dataset,
+  where #610's capped-but-nonzero worker count still wasn't safe under
+  coverage). All six now use `num_workers=0`. Also added a `timeout=600`
+  to the untimed `dicee` embedding-training subprocess in
+  `NCES._set_prerequisites` as defense in depth, and a job-level
+  `timeout-minutes: 90` safety net in `.github/workflows/test.yml` so any
+  future hang fails fast instead of running for hours. The three NCES test
+  files, temporarily excluded from CI while this was diagnosed (#623), are
+  re-enabled.
 - `ConceptAbstractSyntaxTreeBuilder._fix_mid_tokens_errors`/`_postprocess_tail_fix`/
   `_enforce` repaired malformed token sequences via `random.choice(...)`, making
   parser output non-deterministic across runs on identical input; replaced with

@@ -154,8 +154,14 @@ class NCES(BaseNCES):
             self.model = self.get_synthesizer(self.path_of_trained_models)
             print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
             if self.auto_train:
-                # Train NCES for 5 epochs
-                self.train(epochs=5,num_workers = self.num_workers)
+                # Train NCES for 5 epochs. num_workers=0: this quick,
+                # low-fidelity convenience path (see the printed warning
+                # above) trains on a tiny dataset for 5 epochs, where
+                # multiprocessing DataLoader workers add no meaningful
+                # speedup but do carry the coverage-run deadlock risk from
+                # #610/#622 - the capped-but-nonzero worker count `train()`
+                # otherwise defaults to isn't safe here either.
+                self.train(epochs=5, num_workers=0)
                 self.refresh(self.path_of_trained_models)
         else:
             self.instance_embeddings = read_csv(self.path_of_embeddings)
