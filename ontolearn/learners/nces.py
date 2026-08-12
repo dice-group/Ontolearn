@@ -128,6 +128,9 @@ class NCES(BaseNCES):
 
                 self.knowledge_base_path = path_temp_triples
 
+                # timeout: without one, a stalled dicee subprocess (e.g. a hung
+                # dependency call) blocks indefinitely instead of failing into
+                # the except block below. See #622.
                 subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} "
                                f"--path_to_store_single_run {path_temp_embeddings} "
                                f"--backend rdflib --save_embeddings_as_csv "
@@ -137,7 +140,7 @@ class NCES(BaseNCES):
                                f"--embedding_dim {self.dicee_emb_dim} "
                                f"--eval_mode test "
                                f"--optim 'Adam'",
-                               shell=True)
+                               shell=True, timeout=600)
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
@@ -293,8 +296,12 @@ class NCES(BaseNCES):
                                        shuffle_examples=False, max_length=self.max_length,
                                        sorted_examples=self.sorted_examples)
 
+        # num_workers=0: this fetches a single inference batch (next(iter(...))
+        # below), so multiprocessing workers add no throughput benefit while
+        # carrying the same worker-pool deadlock risk under `coverage run`
+        # already found in the training path (#610). See #622.
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers,
+                                num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
@@ -404,7 +411,8 @@ class NCES(BaseNCES):
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
         dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab,
                                        shuffle_examples, max_length=self.max_length)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+        # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []

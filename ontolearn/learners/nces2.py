@@ -253,8 +253,12 @@ class NCES2(BaseNCES):
                                               sampling_strategy=self.sampling_strategy,
                                               num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
+            # num_workers=0: this builds one inference-only DataLoader per
+            # architecture in self.model, in a loop - the same fresh-worker-
+            # pool-per-architecture pattern already found to deadlock under
+            # `coverage run` in the training path (#610). See #622.
             dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers, shuffle=False)
+                                num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
 
         # Initialize a simple solution constructor
@@ -365,7 +369,8 @@ class NCES2(BaseNCES):
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
-            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+            # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
