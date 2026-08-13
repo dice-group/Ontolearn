@@ -98,7 +98,10 @@ class NCES2(BaseNCES):
                   f"and auto_train is True. Will quickly train neural synthesizers. "
                   f"However, it is advisable that you properly train {self.name} using the "
                   f"example script in `examples/train_nces.py`.\x1b[0m\n")
-            self.train(epochs=5, num_workers = self.num_workers)
+            # num_workers=0: see the comment on the equivalent call in
+            # NCES._set_prerequisites (nces.py) - same quick-training,
+            # coverage-run-deadlock-risk rationale (#610/#622).
+            self.train(epochs=5, num_workers=0)
             self.refresh(self.path_of_trained_models)
         else:
             self.model = self.get_synthesizer(self.path_of_trained_models)
@@ -253,8 +256,12 @@ class NCES2(BaseNCES):
                                               sampling_strategy=self.sampling_strategy,
                                               num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
+            # num_workers=0: this builds one inference-only DataLoader per
+            # architecture in self.model, in a loop - the same fresh-worker-
+            # pool-per-architecture pattern already found to deadlock under
+            # `coverage run` in the training path (#610). See #622.
             dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers, shuffle=False)
+                                num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
 
         # Initialize a simple solution constructor
@@ -365,7 +372,8 @@ class NCES2(BaseNCES):
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
-            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+            # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []

@@ -5,6 +5,10 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Safety net: a healthy run takes ~35-45 minutes. Without this, a hung
+    # step (e.g. #622) runs until GitHub's ~360min default job timeout
+    # instead of failing fast and visibly.
+    timeout-minutes: 90
     services:
       fuseki:
         image: stain/jena-fuseki
@@ -73,11 +77,5 @@ jobs:
       - name: Testing and coverage report
         run: |
           pip install coverage
-          # NCES tests are temporarily excluded: they intermittently hang for 1h+
-          # in CI (pretrained-model loading), unrelated to the code under test.
-          # Tracked in https://github.com/dice-group/Ontolearn/issues/622.
-          coverage run -m pytest -p no:warnings -x --durations=0 \
-            --ignore=tests/test_nces.py \
-            --ignore=tests/test_nces2.py \
-            --ignore=tests/test_nces_trainer.py
+          coverage run -m pytest -p no:warnings -x --durations=0
           coverage report -m
