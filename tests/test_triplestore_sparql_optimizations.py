@@ -11,7 +11,7 @@ from ontolearn.triple_store import TripleStore, TripleStoreOntology, TripleStore
 from owlapy.class_expression import OWLClass, OWLThing
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_property import OWLObjectProperty
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 
 NS = "http://example.org/onto#"
 URL = "http://localhost:3030/fake/sparql"
@@ -33,6 +33,40 @@ def _empty_select_response():
     resp = MagicMock()
     resp.json.return_value = {"head": {"vars": ["x"]}, "results": {"bindings": []}}
     return resp
+
+
+class TestDomainAxiomsWithNoExplicitDomain(unittest.TestCase):
+    """Regression test: `most_general_object_properties` now actually drives
+    `object_property_domain_axioms`/`data_property_domain_axioms`/`object_property_range_axioms`
+    for every property in the signature (previously these were only exercised in tests when the
+    domain was owl:Thing, since `func(prop)` used to be silently miscompared). For a property with
+    no explicit rdfs:domain/rdfs:range triple, the underlying `peek()` helper returned a bare `None`
+    on an empty generator instead of the `(None, generator)` tuple its callers unpack, crashing with
+    `TypeError: cannot unpack non-iterable NoneType object`. Caught by CI running against the live
+    Mutagenesis triplestore, where the `inStructure` object property has no declared domain."""
+
+    def setUp(self):
+        self.onto = TripleStoreOntology(URL)
+        self.object_prop = OWLObjectProperty(IRI.create(NS, "noDomainProp"))
+        self.data_prop = OWLDataProperty(IRI.create(NS, "noDomainDataProp"))
+
+    def test_object_property_domain_axioms_falls_back_to_thing(self):
+        with patch("ontolearn.triple_store.requests.post", return_value=_empty_select_response()):
+            axioms = list(self.onto.object_property_domain_axioms(self.object_prop))
+        self.assertEqual(len(axioms), 1)
+        self.assertEqual(axioms[0].get_domain(), OWLThing)
+
+    def test_object_property_range_axioms_falls_back_to_thing(self):
+        with patch("ontolearn.triple_store.requests.post", return_value=_empty_select_response()):
+            axioms = list(self.onto.object_property_range_axioms(self.object_prop))
+        self.assertEqual(len(axioms), 1)
+        self.assertEqual(axioms[0].get_range(), OWLThing)
+
+    def test_data_property_domain_axioms_falls_back_to_thing(self):
+        with patch("ontolearn.triple_store.requests.post", return_value=_empty_select_response()):
+            axioms = list(self.onto.data_property_domain_axioms(self.data_prop))
+        self.assertEqual(len(axioms), 1)
+        self.assertEqual(axioms[0].get_domain(), OWLThing)
 
 
 class TestIndividualsInSignatureCount(unittest.TestCase):

@@ -102,7 +102,7 @@ def peek(generator):
     try:
         first = next(generator)
     except StopIteration:
-        return None
+        return None, generator
     return first, chain([first], generator)
 
 
