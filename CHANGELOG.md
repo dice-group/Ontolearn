@@ -36,6 +36,19 @@ date) and use that section as the basis for the GitHub release notes.
   `from owlready2 import *` to a lazy `ontolearn.utils.import_owlready2()`
   helper so importing them no longer requires owlready2 unless
   owlready2-backed functionality is actually used. (#600)
+- `TripleStore.individuals_count()` and `TripleStore.most_general_object_properties()`
+  (`ontolearn/triple_store.py`) fetched and materialized the full SPARQL result set
+  over HTTP just to compute a count or test a domain/range subset relationship,
+  transferring and parsing far more data than needed on a large or remote endpoint
+  (e.g. DBpedia). `individuals_count` now issues a server-side `COUNT` query
+  (`TripleStoreOntology.individuals_in_signature_count`/`TripleStoreReasoner.instances_count`).
+  `most_general_object_properties` now checks each object property's domain/range
+  against the target domain via a single short-circuiting `ASK` query
+  (`TripleStoreReasoner.is_subset_of_individuals`) instead of fetching every
+  property's full instance set per iteration; this also fixes the subset check
+  itself, which previously compared individuals against the raw (unconsumed)
+  domain/range generator instead of the individuals it would yield, so it could
+  only ever match when the domain was `owl:Thing`. (#613)
 - `tests/test_example_concept_learning_evaluation.py::TestConceptLearning::test_learning`
   intermittently failed DRILL's mean-F1 assertion (`assert x > 0.9`) in CI. Now
   passes `random_state=42` to `Drill` and gives it a larger dedicated runtime
@@ -85,6 +98,16 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `TripleStoreOntology.object_property_domain_axioms`/`data_property_domain_axioms`/
+  `object_property_range_axioms` (`ontolearn/triple_store.py`) crashed with
+  `TypeError: cannot unpack non-iterable NoneType object` for any property with no
+  explicit `rdfs:domain`/`rdfs:range` triple, because the `peek()` helper they rely on
+  returned a bare `None` for an empty generator instead of the `(None, generator)` tuple
+  its callers unpack. Previously unreachable in practice since nothing exercised these
+  axioms for a property lacking a domain/range; surfaced by the `#613` fix above once
+  `most_general_object_properties` started actually calling into them for every object
+  property in the signature. `peek()` now returns `(None, generator)` on an empty
+  generator, matching its documented contract.
 - `ALCSAT`/`SPELL` (`SATBaseLearner._convert_kb_to_structure`,
   `ontolearn/learners/sat_base.py`) crashed with
   `AttributeError: 'Or' object has no attribute 'iri'` while initializing

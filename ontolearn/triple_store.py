@@ -102,7 +102,7 @@ def peek(generator):
     try:
         first = next(generator)
     except StopIteration:
-        return None
+        return None, generator
     return first, chain([first], generator)
 
 
@@ -225,23 +225,31 @@ class TripleStoreOntology(AbstractOWLOntology):
     #     for binding in self.query(query).json()["results"]["bindings"]:
     #         yield OWLNamedIndividual(binding["x"]["value"])
 
-    def individuals_in_signature(self, implicit_individuals:bool = True) -> Iterable[OWLNamedIndividual]:
-        # TODO AB: Maybe extend this method to check for implicit individuals (idea: check for ?x a owl:Thing and
+    @staticmethod
+    def _individuals_in_signature_where_clause(implicit_individuals: bool) -> str:
+        # TODO AB: Maybe extend this to check for implicit individuals (idea: check for ?x a owl:Thing and
         #          exclude everything that is not a class, property, etc.)
         if not implicit_individuals:
-            query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
-        else:
-            query = owl_prefix + """SELECT DISTINCT ?x
-                                    WHERE {
-                                      ?x ?p ?o .
-                                      FILTER NOT EXISTS { ?x a owl:Class }
-                                      FILTER NOT EXISTS { ?x a owl:ObjectProperty }
-                                      FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
-                                      FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
-                                      FILTER NOT EXISTS { ?x a owl:Ontology }
-                                      FILTER (!isBlank(?x))
-                                    }"""
+            return "?x a owl:NamedIndividual."
+        return """?x ?p ?o .
+                  FILTER NOT EXISTS { ?x a owl:Class }
+                  FILTER NOT EXISTS { ?x a owl:ObjectProperty }
+                  FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
+                  FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
+                  FILTER NOT EXISTS { ?x a owl:Ontology }
+                  FILTER (!isBlank(?x))"""
+
+    def individuals_in_signature(self, implicit_individuals:bool = True) -> Iterable[OWLNamedIndividual]:
+        where_clause = self._individuals_in_signature_where_clause(implicit_individuals)
+        query = owl_prefix + f"SELECT DISTINCT ?x WHERE {{ {where_clause} }}"
         yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
+
+    def individuals_in_signature_count(self, implicit_individuals: bool = True) -> int:
+        """Count individuals in the signature via a server-side COUNT query instead of materializing them."""
+        where_clause = self._individuals_in_signature_where_clause(implicit_individuals)
+        query = owl_prefix + f"SELECT (COUNT(DISTINCT ?x) AS ?cnt) WHERE {{ {where_clause} }}"
+        bindings = requests.post(self.url, data={"query": query}).json()["results"]["bindings"]
+        return int(bindings[0]["cnt"]["value"]) if bindings else 0
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
         query = (owl_prefix + "SELECT DISTINCT ?x" + "WHERE { ?x owl:equivalentClass " + f"<{c.str}>."
@@ -486,6 +494,36 @@ class TripleStoreReasoner(AbstractOWLReasoner):
                 if cls not in seen_set:
                     seen_set.add(cls)
                     yield from self.instances(cls, direct, seen_set)
+
+    def instances_count(self, ce: OWLClassExpression, direct: bool = False) -> int:
+        """Count the instances of `ce` via a server-side COUNT query instead of fetching and counting every
+        matching individual. Unlike `instances`, this does not additionally union in instances reachable only
+        through an owl:equivalentClass axiom on `ce`."""
+        ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce, count=True)
+        if not direct:
+            ce_to_sparql = ce_to_sparql.replace(
+                "?x a ",
+                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
+            )
+        bindings = self.query(ce_to_sparql).json()["results"]["bindings"]
+        return int(bindings[0]["cnt"]["value"]) if bindings else 0
+
+    def is_subset_of_individuals(self, individuals: Iterable[OWLNamedIndividual], ce: OWLClassExpression,
+                                  direct: bool = False) -> bool:
+        """True iff every individual in `individuals` is also matched by `ce`, checked server-side via a single
+        ASK query that short-circuits at the first counterexample instead of materializing `ce`'s instances."""
+        individuals = list(individuals)
+        if not individuals:
+            return True
+        ce_pattern = "\n".join(self._owl2sparql_converter.convert("?x", ce))
+        if not direct:
+            ce_pattern = ce_pattern.replace(
+                "?x a ",
+                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
+            )
+        values = " ".join(f"<{i.str}>" for i in individuals)
+        ask_query = f"ASK {{ VALUES ?x {{ {values} }} FILTER NOT EXISTS {{ {ce_pattern} }} }}"
+        return not self.query(ask_query).json()["boolean"]
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
@@ -961,7 +999,20 @@ class TripleStore(AbstractKnowledgeBase):
         yield from self.ontology.data_properties_in_signature()
 
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
-        return len(set(self.individuals(concept)))
+        """Returns the number of individuals belonging to the concept in the ontology.
+
+        Computed server-side via a SPARQL COUNT query instead of fetching and counting every matching
+        individual, since concepts on a large/remote endpoint (e.g. DBpedia) can span many thousands of
+        individuals.
+
+        Args:
+            concept: Class expression of the individuals to count.
+        Returns:
+            Number of the individuals belonging to the given class.
+        """
+        if concept is None or concept.is_owl_thing():
+            return self.ontology.individuals_in_signature_count()
+        return self.reasoner.instances_count(concept)
 
     def individuals_set(self,
                         arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
@@ -975,19 +1026,25 @@ class TripleStore(AbstractKnowledgeBase):
     def most_general_object_properties(
             self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
         assert isinstance(domain, OWLClassExpression)
-        # TODO AB: Implementation copied from KnowledgeBase but is unclear what this method actually does.
+        # Mirrors KnowledgeBase.most_general_object_properties: a property is "most general" for `domain` if
+        # `domain` is owl:Thing, or every individual of `domain` also satisfies the property's declared
+        # domain/range (`func`). Unlike a full-set subset check, the comparison against each property's
+        # domain/range is done server-side via a single short-circuiting ASK query, avoiding a full instance
+        # fetch per object property in the signature.
         func: Callable
         func = (self.get_object_property_ranges if inverse else self.get_object_property_domains)
 
-        # TODO AB: <<REVIEW>> There is a contradiction in the implementation below because if domain is owl:thing then,
-        #          the property is returned, meaning that the domain of the property is a subclass of the 'domain'
-        #          argument. On the other side if set of individuals covered by the 'domain' argument is a subset
-        #          of the set of individuals covered by the property's domain then the property is returned. That means
-        #          that the 'domain' argument is a subclass of the property's domain, which contradict the first
-        #          condition.
+        if domain.is_owl_thing():
+            yield from self.ontology.object_properties_in_signature()
+            return
+
         inds_domain = self.individuals_set(domain)
         for prop in self.ontology.object_properties_in_signature():
-            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
+            fillers = list(func(prop))
+            if not fillers:
+                continue
+            filler = fillers[0] if len(fillers) == 1 else OWLObjectUnionOf(fillers)
+            if self.reasoner.is_subset_of_individuals(inds_domain, filler):
                 yield prop
 
     def data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
