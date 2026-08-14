@@ -27,7 +27,7 @@
 import logging
 import re
 from functools import cache
-from itertools import chain
+from itertools import chain, count
 from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable, FrozenSet
 import requests
 
@@ -484,10 +484,15 @@ class TripleStoreReasoner(AbstractOWLReasoner):
             seen_set.add(ce)
         ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
         if not direct:
-            ce_to_sparql = ce_to_sparql.replace(
-                "?x a ",
-                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
-            )
+            counter = count()
+
+            def _replace_with_subclass_filter(_match: re.Match) -> str:
+                # Each occurrence gets its own variable so that uses inside/outside
+                # constructs like FILTER NOT EXISTS don't accidentally share a binding.
+                var = f"?some_cls_{next(counter)}"
+                return f"?x a {var}. \n {var} <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+
+            ce_to_sparql = re.sub(r"\?x a ", _replace_with_subclass_filter, ce_to_sparql)
         yield from send_http_request_to_ts_and_fetch_results(self.url, ce_to_sparql, OWLNamedIndividual)
         if not direct:
             for cls in self.equivalent_classes(ce):
