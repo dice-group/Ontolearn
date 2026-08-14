@@ -216,6 +216,7 @@ def build_targets(kb: KnowledgeBase, args, rng: random.Random) -> List[OWLClassE
         use_time_datatypes=False,
         use_boolean_datatype=False,
         value_splitter=BinningValueSplitter(max_nr_splits=args.num_splits),
+        random_seed=args.seed,
     )
 
     atoms = numeric_atoms(kb, args.num_splits)
