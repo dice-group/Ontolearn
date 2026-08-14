@@ -105,7 +105,9 @@ date) and use that section as the basis for the GitHub release notes.
   `(¬Daughter) ⊓ Female`, which places one inside a `FILTER NOT EXISTS` block and
   one outside it — the shared variable name let the two occurrences bind to each
   other instead of being scoped independently, producing incorrect results. Each
-  occurrence now gets its own uniquely numbered `?some_cls_N` variable. (#575)
+  occurrence now gets its own uniquely numbered `?some_cls_N` variable. Covered by
+  `tests/test_triplestore_indirect_instances_sparql.py`, which mocks the HTTP layer
+  so it doesn't need a live triplestore. (#575)
 - `TripleStoreOntology.object_property_domain_axioms`/`data_property_domain_axioms`/
   `object_property_range_axioms` (`ontolearn/triple_store.py`) crashed with
   `TypeError: cannot unpack non-iterable NoneType object` for any property with no
