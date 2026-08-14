@@ -98,6 +98,14 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `TripleStoreReasoner.instances` (`ontolearn/triple_store.py`), used for indirect
+  (`direct=False`) instance retrieval on a `TripleStore`, rewrote every `?x a `
+  occurrence in the generated SPARQL to the same `?some_cls` variable. For class
+  expressions with more than one such occurrence in different scopes — e.g.
+  `(¬Daughter) ⊓ Female`, which places one inside a `FILTER NOT EXISTS` block and
+  one outside it — the shared variable name let the two occurrences bind to each
+  other instead of being scoped independently, producing incorrect results. Each
+  occurrence now gets its own uniquely numbered `?some_cls_N` variable. (#575)
 - `TripleStoreOntology.object_property_domain_axioms`/`data_property_domain_axioms`/
   `object_property_range_axioms` (`ontolearn/triple_store.py`) crashed with
   `TypeError: cannot unpack non-iterable NoneType object` for any property with no
