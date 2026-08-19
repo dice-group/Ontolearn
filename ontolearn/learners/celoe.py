@@ -22,6 +22,8 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
+import logging
+
 from .base import RefinementBasedConceptLearner
 
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, EncodedPosNegLPStandardKind, \
@@ -43,6 +45,8 @@ from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 
 from ..utils.static_funcs import concept_len
+
+logger = logging.getLogger(__name__)
 
 _concept_operand_sorter = ConceptOperandSorter()
 
@@ -166,11 +170,27 @@ class CELOE(RefinementBasedConceptLearner):
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         return OENode(c, concept_len(c), parent_node=parent_node, is_root=is_root)
-    # TODO:CD: Why do we need this ?
+
     @contextmanager
     def updating_node(self, node: OENode):
         """
         Removes the node from the heuristic sorted set and inserts it again.
+
+        `heuristic_queue` is a `SortedSet` keyed by `HeuristicOrderedNode`, i.e. it orders
+        entries by `node.heuristic` (then by concept). Refining `node` changes `node.h_exp`
+        and, via `heuristic_func.apply(...)`, `node.heuristic` itself - so `node` has to be
+        pulled out of the sorted structure *before* it is mutated and re-inserted *after*,
+        otherwise the set's internal ordering invariant (built from the heuristic value at
+        insertion time) would no longer match the node's current heuristic value.
+
+        `discard()` looks the node up by its *current* key. If the node's heuristic already
+        changed since it was added to the queue (e.g. it was mutated somewhere other than
+        through this context manager, or it is being updated a second time without ever
+        having been re-added), the lookup can miss and `SortedKeyList.remove()` raises
+        `ValueError`. That would indicate the node's queue membership and its `heuristic`
+        attribute have gone out of sync with each other - worth investigating if it is
+        ever observed - but there is nothing to undo here: the node is simply not present
+        in the queue, so we fall through to `yield`/re-`add()` as normal.
 
         Args:
             Node to update.
@@ -181,8 +201,8 @@ class CELOE(RefinementBasedConceptLearner):
         try:
             self.heuristic_queue.discard(node)
         except ValueError:
-            # TODO:CD: We need to understand this
-            pass
+            logger.warning("Could not find %s in heuristic_queue by its current heuristic key; "
+                            "its heuristic may have been mutated while it was queued.", node)
         yield node
         self.heuristic_queue.add(node)
 

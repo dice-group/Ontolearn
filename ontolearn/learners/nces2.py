@@ -125,9 +125,9 @@ class NCES2(BaseNCES):
                 self.embedding_dim = emb_config["embedding_dim"]
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{path} does not contain at least one of "
-                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`") from e
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             try:
                 with open(f"{path}/config.json") as f:
@@ -146,9 +146,9 @@ class NCES2(BaseNCES):
                 self.embedding_dim = emb_config["embedding_dim"]
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of "
-                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`") from e
 
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
                                               self.input_dropout, self.feature_map_dropout, self.kernel_size,
@@ -277,6 +277,10 @@ class NCES2(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except Exception:
+                # prediction_str is raw, unconstrained model output, not a validated DL
+                # expression, so the parser can legitimately fail in many different ways -
+                # this is the intended "fall back to token-level reconstruction" path, not
+                # a bug being swallowed.
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -285,6 +289,9 @@ class NCES2(BaseNCES):
 
                         concept = self.dl_parser.parse(parse_concept_str)
                     except Exception:
+                        # `concept` already holds the simple_strategy() fallback from above,
+                        # so there is nothing to undo if the stricter AST-validity rebuild
+                        # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
                     print("Prediction: ", prediction_str)
@@ -387,6 +394,9 @@ class NCES2(BaseNCES):
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except Exception:
+                    # See the equivalent fallback in fit_one() above: prediction_str is raw
+                    # model output, not a validated DL expression, so this is the intended
+                    # "fall back to token-level reconstruction" path.
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
