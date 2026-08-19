@@ -31,6 +31,7 @@ from scipy.stats._distn_infrastructure import rv_frozen
 from ontolearn.learners import TDL
 
 logging.getLogger("fitter").setLevel(logging.CRITICAL)
+logger = logging.getLogger(__name__)
 
 
 class TDL_refinement(TDL):
@@ -155,7 +156,7 @@ class TDL_refinement(TDL):
         )
         f.fit()
         best_dist = f.get_best(method="ks_statistic")
-        print(best_dist)
+        logger.debug(best_dist)
         if plot:
             # distribution fit plot
             f.summary(Nbest=1, method="ks_statistic")
@@ -175,10 +176,10 @@ class TDL_refinement(TDL):
         lb_index = np.where(prop_values[np.abs(prop_values - lb).argmin()] == prop_values)
         ub_index = np.where(prop_values[np.abs(prop_values - ub).argmin()] == prop_values)
         # if self.verbose>10:
-        print("lb:", lb_index[0][0], " ub: ", ub_index[0][0])
+        logger.debug("lb: %s  ub: %s", lb_index[0][0], ub_index[0][0])
         if lb_index[0][0] >= ub_index[0][0]:
             if self.verbose > 0:
-                print("Warning: Lower bound and upper bound indices are the same. Refinement may not be effective.")
+                logger.warning("Lower bound and upper bound indices are the same. Refinement may not be effective.")
             return None
         dist = self._find_best_distribution_for_dp(prop_values[lb_index[0][0] : ub_index[0][0]], plot=False)
         return self._compute_dt_pdf_ranges(dist)
@@ -200,8 +201,8 @@ class TDL_refinement(TDL):
         for prop in data_properties_dict:
             best_dist = self._find_best_distribution_for_dp(data_properties_dict[prop])
 
-            print("prop" + prop.__repr__())
-            print(best_dist)
+            logger.debug("prop%r", prop)
+            logger.debug(best_dist)
             best_dists[prop._iri] = best_dist
             ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(best_dist))
 
@@ -278,7 +279,7 @@ class TDL_refinement(TDL):
                                 data_properties_dict[data_prop].append(literal)
         except Exception as e:
             if self.verbose > 0:
-                print(f"Warning: Error extracting data property features: {e}")
+                logger.warning(f"Error extracting data property features: {e}")
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual], start_time: float = None) -> (Tuple)[np.ndarray, List[OWLClassExpression]]:
         # start_time is accepted (but unused) so this override keeps the same call
@@ -343,13 +344,13 @@ class TDL_refinement(TDL):
             )
             raise AssertionError(error_msg)
         if self.verbose > 0:
-            print(f"Unique OWL Class Expressions as features: {len(features_dict)}")
+            logger.info(f"Unique OWL Class Expressions as features: {len(features_dict)}")
             if self.use_inverse:
-                print("  - Including inverse property features")
+                logger.info("  - Including inverse property features")
             if self.use_data_properties:
-                print("  - Including data property features")
+                logger.info("  - Including data property features")
             if self.use_card_restrictions:
-                print("  - Including cardinality restriction features")
+                logger.info("  - Including cardinality restriction features")
 
         # Convert features dict to list
         features_list = [v for k, v in features_dict.items()]
@@ -391,7 +392,7 @@ class TDL_refinement(TDL):
 
         ax.set_yticks(range(len(indices[-40:])))
         _ = ax.set_yticklabels(feat_name[indices[-40:]])
-        print("show plot")
+        logger.debug("show plot")
         plt.show()
 
     def plot_shap_feature_importances(self, shap_vals, feat_name):
@@ -410,7 +411,7 @@ class TDL_refinement(TDL):
         ax.set_title("Top DL Feature Importance (SHAP)")
 
         plt.tight_layout()
-        print("Displaying SHAP Importance Plot")
+        logger.debug("Displaying SHAP Importance Plot")
         plt.show()
 
     def refine_numerical_features(self, topk_expressions: list[OWLClassExpression], iteration: int):
@@ -425,8 +426,8 @@ class TDL_refinement(TDL):
                 if type(filler) is OWLDatatypeRestriction:
                     borders = tuple(float(r.get_facet_value().get_literal()) for r in filler.get_facet_restrictions())
                     if self.verbose > 10:
-                        print("Range to be refined :", borders)
-                        print(e)
+                        logger.debug("Range to be refined : %s", borders)
+                        logger.debug(e)
 
                     refined_ranges = self._extract_refined_ranges_from_data_properties(self.data_properties_dict[e.get_property()], borders)
 
@@ -446,7 +447,7 @@ class TDL_refinement(TDL):
                         lb, ub = borders
                         individuals_for_e = {ind for ind, prop_dict in self.per_individual_data_properties.items() if prop in prop_dict and any(lb <= v <= ub for v in prop_dict[prop])}
                         if self.verbose > 0 and not individuals_for_e:
-                            print(f"Warning: no individuals found for expression {owl_expression_to_dl(e)}, skipping.")
+                            logger.warning(f"No individuals found for expression {owl_expression_to_dl(e)}, skipping.")
 
                     for ind in individuals_for_e:
                         for v in self.per_individual_data_properties[ind][e.get_property()]:
@@ -596,7 +597,7 @@ class TDL_refinement(TDL):
         refined_expressions: Set[OWLClassExpression] = set()
         for i in range(1, self.refine_iterations):
             if self.verbose > 0:
-                print(f"Refinement iteration {i + 1}/{self.refine_iterations}")
+                logger.info(f"Refinement iteration {i + 1}/{self.refine_iterations}")
             # calculate SHAP global feature importance
             tree_explainer = TreeExplainer(self.clf)
             sVal = tree_explainer.shap_values(self.X.values)
@@ -614,11 +615,11 @@ class TDL_refinement(TDL):
             features_to_refine: set[OWLClassExpression] = (set(top_expressions) - refined_expressions)
             refined_features, refined_individuals_to_feature_mapping = self.refine_numerical_features(features_to_refine, iteration=i + 1)
             if self.verbose >0:
-                print("Expressions to be refined:" + str(len(features_to_refine)))
+                logger.info("Expressions to be refined: %d", len(features_to_refine))
 
             if(len(features_to_refine) == 0):
                 if self.verbose > 0:
-                    print("No new expressions to refine. Stopping refinement.")
+                    logger.info("No new expressions to refine. Stopping refinement.")
                 break
             refined_expressions = refined_expressions.union(set(top_expressions))
             X = self._merge_binary_feature_matrices(learning_problem, X, refined_features, refined_individuals_to_feature_mapping)

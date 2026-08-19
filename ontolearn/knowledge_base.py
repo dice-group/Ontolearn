@@ -100,8 +100,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     or (isinstance(ontology,SyncOntology) and isinstance(reasoner,SyncReasoner))),\
                 "You should either use a native ontology and reasoner or use both a SyncOntology and a SyncReasoner!"
             if reasoner.ontology != ontology:
-                print("WARNING: The ontology provided in the constructor is not the same as the one "
-                      "provided in the reasoner. This could lead to inconsistencies.")
+                logger.warning("The ontology provided in the constructor is not the same as the one "
+                               "provided in the reasoner. This could lead to inconsistencies.")
 
         self.path = path
 
@@ -294,7 +294,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
         if mode == "iri":
-            print("WARN  KnowledgeBase.tbox()    :: Ranges of data properties are not implemented for the 'iri' mode!")
+            logger.warning("KnowledgeBase.tbox() :: Ranges of data properties are not implemented for the 'iri' mode!")
         if isinstance(self.ontology, SyncOntology) and mode=="axiom" and entities is None:
             return self.ontology.get_tbox_axioms()
         include_all = False
