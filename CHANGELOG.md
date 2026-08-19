@@ -12,6 +12,8 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Removed
+- `CELOE._add_node_evald` (`ontolearn/learners/celoe.py`), dead code with no
+  call sites — a near-duplicate of `_add_node`.
 - `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
   else in the codebase. It imported `ontolearn.base`, a module removed back
   in the owlapy 1.1.0 migration, so it hadn't been importable for a long
@@ -30,6 +32,11 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- `BaseConceptLearner.train()` (`ontolearn/learners/base.py`) is now documented
+  as a learner-specific optional hook (overridden by Drill, NCES, NCES2, ROCES,
+  CLIP with their own signatures) and returns `self` as its docstring always
+  claimed, instead of being a misleadingly-documented "Train RL agent" stub
+  returning `None`.
 - Upgraded to owlapy 1.6.6, which makes owlready2 an optional install extra
   rather than a hard dependency; `ontolearn/incomplete_kb.py` and
   `ontolearn/semantic_caching.py` switched from module-load-time
