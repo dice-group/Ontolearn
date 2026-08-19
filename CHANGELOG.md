@@ -30,6 +30,16 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- `print()` calls in `knowledge_base.py`, `semantic_caching.py`,
+  `learners/tree_learner_refinement_inherit.py`,
+  `learners/spell_kit/structures.py`, and `learners/drill.py` now go through
+  module-level `logging.getLogger(__name__)` loggers (`info`/`warning`/
+  `debug`/`error`, matched to the message), so their output is controllable
+  and filterable via the existing logging config instead of always printing
+  unconditionally to stdout. `structures.py`'s `structure_to_dot`, whose
+  `print()`s produce actual DOT-graph output rather than log messages, is
+  left as-is. Remaining offenders across the rest of `ontolearn/` are noted
+  in `Improvements.md`.
 - Upgraded to owlapy 1.6.6, which makes owlready2 an optional install extra
   rather than a hard dependency; `ontolearn/incomplete_kb.py` and
   `ontolearn/semantic_caching.py` switched from module-load-time

@@ -23,13 +23,20 @@ none remain open as of this writing.
 - **Logging infra is built but essentially unused.** `ontolearn/utils/log_config.py`
   and `oplogging.py` provide a real fileConfig-based setup with a TRACE
   level, but only ~8 call sites across `ontolearn/` actually use
-  `getLogger`/`oplogging`/`log_config`. Meanwhile `print(` appears **363
-  times** across `ontolearn/**/*.py`. Worst offenders: `learners/drill.py`
-  (37), `semantic_caching.py` (25), `learners/tree_learner_refinement_inherit.py`
-  (25), `learners/spell_kit/structures.py` (18), `learners/nces.py` (17).
-  `knowledge_base.py` even defines `logger = logging.getLogger(__name__)`
-  (line 54) but still uses `print()` for warnings at lines 103-104 and 289.
-  Routing these through the existing logger (with levels) would make output
+  `getLogger`/`oplogging`/`log_config`. `print(` calls have been routed
+  through module-level `logger = logging.getLogger(__name__)` calls (with
+  appropriate levels — `info`/`warning`/`debug`/`error`) in
+  `knowledge_base.py`, `semantic_caching.py`,
+  `learners/tree_learner_refinement_inherit.py`,
+  `learners/spell_kit/structures.py` (except `structure_to_dot`, whose
+  `print()`s are genuine DOT-graph text output, not log messages), and
+  `learners/drill.py`. `print(` still appears **~270 times** across the rest
+  of `ontolearn/**/*.py`; remaining offenders include `learners/nces.py`
+  (17), `learners/nces2.py` (11), `learners/tree_learner.py` (16),
+  `learners/celoe.py` (11), `learners/sparql_query_learner.py` (4), and
+  `data_struct.py` (10) — several of these overlap with the broad-except
+  cleanup below and are best converted alongside that work. Routing the rest
+  through the existing logger (with levels) would make output
   controllable/filterable instead of unconditionally printed.
 - **Bare `except:`** in `ontolearn/data_struct.py:289,388` swallows
   everything including `KeyboardInterrupt`/`SystemExit`. Narrow to the

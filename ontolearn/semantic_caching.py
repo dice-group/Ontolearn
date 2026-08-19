@@ -41,6 +41,7 @@ from owlapy.class_expression import (
     OWLClass,
 )
 from owlapy.owl_property import OWLObjectInverseOf
+import logging
 import time
 from typing import Tuple, Set
 from owlapy import owl_expression_to_dl
@@ -55,6 +56,8 @@ import pickle
 from tqdm import tqdm
 
 from ontolearn.utils import import_owlready2
+
+logger = logging.getLogger(__name__)
 
 
 def concept_generator(path_kg):
@@ -177,7 +180,7 @@ def get_saved_concepts(path_kg, data_name, shuffle):
     if os.path.exists(save_file):
         with open(save_file, "rb") as f:
             alc_concepts = pickle.load(f)
-        print(f"Loaded concepts from {filename}.")
+        logger.info(f"Loaded concepts from {filename}.")
     else:
         # Generate concepts and optionally shuffle
         alc_concepts = concept_generator(path_kg)
@@ -189,7 +192,7 @@ def get_saved_concepts(path_kg, data_name, shuffle):
         with open(save_file, "wb") as f:
             pickle.dump(alc_concepts, f)
 
-        print(f"Generated and saved {'shuffled' if shuffle else 'unshuffled'} concepts.")
+        logger.info(f"Generated and saved {'shuffled' if shuffle else 'unshuffled'} concepts.")
     
     return alc_concepts
 
@@ -554,7 +557,7 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'):
     if reasoner.has_consistent_ontology():
         return {i.str for i in (reasoner.instances(expression, direct=False))}
     else:
-        print("The knowledge base is not consistent") 
+        logger.warning("The knowledge base is not consistent")
          
 
 def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:bool):
@@ -606,21 +609,21 @@ def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:
         Avg_jaccard.append(jacc)
         Avg_jaccard_reas.append(jacc_reas)
         D.append({'dataset':data_name,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
-        print(f'Expression: {owl_expression_to_dl(expr)}')
-        print(f'Jaccard similarity: {jacc}')
-        # assert jacc == 1.0 
+        logger.info(f'Expression: {owl_expression_to_dl(expr)}')
+        logger.info(f'Jaccard similarity: {jacc}')
+        # assert jacc == 1.0
 
     stats = cached_retriever.get_stats()
-    
-    print('-'*50)
-    print("Cache Statistics:")
-    print(f"Hit Ratio: {stats['hit_ratio']:.2f}")
-    print(f"Miss Ratio: {stats['miss_ratio']:.2f}")
-    print(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
-    print(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
-    print(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
-    print(f"Total number of concepts: {len(alc_concepts)}")
-    print(f"Average Jaccard for the {data_name} dataset", sum(Avg_jaccard)/len(Avg_jaccard))
+
+    logger.info('-'*50)
+    logger.info("Cache Statistics:")
+    logger.info(f"Hit Ratio: {stats['hit_ratio']:.2f}")
+    logger.info(f"Miss Ratio: {stats['miss_ratio']:.2f}")
+    logger.info(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
+    logger.info(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
+    logger.info(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
+    logger.info(f"Total number of concepts: {len(alc_concepts)}")
+    logger.info(f"Average Jaccard for the {data_name} dataset: {sum(Avg_jaccard)/len(Avg_jaccard)}")
 
     return {
         'dataset': data_name,
@@ -686,21 +689,21 @@ def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reaso
         Avg_jaccard.append(jacc)
         Avg_jaccard_reas.append(jacc_reas)
         D.append({'dataset':data_name,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
-        print(f'Expression: {owl_expression_to_dl(expr)}')
-        print(f'Jaccard similarity: {jacc}')
-        # assert jacc == 1.0 
+        logger.info(f'Expression: {owl_expression_to_dl(expr)}')
+        logger.info(f'Jaccard similarity: {jacc}')
+        # assert jacc == 1.0
 
     stats = cached_retriever.get_stats()
-    
-    print('-'*50)
-    print("Cache Statistics:")
-    print(f"Hit Ratio: {stats['hit_ratio']:.2f}")
-    print(f"Miss Ratio: {stats['miss_ratio']:.2f}")
-    print(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
-    print(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
-    print(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
-    print(f"Total number of concepts: {len(alc_concepts)}")
-    print(f"Average Jaccard for the {data_name} dataset", sum(Avg_jaccard)/len(Avg_jaccard))
+
+    logger.info('-'*50)
+    logger.info("Cache Statistics:")
+    logger.info(f"Hit Ratio: {stats['hit_ratio']:.2f}")
+    logger.info(f"Miss Ratio: {stats['miss_ratio']:.2f}")
+    logger.info(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
+    logger.info(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
+    logger.info(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
+    logger.info(f"Total number of concepts: {len(alc_concepts)}")
+    logger.info(f"Average Jaccard for the {data_name} dataset: {sum(Avg_jaccard)/len(Avg_jaccard)}")
 
     return {
         'dataset': data_name,
