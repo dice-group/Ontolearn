@@ -38,17 +38,6 @@ none remain open as of this writing.
   cleanup below and are best converted alongside that work. Routing the rest
   through the existing logger (with levels) would make output
   controllable/filterable instead of unconditionally printed.
-- **Bare `except:`** in `ontolearn/data_struct.py:289,388` swallows
-  everything including `KeyboardInterrupt`/`SystemExit`. Narrow to the
-  specific expected exception type.
-- **Broad `except Exception:` that just prints and continues**, masking real
-  bugs as "no result found": `learners/tree_learner.py:525,547,592`,
-  `learners/nces.py:101,144,177,195,234,311,319`,
-  `learners/nces2.py:125,146,272,280,381`,
-  `learners/sparql_query_learner.py:252`. Also
-  `learners/celoe.py:183-185` has a bare `except ValueError: pass` next to an
-  unresolved `# TODO:CD: We need to understand this` — worth actually
-  chasing down before merging code that silently ignores it.
 - **`learners/celoe.py:290-311`** — `_add_node_evald` is dead code, a
   near-duplicate of `_add_node` (255-288) with zero call sites anywhere in
   the repo. Remove it.

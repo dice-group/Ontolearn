@@ -12,6 +12,8 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Removed
+- `CELOE._add_node_evald` (`ontolearn/learners/celoe.py`), dead code with no
+  call sites — a near-duplicate of `_add_node`.
 - `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
   else in the codebase. It imported `ontolearn.base`, a module removed back
   in the owlapy 1.1.0 migration, so it hadn't been importable for a long
@@ -40,6 +42,11 @@ date) and use that section as the basis for the GitHub release notes.
   `print()`s produce actual DOT-graph output rather than log messages, is
   left as-is. Remaining offenders across the rest of `ontolearn/` are noted
   in `Improvements.md`.
+- `BaseConceptLearner.train()` (`ontolearn/learners/base.py`) is now documented
+  as a learner-specific optional hook (overridden by Drill, NCES, NCES2, ROCES,
+  CLIP with their own signatures) and returns `self` as its docstring always
+  claimed, instead of being a misleadingly-documented "Train RL agent" stub
+  returning `None`.
 - Upgraded to owlapy 1.6.6, which makes owlready2 an optional install extra
   rather than a hard dependency; `ontolearn/incomplete_kb.py` and
   `ontolearn/semantic_caching.py` switched from module-load-time
@@ -108,6 +115,37 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- Two bare `except:` clauses swallowed everything, including
+  `KeyboardInterrupt`/`SystemExit`: `NCESBaseDataset.decompose`'s numeric-token
+  check (`ontolearn/data_struct.py:289`) narrowed to `ValueError` (the only
+  thing `int(char)` can raise there), and `NCESDatasetInference.__getitem__`'s
+  embedding lookup (`data_struct.py:388`) narrowed to `KeyError` (the only
+  thing a missing-label `.loc[]` lookup can raise).
+  `SPARQLQueryLearner._compute_f1_score` (`ontolearn/learners/sparql_query_learner.py`)
+  caught bare `Exception` for the same reason its own `_http_request` raised a
+  bare `Exception("Query failed")` on a non-2xx response; `_http_request` now
+  raises `requests.exceptions.HTTPError`, so the catch narrows to
+  `(requests.exceptions.RequestException, KeyError, IndexError, ValueError)` -
+  the actual failure modes of a malformed candidate SPARQL query (built from
+  `_powerset_of_filters` combinations) or its response.
+- `TDL.extract_expressions_from_owl_individuals`'s three per-individual feature
+  extractors (`ontolearn/learners/tree_learner.py`) caught `Exception` around
+  both the reasoner lookups *and* the OWL-object construction that follows
+  them, so a real bug in the construction code (not just a reasoner miss)
+  would silently reduce a feature set instead of surfacing. Narrowed
+  `_extract_inverse_property_features`'s inner `try` to wrap only the
+  `get_object_property_values` reasoner call; all three now always log the
+  caught exception (previously only printed when `verbose > 0`, so a bug
+  hitting the default-quiet path left no trace at all).
+- `CELOE.updating_node`'s `except ValueError: pass` around
+  `heuristic_queue.discard(node)` carried an unresolved
+  `# TODO:CD: We need to understand this`. `heuristic_queue` is a `SortedSet`
+  keyed by the node's `heuristic` value; `discard()` looks a node up by its
+  *current* key, so the `ValueError` means the node's queue membership and
+  its `heuristic` attribute have gone out of sync (e.g. mutated somewhere
+  other than through this context manager). Documented the actual mechanism
+  and replaced the silent `pass` with a `logger.warning` so a future
+  occurrence is visible instead of invisible.
 - `TripleStoreReasoner.instances` (`ontolearn/triple_store.py`), used for indirect
   (`direct=False`) instance retrieval on a `TripleStore`, rewrote every `?x a `
   occurrence in the generated SPARQL to the same `?some_cls` variable. For class

@@ -55,9 +55,12 @@ from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tre
     plot_topk_feature_importance
 
 import itertools
+import logging
 from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
 from enum import Enum, auto
+
+logger = logging.getLogger(__name__)
 
 
 def explain_inference(clf, X: pd.DataFrame):
@@ -499,35 +502,41 @@ class TDL:
             for obj_prop in self.knowledge_base.get_object_properties():
                 # Get inverse property values
                 inverse_prop = obj_prop.get_inverse_property()
-                
+
                 # Check if this individual is the object of any property assertion
                 # by checking all individuals that have this property pointing to our individual
                 for other_ind in self.knowledge_base.individuals():
                     if other_ind == individual:
                         continue
                     try:
-                        # Get object property values for the other individual
+                        # Get object property values for the other individual. This is the
+                        # only reasoner call in the loop body, so only it is allowed to fail
+                        # and be skipped - a bug in the feature-construction code below must
+                        # propagate instead of being silently treated as "no result found".
                         prop_values = list(self.knowledge_base.get_object_property_values(other_ind, obj_prop))
-                        if individual in prop_values:
-                            # Create inverse existential restriction: ∃r⁻.⊤
-                            inv_exist = OWLObjectSomeValuesFrom(property=inverse_prop, 
-                                                               filler=self.knowledge_base.generator.thing)
-                            str_dl_concept = owl_expression_to_dl(inv_exist)
-                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
-                            if str_dl_concept not in features:
-                                features[str_dl_concept] = inv_exist
-                            
-                            # Create inverse universal restriction: ∀r⁻.⊤
-                            inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
-                                                             filler=self.knowledge_base.generator.thing)
-                            str_dl_concept = owl_expression_to_dl(inv_univ)
-                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
-                            if str_dl_concept not in features:
-                                features[str_dl_concept] = inv_univ
-                            break  # Found at least one, that's enough for the feature
                     except Exception:
+                        logger.debug("Could not fetch object property values for %s, %s",
+                                     other_ind, obj_prop, exc_info=True)
                         continue
+                    if individual in prop_values:
+                        # Create inverse existential restriction: ∃r⁻.⊤
+                        inv_exist = OWLObjectSomeValuesFrom(property=inverse_prop,
+                                                           filler=self.knowledge_base.generator.thing)
+                        str_dl_concept = owl_expression_to_dl(inv_exist)
+                        individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                        if str_dl_concept not in features:
+                            features[str_dl_concept] = inv_exist
+
+                        # Create inverse universal restriction: ∀r⁻.⊤
+                        inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
+                                                         filler=self.knowledge_base.generator.thing)
+                        str_dl_concept = owl_expression_to_dl(inv_univ)
+                        individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                        if str_dl_concept not in features:
+                            features[str_dl_concept] = inv_univ
+                        break  # Found at least one, that's enough for the feature
         except Exception as e:
+            logger.warning("Error extracting inverse property features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting inverse property features: {e}")
 
@@ -548,6 +557,7 @@ class TDL:
                    # print(f"Data property values for {data_prop}: {data_values}")
                     pass
         except Exception as e:
+            logger.warning("Error extracting data property features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
 
@@ -593,6 +603,7 @@ class TDL:
                             if str_dl_concept not in features:
                                 features[str_dl_concept] = min_card
         except Exception as e:
+            logger.warning("Error extracting cardinality features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting cardinality features: {e}")
 

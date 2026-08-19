@@ -98,7 +98,7 @@ class NCES(BaseNCES):
                 import dicee
                 print('\nĆheck packages... OK: dicee is installed.')
                 del dicee
-            except Exception:
+            except ImportError:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
                 subprocess.run('pip install dicee==0.3.2')
             if self.auto_train:
@@ -184,9 +184,8 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception as e:
-                print(e,'\n')
                 raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy "
-                                        f"or embedding_config.json`")
+                                        f"or embedding_config.json`") from e
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             try:
                 with open(f"{path}/config.json") as f:
@@ -201,9 +200,9 @@ class NCES(BaseNCES):
                 self.rnn_n_layers = config["rnn_n_layers"]
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, "
-                                        f"inv_vocab.npy or embedding_config.json`")
+                                        f"inv_vocab.npy or embedding_config.json`") from e
 
         m1 = SetTransformer(self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -322,6 +321,11 @@ class NCES(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except Exception:
+                # prediction_str is raw, unconstrained model output, not a validated DL
+                # expression, so the parser can legitimately fail in many different ways
+                # (unbalanced parens, unknown tokens, malformed restrictions, ...) - this
+                # is the intended "fall back to token-level reconstruction" path, not a
+                # bug being swallowed.
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -330,6 +334,9 @@ class NCES(BaseNCES):
 
                         concept = self.dl_parser.parse(parse_concept_str)
                     except Exception:
+                        # `concept` already holds the simple_strategy() fallback from above,
+                        # so there is nothing to undo if the stricter AST-validity rebuild
+                        # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
                     print("Prediction: ", prediction_str)
@@ -432,6 +439,9 @@ class NCES(BaseNCES):
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except Exception:
+                    # See the equivalent fallback in fit_one() above: prediction_str is raw
+                    # model output, not a validated DL expression, so this is the intended
+                    # "fall back to token-level reconstruction" path.
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)

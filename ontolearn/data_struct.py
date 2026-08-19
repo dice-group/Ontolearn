@@ -286,7 +286,7 @@ class NCESBaseDataset:  # pragma: no cover
             try:
                 int(char)
                 return True
-            except:
+            except ValueError:
                 return False
         specials = ['⊔', '⊓', '∃', '∀', '¬', '⊤', '⊥', ' ', '(', ')',\
                     '⁻', '≤', '≥', '{', '}', ':', '[', ']']
@@ -385,7 +385,7 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
         try:
             datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
             datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
-        except:
+        except KeyError:
             print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings.index, pos+neg))}')
             return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1])
         
