@@ -28,7 +28,7 @@ from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, Encod
     AbstractKnowledgeBase
 from ..learning_problem import PosNegLPStandard
 from ..quality_funcs import evaluate_concept
-from ..search import OENode, TreeNode, EvaluatedConcept, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
+from ..search import OENode, TreeNode, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
 
 from typing import Optional, Union, Iterable, Dict
 import owlapy
@@ -283,29 +283,6 @@ class CELOE(RefinementBasedConceptLearner):
             #if logger.isEnabledFor(logging.DEBUG):
             # print("Better description found: %s", ref)
             pass
-        self.heuristic_queue.add(ref)
-        # TODO: implement noise
-        return True
-
-    def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):  # pragma: no cover
-        norm_concept = CESimplifier().simplify(ref.concept)
-        if norm_concept in self._seen_norm_concepts:
-            norm_seen = True
-        else:
-            norm_seen = False
-            self._seen_norm_concepts.add(norm_concept)
-
-        self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-
-        ref.quality = eval_.q
-        self._number_of_tested_concepts += 1
-        if ref.quality == 0:  # > too weak
-            return False
-        assert 0 <= ref.quality <= 1.0
-        # TODO: expression rewriting
-        self.heuristic_func.apply(ref, eval_.inds, self._learning_problem)
-        if not norm_seen and self.best_descriptions.maybe_add(ref):
-            print("Better description found: %s", ref)
         self.heuristic_queue.add(ref)
         # TODO: implement noise
         return True
