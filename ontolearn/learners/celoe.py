@@ -282,7 +282,11 @@ class CELOE(RefinementBasedConceptLearner):
             # ignoring refinement, it has been refined from another parent
             return False
 
-        norm_concept = CESimplifier().simplify(ref.concept)
+        try:
+            norm_concept = CESimplifier().simplify(ref.concept)
+        except (AssertionError, ValueError):
+            # owlapy CESimplifier can emit a 1-operand union/intersection.
+            norm_concept = ref.concept
         if norm_concept in self._seen_norm_concepts:
             norm_seen = True
         else:
