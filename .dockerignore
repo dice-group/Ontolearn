@@ -1,0 +1,58 @@
+# Docker build artifacts
+docker-compose.override.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test / Coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.json
+coverage.xml
+*.cover
+.cache
+nosetests.xml
+
+# Logs
+Log/
+*.log
+
+# Temp files
+temp_embeddings/
+temp_triples/
+
+# Large checkpoint files (mount as volumes instead)
+# checkpoints/
+
+# Fuseki (separate service in docker-compose)
+Fuseki/
+

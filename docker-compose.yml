@@ -1,0 +1,82 @@
+services:
+  # ─── Ontolearn Webservice ───────────────────────────────────────────
+  ontolearn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: ontolearn-webservice
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./KGs:/app/KGs:ro            # Mount knowledge graphs (read-only)
+      - ./LPs:/app/LPs:ro            # Mount learning problems (read-only)
+      - ./checkpoints:/app/checkpoints  # Mount model checkpoints
+    environment:
+      - KNOWLEDGE_BASE_PATH=KGs/Family/family-benchmark_rich_background.owl
+    command: >
+      ontolearn-webservice
+      --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
+      --host 0.0.0.0
+      --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ─── Ontolearn with External Triplestore Backend ────────────────────
+  # Assumes the triplestore is already running and a dataset is hosted at
+  # the endpoint specified by TRIPLE_STORE_ENDPOINT.
+  # Pass the endpoint via a .env file or the command line, e.g.:
+  #   TRIPLE_STORE_ENDPOINT=http://my-fuseki-host:3030/mydataset/sparql \
+  #     docker compose --profile triplestore up
+  ontolearn-triplestore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: ontolearn-triplestore
+    ports:
+      - "8001:8000"
+    environment:
+      - TRIPLE_STORE_ENDPOINT=${TRIPLE_STORE_ENDPOINT:?Please set TRIPLE_STORE_ENDPOINT (e.g. http://host:3030/dataset/sparql)}
+    command: >
+      ontolearn-webservice
+      --endpoint_triple_store ${TRIPLE_STORE_ENDPOINT}
+      --host 0.0.0.0
+      --port 8000
+    profiles:
+      - triplestore
+    restart: unless-stopped
+
+  # ─── Development Container ─────────────────────────────────────────
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: ontolearn-dev
+    volumes:
+      - .:/app
+    profiles:
+      - dev
+    stdin_open: true
+    tty: true
+
+  # ─── Test Runner ───────────────────────────────────────────────────
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    container_name: ontolearn-test
+    volumes:
+      - .:/app
+    profiles:
+      - test
+
+
+
