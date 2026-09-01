@@ -59,6 +59,8 @@ conda create -n venv python=3.11 --no-default-packages && conda activate venv &&
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 # To download learning problems
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
+# To download pretrained NIR encoders + DeCaL embeddings (for NIRReasoner)
+wget https://files.dice-research.org/datasets/CNIR/trained_models.zip -O ./trained_models.zip && unzip trained_models.zip
 ```
 
 ## Learning OWL Class Expressions
@@ -137,6 +139,49 @@ save_owl_class_expressions(expressions=h,path="#owl_prediction")
 ```
 
 Fore more please refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
+
+## Concept Learning with NIRReasoner
+
+CELOE and Drill can search over a `KnowledgeBase` whose instance retrieval is
+[owlapy's `NIRReasoner`](https://dice-group.github.io/owlapy/usage/reasoner.html).
+Named classes stay symbolic; longer class expressions are scored by a pretrained NIR encoder.
+
+Download pretrained encoders and DeCaL embeddings (same zip as in [Installation](#installation)):
+
+```shell
+wget https://files.dice-research.org/datasets/CNIR/trained_models.zip -O ./trained_models.zip && unzip trained_models.zip
+```
+
+```python
+from owlapy.iri import IRI
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_reasoner import NIRReasoner
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners import CELOE
+
+owl_path = "KGs/Family/family-benchmark_rich_background.owl"
+onto = Ontology(IRI.create("file://" + owl_path))
+reasoner = NIRReasoner(
+    onto,
+    model_path="trained_models/nir_pretrained_models/NIR_Transformer_family",
+    embeddings_path="trained_models/embeddings/family/DeCaL_entity_embeddings.csv",
+)
+kb = KnowledgeBase(path=owl_path, ontology=onto, reasoner=reasoner)
+model = CELOE(knowledge_base=kb)
+```
+
+End-to-end comparison of symbolic vs NIR retrieval:
+
+```shell
+python examples/concept_learning_nir_evaluation.py \
+    --lps LPs/Family/lps.json \
+    --kb KGs/Family/family-benchmark_rich_background.owl \
+    --nir_model trained_models/nir_pretrained_models/NIR_Transformer_family \
+    --embeddings trained_models/embeddings/family/DeCaL_entity_embeddings.csv \
+    --learners celoe --problems Aunt --max_runtime 20
+```
+
+Weights: https://files.dice-research.org/datasets/CNIR/trained_models.zip
 
 ## ontolearn-webservice 
 

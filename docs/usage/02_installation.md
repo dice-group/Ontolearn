@@ -117,7 +117,7 @@ Follow the same steps to unzip as the in the KGs case.
 --------------------------------------------------------
 
 ### Other Data
-Below you will find the links to get the necesseray data for _NCES_, _NCES2_, _ROCES_ and _CLIP_.
+Below you will find the links to get the necessary data for _NCES_, _NCES2_, _ROCES_, _CLIP_, and _NIRReasoner_.
 The process to extract the data is the same as shown earlier with "KGs".
 
 ```
@@ -133,6 +133,9 @@ https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/ROCESData.zip
 
 #CLIP:
 https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
+
+#NIRReasoner (pretrained encoders + DeCaL embeddings):
+https://files.dice-research.org/datasets/CNIR/trained_models.zip
 ```
 
 ## Building (sdist and bdist_wheel)

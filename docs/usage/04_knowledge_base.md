@@ -58,6 +58,33 @@ ontology during initialisation. You may as well initialise an instance of `Knowl
 an instance of an ontology and reasoner. For this example we are using a minimalistic ontology
 called the _father_ ontology which you can download as instructed [here](02_installation.md#download-external-files).
 
+You can also pass an owlapy reasoner explicitly. For neural instance retrieval of complex
+class expressions, use [`NIRReasoner`](https://dice-group.github.io/owlapy/usage/reasoner.html)
+with a pretrained encoder from
+[trained_models.zip](https://files.dice-research.org/datasets/CNIR/trained_models.zip):
+
+```python
+from owlapy.iri import IRI
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_reasoner import NIRReasoner
+from ontolearn.knowledge_base import KnowledgeBase
+
+owl_path = "KGs/Family/family-benchmark_rich_background.owl"
+onto = Ontology(IRI.create("file://" + owl_path))
+reasoner = NIRReasoner(
+    onto,
+    model_path="trained_models/nir_pretrained_models/NIR_Transformer_family",
+    embeddings_path="trained_models/embeddings/family/DeCaL_entity_embeddings.csv",
+)
+kb = KnowledgeBase(path=owl_path, ontology=onto, reasoner=reasoner)
+```
+
+Download the weights with:
+
+```shell
+wget https://files.dice-research.org/datasets/CNIR/trained_models.zip -O ./trained_models.zip && unzip trained_models.zip
+```
+
 
 ## Ignore Concepts
 

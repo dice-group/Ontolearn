@@ -10,18 +10,18 @@ are all passed on the command line.
 
 Examples
 --------
-python examples/concept_learning_nir_evaluation.py \\
-    --lps LPs/Family/lps.json \\
-    --kb KGs/Family/family.owl \\
-    --nir_model /path/to/NIR_Transformer_family \\
-    --embeddings /path/to/DeCaL_entity_embeddings.csv \\
-    --max_runtime 60
+Download pretrained NIR encoders and DeCaL embeddings first::
 
-python examples/concept_learning_nir_evaluation.py \\
-    --lps LPs/Family/lps.json --kb KGs/Family/family.owl \\
-    --nir_model /path/to/NIR_Transformer_family \\
-    --embeddings /path/to/DeCaL_entity_embeddings.csv \\
-    --learners celoe --problems Aunt,Brother
+    wget https://files.dice-research.org/datasets/CNIR/trained_models.zip -O ./trained_models.zip && unzip trained_models.zip
+
+Then::
+
+    python examples/concept_learning_nir_evaluation.py \\
+        --lps LPs/Family/lps.json \\
+        --kb KGs/Family/family-benchmark_rich_background.owl \\
+        --nir_model trained_models/nir_pretrained_models/NIR_Transformer_family \\
+        --embeddings trained_models/embeddings/family/DeCaL_entity_embeddings.csv \\
+        --learners celoe --problems Aunt --max_runtime 20
 """
 
 from __future__ import annotations
