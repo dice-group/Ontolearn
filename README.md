@@ -482,4 +482,4 @@ pages="103--115"
 
 ```
 
-In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
+In case you have any question or feedback, please contact us: ```caglar.demir@upb.de```.
