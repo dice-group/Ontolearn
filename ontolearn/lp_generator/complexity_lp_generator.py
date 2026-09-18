@@ -33,8 +33,25 @@ grammar** (:class:`ComplexityProfile`): the caller names which constructors are 
 (intersection, union, existential/universal restriction, cardinality restrictions, has-value,
 negation, inverse roles) and bounds on length/depth, and the generator recursively builds concepts
 that respect that budget. Each candidate is turned into a learning problem via reasoner-based
-retrieval (``kb.individuals_set``) and kept only if it clears minimum example-count and hardness
-bars (no "cheap" atomic/negated-atomic/bare-existential hypothesis already separates pos/neg).
+retrieval (``kb.individuals_set``).
+
+Candidates are additionally ranked by an explicit **difficulty score** (:class:`DifficultyWeights`)
+combining four signals: normalized target length/depth, how far the best "cheap" one-step
+hypothesis (an atomic class, its negation, or a bare ``exists r.Top``) falls short of solving the
+LP outright, and the density of *near-miss negatives* -- individuals that satisfy the target with
+exactly one top-level conjunct dropped (e.g. the right class but the wrong relation), which is
+exactly where a greedy top-down learner is most likely to overgeneralize. :meth:`generate`
+oversamples candidates and keeps the hardest ``num_lps`` of them, and biases the negative sample
+towards near-misses via ``hard_negative_ratio``, so the returned problems are pointed at the
+learner's actual failure modes rather than generic random negatives.
+
+The grammar and probes are built purely from the knowledge base's own signature
+(``kb.ontology.classes_in_signature()``, ``kb.get_object_properties()``), so the same
+:class:`ComplexityProfile` curriculum runs unmodified across knowledge graphs with very different
+shapes -- e.g. Family, Mutagenesis, Carcinogenesis, Biopax, Lymphography. Relation-based constructs
+(∃/∀/cardinality/has-value) are silently dropped from the grammar on a KB that exposes no object
+properties (e.g. Lymphography) rather than raising, so a curriculum degrades gracefully instead of
+crashing on such KBs.
 
 A :class:`ComplexityProfile` curriculum (e.g. atomic -> conjunctive -> nested existential ->
 cardinality -> full ALCQ) can then be run through :meth:`GoalDirectedLPGenerator.generate_benchmark`
@@ -46,7 +63,7 @@ from __future__ import annotations
 import json
 import random
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, FrozenSet, List, Optional, Sequence, Tuple
 
@@ -76,6 +93,7 @@ Individuals = FrozenSet[OWLNamedIndividual]
 __all__ = [
     "DLConstruct",
     "ComplexityProfile",
+    "DifficultyWeights",
     "GeneratedLearningProblem",
     "GoalDirectedLPGenerator",
     "save_benchmark",
@@ -103,12 +121,31 @@ _RESTRICTION_CONSTRUCTS = frozenset({
 
 
 @dataclass(frozen=True)
+class DifficultyWeights:
+    """Weights combining four difficulty signals into one score in (roughly) ``[0, 1]``.
+
+    :param length: weight on ``length / profile.max_length`` (longer target -> harder).
+    :param depth: weight on ``depth / profile.max_depth`` (deeper nesting -> harder).
+    :param baseline_hardness: weight on ``1 - baseline_f1`` -- how far the best cheap one-step
+        hypothesis falls short of solving the LP outright.
+    :param near_miss: weight on the fraction of positives that have a matching near-miss negative
+        (an individual satisfying the target with exactly one top-level conjunct dropped) -- these
+        are the negatives a greedy learner is most likely to accidentally cover.
+    """
+    length: float = 0.25
+    depth: float = 0.15
+    baseline_hardness: float = 0.40
+    near_miss: float = 0.20
+
+
+@dataclass(frozen=True)
 class ComplexityProfile:
     """A named point (or curriculum step) in the space of "how complex should the target be".
 
     :param name: identifier used to tag generated problems and group benchmark results.
     :param allowed_constructs: DL constructors :meth:`GoalDirectedLPGenerator.generate` may use
-        when sampling a target concept.
+        when sampling a target concept. Relation-based constructs (∃/∀/cardinality/has-value) are
+        silently unavailable on a knowledge base exposing no object properties.
     :param min_length/max_length: bounds on ``concept_len`` of the (NNF) target.
     :param min_depth/max_depth: bounds on restriction-nesting depth (see
         :meth:`GoalDirectedLPGenerator.concept_depth`); a bare named class has depth 0.
@@ -121,6 +158,15 @@ class ComplexityProfile:
     :param max_baseline_f1: an LP is discarded if the best of a pool of "cheap" one-step
         hypotheses (an atomic class, its negation, or a bare ``exists r.Top``) already reaches
         this F1 -- i.e. it is trivially solvable without the constructs being tested.
+    :param min_difficulty: an LP is discarded if its :class:`DifficultyWeights`-weighted score
+        falls below this bar. ``0.0`` (default) disables this filter.
+    :param oversample_factor: :meth:`GoalDirectedLPGenerator.generate` collects up to
+        ``num_lps * oversample_factor`` passing candidates (subject to ``max_attempts``) before
+        ranking by difficulty and keeping the hardest ``num_lps`` -- i.e. it actively searches
+        for hard problems instead of returning the first ones found.
+    :param hard_negative_ratio: fraction of the sampled negatives drawn from the near-miss pool
+        (when one exists) rather than arbitrary non-instances.
+    :param difficulty_weights: see :class:`DifficultyWeights`.
     """
     name: str
     allowed_constructs: FrozenSet[DLConstruct]
@@ -135,6 +181,10 @@ class ComplexityProfile:
     min_neg: int = 3
     max_examples_per_side: int = 200
     max_baseline_f1: float = 0.9
+    min_difficulty: float = 0.0
+    oversample_factor: int = 4
+    hard_negative_ratio: float = 0.5
+    difficulty_weights: DifficultyWeights = field(default_factory=DifficultyWeights)
 
 
 @dataclass
@@ -149,6 +199,8 @@ class GeneratedLearningProblem:
     depth: int
     construct_histogram: Dict[str, int]
     baseline_f1: float
+    difficulty: float
+    num_near_miss_negatives: int
 
     def to_lp(self) -> PosNegLPStandard:
         """Build the ``PosNegLPStandard`` consumed by Ontolearn learners (e.g. TDL)."""
@@ -164,6 +216,16 @@ def _f1(pos: Individuals, neg: Individuals, covered: Individuals) -> float:
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     return 2 * precision * recall / (precision + recall)
+
+
+def _conjuncts(ce: OWLClassExpression) -> List[OWLClassExpression]:
+    """Flatten a top-level intersection into its conjuncts (``[ce]`` if `ce` isn't one)."""
+    if isinstance(ce, OWLObjectIntersectionOf):
+        out: List[OWLClassExpression] = []
+        for op in ce.operands():
+            out.extend(_conjuncts(op))
+        return out
+    return [ce]
 
 
 class GoalDirectedLPGenerator:
@@ -202,6 +264,8 @@ class GoalDirectedLPGenerator:
             cheap.append(self.kb.generator.negation(c))
         for p in self.object_properties:
             cheap.append(self.kb.generator.existential_restriction(OWLThing, p))
+        if not cheap:
+            return []
         if len(cheap) > probe_cap:
             cheap = self.rng.sample(cheap, k=probe_cap)
         extensions: List[Tuple[OWLClassExpression, Individuals]] = []
@@ -220,6 +284,38 @@ class GoalDirectedLPGenerator:
             if score > best:
                 best = score
         return best
+
+    def near_miss_negatives(self, target: OWLClassExpression, pos: Individuals) -> Individuals:
+        """Individuals satisfying `target` with exactly one top-level conjunct dropped, minus `pos`.
+
+        E.g. for ``C = Compound ⊓ (∃ hasChild.Father)`` these are individuals that are a
+        ``Compound`` but whose child (if any) isn't a ``Father``, or that have a ``Father`` child
+        but aren't a ``Compound`` -- the negatives one ablated conjunct away from being positive,
+        which is exactly what trips up a greedy top-down learner.
+        """
+        parts = _conjuncts(target)
+        if len(parts) < 2:
+            return frozenset()
+        near: set = set()
+        for i in range(len(parts)):
+            ablated = [p for j, p in enumerate(parts) if j != i]
+            ce = ablated[0] if len(ablated) == 1 else self.kb.generator.intersection(ablated)
+            try:
+                near |= set(self.kb.individuals_set(ce))
+            except Exception:
+                continue
+        return frozenset(near) - pos
+
+    @staticmethod
+    def difficulty_score(profile: ComplexityProfile, length: int, depth: int, base_f1: float,
+                          pos: Individuals, near_miss: Individuals) -> float:
+        """Combine length/depth/baseline-hardness/near-miss-density into one score in ``[0, 1]``."""
+        w = profile.difficulty_weights
+        norm_length = min(length / max(profile.max_length, 1), 1.0)
+        norm_depth = min(depth / max(profile.max_depth, 1), 1.0)
+        near_density = min(len(near_miss) / max(len(pos), 1), 1.0)
+        return (w.length * norm_length + w.depth * norm_depth
+                + w.baseline_hardness * (1.0 - base_f1) + w.near_miss * near_density)
 
     # ------------------------------------------------------------------ concept-shape utilities
     @staticmethod
@@ -250,13 +346,17 @@ class GoalDirectedLPGenerator:
 
     def _sample_rec(self, profile: ComplexityProfile, depth_budget: int, length_budget: int,
                      hist: Counter) -> OWLClassExpression:
-        # Intersection/union/has-value don't add restriction-nesting depth (see `concept_depth`),
-        # so they stay available even once `depth_budget` is exhausted; only ∃/∀/cardinality -
-        # which each cost one level of nesting for their filler - are gated on `depth_budget > 0`.
+        # Intersection/union don't add restriction-nesting depth (see `concept_depth`), so they
+        # stay available even once `depth_budget` is exhausted; only ∃/∀/cardinality/has-value -
+        # which each need at least one object property - are gated on `depth_budget > 0` and on
+        # the knowledge base actually exposing object properties (e.g. Lymphography has none, so
+        # the grammar degrades to intersection/union/negation of atomic classes on it).
+        has_properties = bool(self.object_properties)
         depth_free = [c for c in profile.allowed_constructs
-                      if c in (DLConstruct.INTERSECTION, DLConstruct.UNION, DLConstruct.HAS_VALUE)]
+                      if c in (DLConstruct.INTERSECTION, DLConstruct.UNION)
+                      or (c == DLConstruct.HAS_VALUE and has_properties)]
         options = list(depth_free)
-        if depth_budget > 0:
+        if depth_budget > 0 and has_properties:
             options += [c for c in profile.allowed_constructs if c in _RESTRICTION_CONSTRUCTS]
         if length_budget <= 1 or not options:
             return self._sample_atom(profile, hist)
@@ -315,6 +415,20 @@ class GoalDirectedLPGenerator:
             pool = self.rng.sample(pool, cap)
         return frozenset(pool)
 
+    def _sample_negatives(self, neg: Individuals, near_miss: Individuals, cap: int,
+                           hard_ratio: float) -> Individuals:
+        """Sample negatives biased towards `near_miss`, capped at `cap`."""
+        target_n = min(cap, len(neg))
+        near_pool = list(near_miss)
+        far_pool = list(neg - near_miss)
+        self.rng.shuffle(near_pool)
+        self.rng.shuffle(far_pool)
+        n_hard = min(len(near_pool), int(round(hard_ratio * target_n)))
+        chosen = near_pool[:n_hard] + far_pool[: target_n - n_hard]
+        if len(chosen) < target_n:
+            chosen += near_pool[n_hard: n_hard + (target_n - len(chosen))]
+        return frozenset(chosen)
+
     # ------------------------------------------------------------------ public API
     def sample_target(self, profile: ComplexityProfile) -> Tuple[OWLClassExpression, Counter]:
         """Sample one target concept (in NNF) respecting `profile`, plus its construct histogram."""
@@ -324,12 +438,17 @@ class GoalDirectedLPGenerator:
 
     def generate(self, profile: ComplexityProfile, num_lps: int, max_attempts: int = 3000
                  ) -> List[GeneratedLearningProblem]:
-        """Sample up to `num_lps` distinct, non-trivial learning problems matching `profile`."""
-        results: List[GeneratedLearningProblem] = []
+        """Sample the `num_lps` **hardest** distinct, non-trivial learning problems matching
+        `profile`: up to ``num_lps * profile.oversample_factor`` passing candidates are collected
+        (subject to `max_attempts` sampling attempts total), ranked by
+        :meth:`difficulty_score` and the top `num_lps` are kept.
+        """
+        pool_target = max(num_lps, num_lps * profile.oversample_factor)
+        candidates: List[GeneratedLearningProblem] = []
         seen_ext: set = set()
         seen_dl: set = set()
         attempts = 0
-        while len(results) < num_lps and attempts < max_attempts:
+        while len(candidates) < pool_target and attempts < max_attempts:
             attempts += 1
             ce, hist = self.sample_target(profile)
 
@@ -358,20 +477,29 @@ class GoalDirectedLPGenerator:
             if base_f1 >= profile.max_baseline_f1:
                 continue
 
+            near_miss = self.near_miss_negatives(ce, pos) & neg
+            difficulty = self.difficulty_score(profile, length, depth, base_f1, pos, near_miss)
+            if difficulty < profile.min_difficulty:
+                continue
+
             seen_ext.add(pos)
             seen_dl.add(dl)
-            results.append(GeneratedLearningProblem(
+            candidates.append(GeneratedLearningProblem(
                 profile_name=profile.name,
                 target_concept=ce,
                 dl=dl,
                 pos=self._sample_examples(pos, profile.max_examples_per_side),
-                neg=self._sample_examples(neg, profile.max_examples_per_side),
+                neg=self._sample_negatives(neg, near_miss, profile.max_examples_per_side,
+                                            profile.hard_negative_ratio),
                 length=length,
                 depth=depth,
                 construct_histogram={k.value: v for k, v in hist.items()},
                 baseline_f1=round(base_f1, 4),
+                difficulty=round(difficulty, 4),
+                num_near_miss_negatives=len(near_miss),
             ))
-        return results
+        candidates.sort(key=lambda lp: lp.difficulty, reverse=True)
+        return candidates[:num_lps]
 
     def generate_benchmark(self, profiles: Sequence[ComplexityProfile], num_lps_per_profile: int = 5,
                             max_attempts_per_profile: int = 3000
@@ -386,7 +514,8 @@ class GoalDirectedLPGenerator:
 def save_benchmark(benchmark: Dict[str, List[GeneratedLearningProblem]], path: str) -> None:
     """Serialize a benchmark (as returned by :meth:`GoalDirectedLPGenerator.generate_benchmark`)
     to JSON: `{dl_string: {"profile", "positive_examples", "negative_examples", "length", "depth",
-    "construct_histogram", "baseline_f1"}}`, individuals kept as full IRIs.
+    "construct_histogram", "baseline_f1", "difficulty", "num_near_miss_negatives"}}`, individuals
+    kept as full IRIs.
     """
     out: Dict[str, dict] = {}
     for profile_name, lps in benchmark.items():
@@ -399,6 +528,8 @@ def save_benchmark(benchmark: Dict[str, List[GeneratedLearningProblem]], path: s
                 "depth": lp.depth,
                 "construct_histogram": lp.construct_histogram,
                 "baseline_f1": lp.baseline_f1,
+                "difficulty": lp.difficulty,
+                "num_near_miss_negatives": lp.num_near_miss_negatives,
             }
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(out, fh, indent=2, ensure_ascii=False)
