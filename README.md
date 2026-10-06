@@ -55,7 +55,7 @@ Note that we did not take this loading time into consideration when measuring th
 
 The anonymized source code is available at:
 
-https://anonymous.4open.science/r/Ontolearn-C58D
+https://anonymous.4open.science/r/Ontolearn-9D4B
 
 Please download the repository as a ZIP archive from the anonymous repository page and extract it to a local directory.
 
@@ -68,10 +68,39 @@ conda create -n venv python=3.11 --no-default-packages
 conda activate venv
 pip install -e .
 ```
+## 5, Run Experiment I 
+### 5.1 Overview
+
+We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 3 QALD-based benchmarking datasets QALD10, QALD9+DB and QALD9+WK with the learning problems provided by [PruneCEL].
+We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 600 seconds.
+
+### 5.2 Learning problems
+
+The learning problems of the three QALD-based datasets used in Experiment II are 
+available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
+They are also included in this repository and can be found in the directory `lps/Exp I`.
+
+### 5.3 Knowledge Bases
+
+The authors of [PruneCEL] provide The knowledge bases of the three QALD-based benchmarking datasets used in Experiment I 
+are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
+
+### 5.4 Other Algorithms
+
+Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+
+#### Drill
+DRILL requires a knowledge graph embedding model for each knowledge base.
+The embedding models used in our experiments are provided by the previous
+paper [PruneCEL] and are available at:
+[DOI: 10.5281/zenodo.14720609](https://doi.org/10.5281/zenodo.14720609).
+
+In addition, the pre-trained embedding model for DRILL used in the previous
+paper [PruneCEL] can be downloaded from:
+[DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
 
 
-
-## 4, Run Experiment I 
+## 4, Run Experiment II 
 ### 4.1 Overview
 
 We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets 
@@ -81,7 +110,7 @@ We run all approaches with their default configuration and set their maximum run
 
 ### 4.2 Learning problems
 
-The learning problems of the 12 benchmarking datasets used in Experiment I are 
+The learning problems of the 12 benchmarking datasets used in Experiment II are 
 available from different sources. 10 out of the 12 learning problems are provided 
 by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remaining 
 2 learning problems can be downloaded using the following command:
@@ -90,7 +119,7 @@ by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remai
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
-They are also included in this repository and can be found in the directory `lps/Exp I`.
+They are also included in this repository and can be found in the directory `lps/Exp II`.
 
 ### 4.3 Knowledge Bases
 
@@ -122,48 +151,6 @@ We also provide a pre-trained model for Drill [DOI: 10.5281/zenodo.21457432](htt
 NCES2 needs a trained model for each knowledge base.
 
 The trained models we used can be found at [DOI: 10.5281/zenodo.21457609](https://zenodo.org/records/21457609).
-
-
-
-## 5, Run Experiment II 
-### 5.1 Overview
-
-We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 3 QALD-based benchmarking datasets QALD10, QALD9+DB and QALD9+WK with the learning problems provided by [PruneCEL].
-We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 600 seconds.
-
-### 5.2 Learning problems
-
-The learning problems of the three QALD-based datasets used in Experiment II are 
-available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
-They are also included in this repository and can be found in the directory `lps/Exp II`.
-
-### 5.3 Knowledge Bases
-
-The knowledge bases of the three QALD-based benchmarking datasets used in Experiment II 
-are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
-
-For convenience, the authors of [PruneCEL] provide SPARQL endpoints for querying the 
-corresponding knowledge graphs:
-
-| Dataset | SPARQL Endpoint |
-|---|---|
-| QALD10 | http://expl-gerbil-qa.cs.uni-paderborn.de:9080/sparql |
-| QALD9+DB | http://expl-gerbil-qa.cs.uni-paderborn.de:9050/sparql |
-| QALD9+WK | http://expl-gerbil-qa.cs.uni-paderborn.de:9070/sparql |
-
-### 5.4 Other Algorithms
-
-Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
-
-#### Drill
-DRILL requires a knowledge graph embedding model for each knowledge base.
-The embedding models used in our experiments are provided by the previous
-paper [PruneCEL] and are available at:
-[DOI: 10.5281/zenodo.14720609](https://doi.org/10.5281/zenodo.14720609).
-
-In addition, the pre-trained embedding model for DRILL used in the previous
-paper [PruneCEL] can be downloaded from:
-[DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
 
 
 
