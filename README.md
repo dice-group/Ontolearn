@@ -44,8 +44,8 @@ in the file `Update_Query.txt`.
 
 For the experiments, implementations of the compared approaches (CELOE, DRILL, EvoLearner, NCES2, TDL, and ALCSAT) are provided in the `examples` directory.
 All implementations are provided by the [Ontolearn](https://github.com/dice-group/ontolearn) project. 
-During our experiments, CELOE, DRILL, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. 
-However, the implementations of EvoLearner and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start.
+During our experiments, DRILL, EvoLearner, ALCSAT, TDL and PruneCEL were set up in a similar way as PruneCEL2, i.e., we provided the address of the SPARQL endpoint and all approaches used SPARQL queries to retrieve the necessary data. 
+However, the implementations of CELOE and NCES2 do not seem to support this feature at the moment and both have to load the data into memory before they start.
 Note that we did not take this loading time into consideration when measuring the runtime of these approaches.
 
 
