@@ -68,24 +68,26 @@ conda create -n venv python=3.11 --no-default-packages
 conda activate venv
 pip install -e .
 ```
-## 5, Run Experiment I 
-### 5.1 Overview
+
+## 4, Run Experiment I 
+
+### 4.1 Overview
 
 We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 3 QALD-based benchmarking datasets QALD10, QALD9+DB and QALD9+WK with the learning problems provided by [PruneCEL].
 We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 600 seconds.
 
-### 5.2 Learning problems
+### 4.2 Learning problems
 
 The authors of [PruneCEL] provide the learning problems of the three QALD-based datasets, they are used in Experiment I and are 
 available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
 They are also included in this repository and can be found in the directory `lps/Exp I`.
 
-### 5.3 Knowledge Bases
+### 4.3 Knowledge Bases
 
 The authors of [PruneCEL] provide the knowledge bases of the three QALD-based benchmarking datasets, they are used in Experiment I and
 are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
 
-### 5.4 Other Algorithms
+### 4.4 Other Algorithms
 
 Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
 
@@ -100,15 +102,16 @@ paper [PruneCEL] can be downloaded from:
 [DOI: 10.5281/zenodo.14720524](https://doi.org/10.5281/zenodo.14720524).
 
 
-## 4, Run Experiment II 
-### 4.1 Overview
+## 5, Run Experiment II 
+
+### 5.1 Overview
 
 We compare PruneCEL2 to PruneCEL, CELOE, Drill, Evolearner, NCES2, TDL, and ALCSAT on the 12 benchmarking datasets 
 Family, BioPax, Animal, Mutagenesis, Carcinogenesis, Lymphography, Nctrer, Premier League, Pyrimidine, Hepatitis, Mammographic and Suramin.
 The knowledge base and learning problems are provided by [SMLBench, Ontolearn, DLFoil].
 We run all approaches with their default configuration and set their maximum runtime for a single learning problem to 60 seconds.
 
-### 4.2 Learning problems
+### 5.2 Learning problems
 
 The learning problems of the 12 benchmarking datasets used in Experiment II are 
 available from different sources. 10 out of the 12 learning problems are provided 
@@ -121,7 +124,7 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 
 They are also included in this repository and can be found in the directory `lps/Exp II`.
 
-### 4.3 Knowledge Bases
+### 5.3 Knowledge Bases
 
 The knowledge bases of the 12 benchmarking datasets used for experiment I are 
 available from different sources. 10 out of the 12 knowledge bases are provided 
@@ -132,10 +135,9 @@ by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remai
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 
-### 4.4 Other Algorithms
+### 5.4 Other Algorithms
 
 We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
-
 
 #### Drill
 
@@ -144,7 +146,6 @@ Drill needs an embedding model for each knowledge base.
 The models we used can be found at [DOI: 10.5281/zenodo.21457284](https://zenodo.org/records/21457284). 
 
 We also provide a pre-trained model for Drill [DOI: 10.5281/zenodo.21457432](https://zenodo.org/records/21457433)
-
 
 #### NCES2
 
