@@ -76,13 +76,13 @@ We run all approaches with their default configuration and set their maximum run
 
 ### 5.2 Learning problems
 
-The learning problems of the three QALD-based datasets used in Experiment II are 
+The authors of [PruneCEL] provide the learning problems of the three QALD-based datasets, they are used in Experiment I and are 
 available at DOI: [10.5281/zenodo.16681824](https://doi.org/10.5281/zenodo.16681824). 
 They are also included in this repository and can be found in the directory `lps/Exp I`.
 
 ### 5.3 Knowledge Bases
 
-The authors of [PruneCEL] provide The knowledge bases of the three QALD-based benchmarking datasets used in Experiment I 
+The authors of [PruneCEL] provide the knowledge bases of the three QALD-based benchmarking datasets, they are used in Experiment I and
 are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/14720669).
 
 ### 5.4 Other Algorithms
