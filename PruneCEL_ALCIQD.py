@@ -359,7 +359,7 @@ def main():
 
     # load the learning problems
     print("Loading learning problems...")
-    with open('lps/Exp II/QALD9WK/QALD9_wk_TandF_MST5.json', 'r') as f:
+    with open('lps/Exp I/QALD9WK/QALD9_wk_TandF_MST5.json', 'r') as f:
         lps = json.load(f)
 
 
