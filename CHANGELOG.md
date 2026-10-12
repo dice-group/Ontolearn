@@ -115,6 +115,12 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `TDL`/`TDL_refinement` (`ontolearn/learners/tree_learner.py`,
+  `tree_learner_refinement_inherit.py`) declared `kwargs_grid_search: dict = {}`,
+  a mutable default argument that was mutated in place via
+  `.setdefault("cv", 10)`, so state leaked between unrelated learner
+  instances (and into caller-supplied dicts). The default is now `None` and
+  each instance gets its own copy.
 - Two bare `except:` clauses swallowed everything, including
   `KeyboardInterrupt`/`SystemExit`: `NCESBaseDataset.decompose`'s numeric-token
   check (`ontolearn/data_struct.py:289`) narrowed to `ValueError` (the only

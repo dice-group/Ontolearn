@@ -49,14 +49,8 @@ none remain open as of this writing.
 
 ## 4. Mutable default arguments / shared state
 
-- **`learners/tree_learner.py:287`** and
-  **`learners/tree_learner_refinement_inherit.py:59`** —
-  `kwargs_grid_search: dict = {}` is a classic mutable-default-argument bug.
-  The same dict is shared across every `TDL`/`TDL_refinement` instance
-  created without explicitly passing this argument, and it's mutated in
-  place (`.setdefault("cv", 10)` at tree_learner.py:317) — state can leak
-  between unrelated learner instances. Use `None` as the default and
-  construct a fresh dict inside `__init__`.
+All mutable-default-argument issues originally found in this pass have been
+fixed; none remain open as of this writing.
 
 ## 5. Reproducibility
 
@@ -139,9 +133,8 @@ none remain open as of this writing.
 ## Suggested priority order
 
 1. All three correctness bugs originally listed in §1 are fixed; none remain.
-2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
-3. Delete or restore the two fully-commented-out test files in §6.
-4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
+2. Delete or restore the two fully-commented-out test files in §6.
+3. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
    dedicated refactor (largest single win, but the biggest single change).
-5. Everything else (logging migration, packaging modernization, lint
+4. Everything else (logging migration, packaging modernization, lint
    tightening) as incremental follow-ups, not blocking.

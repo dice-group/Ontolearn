@@ -287,7 +287,7 @@ class TDL:
                  max_runtime: int = None,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 kwargs_grid_search: dict = {},
+                 kwargs_grid_search: dict = None,
                  report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
@@ -317,6 +317,8 @@ class TDL:
         else:
             grid_search_over = dict()
 
+        # Fresh copy: avoids sharing/mutating a default (or caller-owned) dict across instances
+        kwargs_grid_search = dict(kwargs_grid_search) if kwargs_grid_search is not None else {}
         kwargs_grid_search.setdefault("cv", 10)
         
         assert (
