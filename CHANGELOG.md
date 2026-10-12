@@ -20,6 +20,25 @@ date) and use that section as the basis for the GitHub release notes.
   time. (#599)
 
 ### Added
+- `ontolearn.lp_generator.GoalDirectedLPGenerator`
+  (`ontolearn/lp_generator/complexity_lp_generator.py`), a goal-directed,
+  complexity-controlled learning-problem generator. Unlike `LPGen`/`KB2Data`,
+  which refine `owl:Thing` bottom-up and keep whatever falls out, it samples
+  target concepts top-down from an explicit DL-construct grammar
+  (`ComplexityProfile` / `DLConstruct`: intersection, union, ∃, ∀,
+  cardinality, has-value, negation, plus length/depth/arity bounds),
+  retrieves E+/E- via the reasoner and discards trivially-solvable problems
+  (a cheap one-step baseline hypothesis already separates E+/E-).
+  `generate_benchmark()` runs a curriculum of profiles and `save_benchmark()`
+  persists it.
+  - Difficulty-aware: `DifficultyWeights`/`difficulty_score` combine target
+    length/depth, (1 - baseline F1) and near-miss-negative density;
+    `generate()` oversamples and keeps the hardest `num_lps`, biasing
+    negatives towards near-misses (`hard_negative_ratio`).
+  - Works on any knowledge base, including ones with no object properties
+    (relation-based constructs are dropped from the grammar).
+  - Example sweeping several KGs with TDL:
+    `examples/benchmark_complexity_lp_generator_with_tdl.py`.
 - `Drill.__init__` (`ontolearn/learners/drill.py`) accepts a `random_state`
   param, seeding a dedicated `random.Random` instance (used for exploration/
   example sampling instead of the global `random` module) plus `torch`/CUDA,
