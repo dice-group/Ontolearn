@@ -153,9 +153,28 @@ NCES2 needs a trained model for each knowledge base.
 
 The trained models we used can be found at [DOI: 10.5281/zenodo.21457609](https://zenodo.org/records/21457609).
 
+## 6, Run Experiment III 
+
+### 6.1 Overview
+
+We compare PruneCEL2 to CELOE on the Carcinogenesis datasets. 
+We use the learning problem generator introduced by [NCES] to generate 10 learning problems for each Description Logic fragment: 
+ALCI, ALCQ and ALC(D) using the Carcinogenesis dataset.
+The target concepts are generated using only the constructors of the corresponding Description Logic fragment(e.g. target concepts for learning problems in ALCI use only constructors from ALC and inverse roles).
+For each learning problem, we configure both PruneCEL2 and CELOE to support the same Description Logic fragment as that used in the target concept. 
+### 6.2 Learning problems
+
+The learning problems used in Experiment II are available in the directory `lps/Exp III`.
+
+### 6.3 Knowledge Bases
+
+The knowledge bases of the Carcinogenesis datasets used for experiment III are 
+provided by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), 
 
 
-## 6. References
+
+
+## 7. References
 
 [Ontolearn] Demir, Caglar, Alkid Baci, N'Dah Jean Kouagou, Leonie Nora Sieger, Stefan Heindorf, Simon Bin, Lukas Blübaum, Alexander Bigerl, and Axel-Cyrille Ngonga Ngomo.
 *Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python*. Journal of Machine Learning Research 26, no. 63 (2025): 1-6.
@@ -168,6 +187,10 @@ Available at: https://journals.sagepub.com/doi/full/10.3233/SW-180308
 [PruneCEL] Zhang, Quannian, Michael Röder, Nikit Srivastava, N'Dah Jean Kouagou, and Axel-Cyrille Ngonga Ngomo. 
 *Explainable Benchmarking through the Lense of Concept Learning*. In Proceedings of the 13th Knowledge Capture Conference 2025, pp. 139-147. 2025. 
 Available at: https://dl.acm.org/doi/full/10.1145/3731443.3771359
+
+[NCES] N’Dah Jean Kouagou, Stefan Heindorf, Caglar Demir, and Axel-Cyrille Ngonga Ngomo.  
+*Neural Class Expression Synthesis *. The Semantic Web 2023, 209--226, 978-3-031-33455-9.  
+Available at: https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13
 
 [NCES2] N’Dah Jean Kouagou, Stefan Heindorf, Caglar Demir, and Axel-Cyrille Ngonga Ngomo.  
 *Neural Class Expression Synthesis in ALCHIQ(D) *. In Joint European Conference on Machine Learning and Knowledge Discovery in Databases. Cham: Springer Nature Switzerland, 2023. pp. 196–212.  
