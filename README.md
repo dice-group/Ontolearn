@@ -22,7 +22,7 @@ It provides:
 ## 1. Repository Structure
 The following directories and files can be found within this project:
 ```
-- lps:                   The learning problems of Experiment I and Experiment II in json format
+- lps:                   The learning problems of Experiment I, Experiment II and Experiment III in json format
 - examples:              Implementations and configurations of state-of-the-art concept learners used for comparison experiments.
 - PruneCEL_ALCIQD.py:    The source code of PruneCEL2
 - ontolearn:             The required dependency code from Ontolearn.
