@@ -11,6 +11,8 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-15
+
 ### Removed
 - `ontolearn/logging_tentris.conf`, a leftover logging config from the
   removed `tentris.py`, unused anywhere in the package.
@@ -446,7 +448,8 @@ Maintenance release.
 - Closed-world behaviour used by default for negation
   (`FastInstanceChecker`).
 
-[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.10.0...develop
+[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.11.0...develop
+[0.11.0]: https://github.com/dice-group/Ontolearn/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/dice-group/Ontolearn/compare/0.9.2...0.10.0
 [0.9.2]: https://github.com/dice-group/Ontolearn/compare/0.9.1...0.9.2
 [0.9.1]: https://github.com/dice-group/Ontolearn/compare/0.9.0...0.9.1
