@@ -39,6 +39,10 @@ date) and use that section as the basis for the GitHub release notes.
     (relation-based constructs are dropped from the grammar).
   - Example sweeping several KGs with TDL:
     `examples/benchmark_complexity_lp_generator_with_tdl.py`.
+- Unit tests for previously weakly-covered modules: `quality_funcs`
+  (31% -> 100%), `nces_utils` (39% -> 87%), `incomplete_kb` (8% -> 91%),
+  `data_struct` (~60% -> 97%), `value_splitter` incl. `EntropyValueSplitter`
+  (33% -> 100%) and `utils/static_funcs` (37% -> 92%).
 - `Drill.__init__` (`ontolearn/learners/drill.py`) accepts a `random_state`
   param, seeding a dedicated `random.Random` instance (used for exploration/
   example sampling instead of the global `random` module) plus `torch`/CUDA,
