@@ -138,6 +138,13 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `TripleStore` instance retrieval returned too few individuals for class
+  expressions with a `⊤` filler such as `∃r.⊤` on a triplestore without
+  reasoning (#581): owlapy <= 1.6.5 rendered the filler as an explicit
+  `?s a owl:Thing` pattern that raw triples never satisfy, so such branches
+  matched nothing (e.g. 127 instead of 259 instances on Carcinogenesis).
+  Resolved by the owlapy 1.6.6 upgrade (#600); a regression test now guards
+  the generated SPARQL.
 - `TDL`/`TDL_refinement` (`ontolearn/learners/tree_learner.py`,
   `tree_learner_refinement_inherit.py`) declared `kwargs_grid_search: dict = {}`,
   a mutable default argument that was mutated in place via
