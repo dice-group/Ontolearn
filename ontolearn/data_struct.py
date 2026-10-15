@@ -266,7 +266,7 @@ class CLIPDatasetInference(torch.utils.data.Dataset):  # pragma: no cover
             random.shuffle(neg)
             
         datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
-        datapoint_neg = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
         
         return datapoint_pos, datapoint_neg
 

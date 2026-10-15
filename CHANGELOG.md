@@ -140,6 +140,10 @@ date) and use that section as the basis for the GitHub release notes.
   `.setdefault("cv", 10)`, so state leaked between unrelated learner
   instances (and into caller-supplied dicts). The default is now `None` and
   each instance gets its own copy.
+- `CLIPDatasetInference.__getitem__` (`ontolearn/data_struct.py`) built the
+  negative-example tensor from the *positive* examples (`embeddings.loc[pos]`
+  instead of `embeddings.loc[neg]`), so `CLIP`'s length predictor ignored the
+  negatives at inference time even though it was trained with them. (#638)
 - Two bare `except:` clauses swallowed everything, including
   `KeyboardInterrupt`/`SystemExit`: `NCESBaseDataset.decompose`'s numeric-token
   check (`ontolearn/data_struct.py:289`) narrowed to `ValueError` (the only
