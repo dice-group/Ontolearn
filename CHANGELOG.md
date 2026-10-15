@@ -146,6 +146,12 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `LPGen`/`KB2Data` relied on a module-level `random.seed(42)` that reseeded
+  the global `random` module on every import, so the same seed did not
+  reproduce the same learning problems once anything else touched global
+  random state. `LPGen`, `KB2Data`, `ConceptDescriptionGenerator` and
+  `ExpressRefinement` now take a `random_seed` and use their own
+  `random.Random` instance; the import-time seeding is gone. (#595)
 - `TripleStore` instance retrieval returned too few individuals for class
   expressions with a `⊤` filler such as `∃r.⊤` on a triplestore without
   reasoning (#581): owlapy <= 1.6.5 rendered the filler as an explicit
