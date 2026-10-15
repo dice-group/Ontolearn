@@ -101,9 +101,6 @@ fixed; none remain open as of this writing.
   (`setup.py:42-70`) with no comment on why those five specifically need
   exact pins. A short comment per exact-pin (e.g. "pinned: breaking change
   in X") would keep this from looking accidental.
-- `setup.py:122` sets `python_requires='>=3.11'` but the trove classifier at
-  `setup.py:119` still says `"Programming Language :: Python :: 3.10"` —
-  stale, should read 3.11 (CI only tests 3.11.14 anyway).
 
 ## 8. Lint configuration
 
@@ -122,9 +119,6 @@ fixed; none remain open as of this writing.
   `ontolearn/utils/_lazy_owlready2.py:29`), and 8% test coverage. Effectively
   orphaned — either wire it into a test/example or remove it, similar to the
   now-deleted `tentris.py`.
-- **`ontolearn/logging_tentris.conf`** is a leftover config file from the
-  just-removed `tentris.py` (PR #602) and is now unused — safe to delete in
-  a follow-up.
 - **`ontolearn/binders.py`** and **`ontolearn/executor.py`** are each used by
   exactly one example script and nowhere else in `ontolearn/` or `tests/` —
   worth confirming they're still meant to be supported public surface rather

@@ -1,7 +1,7 @@
 # Installation
 
 Since Ontolearn is a Python library, you will need to have Python installed on
-your system (currently supporting version 3.10.13 or higher). Since python comes in various 
+your system (currently supporting version 3.11 or higher). Since python comes in various 
 versions and with different, sometimes conflicting dependencies, most guides will 
 recommend to set up a "virtual environment" to work in and so do we.
 
@@ -44,7 +44,7 @@ environment and installing the dependencies.
   
 * -> Create and activate a conda virtual environment.
   ```shell
-  conda create -n venv python=3.10.14 --no-default-packages
+  conda create -n venv python=3.11 --no-default-packages
   conda activate venv
   ```
 * -> Install the dependencies

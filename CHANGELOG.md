@@ -12,6 +12,8 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Removed
+- `ontolearn/logging_tentris.conf`, a leftover logging config from the
+  removed `tentris.py`, unused anywhere in the package.
 - `CELOE._add_node_evald` (`ontolearn/learners/celoe.py`), dead code with no
   call sites — a near-duplicate of `_add_node`.
 - `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
@@ -55,6 +57,10 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- Version bumped to 0.11.0 (`setup.py`, `ontolearn/__init__.py`, README
+  badges, docs). The `setup.py` trove classifier and the README/installation
+  docs now state Python 3.11, matching `python_requires='>=3.11'` (they still
+  said 3.10).
 - `print()` calls in `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
   `learners/spell_kit/structures.py`, and `learners/drill.py` now go through
