@@ -11,7 +11,11 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-15
+
 ### Removed
+- `ontolearn/logging_tentris.conf`, a leftover logging config from the
+  removed `tentris.py`, unused anywhere in the package.
 - `CELOE._add_node_evald` (`ontolearn/learners/celoe.py`), dead code with no
   call sites — a near-duplicate of `_add_node`.
 - `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
@@ -55,6 +59,10 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- Version bumped to 0.11.0 (`setup.py`, `ontolearn/__init__.py`, README
+  badges, docs). The `setup.py` trove classifier and the README/installation
+  docs now state Python 3.11, matching `python_requires='>=3.11'` (they still
+  said 3.10).
 - `print()` calls in `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
   `learners/spell_kit/structures.py`, and `learners/drill.py` now go through
@@ -138,6 +146,12 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `LPGen`/`KB2Data` relied on a module-level `random.seed(42)` that reseeded
+  the global `random` module on every import, so the same seed did not
+  reproduce the same learning problems once anything else touched global
+  random state. `LPGen`, `KB2Data`, `ConceptDescriptionGenerator` and
+  `ExpressRefinement` now take a `random_seed` and use their own
+  `random.Random` instance; the import-time seeding is gone. (#595)
 - `TripleStore` instance retrieval returned too few individuals for class
   expressions with a `⊤` filler such as `∃r.⊤` on a triplestore without
   reasoning (#581): owlapy <= 1.6.5 rendered the filler as an explicit
@@ -440,7 +454,8 @@ Maintenance release.
 - Closed-world behaviour used by default for negation
   (`FastInstanceChecker`).
 
-[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.10.0...develop
+[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.11.0...develop
+[0.11.0]: https://github.com/dice-group/Ontolearn/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/dice-group/Ontolearn/compare/0.9.2...0.10.0
 [0.9.2]: https://github.com/dice-group/Ontolearn/compare/0.9.1...0.9.2
 [0.9.1]: https://github.com/dice-group/Ontolearn/compare/0.9.0...0.9.1
