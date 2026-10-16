@@ -34,6 +34,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            setup.py
+            requirements.txt
 
       - name: Install dependencies
         run: |
@@ -44,13 +48,37 @@ jobs:
         run: |
           ruff check ontolearn/learners --exclude ontolearn/learners/spell_kit --line-length=200
 
+      - name: Restore download cache
+        id: data-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: | 
+            KGs
+            LPs
+            NCESData
+            CLIPData
+          key: ontolearn-external-dl-v1
+
+
       - name: Get external files
+        if: steps.data-cache.outputs.cache-hit != 'true'
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
           wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
           wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
           wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip
           unzip KGs.zip && unzip LPs.zip && unzip NCESData.zip && unzip CLIPData.zip
+
+      - name: Save data cache 
+        if: steps.data-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            KGs
+            LPs
+            NCESData
+            CLIPData
+          key: ontolearn-external-dl-v1
 
       - name: Wait for Fuseki to start
         run: |
