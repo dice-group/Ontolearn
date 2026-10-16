@@ -25,48 +25,32 @@
 from typing import Set
 from owlapy.class_expression import OWLClassExpression
 from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer, AbstractKnowledgeBase
+from ontolearn.metrics import F1 as _F1, Accuracy as _Accuracy
 from ontolearn.search import EvaluatedConcept
 
 
-def f1(*, individuals: Set, pos: Set, neg: Set):
+def _tp_tn_fp_fn(individuals: Set, pos: Set, neg: Set):
     assert isinstance(individuals, set)
     assert isinstance(pos, set)
     assert isinstance(neg, set)
 
     tp = len(pos.intersection(individuals))
     tn = len(neg.difference(individuals))
-
     fp = len(neg.intersection(individuals))
     fn = len(pos.difference(individuals))
+    return tp, tn, fp, fn
 
-    try:
-        recall = tp / (tp + fn)
-    except ZeroDivisionError:
-        return 0
 
-    try:
-        precision = tp / (tp + fp)
-    except ZeroDivisionError:
-        return 0
-
-    if precision == 0 or recall == 0:
-        return 0
-
-    f_1 = 2 * ((precision * recall) / (precision + recall))
-    return f_1
+def f1(*, individuals: Set, pos: Set, neg: Set):
+    tp, tn, fp, fn = _tp_tn_fp_fn(individuals, pos, neg)
+    applicable, score = _F1().score2(tp=tp, fn=fn, fp=fp, tn=tn)
+    return score if applicable else 0
 
 
 def acc(*, individuals: Set, pos: Set, neg: Set):
-    assert isinstance(individuals, set)
-    assert isinstance(pos, set)
-    assert isinstance(neg, set)
-
-    tp = len(pos.intersection(individuals))
-    tn = len(neg.difference(individuals))
-
-    fp = len(neg.intersection(individuals))
-    fn = len(pos.difference(individuals))
-    return (tp + tn) / (tp + tn + fp + fn)
+    tp, tn, fp, fn = _tp_tn_fp_fn(individuals, pos, neg)
+    _, score = _Accuracy().score2(tp=tp, fn=fn, fp=fp, tn=tn)
+    return score
 
 
 def evaluate_concept(kb: AbstractKnowledgeBase, concept: OWLClassExpression, quality_func: AbstractScorer,

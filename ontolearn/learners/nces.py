@@ -98,7 +98,7 @@ class NCES(BaseNCES):
                 import dicee
                 print('\nĆheck packages... OK: dicee is installed.')
                 del dicee
-            except Exception:
+            except ImportError:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
                 subprocess.run('pip install dicee==0.3.2')
             if self.auto_train:
@@ -128,6 +128,9 @@ class NCES(BaseNCES):
 
                 self.knowledge_base_path = path_temp_triples
 
+                # timeout: without one, a stalled dicee subprocess (e.g. a hung
+                # dependency call) blocks indefinitely instead of failing into
+                # the except block below. See #622.
                 subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} "
                                f"--path_to_store_single_run {path_temp_embeddings} "
                                f"--backend rdflib --save_embeddings_as_csv "
@@ -135,8 +138,9 @@ class NCES(BaseNCES):
                                f"--lr {self.dicee_lr} "
                                f"--model {self.dicee_model} "
                                f"--embedding_dim {self.dicee_emb_dim} "
-                               f"--eval_mode test",
-                               shell=True)
+                               f"--eval_mode test "
+                               f"--optim 'Adam'",
+                               shell=True, timeout=600)
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
@@ -150,8 +154,14 @@ class NCES(BaseNCES):
             self.model = self.get_synthesizer(self.path_of_trained_models)
             print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
             if self.auto_train:
-                # Train NCES for 5 epochs
-                self.train(epochs=5,num_workers = self.num_workers)
+                # Train NCES for 5 epochs. num_workers=0: this quick,
+                # low-fidelity convenience path (see the printed warning
+                # above) trains on a tiny dataset for 5 epochs, where
+                # multiprocessing DataLoader workers add no meaningful
+                # speedup but do carry the coverage-run deadlock risk from
+                # #610/#622 - the capped-but-nonzero worker count `train()`
+                # otherwise defaults to isn't safe here either.
+                self.train(epochs=5, num_workers=0)
                 self.refresh(self.path_of_trained_models)
         else:
             self.instance_embeddings = read_csv(self.path_of_embeddings)
@@ -174,9 +184,8 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception as e:
-                print(e,'\n')
                 raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy "
-                                        f"or embedding_config.json`")
+                                        f"or embedding_config.json`") from e
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             try:
                 with open(f"{path}/config.json") as f:
@@ -191,9 +200,9 @@ class NCES(BaseNCES):
                 self.rnn_n_layers = config["rnn_n_layers"]
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, "
-                                        f"inv_vocab.npy or embedding_config.json`")
+                                        f"inv_vocab.npy or embedding_config.json`") from e
 
         m1 = SetTransformer(self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -292,8 +301,12 @@ class NCES(BaseNCES):
                                        shuffle_examples=False, max_length=self.max_length,
                                        sorted_examples=self.sorted_examples)
 
+        # num_workers=0: this fetches a single inference batch (next(iter(...))
+        # below), so multiprocessing workers add no throughput benefit while
+        # carrying the same worker-pool deadlock risk under `coverage run`
+        # already found in the training path (#610). See #622.
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers,
+                                num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
@@ -308,6 +321,11 @@ class NCES(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except Exception:
+                # prediction_str is raw, unconstrained model output, not a validated DL
+                # expression, so the parser can legitimately fail in many different ways
+                # (unbalanced parens, unknown tokens, malformed restrictions, ...) - this
+                # is the intended "fall back to token-level reconstruction" path, not a
+                # bug being swallowed.
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -316,6 +334,9 @@ class NCES(BaseNCES):
 
                         concept = self.dl_parser.parse(parse_concept_str)
                     except Exception:
+                        # `concept` already holds the simple_strategy() fallback from above,
+                        # so there is nothing to undo if the stricter AST-validity rebuild
+                        # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
                     print("Prediction: ", prediction_str)
@@ -403,7 +424,8 @@ class NCES(BaseNCES):
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
         dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab,
                                        shuffle_examples, max_length=self.max_length)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+        # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
@@ -417,6 +439,9 @@ class NCES(BaseNCES):
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except Exception:
+                    # See the equivalent fallback in fit_one() above: prediction_str is raw
+                    # model output, not a validated DL expression, so this is the intended
+                    # "fall back to token-level reconstruction" path.
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
@@ -430,8 +455,12 @@ class NCES(BaseNCES):
               refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        if os.cpu_count() <= num_workers:
-            num_workers = max(0,os.cpu_count()-1)
+        # Cap unconditionally: on machines with many cores this previously stayed
+        # uncapped at the requested value, and repeatedly spawning that many
+        # DataLoader worker processes (one fresh pool per architecture in
+        # NCESTrainer.train()) can deadlock under `coverage run` regardless of
+        # how many cores are available (see issue #610).
+        num_workers = max(0, min(num_workers, (os.cpu_count() or 1) - 1, 4))
         if storage_path is None:
             currentDateAndTime = datetime.now()
             storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'

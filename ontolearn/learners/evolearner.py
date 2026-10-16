@@ -26,6 +26,7 @@
 
 import operator
 import time
+import uuid
 from itertools import chain
 from typing import Any, Callable, Dict, FrozenSet, List, Tuple, Iterable, Optional, Union
 
@@ -87,7 +88,8 @@ class EvoLearner(BaseConceptLearner):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size', \
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', 'generator'
+        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', \
+        'generator', '_creator_uid'
 
     name = 'evolearner'
 
@@ -190,6 +192,11 @@ class EvoLearner(BaseConceptLearner):
         self.height_limit = height_limit
         self.total_fits = 0
         self.generator = ConceptGenerator()
+        # DEAP's `creator` module is process-global, so plain names like "Fitness"/
+        # "Individual" would be clobbered by any other EvoLearner instance created or
+        # fit()-ed concurrently. Suffix them with a per-instance uid to keep instances
+        # isolated from each other.
+        self._creator_uid = uuid.uuid4().hex
         self.__setup()
 
     def __setup(self):
@@ -308,14 +315,27 @@ class EvoLearner(BaseConceptLearner):
                          name=escape(self.generator.nothing.str))
         return pset
 
+    def __creator_class_names(self) -> Tuple[str, str, str]:
+        """Per-instance names for the DEAP `creator` types this learner registers, to avoid
+        clobbering another EvoLearner instance's types in DEAP's process-global `creator`
+        module."""
+        return (f"Fitness_{self._creator_uid}", f"Quality_{self._creator_uid}",
+               f"Individual_{self._creator_uid}")
+
     def __build_toolbox(self) -> base.Toolbox:
-        creator.create("Fitness", base.Fitness, weights=(1.0,))
-        creator.create("Quality", base.Fitness, weights=(1.0,))
-        creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
+        fitness_name, quality_name, individual_name = self.__creator_class_names()
+        if not hasattr(creator, fitness_name):
+            creator.create(fitness_name, base.Fitness, weights=(1.0,))
+        if not hasattr(creator, quality_name):
+            creator.create(quality_name, base.Fitness, weights=(1.0,))
+        if not hasattr(creator, individual_name):
+            creator.create(individual_name, gp.PrimitiveTree,
+                           fitness=getattr(creator, fitness_name),
+                           quality=getattr(creator, quality_name))
 
         toolbox = base.Toolbox()
         toolbox.register(ToolboxVocabulary.INIT_POPULATION.value, self.init_method.get_population,
-                         creator.Individual, self.pset)
+                         getattr(creator, individual_name), self.pset)
         toolbox.register(ToolboxVocabulary.COMPILE.value, gp.compile, pset=self.pset)
 
         toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION.value, self._fitness_func)
@@ -470,13 +490,14 @@ class EvoLearner(BaseConceptLearner):
             self._number_of_tested_concepts += 1
 
     def clean(self, partial: bool = False):
-        # Resets classes if they already exist, names must match the ones that were created in the toolbox
-        try:
-            del creator.Fitness
-            del creator.Individual
-            del creator.Quality
-        except AttributeError:
-            pass
+        # Resets classes if they already exist, names must match the ones that were created in the toolbox.
+        # Only this instance's own uid-suffixed names are touched, so concurrent EvoLearner
+        # instances never clobber each other's DEAP `creator` types.
+        for name in self.__creator_class_names():
+            try:
+                delattr(creator, name)
+            except AttributeError:
+                pass
         super().clean()
         if not partial:
             # Reset everything if fitting more than one lp. Tests have shown that this is necessary to get the

@@ -47,21 +47,39 @@ class TestTDLBasics(unittest.TestCase):
         with open("LPs/Family/lps.json") as json_file:
             cls.family_lps = json.load(json_file)
 
+    def test_kwargs_grid_search_not_shared_between_instances(self):
+        """kwargs_grid_search must not be a shared mutable default (and caller dicts stay untouched)."""
+        m1 = TDL(knowledge_base=self.kb_family, verbose=0)
+        m1.kwargs_grid_search["n_jobs"] = 3
+        m2 = TDL(knowledge_base=self.kb_family, verbose=0)
+        self.assertEqual(m2.kwargs_grid_search, {"cv": 10})
+
+        user_kwargs = {"n_jobs": 2}
+        m3 = TDL(knowledge_base=self.kb_family, verbose=0, kwargs_grid_search=user_kwargs)
+        self.assertEqual(user_kwargs, {"n_jobs": 2})
+        self.assertEqual(m3.kwargs_grid_search, {"n_jobs": 2, "cv": 10})
+
     def test_initialization_custom(self):
         """Test TDL initialization with custom parameters."""
         model = TDL(
             knowledge_base=self.kb_family,
             use_inverse=True,
-            use_data_properties=True,
-            use_nominals=False,
+            use_data_properties_boolean=True,
+            use_data_properties_string=True,
+            use_data_properties_date=True,
+            use_data_properties_numeric=True,
+            use_nominals=True,
             use_card_restrictions=True,
             verbose=0,
             kwargs_classifier={"max_depth": 5, "random_state": 42}
         )
         
         self.assertEqual(model.use_inverse, True)
-        self.assertEqual(model.use_data_properties, True)
-        self.assertEqual(model.use_nominals, False)
+        self.assertEqual(model.use_data_properties_boolean, True)
+        self.assertEqual(model.use_data_properties_string, True)
+        self.assertEqual(model.use_data_properties_date, True)
+        self.assertEqual(model.use_data_properties_numeric, True)
+        self.assertEqual(model.use_nominals, True)
         self.assertEqual(model.use_card_restrictions, True)
         self.assertEqual(model.verbose, 0)
         self.assertEqual(model.kwargs_classifier["max_depth"], 5)
@@ -125,7 +143,7 @@ class TestTDLFilterLogic(unittest.TestCase):
 
     def test_should_include_expression_data_properties_enabled(self):
         """Test expression filtering when data properties are enabled."""
-        model = TDL(knowledge_base=self.kb, use_data_properties=True, verbose=0)
+        model = TDL(knowledge_base=self.kb,use_data_properties_boolean=True, use_data_properties_string=True, use_data_properties_date=True, use_data_properties_numeric=True, verbose=0)
         
         # Create a data property expression (if available in the KB)
         # For this test, we'll create a mock expression
@@ -136,23 +154,49 @@ class TestTDLFilterLogic(unittest.TestCase):
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
         data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
         
-        # Should be included when use_data_properties=True
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertTrue(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
         self.assertTrue(model._should_include_expression(data_expr))
 
     def test_should_include_expression_data_properties_disabled(self):
         """Test expression filtering when data properties are disabled."""
-        model = TDL(knowledge_base=self.kb, use_data_properties=False, verbose=0)
+        model = TDL(knowledge_base=self.kb, use_data_properties_string=False, use_data_properties_date=False, use_data_properties_numeric=False, use_data_properties_boolean=False, verbose=0)
         
         # Create a data property expression
         from owlapy.owl_datatype import OWLDatatype
         from owlapy.iri import IRI as OWL_IRI
         
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(OWL_IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
         
-        # Should be excluded when use_data_properties=False
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "boolean"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "string"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        self.assertFalse(model._should_include_expression(data_expr))
+
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "dateTime"))
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
         self.assertFalse(model._should_include_expression(data_expr))
 
     def test_should_include_regular_class(self):
@@ -461,6 +505,20 @@ class TestTDLTraining(unittest.TestCase):
         self.assertIsNotNone(model.disjunction_of_conjunctive_concepts)
         self.assertIsNotNone(model.X)
         self.assertIsNotNone(model.y)
+
+    def test_max_runtime(self):
+        """Test that max_runtime parameter is respected."""
+        model = TDL(knowledge_base=self.kb, max_runtime=0.1, verbose=0, kwargs_classifier={"random_state": 42})
+        
+        examples = self.family_lps['problems']['Brother']
+        p = set(examples['positive_examples'])  
+        n = set(examples['negative_examples'])  
+        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+        
+        # Fit the model and ensure it respects max_runtime, Should raise RuntimeError if max_runtime exceeded
+        self.assertRaises(RuntimeError, model.fit, lp)
 
     def test_best_hypotheses(self):
         """Test retrieval of best hypotheses."""

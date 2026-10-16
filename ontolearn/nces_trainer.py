@@ -60,7 +60,11 @@ class NCESTrainer:
         self.tmax = tmax
         self.eta_min = eta_min
         self.clip_value = clip_value
-        self.num_workers = num_workers
+        # Cap unconditionally, not just on low-core machines: train() spawns a
+        # fresh DataLoader worker pool per architecture in a loop, and doing so
+        # repeatedly with a large num_workers can deadlock under `coverage run`
+        # regardless of how many cores are available (see issue #610).
+        self.num_workers = max(0, min(num_workers, (os.cpu_count() or 1) - 1, 4))
         self.storage_path = storage_path
 
     @staticmethod

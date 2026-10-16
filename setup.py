@@ -38,7 +38,7 @@ _deps = [
     "scikit-learn>=1.4.1",
     "torch>=2.2.0",
     "rdflib>=6.0.2",
-    "ruff>=0.7.2",
+    "ruff>=0.16.0",
     "pandas>=1.5.0",
     "sortedcontainers>=2.4.0",
     "deap>=1.3.1",
@@ -47,7 +47,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.6.3",
+    "owlapy==1.6.6",
     "dicee==0.3.2",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
@@ -64,6 +64,8 @@ _deps = [
     "lxml==5.3.0",
     "python-sat==0.1.7.dev23",
     "asciitree==0.3.3",
+    "fitter>=1.7.0",
+    "shap==0.49.1",
     "more-itertools>=10.0.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
@@ -90,7 +92,9 @@ extras["min"] = deps_list(
     "lxml",
     "python-sat",
     "asciitree",
-    "more-itertools",)
+    "fitter",
+    "shap",
+    "more-itertools")
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
@@ -104,7 +108,7 @@ extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ru
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.10.0",
+    version="0.11.0",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,
@@ -112,7 +116,7 @@ setup(
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/Ontolearn',
     classifiers=[
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: MIT License",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
     python_requires='>=3.11',

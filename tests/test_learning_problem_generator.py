@@ -20,7 +20,7 @@ class LearningProblemGenerator_Test(unittest.TestCase):
 
     def test_get_balanced_n_samples_per_example(self):
         lp = LearningProblemGenerator(knowledge_base=kb)
-        """
+        
         # @Using it with LengthBasedRefinement leads to extesive comp. time 
         min_num_concepts = 10
         max_length = 5
@@ -40,7 +40,7 @@ class LearningProblemGenerator_Test(unittest.TestCase):
             # Let Person be a target concept and let 10 be the number instances belonging to Person in CWR.
             # If we sample 5 individuals from Person, then there is no guarantee sampled E^+ nor E^- be same.
             # self.assertNotEqual(balanced_examples[i][2], balanced_examples[i + 1][2])
-        """
+        
 
 if __name__ == '__main__':
     unittest.main()

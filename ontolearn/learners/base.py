@@ -165,12 +165,18 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.start_time = None
 
     def train(self, *args, **kwargs):
-        """Train RL agent on learning problems.
+        """Optional training hook; a no-op by default.
+
+        Training is learner-specific: learners that require training (e.g. Drill, NCES, NCES2,
+        ROCES, CLIP) override this method with their own signatures, while purely symbolic
+        learners (e.g. CELOE, OCEL) need no training. This default exists so that untrainable
+        learners can be used in generic pipelines that call ``train()`` uniformly
+        (e.g. :meth:`ontolearn.experiments.Experiments.carry_out_kfold_cross_validation`).
 
         Returns:
             self.
         """
-        pass
+        return self
 
     def terminate(self):
         """This method is called when the search algorithm terminates.

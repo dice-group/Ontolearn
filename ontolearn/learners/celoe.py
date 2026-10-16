@@ -22,13 +22,15 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
+import logging
+
 from .base import RefinementBasedConceptLearner
 
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, EncodedPosNegLPStandardKind, \
     AbstractKnowledgeBase
 from ..learning_problem import PosNegLPStandard
 from ..quality_funcs import evaluate_concept
-from ..search import OENode, TreeNode, EvaluatedConcept, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
+from ..search import OENode, TreeNode, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
 
 from typing import Optional, Union, Iterable, Dict
 import owlapy
@@ -43,6 +45,8 @@ from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 
 from ..utils.static_funcs import concept_len
+
+logger = logging.getLogger(__name__)
 
 _concept_operand_sorter = ConceptOperandSorter()
 
@@ -166,11 +170,27 @@ class CELOE(RefinementBasedConceptLearner):
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         return OENode(c, concept_len(c), parent_node=parent_node, is_root=is_root)
-    # TODO:CD: Why do we need this ?
+
     @contextmanager
     def updating_node(self, node: OENode):
         """
         Removes the node from the heuristic sorted set and inserts it again.
+
+        `heuristic_queue` is a `SortedSet` keyed by `HeuristicOrderedNode`, i.e. it orders
+        entries by `node.heuristic` (then by concept). Refining `node` changes `node.h_exp`
+        and, via `heuristic_func.apply(...)`, `node.heuristic` itself - so `node` has to be
+        pulled out of the sorted structure *before* it is mutated and re-inserted *after*,
+        otherwise the set's internal ordering invariant (built from the heuristic value at
+        insertion time) would no longer match the node's current heuristic value.
+
+        `discard()` looks the node up by its *current* key. If the node's heuristic already
+        changed since it was added to the queue (e.g. it was mutated somewhere other than
+        through this context manager, or it is being updated a second time without ever
+        having been re-added), the lookup can miss and `SortedKeyList.remove()` raises
+        `ValueError`. That would indicate the node's queue membership and its `heuristic`
+        attribute have gone out of sync with each other - worth investigating if it is
+        ever observed - but there is nothing to undo here: the node is simply not present
+        in the queue, so we fall through to `yield`/re-`add()` as normal.
 
         Args:
             Node to update.
@@ -181,8 +201,8 @@ class CELOE(RefinementBasedConceptLearner):
         try:
             self.heuristic_queue.discard(node)
         except ValueError:
-            # TODO:CD: We need to understand this
-            pass
+            logger.warning("Could not find %s in heuristic_queue by its current heuristic key; "
+                            "its heuristic may have been mutated while it was queued.", node)
         yield node
         self.heuristic_queue.add(node)
 
@@ -283,29 +303,6 @@ class CELOE(RefinementBasedConceptLearner):
             #if logger.isEnabledFor(logging.DEBUG):
             # print("Better description found: %s", ref)
             pass
-        self.heuristic_queue.add(ref)
-        # TODO: implement noise
-        return True
-
-    def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):  # pragma: no cover
-        norm_concept = CESimplifier().simplify(ref.concept)
-        if norm_concept in self._seen_norm_concepts:
-            norm_seen = True
-        else:
-            norm_seen = False
-            self._seen_norm_concepts.add(norm_concept)
-
-        self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-
-        ref.quality = eval_.q
-        self._number_of_tested_concepts += 1
-        if ref.quality == 0:  # > too weak
-            return False
-        assert 0 <= ref.quality <= 1.0
-        # TODO: expression rewriting
-        self.heuristic_func.apply(ref, eval_.inds, self._learning_problem)
-        if not norm_seen and self.best_descriptions.maybe_add(ref):
-            print("Better description found: %s", ref)
         self.heuristic_queue.add(ref)
         # TODO: implement noise
         return True

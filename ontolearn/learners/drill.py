@@ -24,6 +24,7 @@
 from abc import abstractmethod
 
 import json
+import logging
 from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
@@ -55,6 +56,8 @@ from ontolearn.triple_store import TripleStore
 from ontolearn.utils.static_funcs import make_iterable_verbose
 from owlapy.utils import get_expression_length
 
+logger = logging.getLogger(__name__)
+
 
 class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
@@ -83,25 +86,36 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                  max_runtime=None,
                  num_of_sequential_actions=3,
                  stop_at_goal=True,
-                 num_episode: int = 10):
+                 num_episode: int = 10,
+                 random_state: int = None):
 
         self.name = "DRILL"
         self.verbose = verbose
         self.learning_problem = None
+        self.random_state = random_state
+        # Dedicated RNG for exploration/example sampling below, instead of the
+        # global `random` module, so runs are reproducible given the same seed
+        # without perturbing unrelated code's use of the global RNG.
+        self._rnd = random.Random(random_state)
+        if random_state is not None:
+            torch.manual_seed(random_state)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(random_state)
+                torch.cuda.manual_seed_all(random_state)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
-                print("Reading Embeddings...", end="\t")
+                logger.info("Reading Embeddings...")
             self.df_embeddings = read_csv(path_embeddings).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
             if self.verbose > 0:
-                print(self.df_embeddings.shape)
+                logger.info(self.df_embeddings.shape)
         else:
             if self.verbose > 0:
-                print("No pre-trained model...")
+                logger.info("No pre-trained model...")
             self.df_embeddings = None
             self.num_entities, self.embedding_dim = None, 1
 
@@ -225,17 +239,14 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (2) Reinforcement Learning offline training loop
         for th in range(self.num_episode):
             if self.verbose > 0:
-                print(f"Episode {th + 1}: ", end=" ")
+                logger.info(f"Episode {th + 1}: Taking {self.num_of_sequential_actions} actions...")
             # Sequence of decisions
             start_time = time.time()
-            if self.verbose > 0:
-                print(f"Taking {self.num_of_sequential_actions} actions...", end="  ")
 
             sequence_of_states, rewards = self.sequence_of_actions(root_rl_state)
             if self.verbose > 0:
-                print(
-                    f"Runtime {time.time() - start_time:.3f} secs | Max reward: {max(rewards):.3f} | Prob of Explore {self.epsilon:.3f}",
-                    end=" | ")
+                logger.info(
+                    f"Runtime {time.time() - start_time:.3f} secs | Max reward: {max(rewards):.3f} | Prob of Explore {self.epsilon:.3f}")
             # Form experiences
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))
@@ -257,7 +268,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
         """
         if isinstance(self.heuristic_func, CeloeBasedReward):
-            print("No training...")
+            logger.info("No training...")
             return self.terminate_training()
 
         if self.verbose > 0:
@@ -268,15 +279,15 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             training_data = self.generate_learning_problems(num_of_target_concepts,
                                                             num_learning_problems)
         if isinstance(training_data,Iterable) is False:
-            print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
+            logger.warning(f"We couldn't generate training data on this given knowledge base ({self.kb})")
             return self.terminate_training()
 
         for (target_owl_ce, positives, negatives) in training_data:
-            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            logger.info(f"Goal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
             sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
             if self.verbose > 0:
-                print("Sum of rewards for each trial", sum_of_rewards_per_actions)
+                logger.info("Sum of rewards for each trial: %s", sum_of_rewards_per_actions)
 
             self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
                 {'Concept': target_owl_ce,
@@ -300,15 +311,15 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         if directory:
             if os.path.isdir(directory):
                 if isinstance(self.heuristic_func, CeloeBasedReward):
-                    print("No loading because embeddings not provided")
+                    logger.info("No loading because embeddings not provided")
                 else:
-                    print("Loading pretrained DQL Agent...", end="")
+                    logger.info("Loading pretrained DQL Agent...")
                     self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", self.device))
-                    print(self.heuristic_func.net)
+                    logger.info(self.heuristic_func.net)
             else:
-                print(f"{directory} is not found...")
+                logger.warning(f"{directory} is not found...")
         else:
-            print(f"Directory:{directory}")
+            logger.info(f"Directory:{directory}")
 
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
@@ -381,7 +392,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                         f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
                 if ref.quality > best_found_quality:
                     if self.verbose > 0:
-                        print("\nBest Found:", ref)
+                        logger.info("Best Found: %s", ref)
                     best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)
@@ -538,12 +549,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                    self.emb_neg.shape[1]
 
         except AssertionError as e:
-            print(current_state_batch.shape)
-            print(next_state_batch.shape)
-            print(self.emb_pos.shape)
-            print(self.emb_neg.shape)
-            print('Wrong format.')
-            print(e)
+            logger.error("Wrong format. current_state_batch=%s next_state_batch=%s emb_pos=%s emb_neg=%s",
+                          current_state_batch.shape, next_state_batch.shape, self.emb_pos.shape, self.emb_neg.shape)
+            logger.error(e)
             raise
 
         assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
@@ -561,7 +569,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         self.heuristic_func.net.train()
         total_loss = 0
         if self.verbose > 0:
-            print(f"Experience replay Experiences ({X.shape})", end=" | ")
+            logger.info(f"Experience replay Experiences ({X.shape})")
         for m in range(self.num_epochs_per_replay):
             self.optimizer.zero_grad()  # zero the gradient buffers
             # forward: n by 4, dim
@@ -569,13 +577,13 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # loss
             loss = self.heuristic_func.net.loss(predicted_q, y)
             if self.verbose > 0:
-                print(f"{m} Replay loss: {loss.item():.5f}", end=" | ")
+                logger.info(f"{m} Replay loss: {loss.item():.5f}")
             total_loss += loss.item()
             # compute the derivative of the loss w.r.t. the parameters using backpropagation
             loss.backward()
             # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
             self.optimizer.step()
-        print(f'Avg loss: {total_loss / self.num_epochs_per_replay:0.5f}')
+        logger.info(f'Avg loss: {total_loss / self.num_epochs_per_replay:0.5f}')
         self.heuristic_func.net.eval()
 
     def update_search(self, concepts, predicted_Q_values=None):
@@ -632,7 +640,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             path = f"{self.storage_path}/{self.heuristic_func.name}.pth"
 
         if isinstance(self.heuristic_func, CeloeBasedReward):
-            print("No saving..")
+            logger.info("No saving..")
         else:
             torch.save(self.heuristic_func.net.state_dict(), path)
 
@@ -645,8 +653,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         (2) Exploitation.
         """
         self.assign_embeddings(current_state)
-        if random.random() < self.epsilon:
-            next_state = random.choice(next_states)
+        if self._rnd.random() < self.epsilon:
+            next_state = self._rnd.choice(next_states)
         else:
             next_state = self.exploitation(current_state, next_states)
         self.assign_embeddings(next_state)
@@ -741,14 +749,14 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 # Generate Learning problems from a single target
                 for _ in range(num_of_target_concepts):
                     # Randomly sample positive examples from concept i
-                    sampled_positives = set(random.sample(individuals_i, size_of_examples))
-                    
+                    sampled_positives = set(self._rnd.sample(individuals_i, size_of_examples))
+
                     # Randomly sample negative examples from concept j
-                    sampled_negatives = set(random.sample(individuals_j, size_of_examples))
+                    sampled_negatives = set(self._rnd.sample(individuals_j, size_of_examples))
                     
                     # Validate that positive and negative examples are different
                     if sampled_negatives == sampled_positives:
-                        print("Sampled Positives and negatives are same. We need to ignore this example")
+                        logger.debug("Sampled Positives and negatives are same. We need to ignore this example")
                         continue
                      
                     lp = (str_dl_concept_i, sampled_positives, sampled_negatives)
@@ -845,7 +853,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         try:
             assert len(self.search_tree) == 0
         except AssertionError:
-            print(len(self.search_tree))
+            logger.error(len(self.search_tree))
             raise AssertionError('EMPTY search tree')
 
         self._number_of_tested_concepts = 0
@@ -862,7 +870,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
     def terminate_training(self):
         if self.verbose > 0:
-            print("Training is completed..")
+            logger.info("Training is completed..")
         # Save the weights
         self.save_weights()
         with open(f"{self.storage_path}/seen_examples.json", 'w', encoding='utf-8') as f:
@@ -967,7 +975,7 @@ class DepthAbstractDrill:   # pragma: no cover
         self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
         if not self.instance_embeddings:
-            print("No embeddings found")
+            logger.warning("No embeddings found")
             self.embedding_dim = None
         else:
             self.embedding_dim = self.instance_embeddings.shape[1]

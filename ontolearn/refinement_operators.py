@@ -23,10 +23,9 @@
 # -----------------------------------------------------------------------------
 
 """Refinement Operators for refinement-based concept learners."""
-from collections import defaultdict
 from itertools import chain
 import random
-from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator, Tuple
+from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator, Tuple
 
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, \
     OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, OWLObjectUnionOf, OWLClass, \
@@ -172,10 +171,10 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
-                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
-                    yield OWLObjectIntersectionOf((class_expression, i))
-                else:
-                    yield OWLObjectIntersectionOf((class_expression, i))
+                # Skip named classes disjoint with class_expression: their intersection is unsatisfiable.
+                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i):
+                    continue
+                yield OWLObjectIntersectionOf((class_expression, i))
 
     def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Generator[
         OWLObjectComplementOf, None, None]:
@@ -305,6 +304,35 @@ class LengthBasedRefinement(BaseRefinement):
         return results
 
 
+class _LazyMaxNrFillers(dict):
+    """Lazily computes and caches, per object property, the maximum number of
+    distinct fillers (capped at ``card_limit``) any individual has for that property.
+
+    Computing this eagerly for every property in the KB's signature against every
+    individual is an O(properties x individuals) reasoner sweep paid up front at
+    refinement-operator construction time, even though most properties are never
+    involved in a cardinality refinement during search. Instead, the value for a
+    given property is computed on first lookup (``__missing__``) and cached.
+    """
+
+    __slots__ = 'kb', 'card_limit'
+
+    def __init__(self, kb: AbstractKnowledgeBase, card_limit: int):
+        super().__init__()
+        self.kb = kb
+        self.card_limit = card_limit
+
+    def __missing__(self, prop: OWLObjectPropertyExpression) -> int:
+        num_max = 0
+        for ind in self.kb.individuals():
+            num = sum(1 for _ in zip(self.kb.get_object_property_values(ind, prop), range(self.card_limit)))
+            num_max = max(num_max, num)
+            if num_max == self.card_limit:
+                break
+        self[prop] = num_max
+        return num_max
+
+
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
      A top down/downward refinement operator in SHIQ(D).
@@ -326,7 +354,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     use_boolean_datatype: bool
     card_limit: int
 
-    max_nr_fillers: DefaultDict[OWLObjectPropertyExpression, int]
+    max_nr_fillers: Dict[OWLObjectPropertyExpression, int]
     dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
     generator: ConceptGenerator
 
@@ -361,17 +389,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             self.value_splitter = BinningValueSplitter()
 
         if self.use_card_restrictions:
-            obj_properties = list(self.kb.get_object_properties())
-            if self.use_inverse:
-                obj_properties.extend(list(map(OWLObjectInverseOf, obj_properties)))
-
-            self.max_nr_fillers = defaultdict(int)
-            for prop in obj_properties:
-                for ind in self.kb.individuals():
-                    num = sum(1 for _ in zip(self.kb.get_object_property_values(ind, prop), range(self.card_limit)))
-                    self.max_nr_fillers[prop] = max(self.max_nr_fillers[prop], num)
-                    if num == self.card_limit:
-                        break
+            self.max_nr_fillers = _LazyMaxNrFillers(self.kb, self.card_limit)
 
         split_dps = []
         if self.use_numeric_datatypes:
@@ -785,7 +803,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 class ExpressRefinement(ModifiedCELOERefinement):
     """ A top-down refinement operator in ALCHIQ(D)."""
 
-    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count', 'generator'
+    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count', 'generator', 'rnd'
 
     expressivity: float
     downsample: bool
@@ -803,11 +821,13 @@ class ExpressRefinement(ModifiedCELOERefinement):
                  use_numeric_datatypes: bool = True,
                  use_time_datatypes: bool = True,
                  use_boolean_datatype: bool = True,
-                 card_limit: int = 10):
+                 card_limit: int = 10,
+                 random_seed: Optional[int] = None):
         self.downsample = downsample
         self.sample_fillers_count = sample_fillers_count
         self.expressivity = expressivity
         self.generator = ConceptGenerator()
+        self.rnd = random.Random(random_seed)
         super().__init__(knowledge_base,
                          value_splitter=value_splitter,
                          max_child_length=max_child_length,
@@ -841,8 +861,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
             # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
             fillers: Set[OWLClassExpression] = {OWLThing, OWLNothing}
             if len(iter_container_sub) >= self.sample_fillers_count:
-                fillers = fillers | set(random.sample(iter_container_sub, k=self.sample_fillers_count)) | \
-                          set(random.sample(iter_container_neg, k=self.sample_fillers_count))
+                fillers = fillers | set(self.rnd.sample(iter_container_sub, k=self.sample_fillers_count)) | \
+                          set(self.rnd.sample(iter_container_neg, k=self.sample_fillers_count))
             for c in fillers:
                 if self.len(c) + 2 <= self.max_child_length:
                     iter_container_restrict.append(
@@ -883,7 +903,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
             if self.downsample:  # downsampling is necessary if no enough computation resources
                 assert self.expressivity < 1, "When downsampling, the expressivity must be less than 1"
                 m = int(self.expressivity * len(container))
-                container = random.sample(container, k=max(m, 1))
+                container = self.rnd.sample(container, k=max(m, 1))
             else:
                 self.expressivity = 1.
             if ce.is_owl_thing():  # If this is satisfied then all possible refinements are subconcepts

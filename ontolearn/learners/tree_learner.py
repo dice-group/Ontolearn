@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-
+import time
 from typing import Dict, Set, Tuple, List, Union, Callable
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ from owlapy.class_expression import (
     OWLDataAllValuesFrom,
     OWLClass
 )
-from owlapy.utils import HasFiller
+from owlapy.utils import HasFiller, OWLDataOneOf
 from owlapy.owl_individual import OWLNamedIndividual
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
@@ -50,13 +50,17 @@ from ontolearn.learning_problem import PosNegLPStandard
 import sklearn
 from sklearn import tree
 from collections import Counter
-
+from owlapy.owl_datatype import OWLDatatype
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
 
 import itertools
+import logging
 from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
+from enum import Enum, auto
+
+logger = logging.getLogger(__name__)
 
 
 def explain_inference(clf, X: pd.DataFrame):
@@ -184,40 +188,106 @@ def contains_cardinality(expr: OWLClassExpression) -> bool:
     
     return False
 
-def contains_data_property(expr: OWLClassExpression) -> bool:
+class PropertyType(Enum):
+    BOOLEAN = auto()
+    STRING = auto()
+    DATE = auto()
+    NUMERIC = auto()
+    OTHER = auto()
+
+_NUMERIC_TYPES = {
+    "integer", "decimal", "float", "double", "long", "int", "short", "byte",
+    "nonNegativeInteger", "nonPositiveInteger", "positiveInteger",
+    "negativeInteger", "unsignedLong", "unsignedInt", "unsignedShort",
+    "unsignedByte", "real", "rational",
+}
+_STRING_TYPES = {
+    "string", "normalizedString", "token", "language",
+    "Name", "NCName", "NMTOKEN", "PlainLiteral",
+}
+_DATE_TYPES = {
+    "dateTime", "dateTimeStamp", "date", "time",
+    "gYear", "gYearMonth", "gMonthDay", "gDay", "gMonth",
+}
+
+def _classify_datatype_name(name: str) -> PropertyType:
+    """Map an XSD datatype IRI remainder to a DataPropertyType category."""
+    if name == "boolean":
+        return PropertyType.BOOLEAN
+    if name in _NUMERIC_TYPES:
+        return PropertyType.NUMERIC
+    if name in _STRING_TYPES:
+        return PropertyType.STRING
+    if name in _DATE_TYPES:
+        return PropertyType.DATE
+    return PropertyType.OTHER
+
+
+def _classify_literal(literal) -> PropertyType:
+    """Map an OWLLiteral to a DataPropertyType category."""
+    if literal.is_boolean():
+        return PropertyType.BOOLEAN
+    if literal.is_string():
+        return PropertyType.STRING
+    if literal.is_integer() or literal.is_double():
+        return PropertyType.NUMERIC
+    # Fall back to classifying by the literal's datatype IRI
+    try:
+        return _classify_datatype_name(literal.get_datatype().iri.remainder)
+    except AttributeError:
+        return PropertyType.OTHER
+
+
+def contains_data_property(expr: OWLClassExpression, include_boolean:bool = False) -> PropertyType:
     """Returns True if the OWL expression contains a data property."""
+    found: Set[PropertyType] = set()
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
-        return True
+        filler = expr.get_filler()
+        if isinstance(filler, OWLDataOneOf):
+            found.update(_classify_literal(literal) for literal in filler.values())
+        elif isinstance(filler, OWLDatatype):
+            found.add(_classify_datatype_name(filler.iri.remainder))
+        else:
+            found.add(PropertyType.OTHER)
+    elif isinstance(expr, OWLObjectHasValue):
+        found.add(_classify_literal(expr.get_filler()))
+
+    elif isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
+        for op in expr.operands():
+            sub = contains_data_property(op)
+            if sub:
+                found.update(sub)
     
-    # Check operands (for unions, intersections, complements)
-    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
+    elif isinstance(expr, OWLObjectComplementOf):
+        sub = contains_data_property(expr.get_operand())
+        if sub:
+            found.update(sub)
+    elif isinstance(expr, HasFiller):
         try:
-            return any(contains_data_property(op) for op in expr.operands())
+            sub = contains_data_property(expr.get_filler())
+            if sub:
+                found.update(sub)
         except (AttributeError, TypeError):
             pass
-    
-    # Check filler (for restrictions)
-    if isinstance(expr, HasFiller):
-        try:
-            return contains_data_property(expr.get_filler())
-        except (AttributeError, TypeError):
-            pass
-    
-    return False
+    return found
+
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
                  use_inverse: bool = True,
-                 use_data_properties: bool = True,
+                 use_data_properties_boolean:bool = True,
+                 use_data_properties_string: bool = True,
+                 use_data_properties_date: bool = True,
+                 use_data_properties_numeric: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
-                 max_runtime: int = 1,
+                 max_runtime: int = None,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 kwargs_grid_search: dict = {},
+                 kwargs_grid_search: dict = None,
                  report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
@@ -226,7 +296,10 @@ class TDL:
                  verbalize: bool = False):
 
         self.use_inverse = use_inverse
-        self.use_data_properties = use_data_properties
+        self.use_data_properties_boolean = use_data_properties_boolean
+        self.use_data_properties_string = use_data_properties_string
+        self.use_data_properties_date = use_data_properties_date
+        self.use_data_properties_numeric = use_data_properties_numeric
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
         self.verbose = verbose
@@ -244,6 +317,8 @@ class TDL:
         else:
             grid_search_over = dict()
 
+        # Fresh copy: avoids sharing/mutating a default (or caller-owned) dict across instances
+        kwargs_grid_search = dict(kwargs_grid_search) if kwargs_grid_search is not None else {}
         kwargs_grid_search.setdefault("cv", 10)
         
         assert (
@@ -297,8 +372,15 @@ class TDL:
         if not self.use_card_restrictions and contains_cardinality(owl_class_expression):
             return False
         
-        # Exclude expressions containing data properties if flag is disabled
-        if not self.use_data_properties and contains_data_property(owl_class_expression):
+        # exclude expressions containing specific data properties
+        property_types = contains_data_property(owl_class_expression)
+        data_property_toggles = {
+                PropertyType.BOOLEAN:  self.use_data_properties_boolean,
+                PropertyType.STRING:   self.use_data_properties_string,
+                PropertyType.DATE: self.use_data_properties_date,
+                PropertyType.NUMERIC:  self.use_data_properties_numeric,
+            }
+        if not all(data_property_toggles.get(t, False) for t in property_types):
             return False
         
         return True
@@ -321,7 +403,7 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
-    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
+    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual], start_time:float=None) -> (
             Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features = dict()
@@ -331,6 +413,10 @@ class TDL:
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
+            #check if max_runtime exceeded
+            if self.max_runtime and (time.time() - start_time > self.max_runtime):
+                raise RuntimeError(f"Execution terminated: max_runtime of {self.max_runtime} seconds exceeded.")
+
             # Extract base expressions from ABox
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
                 # Apply filters based on configuration flags
@@ -344,7 +430,7 @@ class TDL:
             if self.use_inverse:
                 self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
-            if self.use_data_properties:
+            if self.use_data_properties_string or self.use_data_properties_date or self.use_data_properties_numeric or self.use_data_properties_boolean:
                 self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
             if self.use_card_restrictions:
@@ -357,7 +443,10 @@ class TDL:
                 f"  - Number of individuals processed: {num_individuals}\n"
                 "  - Number of features extracted: 0\n"
                 f"  - use_inverse: {self.use_inverse}\n"
-                f"  - use_data_properties: {self.use_data_properties}\n"
+                f"  - use_data_properties_boolean: {self.use_data_properties_boolean}\n"
+                f"  - use_data_properties_string: {self.use_data_properties_string}\n"
+                f"  - use_data_properties_date: {self.use_data_properties_date}\n"
+                f"  - use_data_properties_numeric: {self.use_data_properties_numeric}\n"
                 f"  - use_card_restrictions: {self.use_card_restrictions}\n"
                 "Possible causes:\n"
                 "  - The knowledge base is empty or contains no relevant axioms about the individuals.\n"
@@ -368,21 +457,31 @@ class TDL:
             raise AssertionError(error_msg)
         if self.verbose > 0:
             print(f"Unique OWL Class Expressions as features: {len(features)}")
-            if self.use_inverse:
-                print("  - Including inverse property features")
-            if self.use_data_properties:
-                print("  - Including data property features")
-            if self.use_card_restrictions:
-                print("  - Including cardinality restriction features")
+            feature_options = {
+                "inverse properties":        self.use_inverse,
+                "nominals":                  self.use_nominals,
+                "cardinality restrictions":  self.use_card_restrictions,
+                "boolean data properties":   self.use_data_properties_boolean,
+                "string data properties":    self.use_data_properties_string,
+                "date data properties":      self.use_data_properties_date,
+                "numeric data properties":   self.use_data_properties_numeric,
+                }
+            enabled = [name for name, flag in feature_options.items() if flag]
+
+            if enabled:
+                print(f"Enabled feature types: {', '.join(enabled)}")
         
         # Convert features dict to list
         features_list = [v for k, v in features.items()]
-        
+       
         # Construct binary feature matrix
         X = []
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Constructing Training Data"):
+            if self.max_runtime and (time.time() - start_time > self.max_runtime):
+                raise RuntimeError(f"Execution terminated: max_runtime of {self.max_runtime} seconds exceeded.")
+
             binary_sparse_representation = []
             features_of_owl_named_individual = individuals_to_feature_mapping[owl_named_individual.str]
 
@@ -405,35 +504,41 @@ class TDL:
             for obj_prop in self.knowledge_base.get_object_properties():
                 # Get inverse property values
                 inverse_prop = obj_prop.get_inverse_property()
-                
+
                 # Check if this individual is the object of any property assertion
                 # by checking all individuals that have this property pointing to our individual
                 for other_ind in self.knowledge_base.individuals():
                     if other_ind == individual:
                         continue
                     try:
-                        # Get object property values for the other individual
+                        # Get object property values for the other individual. This is the
+                        # only reasoner call in the loop body, so only it is allowed to fail
+                        # and be skipped - a bug in the feature-construction code below must
+                        # propagate instead of being silently treated as "no result found".
                         prop_values = list(self.knowledge_base.get_object_property_values(other_ind, obj_prop))
-                        if individual in prop_values:
-                            # Create inverse existential restriction: ∃r⁻.⊤
-                            inv_exist = OWLObjectSomeValuesFrom(property=inverse_prop, 
-                                                               filler=self.knowledge_base.generator.thing)
-                            str_dl_concept = owl_expression_to_dl(inv_exist)
-                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
-                            if str_dl_concept not in features:
-                                features[str_dl_concept] = inv_exist
-                            
-                            # Create inverse universal restriction: ∀r⁻.⊤
-                            inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
-                                                             filler=self.knowledge_base.generator.thing)
-                            str_dl_concept = owl_expression_to_dl(inv_univ)
-                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
-                            if str_dl_concept not in features:
-                                features[str_dl_concept] = inv_univ
-                            break  # Found at least one, that's enough for the feature
                     except Exception:
+                        logger.debug("Could not fetch object property values for %s, %s",
+                                     other_ind, obj_prop, exc_info=True)
                         continue
+                    if individual in prop_values:
+                        # Create inverse existential restriction: ∃r⁻.⊤
+                        inv_exist = OWLObjectSomeValuesFrom(property=inverse_prop,
+                                                           filler=self.knowledge_base.generator.thing)
+                        str_dl_concept = owl_expression_to_dl(inv_exist)
+                        individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                        if str_dl_concept not in features:
+                            features[str_dl_concept] = inv_exist
+
+                        # Create inverse universal restriction: ∀r⁻.⊤
+                        inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
+                                                         filler=self.knowledge_base.generator.thing)
+                        str_dl_concept = owl_expression_to_dl(inv_univ)
+                        individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                        if str_dl_concept not in features:
+                            features[str_dl_concept] = inv_univ
+                        break  # Found at least one, that's enough for the feature
         except Exception as e:
+            logger.warning("Error extracting inverse property features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting inverse property features: {e}")
 
@@ -451,9 +556,10 @@ class TDL:
                     # This method can be extended to add additional data property features
                     # such as numeric ranges, etc.
                     # TODO: Create new OWL CLassExpressions based on data property values
-                    print(f"Data property values for {data_prop}: {data_values}")
+                   # print(f"Data property values for {data_prop}: {data_values}")
                     pass
         except Exception as e:
+            logger.warning("Error extracting data property features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
 
@@ -499,11 +605,12 @@ class TDL:
                             if str_dl_concept not in features:
                                 features[str_dl_concept] = min_card
         except Exception as e:
+            logger.warning("Error extracting cardinality features for %s: %s", individual, e, exc_info=True)
             if self.verbose > 0:
                 print(f"Warning: Error extracting cardinality features: {e}")
 
 
-    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def create_training_data(self, learning_problem: PosNegLPStandard, start_time:float=None) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # (1) Initialize ordering over positive and negative examples.
         if self.verbose > 0:
             print("Creating a Training Dataset")
@@ -516,7 +623,7 @@ class TDL:
         # (3) Iterate over examples to extract unique features.
         examples = positive_examples + negative_examples
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
-        X, features = self.extract_expressions_from_owl_individuals(examples)
+        X, features = self.extract_expressions_from_owl_individuals(examples, start_time)
         # (4) Creating a tabular data for the binary classification problem.
         # X = self.construct_sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
@@ -567,6 +674,63 @@ class TDL:
         prediction_per_example = {pred for pred, positive_example in prediction_per_example}
         return list(prediction_per_example)
 
+    def _maybe_plot_embeddings(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Plot a UMAP-reduced view of the training features, if enabled. Shared by TDL and TDL_refinement."""
+        if self.plot_embeddings:
+            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
+
+    def _fit_decision_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Optionally grid-search classifier hyperparameters, then train self.clf on (X, y).
+        Shared by TDL and TDL_refinement."""
+        if self.grid_search_over:
+            grid_search = sklearn.model_selection.GridSearchCV(
+                tree.DecisionTreeClassifier(**self.kwargs_classifier),
+                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
+            print(grid_search.best_params_)
+            self.kwargs_classifier.update(grid_search.best_params_)
+        # Training
+        if self.verbose > 0:
+            print("Training starts!")
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
+
+    def _report_and_plot(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Report classification metrics and render the configured tree/feature-importance plots.
+        Shared by TDL and TDL_refinement."""
+        if self.report_classification:
+            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+            self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                  self.clf.predict(X.values),
+                                                                                  target_names=["Negative",
+                                                                                                "Positive"])
+            if self.verbose > 0:
+                print(self.__classification_report)
+        if self.plot_tree:
+            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                                              cart_tree=self.clf)
+        if self.plot_feature_importance:
+            plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                                         cart_tree=self.clf)
+
+    def _finalize_predictions(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
+        """Build the conjunctive/disjunctive OWL predictions from the trained tree and optionally verbalize them.
+        Shared by TDL and TDL_refinement."""
+        self.owl_class_expressions.clear()
+        # Each item can be considered is a path of OWL Class Expressions
+        # starting from the root node in the decision tree and
+        # ending in a leaf node.
+        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+        if self.verbose > 0:
+            print("Computing conjunctive_concepts...")
+        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
+        for i in self.conjunctive_concepts:
+            self.owl_class_expressions.add(i)
+        if self.verbose > 0:
+            print("Computing disjunction_of_conjunctive_concepts...")
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
+
+        if self.verbalize:
+            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
+
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
@@ -590,55 +754,17 @@ class TDL:
 
         if max_runtime is not None:
             self.max_runtime = max_runtime
+
+        start_time = time.time()
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
-        X, y = self.create_training_data(learning_problem=learning_problem)
+        X, y = self.create_training_data(learning_problem=learning_problem, start_time=start_time)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
-        if self.plot_embeddings:
-            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
-        if self.grid_search_over:
-            grid_search = sklearn.model_selection.GridSearchCV(
-                tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
-            print(grid_search.best_params_)
-            self.kwargs_classifier.update(grid_search.best_params_)
-        # Training
-        if self.verbose>0:
-            print("Training starts!")
-        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
-
-        if self.report_classification:
-            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-            self.__classification_report += sklearn.metrics.classification_report(y.values,
-                                                                                  self.clf.predict(X.values),
-                                                                                  target_names=["Negative",
-                                                                                                "Positive"])
-            if self.verbose > 0:
-                print(self.__classification_report)
-        if self.plot_tree:
-            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                              cart_tree=self.clf)
-        if self.plot_feature_importance:
-            plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                         cart_tree=self.clf)
-
-        self.owl_class_expressions.clear()
-        # Each item can be considered is a path of OWL Class Expressions
-        # starting from the root node in the decision tree and
-        # ending in a leaf node.
-        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
-        if self.verbose >0:
-            print("Computing conjunctive_concepts...")
-        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
-        for i in self.conjunctive_concepts:
-            self.owl_class_expressions.add(i)
-        if self.verbose >0:
-            print("Computing disjunction_of_conjunctive_concepts...")
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
-
-        if self.verbalize:
-            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
+        self._maybe_plot_embeddings(X, y)
+        self._fit_decision_tree(X, y)
+        self._report_and_plot(X, y)
+        self._finalize_predictions(X, y)
 
         return self
 

@@ -1,9 +1,9 @@
 [![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.10.0-blue)](https://pypi.org/project/ontolearn/0.10.0/)
-[![Docs](https://img.shields.io/badge/documentation-0.10.0-yellow)](https://dice-group.github.io/Ontolearn/)
-[![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
+[![Pypi](https://img.shields.io/badge/pypi-0.11.0-blue)](https://pypi.org/project/ontolearn/0.11.0/)
+[![Docs](https://img.shields.io/badge/documentation-0.11.0-yellow)](https://dice-group.github.io/Ontolearn/)
+[![Python](https://img.shields.io/badge/python-3.11+-4584b6)](https://www.python.org/downloads/release/python-3110/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/Ontolearn)
 &nbsp;
 
@@ -54,7 +54,7 @@ or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
 # To create a virtual python env with conda 
-conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
+conda create -n venv python=3.11 --no-default-packages && conda activate venv && pip install -e .
 # To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 # To download learning problems
@@ -482,4 +482,4 @@ pages="103--115"
 
 ```
 
-In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
+In case you have any question or feedback, please contact us: ```caglar.demir@upb.de```.

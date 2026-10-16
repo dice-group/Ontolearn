@@ -35,10 +35,11 @@ class TestTriplestore(unittest.TestCase):
     ce = OWLObjectIntersectionOf([nitrogen38, has_charge_more_than_0_85])
     onto = TripleStoreOntology("http://localhost:3030/mutagenesis/sparql")
     reasoner = TripleStoreReasoner(onto)
+    store = TripleStore(url="http://localhost:3030/mutagenesis/sparql")
 
     def test_triplestore_runs_error_free(self):
         kb = TripleStore(url="http://localhost:3030/mutagenesis/sparql")
-        model = TDL(knowledge_base=kb, use_inverse=False, use_data_properties=False, use_card_restrictions=False)
+        model = TDL(knowledge_base=kb, use_inverse=False, use_data_properties_boolean=False, use_data_properties_string=False, use_data_properties_date=False, use_data_properties_numeric=False, use_card_restrictions=False)
         with open('LPs/Mutagenesis/lps.json') as json_file:
             settings = json.load(json_file)
         p = set(settings['problems']['NotKnown']['positive_examples'])
@@ -77,6 +78,21 @@ class TestTriplestore(unittest.TestCase):
 
     def test_data_property_values(self):
         self.assertCountEqual(list(self.reasoner.data_property_values(self.d100_25, self.charge)), [OWLLiteral(0.332)])
+
+    def test_individuals_count(self):
+        # Server-side COUNT (individuals_count) must agree with a local full materialization, for both the
+        # whole signature and a specific concept. See https://github.com/dice-group/Ontolearn/issues/613.
+        self.assertEqual(self.store.individuals_count(), self.native_kb.individuals_count())
+        self.assertEqual(self.store.individuals_count(self.compound), self.native_kb.individuals_count(self.compound))
+        self.assertEqual(self.store.individuals_count(self.ce), len(list(self.reasoner.instances(self.ce))))
+
+    def test_most_general_object_properties(self):
+        # hasAtom's declared domain is exactly Compound (see test_object_property_domains), so it must be
+        # returned as "most general" for domain=Compound.
+        self.assertIn(self.hasAtom, list(self.store.most_general_object_properties(domain=self.compound)))
+        # domain=owl:Thing is unrestricted, so every object property in the signature qualifies.
+        self.assertCountEqual(list(self.store.most_general_object_properties(domain=OWLThing)),
+                               list(self.store.get_object_properties()))
 
 
     def test_local_triplestore_family_tdl(self):

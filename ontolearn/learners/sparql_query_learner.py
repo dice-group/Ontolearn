@@ -238,7 +238,7 @@ class SPARQLQueryLearner:
                                  data=query_str.replace('\\', '\\\\')) # in nctrer there are str literals that contain `\\`, which can be parsed by SPARQL (need to be escaped)
         status_code = response.status_code
         if not (200 <= status_code < 204):
-            raise Exception("Query failed")
+            raise requests.exceptions.HTTPError(f"Query failed with status code {status_code}", response=response)
         return response
 
 
@@ -249,9 +249,12 @@ class SPARQLQueryLearner:
                                fp=int(stats["fp"]["value"]),
                                fn=int(stats["fn"]["value"]),
                                tn=int(stats["tn"]["value"]))
-        except Exception:
-            print("Exception occurred!")
-            # query failed (e.g., due to malformed string; continue)
+        # `query_str` is built from a candidate combination of FILTERs (see
+        # _powerset_of_filters), so it can legitimately be malformed SPARQL - this catches
+        # that case (HTTP/JSON-shape errors from a bad query) and scores it as the worst
+        # possible candidate instead of aborting the whole search.
+        except (requests.exceptions.RequestException, KeyError, IndexError, ValueError) as e:
+            print(f"Exception occurred while computing F1 score for a candidate query: {e}")
             return F1().score2(tp=0, fp=0, fn=0, tn=0)
 
     def _powerset_of_filters(self):

@@ -100,8 +100,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     or (isinstance(ontology,SyncOntology) and isinstance(reasoner,SyncReasoner))),\
                 "You should either use a native ontology and reasoner or use both a SyncOntology and a SyncReasoner!"
             if reasoner.ontology != ontology:
-                print("WARNING: The ontology provided in the constructor is not the same as the one "
-                      "provided in the reasoner. This could lead to inconsistencies.")
+                logger.warning("The ontology provided in the constructor is not the same as the one "
+                               "provided in the reasoner. This could lead to inconsistencies.")
 
         self.path = path
 
@@ -161,6 +161,36 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return frozenset(self.ontology.individuals_in_signature())
 
+    def _abox_native_triples(self, i: OWLNamedIndividual):
+        """Yield native (subject, predicate, object) abox triples for a single individual:
+        rdf:type assertions, then data- and object-property assertions. Shared by every
+        'native'/'iri'/'axiom' formatter in :meth:`abox`.
+        """
+        # For now, 'rdfs:type' predicate will be represented as an IRI
+        rdf_type = IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+        yield from ((i, rdf_type, t) for t in self.get_types(ind=i, direct=True))
+        for dp in self.get_data_properties_for_ind(ind=i):
+            yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
+        for op in self.get_object_properties_for_ind(ind=i):
+            yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
+
+    @staticmethod
+    def _abox_triple_as_native(s, p, o):
+        return s, p, o
+
+    @staticmethod
+    def _abox_triple_as_iri(s, p, o):
+        return s.str, p.str, o.get_literal() if isinstance(o, OWLLiteral) else o.str
+
+    @staticmethod
+    def _abox_triple_as_axiom(s, p, o):
+        if isinstance(p, IRI) and isinstance(o, OWLClass):
+            return OWLClassAssertionAxiom(s, o)
+        elif isinstance(o, OWLLiteral):
+            return OWLDataPropertyAssertionAxiom(s, p, o)
+        else:
+            return OWLObjectPropertyAssertionAxiom(s, p, o)
+
     def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
@@ -188,36 +218,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             inds = self.individuals()
 
+        triple_formatters = {"native": self._abox_triple_as_native,
+                              "iri": self._abox_triple_as_iri,
+                              "axiom": self._abox_triple_as_axiom}
+
         for i in inds:
-            if mode == "native":
-                # Obtain all class assertion triples/axioms
-                # For now, 'rdfs:type' predicate will be represented as an IRI
-                yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
-                            self.get_types(ind=i, direct=True))
-
-                # Obtain all property assertion triples/axioms
-                for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
-
-                for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
-            elif mode == "iri":
-                yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                             t.str) for t in self.get_types(ind=i, direct=True))
-                for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i.str, dp.str, literal.get_literal()) for literal in
-                                self.get_data_property_values(i, dp))
-                for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i.str, op.str, ind.str) for ind in
-                                self.get_object_property_values(i, op))
-            elif mode == "axiom":
-                yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
-                for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
-                                self.get_data_property_values(i, dp))
-                for op in self.get_object_properties_for_ind(ind=i):
-                    yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
-                                self.get_object_property_values(i, op))
+            if mode in triple_formatters:
+                formatter = triple_formatters[mode]
+                yield from (formatter(s, p, o) for s, p, o in self._abox_native_triples(i))
             elif mode == "expression":
                 object_restrictions_quantifiers = dict()
                 # To no return duplicate objects.
@@ -286,7 +294,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
         if mode == "iri":
-            print("WARN  KnowledgeBase.tbox()    :: Ranges of data properties are not implemented for the 'iri' mode!")
+            logger.warning("KnowledgeBase.tbox() :: Ranges of data properties are not implemented for the 'iri' mode!")
         if isinstance(self.ontology, SyncOntology) and mode=="axiom" and entities is None:
             return self.ontology.get_tbox_axioms()
         include_all = False
@@ -591,7 +599,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Domains of the property.
         """
         if prop not in self.op_domains:
-            domains = list(self.reasoner.object_property_domains(prop, direct=True))
+            try:
+                domains = list(self.reasoner.object_property_domains(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the domain of object "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                domains = [OWLThing]
             self.op_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
         return self.op_domains[prop]
 
@@ -605,7 +618,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Ranges of the property.
         """
         if prop not in self.op_ranges:
-            ranges = list(self.reasoner.object_property_ranges(prop, direct=True))
+            try:
+                ranges = list(self.reasoner.object_property_ranges(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the range of object "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                ranges = [OWLThing]
             self.op_ranges[prop] = self.generator.intersection(ranges) if len(ranges) > 1 else ranges[0]
         return self.op_ranges[prop]
 
@@ -619,7 +637,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Domains of the property.
         """
         if prop not in self.dp_domains:
-            domains = list(self.reasoner.data_property_domains(prop, direct=True))
+            try:
+                domains = list(self.reasoner.data_property_domains(prop, direct=True))
+            except ValueError as e:
+                logger.warning("Skipping a malformed axiom encountered while computing the domain of data "
+                                f"property {prop}: {e}. Falling back to owl:Thing for this property.")
+                domains = [OWLThing]
             self.dp_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
         return self.dp_domains[prop]
 

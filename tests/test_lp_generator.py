@@ -16,5 +16,16 @@ class LPGen_Test(unittest.TestCase):
             print("Number of learning problems:", len(lps))
         self.assertGreaterEqual(lp_gen.lp_gen.max_num_lps, len(lps))
 
+    def test_random_seed_reproducibility(self):
+        storage_path_1 = f"{STORAGE_PATH}_seed_1"
+        storage_path_2 = f"{STORAGE_PATH}_seed_2"
+        LPGen(kb_path=PATH_FAMILY, storage_path=storage_path_1, random_seed=1).generate()
+        LPGen(kb_path=PATH_FAMILY, storage_path=storage_path_2, random_seed=1).generate()
+        with open(f"{storage_path_1}/LPs.json") as file:
+            lps_1 = json.load(file)
+        with open(f"{storage_path_2}/LPs.json") as file:
+            lps_2 = json.load(file)
+        self.assertEqual(lps_1, lps_2)
+
 if __name__ == '__main__':
     unittest.main()
