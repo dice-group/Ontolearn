@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;Base classes of concept learners.&quot;&quot;&quot;</span>
+<span class="sd">"""Base classes of concept learners."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -132,8 +132,8 @@
     <span class="n">AbstractConceptNode</span><span class="p">,</span> <span class="n">AbstractLearningProblem</span><span class="p">,</span> <span class="n">AbstractKnowledgeBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.triple_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TripleStoreOntology</span>
 
-<span class="n">_N</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_N&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AbstractConceptNode</span><span class="p">)</span>  <span class="c1">#:</span>
-<span class="n">_X</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;_X&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AbstractLearningProblem</span><span class="p">)</span>  <span class="c1">#:</span>
+<span class="n">_N</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">'_N'</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AbstractConceptNode</span><span class="p">)</span>  <span class="c1">#:</span>
+<span class="n">_X</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">'_X'</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">AbstractLearningProblem</span><span class="p">)</span>  <span class="c1">#:</span>
 <span class="n">Factory</span> <span class="o">=</span> <span class="n">Callable</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -142,7 +142,7 @@
 <div class="viewcode-block" id="BaseConceptLearner">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseConceptLearner</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    @TODO: CD: Why should this class inherit from AbstractConceptNode ?</span>
 <span class="sd">    @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.</span>
 
@@ -174,9 +174,9 @@
 <span class="sd">        reasoner (AbstractOWLReasoner): The reasoner that this model is using.</span>
 <span class="sd">        start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`</span>
 <span class="sd">                            takes to execute.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;kb&#39;</span><span class="p">,</span> <span class="s1">&#39;reasoner&#39;</span><span class="p">,</span> <span class="s1">&#39;quality_func&#39;</span><span class="p">,</span> <span class="s1">&#39;max_num_of_concepts_tested&#39;</span><span class="p">,</span> <span class="s1">&#39;terminate_on_goal&#39;</span><span class="p">,</span> <span class="s1">&#39;max_runtime&#39;</span><span class="p">,</span> \
-        <span class="s1">&#39;start_time&#39;</span><span class="p">,</span> <span class="s1">&#39;_goal_found&#39;</span><span class="p">,</span> <span class="s1">&#39;_number_of_tested_concepts&#39;</span>
+<span class="sd">    """</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">'kb'</span><span class="p">,</span> <span class="s1">'reasoner'</span><span class="p">,</span> <span class="s1">'quality_func'</span><span class="p">,</span> <span class="s1">'max_num_of_concepts_tested'</span><span class="p">,</span> <span class="s1">'terminate_on_goal'</span><span class="p">,</span> <span class="s1">'max_runtime'</span><span class="p">,</span> \
+        <span class="s1">'start_time'</span><span class="p">,</span> <span class="s1">'_goal_found'</span><span class="p">,</span> <span class="s1">'_number_of_tested_concepts'</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
@@ -197,18 +197,18 @@
                  <span class="n">max_num_of_concepts_tested</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">terminate_on_goal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new base concept learner</span>
+<span class="w">        </span><span class="sd">"""Create a new base concept learner</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            knowledge_base: Knowledge base which is used to learn and test concepts. required, but can be taken</span>
 <span class="sd">                from the learning problem if not specified.</span>
 <span class="sd">            quality_func: Function to evaluate the quality of solution concepts. Defaults to `F1`.</span>
-<span class="sd">            max_num_of_concepts_tested: Limit to stop the algorithm after n concepts tested. Defaults to 10&#39;000.</span>
+<span class="sd">            max_num_of_concepts_tested: Limit to stop the algorithm after n concepts tested. Defaults to 10'000.</span>
 <span class="sd">            max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.</span>
 <span class="sd">            terminate_on_goal: Whether to stop the algorithm if a perfect solution is found. Defaults to True.</span>
 <span class="sd">            reasoner: Optionally use a different reasoner. If reasoner=None, the reasoner of the :attr:`knowledge_base`</span>
 <span class="sd">                is used.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span> <span class="o">=</span> <span class="n">reasoner</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="o">=</span> <span class="n">quality_func</span>
@@ -224,9 +224,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__sanity_checking</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fill all params with plausible default values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span> <span class="o">=</span> <span class="n">F1</span><span class="p">()</span>
@@ -245,9 +245,9 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.clean">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Clear all states of the concept learner.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_tested_concepts</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_goal_found</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -256,34 +256,40 @@
 <div class="viewcode-block" id="BaseConceptLearner.train">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.train">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train RL agent on learning problems.</span>
+<span class="w">        </span><span class="sd">"""Optional training hook; a no-op by default.</span>
+
+<span class="sd">        Training is learner-specific: learners that require training (e.g. Drill, NCES, NCES2,</span>
+<span class="sd">        ROCES, CLIP) override this method with their own signatures, while purely symbolic</span>
+<span class="sd">        learners (e.g. CELOE, OCEL) need no training. This default exists so that untrainable</span>
+<span class="sd">        learners can be used in generic pipelines that call ``train()`` uniformly</span>
+<span class="sd">        (e.g. :meth:`ontolearn.experiments.Experiments.carry_out_kfold_cross_validation`).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="BaseConceptLearner.terminate">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.terminate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method is called when the search algorithm terminates.</span>
+<span class="w">        </span><span class="sd">"""This method is called when the search algorithm terminates.</span>
 
 <span class="sd">        If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The concept learner object itself.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># if self.store_onto_flag:</span>
         <span class="c1">#     self.store_ontology()</span>
 
         <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Elapsed runtime: </span><span class="si">{0}</span><span class="s1"> seconds&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Number of concepts tested: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_tested_concepts</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Elapsed runtime: </span><span class="si">{0}</span><span class="s1"> seconds'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Number of concepts tested: </span><span class="si">{0}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_tested_concepts</span><span class="p">))</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_goal_found</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="s1">&#39;A goal concept found: </span><span class="si">{0}</span><span class="s1">&#39;</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="s1">'A goal concept found: </span><span class="si">{0}</span><span class="s1">'</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="s1">&#39;Current best concept: </span><span class="si">{0}</span><span class="s1">&#39;</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="s1">'Current best concept: </span><span class="si">{0}</span><span class="s1">'</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -292,7 +298,7 @@
 <div class="viewcode-block" id="BaseConceptLearner.construct_learning_problem">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.construct_learning_problem">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_learning_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">_X</span><span class="p">],</span> <span class="n">xargs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">xkwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_X</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct learning problem of given type based on args and kwargs. If a learning problem is contained in</span>
+<span class="w">        </span><span class="sd">"""Construct learning problem of given type based on args and kwargs. If a learning problem is contained in</span>
 <span class="sd">        args or the learning_problem kwarg, it is used. otherwise, a new learning problem of type type_ is created</span>
 <span class="sd">        with args and kwargs as parameters.</span>
 
@@ -303,8 +309,8 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The learning problem.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">learning_problem</span> <span class="o">=</span> <span class="n">xkwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;learning_problem&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">learning_problem</span> <span class="o">=</span> <span class="n">xkwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"learning_problem"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">learning_problem</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">xargs</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xargs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">AbstractLearningProblem</span><span class="p">):</span>
             <span class="n">learning_problem</span> <span class="o">=</span> <span class="n">xargs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">xargs</span> <span class="o">=</span> <span class="n">xargs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
@@ -318,9 +324,9 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.fit">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the concept learning algorithm according to its configuration.</span>
+<span class="w">        </span><span class="sd">"""Run the concept learning algorithm according to its configuration.</span>
 
-<span class="sd">        Once finished, the results can be queried with the `best_hypotheses` function.&quot;&quot;&quot;</span>
+<span class="sd">        Once finished, the results can be queried with the `best_hypotheses` function."""</span>
         <span class="k">pass</span></div>
 
 
@@ -328,7 +334,7 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.best_hypotheses">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current best found hypotheses according to the quality.</span>
+<span class="w">        </span><span class="sd">"""Get the current best found hypotheses according to the quality.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            n: Maximum number of results.</span>
@@ -336,14 +342,14 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Iterable with hypotheses in form of search tree nodes.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_assign_labels_to_individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span>
                                       <span class="n">hypotheses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span>
                                       <span class="n">reasoner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractOWLReasoner</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Use each class expression as a hypothesis, and use it as a binary function to assign 1 or 0 to each</span>
 <span class="sd">        individual.</span>
 
@@ -353,7 +359,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Matrix of \\|individuals\\| x \\|hypotheses\\|.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">retrieval_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span> <span class="k">if</span> <span class="n">reasoner</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">instances</span>
 
         <span class="n">labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">individuals</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hypotheses</span><span class="p">)))</span>
@@ -370,7 +376,7 @@
                 <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">_N</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">axioms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">OWLAxiom</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        @TODO: CD: Predicting an individual can be done by a retrieval function not a concept learner</span>
 <span class="sd">        @TODO: A concept learner learns an owl class expression.</span>
 <span class="sd">        @TODO: This learned expression can be used as a binary predictor.</span>
@@ -395,12 +401,12 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each</span>
 <span class="sd">            hypothesis whether the individual is entailed in the hypothesis.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">reasoner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoner</span>
         <span class="n">new_individuals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">OWLThing</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_individuals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">axioms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">axioms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;If individuals are provided that are not in the knowledge base yet, a list of axioms &#39;</span>
-                               <span class="sa">f</span><span class="s1">&#39;has to be provided. New Individuals:</span><span class="se">\n</span><span class="si">{</span><span class="n">new_individuals</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'If individuals are provided that are not in the knowledge base yet, a list of axioms '</span>
+                               <span class="sa">f</span><span class="s1">'has to be provided. New Individuals:</span><span class="se">\n</span><span class="si">{</span><span class="n">new_individuals</span><span class="si">}</span><span class="s1">.'</span><span class="p">)</span>
 
         <span class="c1"># If axioms are provided they need to be added to the ontology</span>
         <span class="k">if</span> <span class="n">axioms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -438,20 +444,20 @@
 
 <div class="viewcode-block" id="BaseConceptLearner.save_best_hypothesis">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.save_best_hypothesis">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;./Predictions&#39;</span><span class="p">,</span> <span class="n">rdf_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;rdfxml&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialise the best hypotheses to a file.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'./Predictions'</span><span class="p">,</span> <span class="n">rdf_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'rdfxml'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Serialise the best hypotheses to a file.</span>
 <span class="sd">        @TODO: CD: This function should be deprecated.</span>
 <span class="sd">        @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner</span>
 <span class="sd">        @TODO:CD: owlapy 1.3.3, we will use save_owl_class_expressions</span>
 <span class="sd">        Args:</span>
 <span class="sd">            n: Maximum number of hypotheses to save.</span>
 <span class="sd">            path: Filename base (extension will be added automatically).</span>
-<span class="sd">            rdf_format: Serialisation format. currently supported: &quot;rdfxml&quot;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">NS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;https://dice-research.org/predictions/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39;#&#39;</span>
+<span class="sd">            rdf_format: Serialisation format. currently supported: "rdfxml".</span>
+<span class="sd">        """</span>
+        <span class="n">NS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">'https://dice-research.org/predictions/'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span> <span class="o">+</span> <span class="s1">'#'</span>
 
-        <span class="k">if</span> <span class="n">rdf_format</span> <span class="o">!=</span> <span class="s1">&#39;rdfxml&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Format </span><span class="si">{</span><span class="n">rdf_format</span><span class="si">}</span><span class="s1"> not implemented.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rdf_format</span> <span class="o">!=</span> <span class="s1">'rdfxml'</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Format </span><span class="si">{</span><span class="n">rdf_format</span><span class="si">}</span><span class="s1"> not implemented.'</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span>  <span class="n">AbstractKnowledgeBase</span><span class="p">)</span>
 
@@ -463,11 +469,11 @@
         <span class="n">best</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)]</span> <span class="k">if</span> <span class="n">n</span><span class="o">==</span><span class="mi">1</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">best</span><span class="p">):</span>
-            <span class="n">cls_a</span><span class="p">:</span> <span class="n">OWLClass</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s2">&quot;Pred_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ith</span><span class="p">)))</span>
+            <span class="n">cls_a</span><span class="p">:</span> <span class="n">OWLClass</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span> <span class="s2">"Pred_"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ith</span><span class="p">)))</span>
             <span class="n">equivalent_classes_axiom</span> <span class="o">=</span> <span class="n">OWLEquivalentClassesAxiom</span><span class="p">([</span><span class="n">cls_a</span><span class="p">,</span> <span class="n">h</span><span class="p">])</span>
             <span class="n">ontology</span><span class="o">.</span><span class="n">add_axiom</span><span class="p">(</span><span class="n">equivalent_classes_axiom</span><span class="p">)</span>
             <span class="c1"># @TODO:CD: We should find a way to include information (F1score etc) outside of OWL class expression instances</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""</span>
 <span class="sd">            try:</span>
 <span class="sd">                assert isinstance(h, _NodeQuality)</span>
 <span class="sd">                quality = h.quality</span>
@@ -475,21 +481,21 @@
 <span class="sd">                quality = None</span>
 <span class="sd">            if isinstance(self.quality_func, Accuracy):</span>
 <span class="sd">                accuracy = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(</span>
-<span class="sd">                    OWLAnnotationProperty(IRI.create(SNS, &quot;accuracy&quot;)), OWLLiteral(quality)))</span>
+<span class="sd">                    OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))</span>
 <span class="sd">                ontology.add_axiom(accuracy)</span>
 <span class="sd">            elif isinstance(self.quality_func, F1):</span>
 <span class="sd">                f1_score = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(</span>
-<span class="sd">                    OWLAnnotationProperty(IRI.create(SNS, &quot;f1_score&quot;)), OWLLiteral(quality)))</span>
+<span class="sd">                    OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))</span>
 <span class="sd">                ontology.add_axiom(f1_score)</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
         <span class="c1"># TODO:# must be added for the time being</span>
-        <span class="n">ontology</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;.owl&#39;</span><span class="p">,</span> <span class="n">is_file_path</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
+        <span class="n">ontology</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">'.owl'</span><span class="p">,</span> <span class="n">is_file_path</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="BaseConceptLearner.load_hypotheses">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.BaseConceptLearner.load_hypotheses">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        @TODO: CD: This function should be deprecated.</span>
 <span class="sd">        @TODO: CD: Loading owl class expressions from disk should be disentangled from a concept earner</span>
 
@@ -498,11 +504,11 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: Path to the file containing hypotheses.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">Ontology</span><span class="p">):</span>
-            <span class="n">ontology</span> <span class="o">=</span> <span class="n">Ontology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">path</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">ontology</span> <span class="o">=</span> <span class="n">Ontology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">'file://'</span> <span class="o">+</span> <span class="n">path</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="p">,</span> <span class="n">SyncOntology</span><span class="p">):</span>
-            <span class="n">ontology</span> <span class="o">=</span> <span class="n">SyncOntology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">path</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">ontology</span> <span class="o">=</span> <span class="n">SyncOntology</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">'file://'</span> <span class="o">+</span> <span class="n">path</span><span class="p">),</span> <span class="n">load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">equivalent_classes</span> <span class="ow">in</span> <span class="n">ontology</span><span class="o">.</span><span class="n">equivalent_classes_axioms</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">equivalent_c</span> <span class="ow">in</span> <span class="n">equivalent_classes</span><span class="o">.</span><span class="n">class_expressions</span><span class="p">():</span>
@@ -515,7 +521,7 @@
 <div class="viewcode-block" id="RefinementBasedConceptLearner">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.RefinementBasedConceptLearner">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RefinementBasedConceptLearner</span><span class="p">(</span><span class="n">BaseConceptLearner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for refinement based Concept Learning approaches.</span>
 
 <span class="sd">    Attributes:</span>
@@ -535,8 +541,8 @@
 <span class="sd">        max_child_length (int): Limit the length of concepts generated by the refinement operator.</span>
 
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;operator&#39;</span><span class="p">,</span> <span class="s1">&#39;heuristic_func&#39;</span><span class="p">,</span> <span class="s1">&#39;max_child_length&#39;</span><span class="p">,</span> <span class="s1">&#39;start_class&#39;</span><span class="p">,</span> <span class="s1">&#39;iter_bound&#39;</span>
+<span class="sd">    """</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">'operator'</span><span class="p">,</span> <span class="s1">'heuristic_func'</span><span class="p">,</span> <span class="s1">'max_child_length'</span><span class="p">,</span> <span class="s1">'start_class'</span><span class="p">,</span> <span class="s1">'iter_bound'</span>
 
     <span class="n">operator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseRefinement</span><span class="p">]</span>
     <span class="n">heuristic_func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AbstractHeuristic</span><span class="p">]</span>
@@ -557,7 +563,7 @@
                  <span class="n">iter_bound</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">max_child_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">root_concept</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new base concept learner.</span>
+<span class="w">        </span><span class="sd">"""Create a new base concept learner.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            knowledge_base: Knowledge base which is used to learn and test concepts. required, but can be taken</span>
@@ -572,7 +578,7 @@
 <span class="sd">            max_child_length: Limit the length of concepts generated by the refinement operator. defaults to 10.</span>
 <span class="sd">                Only used if refinement_operator is not specified.</span>
 <span class="sd">            root_concept: The start concept to begin the search from. Defaults to OWL Thing.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">knowledge_base</span><span class="p">,</span>
                          <span class="n">reasoner</span><span class="o">=</span><span class="n">reasoner</span><span class="p">,</span>
                          <span class="n">quality_func</span><span class="o">=</span><span class="n">quality_func</span><span class="p">,</span>
@@ -589,9 +595,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__sanity_checking</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fill all params with plausible default values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_child_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_child_length</span> <span class="o">=</span> <span class="mi">10</span>
 
@@ -615,7 +621,7 @@
 <div class="viewcode-block" id="RefinementBasedConceptLearner.terminate">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.RefinementBasedConceptLearner.terminate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">show_search_tree</span><span class="p">(</span><span class="s1">&#39;Final&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_search_tree</span><span class="p">(</span><span class="s1">'Final'</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
 
 
@@ -623,12 +629,12 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.RefinementBasedConceptLearner.next_node_to_expand">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">next_node_to_expand</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return from the search tree the most promising search tree node to use for the next refinement step.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            _N: Next search tree node to refine.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 
 
@@ -636,14 +642,14 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.RefinementBasedConceptLearner.downward_refinement">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">downward_refinement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute one refinement step of a refinement based learning algorithm.</span>
+<span class="w">        </span><span class="sd">"""Execute one refinement step of a refinement based learning algorithm.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            node (_N): the search tree node on which to refine.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Iterable[_N]: Refinement results as new search tree nodes (they still need to be added to the tree).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 
 
@@ -651,13 +657,13 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.base.RefinementBasedConceptLearner.show_search_tree">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">show_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A debugging function to print out the current search tree and the current n best found hypotheses to</span>
+<span class="w">        </span><span class="sd">"""A debugging function to print out the current search tree and the current n best found hypotheses to</span>
 <span class="sd">        standard output.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            heading_step: A message to display at the beginning of the output.</span>
 <span class="sd">            top_n: The number of current best hypotheses to print out.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">pass</span></div>
 </div>
 

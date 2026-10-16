@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,10 +106,11 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;EvoLearner: An evolutionary approach to learn concepts in ALCQ(D).&quot;&quot;&quot;</span>
+<span class="sd">"""EvoLearner: An evolutionary approach to learn concepts in ALCQ(D)."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
@@ -140,7 +141,7 @@
 <div class="viewcode-block" id="EvoLearner">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EvoLearner</span><span class="p">(</span><span class="n">BaseConceptLearner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;An evolutionary approach to learn concepts in ALCQ(D).</span>
+<span class="w">    </span><span class="sd">"""An evolutionary approach to learn concepts in ALCQ(D).</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm.</span>
@@ -152,7 +153,7 @@
 <span class="sd">        max_num_of_concepts_tested (int): Limit to stop the algorithm after n concepts tested.</span>
 <span class="sd">        max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds.</span>
 <span class="sd">        mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation operation.</span>
-<span class="sd">        name (str): Name of the model = &#39;evolearner&#39;.</span>
+<span class="sd">        name (str): Name of the model = 'evolearner'.</span>
 <span class="sd">        num_generations (int): Number of generation for the evolutionary algorithm.</span>
 <span class="sd">        _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.</span>
 <span class="sd">        population_size (int): Population size for the evolutionary algorithm.</span>
@@ -168,14 +169,15 @@
 <span class="sd">        use_data_properties (bool): Consider data properties?</span>
 <span class="sd">        use_inverse (bool): Consider inversed concepts?</span>
 <span class="sd">        value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;fitness_func&#39;</span><span class="p">,</span> <span class="s1">&#39;init_method&#39;</span><span class="p">,</span> <span class="s1">&#39;algorithm&#39;</span><span class="p">,</span> <span class="s1">&#39;value_splitter&#39;</span><span class="p">,</span> <span class="s1">&#39;tournament_size&#39;</span><span class="p">,</span> \
-        <span class="s1">&#39;population_size&#39;</span><span class="p">,</span> <span class="s1">&#39;num_generations&#39;</span><span class="p">,</span> <span class="s1">&#39;height_limit&#39;</span><span class="p">,</span> <span class="s1">&#39;use_data_properties&#39;</span><span class="p">,</span> <span class="s1">&#39;pset&#39;</span><span class="p">,</span> <span class="s1">&#39;toolbox&#39;</span><span class="p">,</span> \
-        <span class="s1">&#39;_learning_problem&#39;</span><span class="p">,</span> <span class="s1">&#39;_result_population&#39;</span><span class="p">,</span> <span class="s1">&#39;mut_uniform_gen&#39;</span><span class="p">,</span> <span class="s1">&#39;_dp_to_prim_type&#39;</span><span class="p">,</span> <span class="s1">&#39;_dp_splits&#39;</span><span class="p">,</span> \
-        <span class="s1">&#39;_split_properties&#39;</span><span class="p">,</span> <span class="s1">&#39;_cache&#39;</span><span class="p">,</span> <span class="s1">&#39;use_card_restrictions&#39;</span><span class="p">,</span> <span class="s1">&#39;card_limit&#39;</span><span class="p">,</span> <span class="s1">&#39;use_inverse&#39;</span><span class="p">,</span> <span class="s1">&#39;total_fits&#39;</span><span class="p">,</span> <span class="s1">&#39;generator&#39;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">'fitness_func'</span><span class="p">,</span> <span class="s1">'init_method'</span><span class="p">,</span> <span class="s1">'algorithm'</span><span class="p">,</span> <span class="s1">'value_splitter'</span><span class="p">,</span> <span class="s1">'tournament_size'</span><span class="p">,</span> \
+        <span class="s1">'population_size'</span><span class="p">,</span> <span class="s1">'num_generations'</span><span class="p">,</span> <span class="s1">'height_limit'</span><span class="p">,</span> <span class="s1">'use_data_properties'</span><span class="p">,</span> <span class="s1">'pset'</span><span class="p">,</span> <span class="s1">'toolbox'</span><span class="p">,</span> \
+        <span class="s1">'_learning_problem'</span><span class="p">,</span> <span class="s1">'_result_population'</span><span class="p">,</span> <span class="s1">'mut_uniform_gen'</span><span class="p">,</span> <span class="s1">'_dp_to_prim_type'</span><span class="p">,</span> <span class="s1">'_dp_splits'</span><span class="p">,</span> \
+        <span class="s1">'_split_properties'</span><span class="p">,</span> <span class="s1">'_cache'</span><span class="p">,</span> <span class="s1">'use_card_restrictions'</span><span class="p">,</span> <span class="s1">'card_limit'</span><span class="p">,</span> <span class="s1">'use_inverse'</span><span class="p">,</span> <span class="s1">'total_fits'</span><span class="p">,</span> \
+        <span class="s1">'generator'</span><span class="p">,</span> <span class="s1">'_creator_uid'</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;evolearner&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'evolearner'</span>
 
     <span class="n">kb</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span>
     <span class="n">fitness_func</span><span class="p">:</span> <span class="n">AbstractFitness</span>
@@ -221,7 +223,7 @@
                  <span class="n">population_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">800</span><span class="p">,</span>
                  <span class="n">num_generations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
                  <span class="n">height_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">17</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Create a new instance of EvoLearner</span>
+<span class="w">        </span><span class="sd">""" Create a new instance of EvoLearner</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm. Defaults to `EASimple`.</span>
@@ -250,7 +252,7 @@
 <span class="sd">            use_inverse (bool): Consider inversed concepts? Defaults to False.</span>
 <span class="sd">            value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to</span>
 <span class="sd">                                                `EntropyValueSplitter`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="n">quality_func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">quality_func</span> <span class="o">=</span> <span class="n">Accuracy</span><span class="p">()</span>
@@ -276,6 +278,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span> <span class="o">=</span> <span class="n">height_limit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_fits</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">ConceptGenerator</span><span class="p">()</span>
+        <span class="c1"># DEAP's `creator` module is process-global, so plain names like "Fitness"/</span>
+        <span class="c1"># "Individual" would be clobbered by any other EvoLearner instance created or</span>
+        <span class="c1"># fit()-ed concurrently. Suffix them with a per-instance uid to keep instances</span>
+        <span class="c1"># isolated from each other.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_creator_uid</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__setup</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -309,7 +316,7 @@
         <span class="n">union</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_union</span><span class="p">()</span>
         <span class="n">intersection</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">create_intersection</span><span class="p">()</span>
 
-        <span class="n">pset</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveSetTyped</span><span class="p">(</span><span class="s2">&quot;concept_tree&quot;</span><span class="p">,</span> <span class="p">[],</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
+        <span class="n">pset</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveSetTyped</span><span class="p">(</span><span class="s2">"concept_tree"</span><span class="p">,</span> <span class="p">[],</span> <span class="n">OWLClassExpression</span><span class="p">)</span>
         <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">negation</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
                           <span class="n">name</span><span class="o">=</span><span class="n">OperatorVocabulary</span><span class="o">.</span><span class="n">NEGATION</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="n">pset</span><span class="o">.</span><span class="n">addPrimitive</span><span class="p">(</span><span class="n">union</span><span class="p">,</span> <span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">OWLClassExpression</span><span class="p">,</span>
@@ -394,20 +401,33 @@
                          <span class="n">name</span><span class="o">=</span><span class="n">escape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">nothing</span><span class="o">.</span><span class="n">str</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">pset</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__creator_class_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Per-instance names for the DEAP `creator` types this learner registers, to avoid</span>
+<span class="sd">        clobbering another EvoLearner instance's types in DEAP's process-global `creator`</span>
+<span class="sd">        module."""</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Fitness_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_creator_uid</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Quality_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_creator_uid</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+               <span class="sa">f</span><span class="s2">"Individual_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_creator_uid</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">__build_toolbox</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">base</span><span class="o">.</span><span class="n">Toolbox</span><span class="p">:</span>
-        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Fitness&quot;</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
-        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Quality&quot;</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
-        <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;Individual&quot;</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveTree</span><span class="p">,</span> <span class="n">fitness</span><span class="o">=</span><span class="n">creator</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">creator</span><span class="o">.</span><span class="n">Quality</span><span class="p">)</span>
+        <span class="n">fitness_name</span><span class="p">,</span> <span class="n">quality_name</span><span class="p">,</span> <span class="n">individual_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__creator_class_names</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">fitness_name</span><span class="p">):</span>
+            <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">fitness_name</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">quality_name</span><span class="p">):</span>
+            <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">quality_name</span><span class="p">,</span> <span class="n">base</span><span class="o">.</span><span class="n">Fitness</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">individual_name</span><span class="p">):</span>
+            <span class="n">creator</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">individual_name</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">PrimitiveTree</span><span class="p">,</span>
+                           <span class="n">fitness</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">fitness_name</span><span class="p">),</span>
+                           <span class="n">quality</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">quality_name</span><span class="p">))</span>
 
         <span class="n">toolbox</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">Toolbox</span><span class="p">()</span>
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">INIT_POPULATION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span><span class="o">.</span><span class="n">get_population</span><span class="p">,</span>
-                         <span class="n">creator</span><span class="o">.</span><span class="n">Individual</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+                         <span class="nb">getattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">individual_name</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">COMPILE</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">compile</span><span class="p">,</span> <span class="n">pset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
 
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">FITNESS_FUNCTION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fitness_func</span><span class="p">)</span>
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">SELECTION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">tools</span><span class="o">.</span><span class="n">selTournament</span><span class="p">,</span> <span class="n">tournsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tournament_size</span><span class="p">)</span>
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">cxOnePoint</span><span class="p">)</span>
-        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;create_tree_mut&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span><span class="o">.</span><span class="n">get_expression</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"create_tree_mut"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mut_uniform_gen</span><span class="o">.</span><span class="n">get_expression</span><span class="p">)</span>
         <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">MUTATION</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">mutUniform</span><span class="p">,</span> <span class="n">expr</span><span class="o">=</span><span class="n">toolbox</span><span class="o">.</span><span class="n">create_tree_mut</span><span class="p">,</span> <span class="n">pset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
 
         <span class="n">toolbox</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
@@ -417,10 +437,10 @@
                          <span class="n">gp</span><span class="o">.</span><span class="n">staticLimit</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">HEIGHT_KEY</span><span class="p">),</span>
                                         <span class="n">max_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height_limit</span><span class="p">))</span>
 
-        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;get_top_hypotheses&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">)</span>
-        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;terminate_on_goal&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminate_on_goal</span><span class="p">)</span>
-        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;max_runtime&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">)</span>
-        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pset&quot;</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"get_top_hypotheses"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"terminate_on_goal"</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminate_on_goal</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"max_runtime"</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">)</span>
+        <span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">"pset"</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pset</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">toolbox</span>
 
@@ -444,7 +464,7 @@
 <div class="viewcode-block" id="EvoLearner.register_op">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.register_op">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">register_op</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a *function* in the toolbox under the name *alias*.</span>
+<span class="w">        </span><span class="sd">"""Register a *function* in the toolbox under the name *alias*.</span>
 <span class="sd">        You may provide default arguments that will be passed automatically when</span>
 <span class="sd">        calling the registered function. Fixed arguments can then be overriden</span>
 <span class="sd">        at function call time.</span>
@@ -457,7 +477,7 @@
 <span class="sd">            args: One or more argument (and keyword argument) to pass</span>
 <span class="sd">                     automatically to the registered function when called,</span>
 <span class="sd">                     optional.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">alias</span> <span class="o">==</span> <span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">CROSSOVER</span> <span class="ow">or</span> <span class="n">alias</span> <span class="o">==</span> <span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">MUTATION</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">toolbox</span><span class="o">.</span><span class="n">decorate</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="n">gp</span><span class="o">.</span><span class="n">staticLimit</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">attrgetter</span><span class="p">(</span><span class="n">ToolboxVocabulary</span><span class="o">.</span><span class="n">HEIGHT_KEY</span><span class="p">),</span>
@@ -466,11 +486,11 @@
 
 <div class="viewcode-block" id="EvoLearner.fit">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.fit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;EvoLearner&#39;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'EvoLearner'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find hypotheses that explain pos and neg.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Don&#39;t reset everything if the user is just using this model for 1 learning problem, since he may use the</span>
+<span class="sd">        """</span>
+        <span class="c1"># Don't reset everything if the user is just using this model for 1 learning problem, since he may use the</span>
         <span class="c1"># register_op method, else-wise we need to `clean` before fitting to get a fresh fit.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_fits</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
@@ -478,7 +498,7 @@
         <span class="n">learning_problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_learning_problem</span><span class="p">(</span><span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span> <span class="o">=</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">encode_kb</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">)</span>
 
-        <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"verbose"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 
         <span class="n">population</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialize</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">neg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -519,7 +539,7 @@
 
 <div class="viewcode-block" id="EvoLearner.best_hypotheses">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.best_hypotheses">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="n">return_node</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'fitness'</span><span class="p">,</span> <span class="n">return_node</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span>
     <span class="n">Iterable</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]]:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -536,7 +556,7 @@
                 <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_result_population</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span><span class="o">.</span><span class="n">concept</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;fitness&#39;</span><span class="p">)</span> \
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_top_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tree</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'fitness'</span><span class="p">)</span> \
             <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">EvoLearnerNode</span><span class="p">]:</span>
         <span class="n">best_inds</span> <span class="o">=</span> <span class="n">tools</span><span class="o">.</span><span class="n">selBest</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">n</span> <span class="o">*</span> <span class="mi">10</span><span class="p">,</span> <span class="n">fit_attr</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
         <span class="n">best_inds_distinct</span> <span class="o">=</span> <span class="p">[]</span>
@@ -567,13 +587,14 @@
 <div class="viewcode-block" id="EvoLearner.clean">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.evolearner.EvoLearner.clean">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-        <span class="c1"># Resets classes if they already exist, names must match the ones that were created in the toolbox</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Fitness</span>
-            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Individual</span>
-            <span class="k">del</span> <span class="n">creator</span><span class="o">.</span><span class="n">Quality</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">pass</span>
+        <span class="c1"># Resets classes if they already exist, names must match the ones that were created in the toolbox.</span>
+        <span class="c1"># Only this instance's own uid-suffixed names are touched, so concurrent EvoLearner</span>
+        <span class="c1"># instances never clobber each other's DEAP `creator` types.</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__creator_class_names</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">delattr</span><span class="p">(</span><span class="n">creator</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">partial</span><span class="p">:</span>
             <span class="c1"># Reset everything if fitting more than one lp. Tests have shown that this is necessary to get the</span>

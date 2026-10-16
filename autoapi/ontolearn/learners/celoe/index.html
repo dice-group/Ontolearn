@@ -81,6 +81,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../alcsat/index.html">ontolearn.learners.alcsat</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../base/index.html">ontolearn.learners.base</a></li>
 <li class="toctree-l5 current"><a class="current reference internal" href="#">ontolearn.learners.celoe</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
@@ -98,6 +99,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../spell/index.html">ontolearn.learners.spell</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../spell_kit/index.html">ontolearn.learners.spell_kit</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../tree_learner_refinement_inherit/index.html">ontolearn.learners.tree_learner_refinement_inherit</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
@@ -119,7 +121,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../utils/index.html">ontolearn.utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
@@ -160,6 +161,16 @@
              
   <section id="module-ontolearn.learners.celoe">
 <span id="ontolearn-learners-celoe"></span><h1>ontolearn.learners.celoe<a class="headerlink" href="#module-ontolearn.learners.celoe" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.celoe.logger" title="ontolearn.learners.celoe.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -172,6 +183,11 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.celoe.logger">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.celoe.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#ontolearn.learners.celoe.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="ontolearn.learners.celoe.CELOE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.learners.celoe.</span></span><span class="sig-name descname"><span class="pre">CELOE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractKnowledgeBase" title="ontolearn.abstracts.AbstractKnowledgeBase"><span class="pre">AbstractKnowledgeBase</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasoner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.abstracts.AbstractOWLReasoner</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_operator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.BaseRefinement" title="ontolearn.abstracts.BaseRefinement"><span class="pre">BaseRefinement</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractScorer" title="ontolearn.abstracts.AbstractScorer"><span class="pre">AbstractScorer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristic_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../abstracts/index.html#ontolearn.abstracts.AbstractHeuristic" title="ontolearn.abstracts.AbstractHeuristic"><span class="pre">AbstractHeuristic</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminate_on_goal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter_bound</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_of_concepts_tested</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_runtime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calculate_min_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/celoe.html#CELOE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.celoe.CELOE" title="Link to this definition"></a></dt>
@@ -487,6 +503,20 @@ takes to execute.</p>
 <dt class="sig sig-object py" id="ontolearn.learners.celoe.CELOE.updating_node">
 <span class="sig-name descname"><span class="pre">updating_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../search/index.html#ontolearn.search.OENode" title="ontolearn.search.OENode"><span class="pre">OENode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/celoe.html#CELOE.updating_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.celoe.CELOE.updating_node" title="Link to this definition"></a></dt>
 <dd><p>Removes the node from the heuristic sorted set and inserts it again.</p>
+<p><cite>heuristic_queue</cite> is a <cite>SortedSet</cite> keyed by <cite>HeuristicOrderedNode</cite>, i.e. it orders
+entries by <cite>node.heuristic</cite> (then by concept). Refining <cite>node</cite> changes <cite>node.h_exp</cite>
+and, via <cite>heuristic_func.apply(…)</cite>, <cite>node.heuristic</cite> itself - so <cite>node</cite> has to be
+pulled out of the sorted structure <em>before</em> it is mutated and re-inserted <em>after</em>,
+otherwise the set’s internal ordering invariant (built from the heuristic value at
+insertion time) would no longer match the node’s current heuristic value.</p>
+<p><cite>discard()</cite> looks the node up by its <em>current</em> key. If the node’s heuristic already
+changed since it was added to the queue (e.g. it was mutated somewhere other than
+through this context manager, or it is being updated a second time without ever
+having been re-added), the lookup can miss and <cite>SortedKeyList.remove()</cite> raises
+<cite>ValueError</cite>. That would indicate the node’s queue membership and its <cite>heuristic</cite>
+attribute have gone out of sync with each other - worth investigating if it is
+ever observed - but there is nothing to undo here: the node is simply not present
+in the queue, so we fall through to <cite>yield</cite>/re-<cite>add()</cite> as normal.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>update.</strong> (<em>Node to</em>)</p>

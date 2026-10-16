@@ -1,0 +1,443 @@
+ontolearn.lp_generator.complexity_lp_generator
+==============================================
+
+.. py:module:: ontolearn.lp_generator.complexity_lp_generator
+
+.. autoapi-nested-parse::
+
+   Goal-directed, complexity-controlled learning-problem generation.
+
+   ``ontolearn.lp_generator.LPGen``/``KB2Data`` synthesize learning problems bottom-up: they
+   refine ``owl:Thing`` with ``ExpressRefinement`` and keep whatever non-redundant concepts fall
+   out, sorted by length only as a dedup tie-break. There is no way to ask for "a learning problem
+   whose target uses exactly a nested existential restriction and an object intersection, depth <= 3".
+
+   This module instead samples a target ``OWLClassExpression`` **top-down from an explicit DL-construct
+   grammar** (:class:`ComplexityProfile`): the caller names which constructors are allowed
+   (intersection, union, existential/universal restriction, cardinality restrictions, has-value,
+   negation, inverse roles) and bounds on length/depth, and the generator recursively builds concepts
+   that respect that budget. Each candidate is turned into a learning problem via reasoner-based
+   retrieval (``kb.individuals_set``).
+
+   Candidates are additionally ranked by an explicit **difficulty score** (:class:`DifficultyWeights`)
+   combining four signals: normalized target length/depth, how far the best "cheap" one-step
+   hypothesis (an atomic class, its negation, or a bare ``exists r.Top``) falls short of solving the
+   LP outright, and the density of *near-miss negatives* -- individuals that satisfy the target with
+   exactly one top-level conjunct dropped (e.g. the right class but the wrong relation), which is
+   exactly where a greedy top-down learner is most likely to overgeneralize. :meth:`generate`
+   oversamples candidates and keeps the hardest ``num_lps`` of them, and biases the negative sample
+   towards near-misses via ``hard_negative_ratio``, so the returned problems are pointed at the
+   learner's actual failure modes rather than generic random negatives.
+
+   The grammar and probes are built purely from the knowledge base's own signature
+   (``kb.ontology.classes_in_signature()``, ``kb.get_object_properties()``), so the same
+   :class:`ComplexityProfile` curriculum runs unmodified across knowledge graphs with very different
+   shapes -- e.g. Family, Mutagenesis, Carcinogenesis, Biopax, Lymphography. Relation-based constructs
+   (∃/∀/cardinality/has-value) are silently dropped from the grammar on a KB that exposes no object
+   properties (e.g. Lymphography) rather than raising, so a curriculum degrades gracefully instead of
+   crashing on such KBs.
+
+   A :class:`ComplexityProfile` curriculum (e.g. atomic -> conjunctive -> nested existential ->
+   cardinality -> full ALCQ) can then be run through :meth:`GoalDirectedLPGenerator.generate_benchmark`
+   to build a graded benchmark suite, e.g. to measure how a learner's F1 degrades as target-concept
+   complexity grows -- see ``examples/benchmark_complexity_lp_generator_with_tdl.py``.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.lp_generator.complexity_lp_generator.DLConstruct
+   ontolearn.lp_generator.complexity_lp_generator.DifficultyWeights
+   ontolearn.lp_generator.complexity_lp_generator.ComplexityProfile
+   ontolearn.lp_generator.complexity_lp_generator.GeneratedLearningProblem
+   ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   ontolearn.lp_generator.complexity_lp_generator.save_benchmark
+
+
+Module Contents
+---------------
+
+.. py:class:: DLConstruct(*args, **kwds)
+
+   Bases: :py:obj:`enum.Enum`
+
+
+   DL constructors a :class:`ComplexityProfile` can allow/forbid.
+
+
+   .. py:attribute:: ATOMIC
+      :value: 'atomic'
+
+
+
+   .. py:attribute:: NEGATION
+      :value: 'negation'
+
+
+
+   .. py:attribute:: INTERSECTION
+      :value: 'intersection'
+
+
+
+   .. py:attribute:: UNION
+      :value: 'union'
+
+
+
+   .. py:attribute:: EXISTENTIAL
+      :value: 'existential'
+
+
+
+   .. py:attribute:: UNIVERSAL
+      :value: 'universal'
+
+
+
+   .. py:attribute:: MIN_CARDINALITY
+      :value: 'min_cardinality'
+
+
+
+   .. py:attribute:: MAX_CARDINALITY
+      :value: 'max_cardinality'
+
+
+
+   .. py:attribute:: EXACT_CARDINALITY
+      :value: 'exact_cardinality'
+
+
+
+   .. py:attribute:: HAS_VALUE
+      :value: 'has_value'
+
+
+
+.. py:class:: DifficultyWeights
+
+   Weights combining four difficulty signals into one score in (roughly) ``[0, 1]``.
+
+   :param length: weight on ``length / profile.max_length`` (longer target -> harder).
+   :param depth: weight on ``depth / profile.max_depth`` (deeper nesting -> harder).
+   :param baseline_hardness: weight on ``1 - baseline_f1`` -- how far the best cheap one-step
+       hypothesis falls short of solving the LP outright.
+   :param near_miss: weight on the fraction of positives that have a matching near-miss negative
+       (an individual satisfying the target with exactly one top-level conjunct dropped) -- these
+       are the negatives a greedy learner is most likely to accidentally cover.
+
+
+   .. py:attribute:: length
+      :type:  float
+      :value: 0.25
+
+
+
+   .. py:attribute:: depth
+      :type:  float
+      :value: 0.15
+
+
+
+   .. py:attribute:: baseline_hardness
+      :type:  float
+      :value: 0.4
+
+
+
+   .. py:attribute:: near_miss
+      :type:  float
+      :value: 0.2
+
+
+
+.. py:class:: ComplexityProfile
+
+   A named point (or curriculum step) in the space of "how complex should the target be".
+
+   :param name: identifier used to tag generated problems and group benchmark results.
+   :param allowed_constructs: DL constructors :meth:`GoalDirectedLPGenerator.generate` may use
+       when sampling a target concept. Relation-based constructs (∃/∀/cardinality/has-value) are
+       silently unavailable on a knowledge base exposing no object properties.
+   :param min_length/max_length: bounds on ``concept_len`` of the (NNF) target.
+   :param min_depth/max_depth: bounds on restriction-nesting depth (see
+       :meth:`GoalDirectedLPGenerator.concept_depth`); a bare named class has depth 0.
+   :param max_arity: maximum number of operands sampled under one intersection/union.
+   :param card_limit: cardinality restrictions sample ``n`` uniformly from ``[1, card_limit]``.
+   :param use_inverse_roles: if True, restrictions may use ``r-`` in place of ``r``.
+   :param min_pos/min_neg: an LP is discarded unless the target has at least this many
+       positive and negative instances in the knowledge base.
+   :param max_examples_per_side: positives/negatives are subsampled down to this cap.
+   :param max_baseline_f1: an LP is discarded if the best of a pool of "cheap" one-step
+       hypotheses (an atomic class, its negation, or a bare ``exists r.Top``) already reaches
+       this F1 -- i.e. it is trivially solvable without the constructs being tested.
+   :param min_difficulty: an LP is discarded if its :class:`DifficultyWeights`-weighted score
+       falls below this bar. ``0.0`` (default) disables this filter.
+   :param oversample_factor: :meth:`GoalDirectedLPGenerator.generate` collects up to
+       ``num_lps * oversample_factor`` passing candidates (subject to ``max_attempts``) before
+       ranking by difficulty and keeping the hardest ``num_lps`` -- i.e. it actively searches
+       for hard problems instead of returning the first ones found.
+   :param hard_negative_ratio: fraction of the sampled negatives drawn from the near-miss pool
+       (when one exists) rather than arbitrary non-instances.
+   :param difficulty_weights: see :class:`DifficultyWeights`.
+
+
+   .. py:attribute:: name
+      :type:  str
+
+
+   .. py:attribute:: allowed_constructs
+      :type:  FrozenSet[DLConstruct]
+
+
+   .. py:attribute:: min_length
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: max_length
+      :type:  int
+      :value: 10
+
+
+
+   .. py:attribute:: min_depth
+      :type:  int
+      :value: 0
+
+
+
+   .. py:attribute:: max_depth
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: max_arity
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: card_limit
+      :type:  int
+      :value: 5
+
+
+
+   .. py:attribute:: use_inverse_roles
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: min_pos
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: min_neg
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: max_examples_per_side
+      :type:  int
+      :value: 200
+
+
+
+   .. py:attribute:: max_baseline_f1
+      :type:  float
+      :value: 0.9
+
+
+
+   .. py:attribute:: min_difficulty
+      :type:  float
+      :value: 0.0
+
+
+
+   .. py:attribute:: oversample_factor
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: hard_negative_ratio
+      :type:  float
+      :value: 0.5
+
+
+
+   .. py:attribute:: difficulty_weights
+      :type:  DifficultyWeights
+
+
+.. py:class:: GeneratedLearningProblem
+
+   A goal-directed learning problem: a sampled target concept plus its (E+, E-).
+
+
+   .. py:attribute:: profile_name
+      :type:  str
+
+
+   .. py:attribute:: target_concept
+      :type:  owlapy.class_expression.OWLClassExpression
+
+
+   .. py:attribute:: dl
+      :type:  str
+
+
+   .. py:attribute:: pos
+      :type:  Individuals
+
+
+   .. py:attribute:: neg
+      :type:  Individuals
+
+
+   .. py:attribute:: length
+      :type:  int
+
+
+   .. py:attribute:: depth
+      :type:  int
+
+
+   .. py:attribute:: construct_histogram
+      :type:  Dict[str, int]
+
+
+   .. py:attribute:: baseline_f1
+      :type:  float
+
+
+   .. py:attribute:: difficulty
+      :type:  float
+
+
+   .. py:attribute:: num_near_miss_negatives
+      :type:  int
+
+
+   .. py:method:: to_lp() -> ontolearn.learning_problem.PosNegLPStandard
+
+      Build the ``PosNegLPStandard`` consumed by Ontolearn learners (e.g. TDL).
+
+
+
+.. py:class:: GoalDirectedLPGenerator(knowledge_base: ontolearn.knowledge_base.KnowledgeBase, seed: Optional[int] = None, probe_cap: int = 300)
+
+   Samples target concepts from an explicit DL-construct grammar and turns them into LPs.
+
+   Usage::
+
+       kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+       gen = GoalDirectedLPGenerator(kb, seed=1)
+       profile = ComplexityProfile(
+           name="nested-existential",
+           allowed_constructs=frozenset({DLConstruct.EXISTENTIAL, DLConstruct.INTERSECTION}),
+           max_length=8, max_depth=3,
+       )
+       lps = gen.generate(profile, num_lps=10)
+       model = TDL(kb).fit(lps[0].to_lp())
+
+
+   .. py:attribute:: kb
+
+
+   .. py:attribute:: rng
+
+
+   .. py:attribute:: all_individuals
+      :type:  Individuals
+
+
+   .. py:attribute:: atomic_classes
+      :type:  List[owlapy.class_expression.OWLClass]
+
+
+   .. py:attribute:: object_properties
+      :type:  List[owlapy.owl_property.OWLObjectProperty]
+
+
+   .. py:method:: baseline_f1(pos: Individuals, neg: Individuals) -> float
+
+      Best F1 any single "cheap" one-step hypothesis reaches on (pos, neg).
+
+
+
+   .. py:method:: near_miss_negatives(target: owlapy.class_expression.OWLClassExpression, pos: Individuals) -> Individuals
+
+      Individuals satisfying `target` with exactly one top-level conjunct dropped, minus `pos`.
+
+      E.g. for ``C = Compound ⊓ (∃ hasChild.Father)`` these are individuals that are a
+      ``Compound`` but whose child (if any) isn't a ``Father``, or that have a ``Father`` child
+      but aren't a ``Compound`` -- the negatives one ablated conjunct away from being positive,
+      which is exactly what trips up a greedy top-down learner.
+
+
+
+   .. py:method:: difficulty_score(profile: ComplexityProfile, length: int, depth: int, base_f1: float, pos: Individuals, near_miss: Individuals) -> float
+      :staticmethod:
+
+
+      Combine length/depth/baseline-hardness/near-miss-density into one score in ``[0, 1]``.
+
+
+
+   .. py:method:: concept_depth(ce: owlapy.class_expression.OWLClassExpression) -> int
+      :staticmethod:
+
+
+      Restriction-nesting depth: a named class or ``has value`` atom has depth 0.
+
+
+
+   .. py:method:: sample_target(profile: ComplexityProfile) -> Tuple[owlapy.class_expression.OWLClassExpression, collections.Counter]
+
+      Sample one target concept (in NNF) respecting `profile`, plus its construct histogram.
+
+
+
+   .. py:method:: generate(profile: ComplexityProfile, num_lps: int, max_attempts: int = 3000) -> List[GeneratedLearningProblem]
+
+      Sample the `num_lps` **hardest** distinct, non-trivial learning problems matching
+      `profile`: up to ``num_lps * profile.oversample_factor`` passing candidates are collected
+      (subject to `max_attempts` sampling attempts total), ranked by
+      :meth:`difficulty_score` and the top `num_lps` are kept.
+
+
+
+   .. py:method:: generate_benchmark(profiles: Sequence[ComplexityProfile], num_lps_per_profile: int = 5, max_attempts_per_profile: int = 3000) -> Dict[str, List[GeneratedLearningProblem]]
+
+      Run :meth:`generate` for each profile in a curriculum; returns `{profile.name: [...]}`.
+
+
+
+.. py:function:: save_benchmark(benchmark: Dict[str, List[GeneratedLearningProblem]], path: str) -> None
+
+   Serialize a benchmark (as returned by :meth:`GoalDirectedLPGenerator.generate_benchmark`)
+   to JSON: `{dl_string: {"profile", "positive_examples", "negative_examples", "length", "depth",
+   "construct_histogram", "baseline_f1", "difficulty", "num_near_miss_negatives"}}`, individuals
+   kept as full IRIs.
+
+

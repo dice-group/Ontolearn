@@ -1,0 +1,123 @@
+ontolearn.learners.tree_learner_refinement_inherit
+==================================================
+
+.. py:module:: ontolearn.learners.tree_learner_refinement_inherit
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.tree_learner_refinement_inherit.logger
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   ontolearn.learners.tree_learner_refinement_inherit.TDL_refinement
+
+
+Module Contents
+---------------
+
+.. py:data:: logger
+
+.. py:class:: TDL_refinement(knowledge_base, use_inverse: bool = False, use_data_properties_numeric: bool = True, use_data_properties_boolean: bool = True, use_data_properties_string: bool = True, use_data_properties_date: bool = True, use_nominals: bool = False, use_card_restrictions: bool = True, kwargs_classifier: dict = None, max_runtime: int = None, grid_search_over: dict = None, grid_search_apply: bool = False, kwargs_grid_search: dict = None, report_classification: bool = False, plot_tree: bool = False, plot_embeddings: bool = False, plot_feature_importance: bool = False, verbose: int = 10, verbalize: bool = False, feature_refinement: bool = True, plot_importance_evo: bool = False, refine_iterations: int = 3, topk: int = 30)
+
+   Bases: :py:obj:`ontolearn.learners.TDL`
+
+
+   Tree-based Description Logic Concept Learner
+
+
+   .. py:attribute:: feature_refinement
+      :value: True
+
+
+
+   .. py:attribute:: plot_importance_evo
+      :value: False
+
+
+
+   .. py:attribute:: refine_iterations
+      :value: 3
+
+
+
+   .. py:attribute:: topk
+      :value: 30
+
+
+
+   .. py:attribute:: concept_per_iteration
+      :type:  List
+      :value: []
+
+
+
+   .. py:attribute:: top_feature_dicts
+      :type:  List
+      :value: []
+
+
+
+   .. py:attribute:: initial_importance_dict
+      :type:  Dict
+
+
+   .. py:attribute:: use_data_properties
+
+
+   .. py:attribute:: data_property_datatype_dict
+      :type:  Dict[owlapy.owl_property.OWLDataProperty, owlapy.owl_datatype.OWLDatatype]
+
+
+   .. py:method:: extract_expressions_from_owl_individuals(individuals: List[owlapy.owl_individual.OWLNamedIndividual], start_time: float = None) -> Tuple[numpy.ndarray, List[owlapy.class_expression.OWLClassExpression]]
+
+
+   .. py:method:: plot_perm_feature_importances(perm_importance_result, feat_name)
+
+      bar plot the permutation feature importance
+
+
+
+   .. py:method:: plot_shap_feature_importances(shap_vals, feat_name)
+
+      Bar plot the mean absolute SHAP feature importance
+
+
+
+   .. py:method:: refine_numerical_features(topk_expressions: list[owlapy.class_expression.OWLClassExpression], iteration: int)
+
+      Refine numerical features based on data property values and fitted distributions.
+
+
+
+   .. py:method:: plot_importance_evolution(initial_dict, refined_dicts, top_k=10)
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard = None, max_runtime: int = None)
+
+      Fit the learner to the given learning problem
+
+      (1) Extract multi-hop information about E^+ and E^-.
+      (2) Create OWL Class Expressions from (1)
+      (3) Build a binary sparse training data X where
+          first |E+| rows denote the binary representations of positives
+          Remaining rows denote the binary representations of E⁻
+      (4) Create binary labels.
+      (5) Train a decision tree classifier on (3) and (4)
+      (6) If feature refinement is enabled, refine the numerical dp features based on SHAP values and data property ranges.
+      (4) Construct a set of DL concept for each e \in E^+
+      (5) Union (4)
+
+      :param learning_problem: The learning problem
+      :param max_runtime:total runtime of the learning
+
+
+
+

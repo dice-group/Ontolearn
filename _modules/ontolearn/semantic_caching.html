@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;python examples/retrieval_eval.py&quot;&quot;&quot;</span>
+<span class="sd">"""python examples/retrieval_eval.py"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLBottomObjectProperty</span><span class="p">,</span> <span class="n">OWLTopObjectProperty</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_reasoner</span><span class="w"> </span><span class="kn">import</span> <span class="n">EBR</span>
@@ -125,18 +125,23 @@
     <span class="n">OWLClass</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectInverseOf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Set</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_expression_to_dl</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">owlready2</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_reasoner</span><span class="w"> </span><span class="kn">import</span> <span class="n">SyncReasoner</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_owlready2</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="concept_generator">
@@ -251,20 +256,20 @@
 <div class="viewcode-block" id="get_saved_concepts">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.get_saved_concepts">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_saved_concepts</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">data_name</span><span class="p">,</span> <span class="n">shuffle</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shuffle or not the generated concept and save it in a folder for reproducibility.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Shuffle or not the generated concept and save it in a folder for reproducibility."""</span>
     
     <span class="c1"># Create the directory if it does not exist</span>
-    <span class="n">cache_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;caching_results_</span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">cache_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"caching_results_</span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Determine the filename based on shuffle flag</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;shuffled_concepts.pkl&quot;</span> <span class="k">if</span> <span class="n">shuffle</span> <span class="k">else</span> <span class="s2">&quot;unshuffled_concepts.pkl&quot;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="s2">"shuffled_concepts.pkl"</span> <span class="k">if</span> <span class="n">shuffle</span> <span class="k">else</span> <span class="s2">"unshuffled_concepts.pkl"</span>
     <span class="n">save_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">save_file</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_file</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_file</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded concepts from </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded concepts from </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Generate concepts and optionally shuffle</span>
         <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">concept_generator</span><span class="p">(</span><span class="n">path_kg</span><span class="p">)</span>
@@ -273,10 +278,10 @@
             <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">)</span>
 
         <span class="c1"># Save the concepts</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">save_file</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated and saved </span><span class="si">{</span><span class="s1">&#39;shuffled&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">shuffle</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;unshuffled&#39;</span><span class="si">}</span><span class="s2"> concepts.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Generated and saved </span><span class="si">{</span><span class="s1">'shuffled'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">shuffle</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'unshuffled'</span><span class="si">}</span><span class="s2"> concepts."</span><span class="p">)</span>
     
     <span class="k">return</span> <span class="n">alc_concepts</span></div>
 
@@ -292,7 +297,7 @@
 <div class="viewcode-block" id="CacheWithEviction">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.CacheWithEviction">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CacheWithEviction</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;LIFO&#39;</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s1">'LIFO'</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>  <span class="c1"># Store the actual cache</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">access_times</span> <span class="o">=</span> <span class="p">{}</span>      <span class="c1"># Track last access times for LRU and MRU</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="n">cache_size</span>
@@ -301,23 +306,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Track if cache is already initialized</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_evict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;empty the cache when it is full using different strategy&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''empty the cache when it is full using different strategy'''</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;FIFO&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">'FIFO'</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Evict the oldest item (first in)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;LIFO&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">'LIFO'</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Evict the most recently added item</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;LRU&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">'LRU'</span><span class="p">:</span>
                 <span class="c1"># Evict the least recently used item based on `access_times`</span>
                 <span class="n">lru_key</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">lru_key</span><span class="p">]</span>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">[</span><span class="n">lru_key</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;MRU&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">'MRU'</span><span class="p">:</span>
                 <span class="c1"># Evict the most recently used item based on `access_times`</span>
                 <span class="n">mru_key</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">mru_key</span><span class="p">]</span>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">[</span><span class="n">mru_key</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">&#39;RP&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s1">'RP'</span><span class="p">:</span>
                 <span class="c1"># Random eviction</span>
                 <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span> 
                 <span class="n">random_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
@@ -327,11 +332,11 @@
 <div class="viewcode-block" id="CacheWithEviction.get">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.CacheWithEviction.get">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieve an item from the cache. Updates access time for LRU/MRU.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;LRU&#39;</span><span class="p">,</span> <span class="s1">&#39;MRU&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'LRU'</span><span class="p">,</span> <span class="s1">'MRU'</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>  <span class="c1"># Update access timestamp</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -340,28 +345,28 @@
 <div class="viewcode-block" id="CacheWithEviction.put">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.CacheWithEviction.put">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add an item to the cache. Evicts an entry if the cache is full.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># Remove existing entry to re-insert and maintain order</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_evict</span><span class="p">()</span>  <span class="c1"># Evict if necessary</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;LRU&#39;</span><span class="p">,</span> <span class="s1">&#39;MRU&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'LRU'</span><span class="p">,</span> <span class="s1">'MRU'</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">access_times</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>  <span class="c1"># Record access timestamp</span></div>
 
 
 <div class="viewcode-block" id="CacheWithEviction.initialize_cache">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.CacheWithEviction.initialize_cache">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">path_onto</span><span class="p">,</span> <span class="n">third</span><span class="p">,</span> <span class="n">All_individuals</span><span class="p">,</span> <span class="n">handle_restriction_func</span><span class="p">,</span> <span class="n">concepts</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the cache with precomputed results for OWLClass and Existential concepts.</span>
 <span class="sd">        :param ontology: The loaded ontology.</span>
 <span class="sd">        :param func: Function to retrieve individuals for a given expression.</span>
 <span class="sd">        :param concepts: List of OWL concepts to precompute and store instances for.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -371,21 +376,21 @@
         <span class="n">existential_concepts</span> <span class="o">=</span> <span class="p">[</span><span class="n">concept</span> <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">concepts</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concept</span><span class="p">,</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">)]</span>
         
         <span class="c1"># Process OWLClass concepts</span>
-        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">class_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Adding OWLClass concepts&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">class_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Adding OWLClass concepts"</span><span class="p">):</span>
             <span class="n">concept_str</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">concept_str</span><span class="p">,</span> <span class="n">func</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path_onto</span><span class="p">,</span> <span class="n">third</span><span class="p">))</span>
 
-        <span class="k">for</span> <span class="n">negated_cls</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">negated_class_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Adding Complement concepts&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">negated_cls</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">negated_class_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Adding Complement concepts"</span><span class="p">):</span>
             <span class="c1"># Compute and store complement</span>
             <span class="n">negated_cls_str</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">negated_cls</span><span class="p">)</span>
-            <span class="n">cached</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">negated_cls_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;¬&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">cached</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">negated_cls_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"¬"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">cached</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">cached</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">negated_cls</span><span class="p">,</span> <span class="n">path_onto</span><span class="p">,</span> <span class="n">third</span><span class="p">)</span>
             <span class="n">neg</span> <span class="o">=</span> <span class="n">All_individuals</span> <span class="o">-</span> <span class="n">cached</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">negated_cls_str</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
             
         <span class="c1"># Process Existential concepts</span>
-        <span class="k">for</span> <span class="n">existential</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">existential_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Adding Existential concepts&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">existential</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">existential_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Adding Existential concepts"</span><span class="p">):</span>
             <span class="n">existential_str</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">existential</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">existential_str</span><span class="p">,</span> <span class="n">handle_restriction_func</span><span class="p">(</span><span class="n">existential</span><span class="p">))</span>
             
@@ -402,7 +407,7 @@
 <div class="viewcode-block" id="CacheWithEviction.is_full">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.CacheWithEviction.is_full">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_full</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the cache is full.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check if the cache is full."""</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span></div>
 </div>
 
@@ -412,7 +417,7 @@
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.semantic_caching_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">semantic_caching_size</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">eviction_strategy</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">,</span> <span class="n">cache_type</span><span class="p">,</span> <span class="n">concepts</span><span class="p">):</span>
 
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;This function implements the semantic caching algorithm for ALC concepts as presented in the paper&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''This function implements the semantic caching algorithm for ALC concepts as presented in the paper'''</span>
 
     <span class="n">cache</span> <span class="o">=</span> <span class="n">CacheWithEviction</span><span class="p">(</span><span class="n">cache_size</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">eviction_strategy</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>  <span class="c1"># Cache for instances</span>
     <span class="n">loaded_ontologies</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1">#Cache for ontologies</span>
@@ -420,9 +425,9 @@
     <span class="n">cache_type</span> <span class="o">=</span> <span class="n">cache_type</span>
     <span class="n">concepts</span> <span class="o">=</span> <span class="n">concepts</span>
     <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;hits&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s1">&#39;misses&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mi">0</span>
+        <span class="s1">'hits'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">'misses'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">'time'</span><span class="p">:</span> <span class="mi">0</span>
     <span class="p">}</span>
     <span class="n">time_initialization</span> <span class="o">=</span> <span class="mi">0</span>
     
@@ -433,7 +438,7 @@
         <span class="c1"># Load ontology and individuals if not already cached</span>
         <span class="n">path_onto</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">path_onto</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loaded_ontologies</span><span class="p">:</span>
-            <span class="n">loaded_ontologies</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_ontology</span><span class="p">(</span><span class="n">path_onto</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="n">loaded_ontologies</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span> <span class="o">=</span> <span class="n">import_owlready2</span><span class="p">()</span><span class="o">.</span><span class="n">get_ontology</span><span class="p">(</span><span class="n">path_onto</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
             <span class="n">loaded_individuals</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">.</span><span class="n">iri</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">loaded_ontologies</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span><span class="o">.</span><span class="n">individuals</span><span class="p">())}</span>
         <span class="n">onto</span> <span class="o">=</span> <span class="n">loaded_ontologies</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span>
         <span class="n">All_individuals</span> <span class="o">=</span> <span class="n">loaded_individuals</span><span class="p">[</span><span class="n">path_onto</span><span class="p">]</span>
@@ -445,18 +450,18 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">retrieve_from_cache</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
             <span class="n">cached_result</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">cached_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">return</span> <span class="n">cached_result</span>
             <span class="k">else</span><span class="p">:</span> 
-                <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">return</span> <span class="kc">None</span>
             
         <span class="k">def</span><span class="w"> </span><span class="nf">handle_owl_some_values_from</span><span class="p">(</span><span class="n">owl_expression</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""</span>
 <span class="sd">            Process the OWLObjectSomeValuesFrom expression locally.</span>
 <span class="sd">            When called, return the retrieval of OWLObjectSomeValuesFrom</span>
 <span class="sd">            based on the Algorithm described in the paper</span>
-<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">            """</span>
             
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">All_individuals</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1000</span><span class="p">:</span> <span class="c1"># The loop beomes unscalable when there are too many individuals </span>
                 <span class="n">object_property</span> <span class="o">=</span> <span class="n">owl_expression</span><span class="o">.</span><span class="n">get_property</span><span class="p">()</span>
@@ -491,7 +496,7 @@
 
         <span class="c1"># Cold cache initialization</span>
         <span class="n">start_time_initialization</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">&#39;cold&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">cache</span><span class="o">.</span><span class="n">initialized</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">'cold'</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">cache</span><span class="o">.</span><span class="n">initialized</span><span class="p">:</span>
             <span class="n">cache</span><span class="o">.</span><span class="n">initialize_cache</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">path_onto</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">All_individuals</span><span class="p">,</span> <span class="n">handle_owl_some_values_from</span><span class="p">,</span> <span class="n">concepts</span><span class="p">)</span>
         <span class="n">time_initialization</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span> <span class="n">start_time_initialization</span>
 
@@ -503,11 +508,11 @@
             <span class="n">result</span> <span class="o">=</span> <span class="n">cached_result</span> <span class="k">if</span> <span class="n">cached_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owl_expression</span><span class="p">,</span> <span class="n">OWLObjectComplementOf</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">&#39;cold&#39;</span><span class="p">:</span> <span class="c1">#If it is cold then all complement object are already cached at initialisation time</span>
+            <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">'cold'</span><span class="p">:</span> <span class="c1">#If it is cold then all complement object are already cached at initialisation time</span>
                 <span class="n">cached_result_cold</span> <span class="o">=</span> <span class="n">retrieve_from_cache</span><span class="p">(</span><span class="n">str_expression</span><span class="p">)</span>
                 <span class="n">result</span> <span class="o">=</span>  <span class="n">cached_result_cold</span> <span class="k">if</span> <span class="n">cached_result_cold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span> 
-                <span class="n">not_str_expression</span> <span class="o">=</span> <span class="n">str_expression</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;¬&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">not_str_expression</span> <span class="o">=</span> <span class="n">str_expression</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"¬"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">cached_result</span> <span class="o">=</span> <span class="n">retrieve_from_cache</span><span class="p">(</span><span class="n">not_str_expression</span><span class="p">)</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">All_individuals</span> <span class="o">-</span> <span class="n">cached_result</span><span class="p">)</span> <span class="k">if</span> <span class="n">cached_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
@@ -530,7 +535,7 @@
                 <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
                 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owl_expression</span><span class="p">,</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">&#39;cold&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cache_type</span> <span class="o">==</span> <span class="s1">'cold'</span><span class="p">:</span>
                 <span class="n">cached_result_cold</span> <span class="o">=</span> <span class="n">retrieve_from_cache</span><span class="p">(</span><span class="n">str_expression</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">cached_result_cold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">result</span> <span class="o">=</span> <span class="n">cached_result_cold</span>
@@ -548,15 +553,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
-        <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+        <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
         <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">str_expression</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">transform_forall_to_exists</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
-        <span class="n">pattern_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;∀ (\w+)\.\(¬(\w+)\)&#39;</span>
-        <span class="n">replacement_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;∃ \1.\2&#39;</span>
-        <span class="n">pattern_non_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;∀ (\w+)\.(\w+)&#39;</span>
-        <span class="n">replacement_non_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;∃ \1.(¬\2)&#39;</span>
+        <span class="n">pattern_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">'∀ (\w+)\.\(¬(\w+)\)'</span>
+        <span class="n">replacement_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">'∃ \1.\2'</span>
+        <span class="n">pattern_non_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">'∀ (\w+)\.(\w+)'</span>
+        <span class="n">replacement_non_negated</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">'∃ \1.(¬\2)'</span>
 
         <span class="n">transformed_expression</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">pattern_negated</span><span class="p">,</span> <span class="n">replacement_negated</span><span class="p">,</span> <span class="n">expression</span><span class="p">)</span>
         <span class="n">transformed_expression</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">pattern_non_negated</span><span class="p">,</span> <span class="n">replacement_non_negated</span><span class="p">,</span> <span class="n">transformed_expression</span><span class="p">)</span>
@@ -564,17 +569,17 @@
         <span class="k">return</span> <span class="n">transformed_expression</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">():</span>
-        <span class="n">total_requests</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span>
-        <span class="n">hit_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">miss_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">avg_time</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">total_requests</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">+</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span>
+        <span class="n">hit_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">miss_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">avg_time</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
     
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;hit_ratio&#39;</span><span class="p">:</span> <span class="n">hit_ratio</span><span class="p">,</span>
-            <span class="s1">&#39;miss_ratio&#39;</span><span class="p">:</span> <span class="n">miss_ratio</span><span class="p">,</span>
-            <span class="s1">&#39;average_time_per_request&#39;</span><span class="p">:</span> <span class="n">avg_time</span><span class="p">,</span>
-            <span class="s1">&#39;total_time&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;time_initialization&#39;</span><span class="p">:</span> <span class="n">time_initialization</span>
+            <span class="s1">'hit_ratio'</span><span class="p">:</span> <span class="n">hit_ratio</span><span class="p">,</span>
+            <span class="s1">'miss_ratio'</span><span class="p">:</span> <span class="n">miss_ratio</span><span class="p">,</span>
+            <span class="s1">'average_time_per_request'</span><span class="p">:</span> <span class="n">avg_time</span><span class="p">,</span>
+            <span class="s1">'total_time'</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">],</span>
+            <span class="s1">'time_initialization'</span><span class="p">:</span> <span class="n">time_initialization</span>
         <span class="p">}</span>
 
     <span class="n">wrapper</span><span class="o">.</span><span class="n">get_stats</span> <span class="o">=</span> <span class="n">get_stats</span>
@@ -587,12 +592,12 @@
 <div class="viewcode-block" id="non_semantic_caching_size">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.non_semantic_caching_size">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">non_semantic_caching_size</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;This function implements a caching algorithm for ALC concepts without semantics.&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''This function implements a caching algorithm for ALC concepts without semantics.'''</span>
     <span class="n">cache</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>  <span class="c1"># Cache for instances</span>
     <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;hits&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s1">&#39;misses&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="mi">0</span>
+        <span class="s1">'hits'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">'misses'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">'time'</span><span class="p">:</span> <span class="mi">0</span>
     <span class="p">}</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
@@ -603,10 +608,10 @@
             <span class="k">if</span> <span class="n">expression</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
                 <span class="c1"># Move the accessed item to the end to mark it as recently used</span>
                 <span class="n">cache</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">expression</span><span class="p">)</span>
-                <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">expression</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">return</span> <span class="kc">None</span>
 
         <span class="c1"># Start timing before cache access and function execution</span>
@@ -615,7 +620,7 @@
         <span class="c1"># Try to retrieve the result from the cache If result is in cache, return it directly</span>
         <span class="n">cached_result</span> <span class="o">=</span> <span class="n">retrieve_from_cache</span><span class="p">(</span><span class="n">str_expression</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">cached_result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">cached_result</span>
         
         <span class="c1"># Compute the result and store it in the cache</span>
@@ -626,21 +631,21 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">cache_size</span><span class="p">:</span>
             <span class="n">cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  
 
-        <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+        <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
     
     <span class="c1"># Function to get cache statistics</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_stats</span><span class="p">():</span>
-        <span class="n">total_requests</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span>
-        <span class="n">hit_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hits&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">miss_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;misses&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">avg_time</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">total_requests</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">+</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span>
+        <span class="n">hit_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'hits'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">miss_ratio</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'misses'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">avg_time</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_requests</span> <span class="k">if</span> <span class="n">total_requests</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
         
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">&#39;hit_ratio&#39;</span><span class="p">:</span> <span class="n">hit_ratio</span><span class="p">,</span>
-            <span class="s1">&#39;miss_ratio&#39;</span><span class="p">:</span> <span class="n">miss_ratio</span><span class="p">,</span>
-            <span class="s1">&#39;average_time_per_request&#39;</span><span class="p">:</span> <span class="n">avg_time</span><span class="p">,</span>
-            <span class="s1">&#39;total_time&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+            <span class="s1">'hit_ratio'</span><span class="p">:</span> <span class="n">hit_ratio</span><span class="p">,</span>
+            <span class="s1">'miss_ratio'</span><span class="p">:</span> <span class="n">miss_ratio</span><span class="p">,</span>
+            <span class="s1">'average_time_per_request'</span><span class="p">:</span> <span class="n">avg_time</span><span class="p">,</span>
+            <span class="s1">'total_time'</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">'time'</span><span class="p">]</span>
         <span class="p">}</span>
     
     <span class="n">wrapper</span><span class="o">.</span><span class="n">get_stats</span> <span class="o">=</span> <span class="n">get_stats</span>
@@ -652,8 +657,8 @@
 <div class="viewcode-block" id="retrieve">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.retrieve">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">retrieve</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">path_kg</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">path_kge_model</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Retrieve instances with neural reasoner&#39;&#39;&#39;</span>
-    <span class="s1">&#39;take a concept c and returns it set of retrieved individual&#39;</span>
+<span class="w">    </span><span class="sd">'''Retrieve instances with neural reasoner'''</span>
+    <span class="s1">'take a concept c and returns it set of retrieved individual'</span>
 
     <span class="k">if</span> <span class="n">path_kge_model</span><span class="p">:</span>
         <span class="n">neural_owl_reasoner</span> <span class="o">=</span> <span class="n">EBR</span><span class="p">(</span><span class="n">NeuralOntology</span><span class="p">(</span><span class="n">path_neural_embedding</span><span class="o">=</span><span class="n">path_kge_model</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.9</span><span class="p">))</span>
@@ -666,35 +671,35 @@
 
 <div class="viewcode-block" id="retrieve_other_reasoner">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.retrieve_other_reasoner">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">retrieve_other_reasoner</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">path_kg</span><span class="p">,</span> <span class="n">name_reasoner</span><span class="o">=</span><span class="s1">&#39;HermiT&#39;</span><span class="p">):</span> 
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Retrieve instances with symbolic reasoners&#39;&#39;&#39;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">retrieve_other_reasoner</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">path_kg</span><span class="p">,</span> <span class="n">name_reasoner</span><span class="o">=</span><span class="s1">'HermiT'</span><span class="p">):</span> 
+<span class="w">    </span><span class="sd">'''Retrieve instances with symbolic reasoners'''</span>
     
     <span class="n">reasoner</span> <span class="o">=</span> <span class="n">SyncReasoner</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">reasoner</span><span class="o">=</span><span class="n">name_reasoner</span><span class="p">)</span>
    
     <span class="k">if</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">has_consistent_ontology</span><span class="p">():</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="n">reasoner</span><span class="o">.</span><span class="n">instances</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">direct</span><span class="o">=</span><span class="kc">False</span><span class="p">))}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The knowledge base is not consistent&quot;</span><span class="p">)</span> </div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The knowledge base is not consistent"</span><span class="p">)</span></div>
 
          
 
 <div class="viewcode-block" id="run_semantic_cache">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.run_semantic_cache">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_semantic_cache</span><span class="p">(</span><span class="n">path_kg</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">path_kge</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">name_reasoner</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">eviction</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">cache_type</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">shuffle_concepts</span><span class="p">:</span><span class="nb">bool</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Return cache performnace with semantics&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''Return cache performnace with semantics'''</span>
 
     <span class="n">symbolic_kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path_kg</span><span class="p">)</span>
     <span class="n">D</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Avg_jaccard</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Avg_jaccard_reas</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">data_name</span> <span class="o">=</span> <span class="n">path_kg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">data_name</span> <span class="o">=</span> <span class="n">path_kg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">shuffle_concepts</span><span class="p">:</span>
         <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">get_saved_concepts</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">data_name</span><span class="o">=</span><span class="n">data_name</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">get_saved_concepts</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">data_name</span><span class="o">=</span><span class="n">data_name</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> 
 
-    <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">&#39;EBR&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">'EBR'</span><span class="p">:</span>
         <span class="n">cached_retriever</span> <span class="o">=</span> <span class="n">semantic_caching_size</span><span class="p">(</span><span class="n">retrieve</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="n">cache_size</span><span class="p">,</span> <span class="n">eviction_strategy</span><span class="o">=</span><span class="n">eviction</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">cache_type</span><span class="o">=</span><span class="n">cache_type</span><span class="p">,</span> <span class="n">concepts</span><span class="o">=</span><span class="n">alc_concepts</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">cached_retriever</span> <span class="o">=</span> <span class="n">semantic_caching_size</span><span class="p">(</span><span class="n">retrieve_other_reasoner</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="n">cache_size</span><span class="p">,</span> <span class="n">eviction_strategy</span><span class="o">=</span><span class="n">eviction</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">cache_type</span><span class="o">=</span><span class="n">cache_type</span><span class="p">,</span> <span class="n">concepts</span><span class="o">=</span><span class="n">alc_concepts</span><span class="p">)</span>
@@ -702,7 +707,7 @@
     <span class="n">total_time_ebr</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">for</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">alc_concepts</span><span class="p">:</span> 
-        <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">&#39;EBR&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">'EBR'</span><span class="p">:</span>
             <span class="n">time_start_cache</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">A</span>  <span class="o">=</span> <span class="n">cached_retriever</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">path_kg</span><span class="p">,</span> <span class="n">path_kge</span><span class="p">)</span> <span class="c1">#Retrieval with cache</span>
             <span class="n">time_cache</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">time_start_cache</span>
@@ -728,34 +733,34 @@
         <span class="n">jacc_reas</span> <span class="o">=</span> <span class="n">jaccard_similarity</span><span class="p">(</span><span class="n">retrieve_ebr</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">)</span>
         <span class="n">Avg_jaccard</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacc</span><span class="p">)</span>
         <span class="n">Avg_jaccard_reas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacc_reas</span><span class="p">)</span>
-        <span class="n">D</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;dataset&#39;</span><span class="p">:</span><span class="n">data_name</span><span class="p">,</span><span class="s1">&#39;Expression&#39;</span><span class="p">:</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">),</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="p">,</span><span class="s1">&#39;cache_size&#39;</span><span class="p">:</span><span class="n">cache_size</span><span class="p">,</span> <span class="s2">&quot;time_ebr&quot;</span><span class="p">:</span><span class="n">time_ebr</span><span class="p">,</span> <span class="s2">&quot;time_cache&quot;</span><span class="p">:</span> <span class="n">time_cache</span><span class="p">,</span> <span class="s2">&quot;Jaccard&quot;</span><span class="p">:</span><span class="n">jacc</span><span class="p">})</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expression: </span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Jaccard similarity: </span><span class="si">{</span><span class="n">jacc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># assert jacc == 1.0 </span>
+        <span class="n">D</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">'dataset'</span><span class="p">:</span><span class="n">data_name</span><span class="p">,</span><span class="s1">'Expression'</span><span class="p">:</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">),</span> <span class="s2">"Type"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="p">,</span><span class="s1">'cache_size'</span><span class="p">:</span><span class="n">cache_size</span><span class="p">,</span> <span class="s2">"time_ebr"</span><span class="p">:</span><span class="n">time_ebr</span><span class="p">,</span> <span class="s2">"time_cache"</span><span class="p">:</span> <span class="n">time_cache</span><span class="p">,</span> <span class="s2">"Jaccard"</span><span class="p">:</span><span class="n">jacc</span><span class="p">})</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Expression: </span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Jaccard similarity: </span><span class="si">{</span><span class="n">jacc</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="c1"># assert jacc == 1.0</span>
 
     <span class="n">stats</span> <span class="o">=</span> <span class="n">cached_retriever</span><span class="o">.</span><span class="n">get_stats</span><span class="p">()</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cache Statistics:&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hit Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hit_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Miss Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;miss_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average Time per Request: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;average_time_per_request&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Time with Caching: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Time Without Caching: </span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of concepts: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average Jaccard for the </span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2"> dataset&quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">))</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'-'</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Cache Statistics:"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hit Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'hit_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Miss Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'miss_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Time per Request: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'average_time_per_request'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total Time with Caching: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_time'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total Time Without Caching: </span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of concepts: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Jaccard for the </span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2"> dataset: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;dataset&#39;</span><span class="p">:</span> <span class="n">data_name</span><span class="p">,</span>
-        <span class="s1">&#39;cache_size&#39;</span><span class="p">:</span> <span class="n">cache_size</span><span class="p">,</span>
-        <span class="s1">&#39;hit_ratio&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hit_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;miss_ratio&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;miss_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;RT_cache&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;RT&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;#concepts&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">),</span>
-        <span class="s1">&#39;avg_jaccard&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;avg_jaccard_reas&#39;</span><span class="p">:</span>  <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;strategy&#39;</span><span class="p">:</span> <span class="n">eviction</span>
+        <span class="s1">'dataset'</span><span class="p">:</span> <span class="n">data_name</span><span class="p">,</span>
+        <span class="s1">'cache_size'</span><span class="p">:</span> <span class="n">cache_size</span><span class="p">,</span>
+        <span class="s1">'hit_ratio'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'hit_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'miss_ratio'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'miss_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'RT_cache'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_time'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'RT'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'#concepts'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">),</span>
+        <span class="s1">'avg_jaccard'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'avg_jaccard_reas'</span><span class="p">:</span>  <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'strategy'</span><span class="p">:</span> <span class="n">eviction</span>
     <span class="p">},</span> <span class="n">D</span></div>
 
 
@@ -764,20 +769,20 @@
 <div class="viewcode-block" id="run_non_semantic_cache">
 <a class="viewcode-back" href="../../autoapi/ontolearn/semantic_caching/index.html#ontolearn.semantic_caching.run_non_semantic_cache">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_non_semantic_cache</span><span class="p">(</span><span class="n">path_kg</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">path_kge</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">name_reasoner</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">shuffle_concepts</span><span class="p">:</span><span class="nb">bool</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Return cache performnace without any semantics&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''Return cache performnace without any semantics'''</span>
 
     <span class="n">symbolic_kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path_kg</span><span class="p">)</span>
     <span class="n">D</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Avg_jaccard</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Avg_jaccard_reas</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">data_name</span> <span class="o">=</span> <span class="n">path_kg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">data_name</span> <span class="o">=</span> <span class="n">path_kg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">shuffle_concepts</span><span class="p">:</span>
         <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">get_saved_concepts</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">data_name</span><span class="o">=</span><span class="n">data_name</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">alc_concepts</span> <span class="o">=</span> <span class="n">get_saved_concepts</span><span class="p">(</span><span class="n">path_kg</span><span class="p">,</span> <span class="n">data_name</span><span class="o">=</span><span class="n">data_name</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> 
 
-    <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">&#39;EBR&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">'EBR'</span><span class="p">:</span>
         <span class="n">cached_retriever</span> <span class="o">=</span> <span class="n">non_semantic_caching_size</span><span class="p">(</span><span class="n">retrieve</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="n">cache_size</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">cached_retriever</span> <span class="o">=</span> <span class="n">non_semantic_caching_size</span><span class="p">(</span><span class="n">retrieve_other_reasoner</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="n">cache_size</span><span class="p">)</span>
@@ -785,7 +790,7 @@
     <span class="n">total_time_ebr</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="k">for</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">alc_concepts</span><span class="p">:</span> 
-        <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">&#39;EBR&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name_reasoner</span> <span class="o">==</span> <span class="s1">'EBR'</span><span class="p">:</span>
             <span class="n">time_start_cache</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">A</span>  <span class="o">=</span> <span class="n">cached_retriever</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">path_kg</span><span class="p">,</span> <span class="n">path_kge</span><span class="p">)</span> <span class="c1">#Retrieval with cache</span>
             <span class="n">time_cache</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">time_start_cache</span>
@@ -811,33 +816,33 @@
         <span class="n">jacc_reas</span> <span class="o">=</span> <span class="n">jaccard_similarity</span><span class="p">(</span><span class="n">retrieve_ebr</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">)</span>
         <span class="n">Avg_jaccard</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacc</span><span class="p">)</span>
         <span class="n">Avg_jaccard_reas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">jacc_reas</span><span class="p">)</span>
-        <span class="n">D</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;dataset&#39;</span><span class="p">:</span><span class="n">data_name</span><span class="p">,</span><span class="s1">&#39;Expression&#39;</span><span class="p">:</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">),</span> <span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="p">,</span><span class="s1">&#39;cache_size&#39;</span><span class="p">:</span><span class="n">cache_size</span><span class="p">,</span> <span class="s2">&quot;time_ebr&quot;</span><span class="p">:</span><span class="n">time_ebr</span><span class="p">,</span> <span class="s2">&quot;time_cache&quot;</span><span class="p">:</span> <span class="n">time_cache</span><span class="p">,</span> <span class="s2">&quot;Jaccard&quot;</span><span class="p">:</span><span class="n">jacc</span><span class="p">})</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expression: </span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Jaccard similarity: </span><span class="si">{</span><span class="n">jacc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1"># assert jacc == 1.0 </span>
+        <span class="n">D</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">'dataset'</span><span class="p">:</span><span class="n">data_name</span><span class="p">,</span><span class="s1">'Expression'</span><span class="p">:</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">),</span> <span class="s2">"Type"</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="p">,</span><span class="s1">'cache_size'</span><span class="p">:</span><span class="n">cache_size</span><span class="p">,</span> <span class="s2">"time_ebr"</span><span class="p">:</span><span class="n">time_ebr</span><span class="p">,</span> <span class="s2">"time_cache"</span><span class="p">:</span> <span class="n">time_cache</span><span class="p">,</span> <span class="s2">"Jaccard"</span><span class="p">:</span><span class="n">jacc</span><span class="p">})</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Expression: </span><span class="si">{</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Jaccard similarity: </span><span class="si">{</span><span class="n">jacc</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="c1"># assert jacc == 1.0</span>
 
     <span class="n">stats</span> <span class="o">=</span> <span class="n">cached_retriever</span><span class="o">.</span><span class="n">get_stats</span><span class="p">()</span>
-    
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cache Statistics:&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hit Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hit_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Miss Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;miss_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average Time per Request: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;average_time_per_request&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Time with Caching: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total Time Without Caching: </span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of concepts: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average Jaccard for the </span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2"> dataset&quot;</span><span class="p">,</span> <span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">))</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'-'</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Cache Statistics:"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hit Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'hit_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Miss Ratio: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'miss_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Time per Request: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'average_time_per_request'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total Time with Caching: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_time'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total Time Without Caching: </span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total number of concepts: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average Jaccard for the </span><span class="si">{</span><span class="n">data_name</span><span class="si">}</span><span class="s2"> dataset: </span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;dataset&#39;</span><span class="p">:</span> <span class="n">data_name</span><span class="p">,</span>
-        <span class="s1">&#39;cache_size&#39;</span><span class="p">:</span> <span class="n">cache_size</span><span class="p">,</span>
-        <span class="s1">&#39;hit_ratio&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;hit_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;miss_ratio&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;miss_ratio&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;RT_cache&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_time&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;RT&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;#concepts&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">),</span>
-        <span class="s1">&#39;avg_jaccard&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="s1">&#39;avg_jaccard_reas&#39;</span><span class="p">:</span>  <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="s1">'dataset'</span><span class="p">:</span> <span class="n">data_name</span><span class="p">,</span>
+        <span class="s1">'cache_size'</span><span class="p">:</span> <span class="n">cache_size</span><span class="p">,</span>
+        <span class="s1">'hit_ratio'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'hit_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'miss_ratio'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'miss_ratio'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'RT_cache'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'total_time'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'RT'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">total_time_ebr</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'#concepts'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">alc_concepts</span><span class="p">),</span>
+        <span class="s1">'avg_jaccard'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s1">'avg_jaccard_reas'</span><span class="p">:</span>  <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">Avg_jaccard_reas</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">},</span> <span class="n">D</span></div>
 
 

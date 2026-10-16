@@ -144,17 +144,17 @@ The learning problem is further divided in positive and negative examples. We ha
 hardcoded lines which we can now simply access by loading the json file. Below is
 an example file that we are naming <code class="docutils literal notranslate"><span class="pre">synthetic_problems.json</span></code>  showing how should it look:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{  
-  &quot;data_path&quot;: &quot;../KGs/Family/family-benchmark_rich_background.owl&quot;,  
-  &quot;learning_problem&quot;: {
-    &quot;positive_examples&quot;: [  
-    &quot;http://www.benchmark.org/family#F2F28&quot;,  
-    &quot;http://www.benchmark.org/family#F2F36&quot;,  
-    &quot;http://www.benchmark.org/family#F3F52&quot;  
+  "data_path": "../KGs/Family/family-benchmark_rich_background.owl",  
+  "learning_problem": {
+    "positive_examples": [  
+    "http://www.benchmark.org/family#F2F28",  
+    "http://www.benchmark.org/family#F2F36",  
+    "http://www.benchmark.org/family#F3F52"  
     ],  
-    &quot;negative_examples&quot;: [  
-    &quot;http://www.benchmark.org/family#F6M69&quot;,  
-    &quot;http://www.benchmark.org/family#F6M100&quot;,  
-    &quot;http://www.benchmark.org/family#F2F30&quot;  
+    "negative_examples": [  
+    "http://www.benchmark.org/family#F6M69",  
+    "http://www.benchmark.org/family#F6M100",  
+    "http://www.benchmark.org/family#F2F30"  
     ]
   }  
 }
@@ -185,7 +185,7 @@ stored the knowledge base path and the learning problems in the variable <code c
 <!--pytest-codeblocks:cont-->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;synthetic_problems.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>    
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'synthetic_problems.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>    
     <span class="n">settings</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -198,7 +198,7 @@ under <code class="docutils literal notranslate"><span class="pre">data_path</sp
 <!--pytest-codeblocks:cont-->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
 
-<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;data_path&#39;</span><span class="p">])</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s1">'data_path'</span><span class="p">])</span>
 </pre></div>
 </div>
 </section>
@@ -214,8 +214,8 @@ learning algorithm is trying to generate hypothesis (class expressions).</p>
 <p>First and foremost, load the learning problem examples from the json file
 into sets as shown below:</p>
 <!--pytest-codeblocks:cont-->
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">positive_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;learning_problem&#39;</span><span class="p">][</span><span class="s1">&#39;positive_examples&#39;</span><span class="p">])</span>  
-<span class="n">negative_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;learning_problem&#39;</span><span class="p">][</span><span class="s1">&#39;negative_examples&#39;</span><span class="p">])</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">positive_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">'learning_problem'</span><span class="p">][</span><span class="s1">'positive_examples'</span><span class="p">])</span>  
+<span class="n">negative_examples</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">'learning_problem'</span><span class="p">][</span><span class="s1">'negative_examples'</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>In Ontolearn you represent the learning problem as an object of the class
@@ -314,7 +314,7 @@ the method <code class="docutils literal notranslate"><span class="pre">best_hyp
 </div>
 <p>The hypotheses can also be saved locally:</p>
 <!--pytest-codeblocks:cont-->
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">save_best_hypothesis</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;Predictions&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">save_best_hypothesis</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">'Predictions'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">save_best_hypothesis</span></code> method creates a <code class="docutils literal notranslate"><span class="pre">.owl</span></code> file of the RDF/XML format
@@ -343,7 +343,7 @@ Check https://krr-oxford.github.io/DeepOnto/ for full instructions.</p></li>
 <p>After you are done with that you can simply verbalize predictions:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">verbalize</span>
 
-<span class="n">verbalize</span><span class="p">(</span><span class="s1">&#39;Predictions.owl&#39;</span><span class="p">)</span>
+<span class="n">verbalize</span><span class="p">(</span><span class="s1">'Predictions.owl'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This will create for each class expression inside <code class="docutils literal notranslate"><span class="pre">Predictions.owl</span></code> a <code class="docutils literal notranslate"><span class="pre">.png</span></code>

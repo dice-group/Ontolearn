@@ -38,8 +38,6 @@ Module Contents
 
 
    .. py:attribute:: reasoner
-      :value: None
-
 
 
    .. py:attribute:: max_runtime

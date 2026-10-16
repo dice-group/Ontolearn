@@ -9,6 +9,7 @@ Attributes
 
 .. autoapisummary::
 
+   ontolearn.learners.spell_kit.structures.logger
    ontolearn.learners.spell_kit.structures.namespaces
    ontolearn.learners.spell_kit.structures.Signature
    ontolearn.learners.spell_kit.structures.tag_onto
@@ -66,6 +67,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:data:: namespaces
 

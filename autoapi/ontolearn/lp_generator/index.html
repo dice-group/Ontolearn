@@ -24,7 +24,7 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="ontolearn.lp_generator.generate_data" href="generate_data/index.html" />
+    <link rel="next" title="ontolearn.lp_generator.complexity_lp_generator" href="complexity_lp_generator/index.html" />
     <link rel="prev" title="ontolearn.learning_problem_generator" href="../learning_problem_generator/index.html" /> 
 </head>
 
@@ -81,11 +81,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../learning_problem_generator/index.html">ontolearn.learning_problem_generator</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.lp_generator</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="complexity_lp_generator/index.html">ontolearn.lp_generator.complexity_lp_generator</a></li>
 <li class="toctree-l5"><a class="reference internal" href="generate_data/index.html">ontolearn.lp_generator.generate_data</a></li>
 <li class="toctree-l5"><a class="reference internal" href="helper_classes/index.html">ontolearn.lp_generator.helper_classes</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.LPGen"><code class="docutils literal notranslate"><span class="pre">LPGen</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.LPGen.lp_gen"><code class="docutils literal notranslate"><span class="pre">LPGen.lp_gen</span></code></a></li>
@@ -93,6 +95,7 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data"><code class="docutils literal notranslate"><span class="pre">KB2Data</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data.rnd"><code class="docutils literal notranslate"><span class="pre">KB2Data.rnd</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data.max_num_lps"><code class="docutils literal notranslate"><span class="pre">KB2Data.max_num_lps</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data.beyond_alc"><code class="docutils literal notranslate"><span class="pre">KB2Data.beyond_alc</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data.dl_syntax_renderer"><code class="docutils literal notranslate"><span class="pre">KB2Data.dl_syntax_renderer</span></code></a></li>
@@ -106,6 +109,70 @@
 <li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.KB2Data.save_data"><code class="docutils literal notranslate"><span class="pre">KB2Data.save_data()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.name"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.allowed_constructs"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.allowed_constructs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.min_length"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.min_length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.max_length"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.max_length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.min_depth"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.min_depth</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.max_depth"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.max_depth</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.max_arity"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.max_arity</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.card_limit"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.card_limit</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.use_inverse_roles"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.use_inverse_roles</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.min_pos"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.min_pos</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.min_neg"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.min_neg</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.max_examples_per_side"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.max_examples_per_side</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.max_baseline_f1"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.max_baseline_f1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.min_difficulty"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.min_difficulty</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.oversample_factor"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.oversample_factor</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.hard_negative_ratio"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.hard_negative_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile.difficulty_weights"><code class="docutils literal notranslate"><span class="pre">ComplexityProfile.difficulty_weights</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct"><code class="docutils literal notranslate"><span class="pre">DLConstruct</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.ATOMIC"><code class="docutils literal notranslate"><span class="pre">DLConstruct.ATOMIC</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.NEGATION"><code class="docutils literal notranslate"><span class="pre">DLConstruct.NEGATION</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.INTERSECTION"><code class="docutils literal notranslate"><span class="pre">DLConstruct.INTERSECTION</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.UNION"><code class="docutils literal notranslate"><span class="pre">DLConstruct.UNION</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.EXISTENTIAL"><code class="docutils literal notranslate"><span class="pre">DLConstruct.EXISTENTIAL</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.UNIVERSAL"><code class="docutils literal notranslate"><span class="pre">DLConstruct.UNIVERSAL</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.MIN_CARDINALITY"><code class="docutils literal notranslate"><span class="pre">DLConstruct.MIN_CARDINALITY</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.MAX_CARDINALITY"><code class="docutils literal notranslate"><span class="pre">DLConstruct.MAX_CARDINALITY</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.EXACT_CARDINALITY"><code class="docutils literal notranslate"><span class="pre">DLConstruct.EXACT_CARDINALITY</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct.HAS_VALUE"><code class="docutils literal notranslate"><span class="pre">DLConstruct.HAS_VALUE</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.profile_name"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.profile_name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.target_concept"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.target_concept</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.dl"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.dl</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.pos"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.pos</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.neg"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.neg</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.length"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.depth"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.depth</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.construct_histogram"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.construct_histogram</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.baseline_f1"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.baseline_f1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.difficulty"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.difficulty</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.num_near_miss_negatives"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.num_near_miss_negatives</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem.to_lp"><code class="docutils literal notranslate"><span class="pre">GeneratedLearningProblem.to_lp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.kb"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.kb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.rng"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.rng</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.all_individuals"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.all_individuals</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.atomic_classes"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.atomic_classes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.object_properties"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.object_properties</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.baseline_f1"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.baseline_f1()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.near_miss_negatives"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.near_miss_negatives()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.difficulty_score"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.difficulty_score()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.concept_depth"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.concept_depth()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.sample_target"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.sample_target()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark"><code class="docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate_benchmark()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.lp_generator.save_benchmark"><code class="docutils literal notranslate"><span class="pre">save_benchmark()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -122,7 +189,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../utils/index.html">ontolearn.utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../value_splitter/index.html">ontolearn.value_splitter</a></li>
@@ -166,6 +232,7 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="complexity_lp_generator/index.html">ontolearn.lp_generator.complexity_lp_generator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="generate_data/index.html">ontolearn.lp_generator.generate_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="helper_classes/index.html">ontolearn.lp_generator.helper_classes</a></li>
 </ul>
@@ -181,6 +248,28 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.lp_generator.KB2Data" title="ontolearn.lp_generator.KB2Data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KB2Data</span></code></a></p></td>
 <td><p>This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplexityProfile</span></code></a></p></td>
+<td><p>A named point (or curriculum step) in the space of &quot;how complex should the target be&quot;.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct" title="ontolearn.lp_generator.DLConstruct"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DLConstruct</span></code></a></p></td>
+<td><p>DL constructors a <a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComplexityProfile</span></code></a> can allow/forbid.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem" title="ontolearn.lp_generator.GeneratedLearningProblem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GeneratedLearningProblem</span></code></a></p></td>
+<td><p>A goal-directed learning problem: a sampled target concept plus its (E+, E-).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator" title="ontolearn.lp_generator.GoalDirectedLPGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator</span></code></a></p></td>
+<td><p>Samples target concepts from an explicit DL-construct grammar and turns them into LPs.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.lp_generator.save_benchmark" title="ontolearn.lp_generator.save_benchmark"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_benchmark</span></code></a>(→ None)</p></td>
+<td><p>Serialize a benchmark (as returned by <a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark" title="ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate_benchmark()</span></code></a>)</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -188,7 +277,7 @@
 <h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="ontolearn.lp_generator.LPGen">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">LPGen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kb_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_lps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beyond_alc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_expressivity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample_refinements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_fillers_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sub_roots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_pos_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pos_neg_examples_per_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/generate_data.html#LPGen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.LPGen" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">LPGen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kb_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_lps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beyond_alc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_expressivity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample_refinements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_fillers_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sub_roots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_pos_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pos_neg_examples_per_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/generate_data.html#LPGen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.LPGen" title="Link to this definition"></a></dt>
 <dd><dl class="py attribute">
 <dt class="sig sig-object py" id="ontolearn.lp_generator.LPGen.lp_gen">
 <span class="sig-name descname"><span class="pre">lp_gen</span></span><a class="headerlink" href="#ontolearn.lp_generator.LPGen.lp_gen" title="Link to this definition"></a></dt>
@@ -203,11 +292,16 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="ontolearn.lp_generator.KB2Data">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">KB2Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_lps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beyond_alc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_expressivity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample_refinements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_fillers_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sub_roots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_pos_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pos_neg_examples_per_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/helper_classes.html#KB2Data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.KB2Data" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">KB2Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_lps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beyond_alc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_child_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refinement_expressivity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample_refinements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_fillers_count</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_sub_roots</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_pos_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pos_neg_examples_per_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/helper_classes.html#KB2Data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.KB2Data" title="Link to this definition"></a></dt>
 <dd><p>This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.
 A refinement operator is used to generate a large number of concepts, from which we filter and retain the shortest
 non-redundant concepts. We export each concept and its instances (eventually positive and negative examples) into
 a json file.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.KB2Data.rnd">
+<span class="sig-name descname"><span class="pre">rnd</span></span><a class="headerlink" href="#ontolearn.lp_generator.KB2Data.rnd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="ontolearn.lp_generator.KB2Data.max_num_lps">
 <span class="sig-name descname"><span class="pre">max_num_lps</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></span><a class="headerlink" href="#ontolearn.lp_generator.KB2Data.max_num_lps" title="Link to this definition"></a></dt>
@@ -265,6 +359,353 @@ a json file.</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">ComplexityProfile</span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#ComplexityProfile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile" title="Link to this definition"></a></dt>
+<dd><p>A named point (or curriculum step) in the space of “how complex should the target be”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – identifier used to tag generated problems and group benchmark results.</p></li>
+<li><p><strong>allowed_constructs</strong> – DL constructors <a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate" title="ontolearn.lp_generator.GoalDirectedLPGenerator.generate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate()</span></code></a> may use
+when sampling a target concept. Relation-based constructs (∃/∀/cardinality/has-value) are
+silently unavailable on a knowledge base exposing no object properties.</p></li>
+<li><p><strong>min_length/max_length</strong> – bounds on <code class="docutils literal notranslate"><span class="pre">concept_len</span></code> of the (NNF) target.</p></li>
+<li><p><strong>min_depth/max_depth</strong> – bounds on restriction-nesting depth (see
+<a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.concept_depth" title="ontolearn.lp_generator.GoalDirectedLPGenerator.concept_depth"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.concept_depth()</span></code></a>); a bare named class has depth 0.</p></li>
+<li><p><strong>max_arity</strong> – maximum number of operands sampled under one intersection/union.</p></li>
+<li><p><strong>card_limit</strong> – cardinality restrictions sample <code class="docutils literal notranslate"><span class="pre">n</span></code> uniformly from <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">card_limit]</span></code>.</p></li>
+<li><p><strong>use_inverse_roles</strong> – if True, restrictions may use <code class="docutils literal notranslate"><span class="pre">r-</span></code> in place of <code class="docutils literal notranslate"><span class="pre">r</span></code>.</p></li>
+<li><p><strong>min_pos/min_neg</strong> – an LP is discarded unless the target has at least this many
+positive and negative instances in the knowledge base.</p></li>
+<li><p><strong>max_examples_per_side</strong> – positives/negatives are subsampled down to this cap.</p></li>
+<li><p><strong>max_baseline_f1</strong> – an LP is discarded if the best of a pool of “cheap” one-step
+hypotheses (an atomic class, its negation, or a bare <code class="docutils literal notranslate"><span class="pre">exists</span> <span class="pre">r.Top</span></code>) already reaches
+this F1 – i.e. it is trivially solvable without the constructs being tested.</p></li>
+<li><p><strong>min_difficulty</strong> – an LP is discarded if its <code class="xref py py-class docutils literal notranslate"><span class="pre">DifficultyWeights</span></code>-weighted score
+falls below this bar. <code class="docutils literal notranslate"><span class="pre">0.0</span></code> (default) disables this filter.</p></li>
+<li><p><strong>oversample_factor</strong> – <a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate" title="ontolearn.lp_generator.GoalDirectedLPGenerator.generate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate()</span></code></a> collects up to
+<code class="docutils literal notranslate"><span class="pre">num_lps</span> <span class="pre">*</span> <span class="pre">oversample_factor</span></code> passing candidates (subject to <code class="docutils literal notranslate"><span class="pre">max_attempts</span></code>) before
+ranking by difficulty and keeping the hardest <code class="docutils literal notranslate"><span class="pre">num_lps</span></code> – i.e. it actively searches
+for hard problems instead of returning the first ones found.</p></li>
+<li><p><strong>hard_negative_ratio</strong> – fraction of the sampled negatives drawn from the near-miss pool
+(when one exists) rather than arbitrary non-instances.</p></li>
+<li><p><strong>difficulty_weights</strong> – see <code class="xref py py-class docutils literal notranslate"><span class="pre">DifficultyWeights</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.allowed_constructs">
+<span class="sig-name descname"><span class="pre">allowed_constructs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">FrozenSet</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.lp_generator.DLConstruct" title="ontolearn.lp_generator.DLConstruct"><span class="pre">DLConstruct</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.allowed_constructs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.min_length">
+<span class="sig-name descname"><span class="pre">min_length</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.min_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.max_length">
+<span class="sig-name descname"><span class="pre">max_length</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.max_length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.min_depth">
+<span class="sig-name descname"><span class="pre">min_depth</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.min_depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.max_depth">
+<span class="sig-name descname"><span class="pre">max_depth</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.max_depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.max_arity">
+<span class="sig-name descname"><span class="pre">max_arity</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.max_arity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.card_limit">
+<span class="sig-name descname"><span class="pre">card_limit</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.card_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.use_inverse_roles">
+<span class="sig-name descname"><span class="pre">use_inverse_roles</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.use_inverse_roles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.min_pos">
+<span class="sig-name descname"><span class="pre">min_pos</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.min_pos" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.min_neg">
+<span class="sig-name descname"><span class="pre">min_neg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.min_neg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.max_examples_per_side">
+<span class="sig-name descname"><span class="pre">max_examples_per_side</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.max_examples_per_side" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.max_baseline_f1">
+<span class="sig-name descname"><span class="pre">max_baseline_f1</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.9</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.max_baseline_f1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.min_difficulty">
+<span class="sig-name descname"><span class="pre">min_difficulty</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.min_difficulty" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.oversample_factor">
+<span class="sig-name descname"><span class="pre">oversample_factor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.oversample_factor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.hard_negative_ratio">
+<span class="sig-name descname"><span class="pre">hard_negative_ratio</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.hard_negative_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.ComplexityProfile.difficulty_weights">
+<span class="sig-name descname"><span class="pre">difficulty_weights</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="complexity_lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.DifficultyWeights" title="ontolearn.lp_generator.complexity_lp_generator.DifficultyWeights"><span class="pre">DifficultyWeights</span></a></span><a class="headerlink" href="#ontolearn.lp_generator.ComplexityProfile.difficulty_weights" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">DLConstruct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#DLConstruct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>DL constructors a <a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComplexityProfile</span></code></a> can allow/forbid.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.ATOMIC">
+<span class="sig-name descname"><span class="pre">ATOMIC</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'atomic'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.ATOMIC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.NEGATION">
+<span class="sig-name descname"><span class="pre">NEGATION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'negation'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.NEGATION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.INTERSECTION">
+<span class="sig-name descname"><span class="pre">INTERSECTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'intersection'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.INTERSECTION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.UNION">
+<span class="sig-name descname"><span class="pre">UNION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'union'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.UNION" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.EXISTENTIAL">
+<span class="sig-name descname"><span class="pre">EXISTENTIAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'existential'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.EXISTENTIAL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.UNIVERSAL">
+<span class="sig-name descname"><span class="pre">UNIVERSAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'universal'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.UNIVERSAL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.MIN_CARDINALITY">
+<span class="sig-name descname"><span class="pre">MIN_CARDINALITY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'min_cardinality'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.MIN_CARDINALITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.MAX_CARDINALITY">
+<span class="sig-name descname"><span class="pre">MAX_CARDINALITY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'max_cardinality'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.MAX_CARDINALITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.EXACT_CARDINALITY">
+<span class="sig-name descname"><span class="pre">EXACT_CARDINALITY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'exact_cardinality'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.EXACT_CARDINALITY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.DLConstruct.HAS_VALUE">
+<span class="sig-name descname"><span class="pre">HAS_VALUE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'has_value'</span></span><a class="headerlink" href="#ontolearn.lp_generator.DLConstruct.HAS_VALUE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">GeneratedLearningProblem</span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GeneratedLearningProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem" title="Link to this definition"></a></dt>
+<dd><p>A goal-directed learning problem: a sampled target concept plus its (E+, E-).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.profile_name">
+<span class="sig-name descname"><span class="pre">profile_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.profile_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.target_concept">
+<span class="sig-name descname"><span class="pre">target_concept</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">owlapy.class_expression.OWLClassExpression</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.target_concept" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.dl">
+<span class="sig-name descname"><span class="pre">dl</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.dl" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.pos">
+<span class="sig-name descname"><span class="pre">pos</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Individuals</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.pos" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.neg">
+<span class="sig-name descname"><span class="pre">neg</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Individuals</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.neg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.length">
+<span class="sig-name descname"><span class="pre">length</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.depth">
+<span class="sig-name descname"><span class="pre">depth</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.construct_histogram">
+<span class="sig-name descname"><span class="pre">construct_histogram</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.construct_histogram" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.baseline_f1">
+<span class="sig-name descname"><span class="pre">baseline_f1</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.baseline_f1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.difficulty">
+<span class="sig-name descname"><span class="pre">difficulty</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.difficulty" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.num_near_miss_negatives">
+<span class="sig-name descname"><span class="pre">num_near_miss_negatives</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.num_near_miss_negatives" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GeneratedLearningProblem.to_lp">
+<span class="sig-name descname"><span class="pre">to_lp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../learning_problem/index.html#ontolearn.learning_problem.PosNegLPStandard" title="ontolearn.learning_problem.PosNegLPStandard"><span class="pre">PosNegLPStandard</span></a></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GeneratedLearningProblem.to_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GeneratedLearningProblem.to_lp" title="Link to this definition"></a></dt>
+<dd><p>Build the <code class="docutils literal notranslate"><span class="pre">PosNegLPStandard</span></code> consumed by Ontolearn learners (e.g. TDL).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">GoalDirectedLPGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_base/index.html#ontolearn.knowledge_base.KnowledgeBase" title="ontolearn.knowledge_base.KnowledgeBase"><span class="pre">KnowledgeBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_cap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">300</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator" title="Link to this definition"></a></dt>
+<dd><p>Samples target concepts from an explicit DL-construct grammar and turns them into LPs.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span><span class="p">)</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="n">GoalDirectedLPGenerator</span><span class="p">(</span><span class="n">kb</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">profile</span> <span class="o">=</span> <span class="n">ComplexityProfile</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"nested-existential"</span><span class="p">,</span>
+    <span class="n">allowed_constructs</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">({</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXISTENTIAL</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">INTERSECTION</span><span class="p">}),</span>
+    <span class="n">max_length</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">lps</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">num_lps</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">TDL</span><span class="p">(</span><span class="n">kb</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">lps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_lp</span><span class="p">())</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.kb">
+<span class="sig-name descname"><span class="pre">kb</span></span><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.kb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.rng">
+<span class="sig-name descname"><span class="pre">rng</span></span><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.rng" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.all_individuals">
+<span class="sig-name descname"><span class="pre">all_individuals</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Individuals</span></span><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.all_individuals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.atomic_classes">
+<span class="sig-name descname"><span class="pre">atomic_classes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClass</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.atomic_classes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.object_properties">
+<span class="sig-name descname"><span class="pre">object_properties</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.owl_property.OWLObjectProperty</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.object_properties" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.baseline_f1">
+<span class="sig-name descname"><span class="pre">baseline_f1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Individuals</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.baseline_f1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.baseline_f1" title="Link to this definition"></a></dt>
+<dd><p>Best F1 any single “cheap” one-step hypothesis reaches on (pos, neg).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.near_miss_negatives">
+<span class="sig-name descname"><span class="pre">near_miss_negatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Individuals</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Individuals</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.near_miss_negatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.near_miss_negatives" title="Link to this definition"></a></dt>
+<dd><p>Individuals satisfying <cite>target</cite> with exactly one top-level conjunct dropped, minus <cite>pos</cite>.</p>
+<p>E.g. for <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">Compound</span> <span class="pre">⊓</span> <span class="pre">(∃</span> <span class="pre">hasChild.Father)</span></code> these are individuals that are a
+<code class="docutils literal notranslate"><span class="pre">Compound</span></code> but whose child (if any) isn’t a <code class="docutils literal notranslate"><span class="pre">Father</span></code>, or that have a <code class="docutils literal notranslate"><span class="pre">Father</span></code> child
+but aren’t a <code class="docutils literal notranslate"><span class="pre">Compound</span></code> – the negatives one ablated conjunct away from being positive,
+which is exactly what trips up a greedy top-down learner.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.difficulty_score">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">difficulty_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><span class="pre">ComplexityProfile</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_f1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Individuals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">near_miss</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Individuals</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.difficulty_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.difficulty_score" title="Link to this definition"></a></dt>
+<dd><p>Combine length/depth/baseline-hardness/near-miss-density into one score in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.concept_depth">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">concept_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ce</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">owlapy.class_expression.OWLClassExpression</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.concept_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.concept_depth" title="Link to this definition"></a></dt>
+<dd><p>Restriction-nesting depth: a named class or <code class="docutils literal notranslate"><span class="pre">has</span> <span class="pre">value</span></code> atom has depth 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.sample_target">
+<span class="sig-name descname"><span class="pre">sample_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><span class="pre">ComplexityProfile</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">owlapy.class_expression.OWLClassExpression</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">collections.Counter</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.sample_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.sample_target" title="Link to this definition"></a></dt>
+<dd><p>Sample one target concept (in NNF) respecting <cite>profile</cite>, plus its construct histogram.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.generate">
+<span class="sig-name descname"><span class="pre">generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><span class="pre">ComplexityProfile</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_lps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_attempts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem" title="ontolearn.lp_generator.GeneratedLearningProblem"><span class="pre">GeneratedLearningProblem</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.generate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate" title="Link to this definition"></a></dt>
+<dd><p>Sample the <cite>num_lps</cite> <strong>hardest</strong> distinct, non-trivial learning problems matching
+<cite>profile</cite>: up to <code class="docutils literal notranslate"><span class="pre">num_lps</span> <span class="pre">*</span> <span class="pre">profile.oversample_factor</span></code> passing candidates are collected
+(subject to <cite>max_attempts</cite> sampling attempts total), ranked by
+<a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.difficulty_score" title="ontolearn.lp_generator.GoalDirectedLPGenerator.difficulty_score"><code class="xref py py-meth docutils literal notranslate"><span class="pre">difficulty_score()</span></code></a> and the top <cite>num_lps</cite> are kept.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark">
+<span class="sig-name descname"><span class="pre">generate_benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.lp_generator.ComplexityProfile" title="ontolearn.lp_generator.ComplexityProfile"><span class="pre">ComplexityProfile</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_lps_per_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_attempts_per_profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem" title="ontolearn.lp_generator.GeneratedLearningProblem"><span class="pre">GeneratedLearningProblem</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#GoalDirectedLPGenerator.generate_benchmark"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark" title="Link to this definition"></a></dt>
+<dd><p>Run <a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate" title="ontolearn.lp_generator.GoalDirectedLPGenerator.generate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate()</span></code></a> for each profile in a curriculum; returns <cite>{profile.name: […]}</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.lp_generator.save_benchmark">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.lp_generator.</span></span><span class="sig-name descname"><span class="pre">save_benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">benchmark</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ontolearn.lp_generator.GeneratedLearningProblem" title="ontolearn.lp_generator.GeneratedLearningProblem"><span class="pre">GeneratedLearningProblem</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/ontolearn/lp_generator/complexity_lp_generator.html#save_benchmark"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.lp_generator.save_benchmark" title="Link to this definition"></a></dt>
+<dd><p>Serialize a benchmark (as returned by <a class="reference internal" href="#ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark" title="ontolearn.lp_generator.GoalDirectedLPGenerator.generate_benchmark"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GoalDirectedLPGenerator.generate_benchmark()</span></code></a>)
+to JSON: <cite>{dl_string: {“profile”, “positive_examples”, “negative_examples”, “length”, “depth”,
+“construct_histogram”, “baseline_f1”, “difficulty”, “num_near_miss_negatives”}}</cite>, individuals
+kept as full IRIs.</p>
+</dd></dl>
+
 </section>
 </section>
 
@@ -273,7 +714,7 @@ a json file.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../learning_problem_generator/index.html" class="btn btn-neutral float-left" title="ontolearn.learning_problem_generator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="generate_data/index.html" class="btn btn-neutral float-right" title="ontolearn.lp_generator.generate_data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="complexity_lp_generator/index.html" class="btn btn-neutral float-right" title="ontolearn.lp_generator.complexity_lp_generator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

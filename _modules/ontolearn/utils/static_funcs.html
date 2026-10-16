@@ -89,7 +89,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -98,7 +98,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -131,12 +131,12 @@
 <div class="viewcode-block" id="f1_set_similarity">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.f1_set_similarity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">f1_set_similarity</span><span class="p">(</span><span class="n">y</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">yhat</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute F1 score for two set</span>
 <span class="sd">    :param y: A set of URIs</span>
 <span class="sd">    :param yhat: A set of URIs</span>
 <span class="sd">    :return:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">yhat</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mf">1.0</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">yhat</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -160,7 +160,7 @@
 <div class="viewcode-block" id="concept_reducer">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.concept_reducer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">concept_reducer</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reduces a set of concepts by applying a binary operation to each pair of concepts.</span>
 
 <span class="sd">    Args:</span>
@@ -178,7 +178,7 @@
 
 <span class="sd">    Note:</span>
 <span class="sd">        The operation `opt` should be commutative and associative to ensure meaningful reduction in the context of set operations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
@@ -192,7 +192,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">concept_reducer_properties</span><span class="p">(</span>
         <span class="n">concepts</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">OWLQuantifiedObjectRestriction</span><span class="p">,</span> <span class="n">OWLObjectCardinalityRestriction</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Map a set of owl concepts and a set of properties into OWL Restrictions</span>
 
 <span class="sd">    Args:</span>
@@ -203,10 +203,10 @@
 
 <span class="sd">    Returns: List of OWL Restrictions</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="s2">&quot;Concepts must be an Iterable&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="s2">&quot;properties must be an Iterable&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Callable</span><span class="p">),</span> <span class="s2">&quot;cls must be an Callable&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concepts</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="s2">"Concepts must be an Iterable"</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">properties</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">),</span> <span class="s2">"properties must be an Iterable"</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Callable</span><span class="p">),</span> <span class="s2">"cls must be an Callable"</span>
     <span class="k">assert</span> <span class="n">cardinality</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="n">result</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
@@ -221,7 +221,7 @@
 
 <div class="viewcode-block" id="make_iterable_verbose">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.make_iterable_verbose">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">make_iterable_verbose</span><span class="p">(</span><span class="n">iterable_object</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Default&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_iterable_verbose</span><span class="p">(</span><span class="n">iterable_object</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Default"</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">iterable_object</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="n">leave</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -233,7 +233,7 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.init_length_metric">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_length_metric</span><span class="p">(</span><span class="n">length_metric</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OWLClassExpressionLengthMetric</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                        <span class="n">length_metric_factory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">OWLClassExpressionLengthMetric</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Initialize the technique on computing length of a concept&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" Initialize the technique on computing length of a concept"""</span>
     <span class="k">if</span> <span class="n">length_metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
     <span class="k">elif</span> <span class="n">length_metric_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -257,7 +257,7 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.init_hierarchy_instances">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_hierarchy_instances</span><span class="p">(</span><span class="n">reasoner</span><span class="p">,</span> <span class="n">class_hierarchy</span><span class="p">,</span> <span class="n">object_property_hierarchy</span><span class="p">,</span> <span class="n">data_property_hierarchy</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">ClassHierarchy</span><span class="p">,</span> <span class="n">ObjectPropertyHierarchy</span><span class="p">,</span> <span class="n">DatatypePropertyHierarchy</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Initialize class, object property, and data property hierarchies &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" Initialize class, object property, and data property hierarchies """</span>
     <span class="k">if</span> <span class="n">class_hierarchy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">class_hierarchy</span> <span class="o">=</span> <span class="n">ClassHierarchy</span><span class="p">(</span><span class="n">reasoner</span><span class="p">)</span>
 
@@ -291,7 +291,7 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.init_individuals_from_concepts">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_individuals_from_concepts</span><span class="p">(</span><span class="n">include_implicit_individuals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">reasoner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ontology</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                    <span class="n">individuals_per_concept</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">include_implicit_individuals</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">include_implicit_individuals</span><span class="si">}</span><span class="s2"> must be boolean&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">include_implicit_individuals</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">include_implicit_individuals</span><span class="si">}</span><span class="s2"> must be boolean"</span>
     <span class="k">if</span> <span class="n">include_implicit_individuals</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">individuals_per_concept</span><span class="p">,</span> <span class="n">Generator</span><span class="p">)</span>
         <span class="c1"># get all individuals from concepts</span>
@@ -318,9 +318,9 @@
 <div class="viewcode-block" id="compute_f1_score">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.compute_f1_score">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_f1_score</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Compute F1-score of a concept</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">neg</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Types must match:</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="sd">""" Compute F1-score of a concept</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">neg</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Types must match:</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="c1"># true positive: |E^+ AND R(C)  |</span>
     <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
     <span class="c1"># true negative : |E^- AND R(C)|</span>
@@ -352,10 +352,10 @@
 <div class="viewcode-block" id="compute_f1_score_from_confusion_matrix">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.compute_f1_score_from_confusion_matrix">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_f1_score_from_confusion_matrix</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">float</span><span class="p">:</span>
-    <span class="n">tp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">&quot;tp&quot;</span><span class="p">])</span>
-    <span class="n">fn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">&quot;fn&quot;</span><span class="p">])</span>
-    <span class="n">fp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">&quot;fp&quot;</span><span class="p">])</span>
-    <span class="n">tn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">&quot;tn&quot;</span><span class="p">])</span>
+    <span class="n">tp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">"tp"</span><span class="p">])</span>
+    <span class="n">fn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">"fn"</span><span class="p">])</span>
+    <span class="n">fp</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">"fp"</span><span class="p">])</span>
+    <span class="n">tn</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="p">[</span><span class="s2">"tn"</span><span class="p">])</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">recall</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
@@ -375,15 +375,15 @@
 
 <div class="viewcode-block" id="plot_umap_reduced_embeddings">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.plot_umap_reduced_embeddings">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">plot_umap_reduced_embeddings</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;umap_visualization.pdf&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-    <span class="c1"># TODO:AB: &#39;umap&#39; is not part of the dependencies !?</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_umap_reduced_embeddings</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"umap_visualization.pdf"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="c1"># TODO:AB: 'umap' is not part of the dependencies !?</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">umap</span>
     <span class="n">reducer</span> <span class="o">=</span> <span class="n">umap</span><span class="o">.</span><span class="n">UMAP</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">embedding</span> <span class="o">=</span> <span class="n">reducer</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">embedding</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">embedding</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
-                <span class="n">c</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;r&quot;</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;b&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">y</span><span class="p">])</span>
+                <span class="n">c</span><span class="o">=</span><span class="p">[</span><span class="s2">"r"</span> <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"b"</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">y</span><span class="p">])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">,</span> <span class="s1">&#39;datalim&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">'equal'</span><span class="p">,</span> <span class="s1">'datalim'</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
@@ -392,7 +392,7 @@
 <div class="viewcode-block" id="plot_decision_tree_of_expressions">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.plot_decision_tree_of_expressions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_decision_tree_of_expressions</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">cart_tree</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Plot the built CART Decision Tree and feature importance.</span>
 
 <span class="sd">    Parameters:</span>
@@ -403,20 +403,20 @@
 <span class="sd">        None</span>
 
 <span class="sd">    Notes:</span>
-<span class="sd">        This function plots the decision tree using matplotlib and saves it to a PDF file named &#39;cart_decision_tree.pdf&#39;.</span>
+<span class="sd">        This function plots the decision tree using matplotlib and saves it to a PDF file named 'cart_decision_tree.pdf'.</span>
 <span class="sd">        It also displays the plot.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-    <span class="n">sklearn</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_tree</span><span class="p">(</span><span class="n">cart_tree</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Negative&quot;</span><span class="p">,</span> <span class="s2">&quot;Positive&quot;</span><span class="p">],</span>
+    <span class="n">sklearn</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_tree</span><span class="p">(</span><span class="n">cart_tree</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">feature_names</span><span class="o">=</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Negative"</span><span class="p">,</span> <span class="s2">"Positive"</span><span class="p">],</span>
                            <span class="n">filled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;cart_decision_tree.pdf&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">'cart_decision_tree.pdf'</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="plot_topk_feature_importance">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.plot_topk_feature_importance">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_topk_feature_importance</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">cart_tree</span><span class="p">,</span> <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Plot the feature importance of the CART Decision Tree.</span>
 
 <span class="sd">    Parameters:</span>
@@ -431,15 +431,15 @@
 <span class="sd">        This function plots a bar chart showing the importance of each feature in the decision tree,</span>
 <span class="sd">        with the top k features displayed. The importance is measured by the normalized total reduction.</span>
 <span class="sd">        The plot is displayed using matplotlib.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
     <span class="n">topk_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">cart_tree</span><span class="o">.</span><span class="n">feature_importances_</span><span class="p">)[</span><span class="o">-</span><span class="n">topk</span><span class="p">:]</span>
     <span class="n">expressions</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">topk_id</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
     <span class="n">feature_importance</span> <span class="o">=</span> <span class="n">cart_tree</span><span class="o">.</span><span class="n">feature_importances_</span><span class="p">[</span><span class="n">topk_id</span><span class="p">]</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">expressions</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">feature_importance</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Normalized total reduction&#39;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Feature Importance&#39;</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">'Normalized total reduction'</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">'Feature Importance'</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)</span>
     <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
 
@@ -448,16 +448,16 @@
 <div class="viewcode-block" id="save_owl_class_expressions">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.save_owl_class_expressions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">save_owl_class_expressions</span><span class="p">(</span><span class="n">expressions</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]],</span>
-                               <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;./Predictions&#39;</span><span class="p">,</span>
-                               <span class="n">rdf_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;rdfxml&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                               <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'./Predictions'</span><span class="p">,</span>
+                               <span class="n">rdf_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'rdfxml'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expressions</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expressions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                                                                     <span class="n">OWLClassExpression</span><span class="p">),</span> <span class="s2">&quot;expressions must be either OWLClassExpression or a list of OWLClassExpression&quot;</span>
+                                                                     <span class="n">OWLClassExpression</span><span class="p">),</span> <span class="s2">"expressions must be either OWLClassExpression or a list of OWLClassExpression"</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expressions</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">):</span>
         <span class="n">expressions</span> <span class="o">=</span> <span class="p">[</span><span class="n">expressions</span><span class="p">]</span>
-    <span class="n">NS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">&#39;https://dice-research.org/predictions#&#39;</span>
+    <span class="n">NS</span><span class="p">:</span> <span class="n">Final</span> <span class="o">=</span> <span class="s1">'https://dice-research.org/predictions#'</span>
 
-    <span class="k">if</span> <span class="n">rdf_format</span> <span class="o">!=</span> <span class="s1">&#39;rdfxml&#39;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Format </span><span class="si">{</span><span class="n">rdf_format</span><span class="si">}</span><span class="s1"> not implemented.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rdf_format</span> <span class="o">!=</span> <span class="s1">'rdfxml'</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Format </span><span class="si">{</span><span class="n">rdf_format</span><span class="si">}</span><span class="s1"> not implemented.'</span><span class="p">)</span>
     <span class="c1"># @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_ontology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ontology</span>
     <span class="c1"># ()</span>
@@ -470,13 +470,13 @@
             <span class="n">ontology</span><span class="o">.</span><span class="n">add_axiom</span><span class="p">(</span><span class="n">equivalent_classes_axiom</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exception at creating OWLEquivalentClassesAxiom&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Exception at creating OWLEquivalentClassesAxiom"</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">equivalent_classes_axiom</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">cls_a</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">expressions</span><span class="p">)</span>
             <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">ontology</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;.owl&#39;</span><span class="p">,</span> <span class="n">is_file_path</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
+    <span class="n">ontology</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">'.owl'</span><span class="p">,</span> <span class="n">is_file_path</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
 
 
 
@@ -487,28 +487,28 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
     <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">predictions_file_path</span><span class="p">)</span>
     <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
-    <span class="n">tmp_file</span> <span class="o">=</span> <span class="s1">&#39;tmp_file_&#39;</span> <span class="o">+</span> <span class="n">predictions_file_path</span>
-    <span class="n">owl</span> <span class="o">=</span> <span class="s1">&#39;http://www.w3.org/2002/07/owl#&#39;</span>
-    <span class="n">ontology_elem</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">{{</span><span class="si">{</span><span class="n">owl</span><span class="si">}</span><span class="se">}}</span><span class="s1">Ontology&#39;</span><span class="p">)</span>
-    <span class="n">ontology_elem</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ontology_elem</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">{{</span><span class="si">{</span><span class="n">owl</span><span class="si">}</span><span class="se">}}</span><span class="s1">imports&#39;</span><span class="p">))</span>
+    <span class="n">tmp_file</span> <span class="o">=</span> <span class="s1">'tmp_file_'</span> <span class="o">+</span> <span class="n">predictions_file_path</span>
+    <span class="n">owl</span> <span class="o">=</span> <span class="s1">'http://www.w3.org/2002/07/owl#'</span>
+    <span class="n">ontology_elem</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="se">{{</span><span class="si">{</span><span class="n">owl</span><span class="si">}</span><span class="se">}}</span><span class="s1">Ontology'</span><span class="p">)</span>
+    <span class="n">ontology_elem</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ontology_elem</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="se">{{</span><span class="si">{</span><span class="n">owl</span><span class="si">}</span><span class="se">}}</span><span class="s1">imports'</span><span class="p">))</span>
 
     <span class="c1"># The commented lines below are needed if you want to use `verbaliser.verbalise_class_expression`</span>
     <span class="c1"># They assign labels to classes and properties.</span>
 
-    <span class="c1"># rdf = &#39;http://www.w3.org/1999/02/22-rdf-syntax-ns#&#39;</span>
-    <span class="c1"># rdfs = &#39;http://www.w3.org/2000/01/rdf-schema#&#39;</span>
+    <span class="c1"># rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'</span>
+    <span class="c1"># rdfs = 'http://www.w3.org/2000/01/rdf-schema#'</span>
     <span class="c1"># for element in root.iter():</span>
     <span class="c1">#     resource = None</span>
-    <span class="c1">#     if f&#39;{{{rdf}}}about&#39; in element.attrib:</span>
-    <span class="c1">#         resource = element.attrib[f&#39;{{{rdf}}}about&#39;]</span>
-    <span class="c1">#     elif f&#39;{{{rdf}}}resource&#39; in element.attrib:</span>
-    <span class="c1">#         resource = element.attrib[f&#39;{{{rdf}}}resource&#39;]</span>
+    <span class="c1">#     if f'{{{rdf}}}about' in element.attrib:</span>
+    <span class="c1">#         resource = element.attrib[f'{{{rdf}}}about']</span>
+    <span class="c1">#     elif f'{{{rdf}}}resource' in element.attrib:</span>
+    <span class="c1">#         resource = element.attrib[f'{{{rdf}}}resource']</span>
     <span class="c1">#     if resource is not None:</span>
-    <span class="c1">#         label = resource.split(&#39;#&#39;)</span>
+    <span class="c1">#         label = resource.split('#')</span>
     <span class="c1">#         if len(label) &gt; 1:</span>
-    <span class="c1">#             element.set(f&#39;{{{rdfs}}}label&#39;, label[1])</span>
+    <span class="c1">#             element.set(f'{{{rdfs}}}label', label[1])</span>
     <span class="c1">#         else:</span>
-    <span class="c1">#             element.set(f&#39;{{{rdfs}}}label&#39;, resource)</span>
+    <span class="c1">#             element.set(f'{{{rdfs}}}label', resource)</span>
 
     <span class="n">tree</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">)</span>
 
@@ -517,8 +517,8 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">anytree.dotexport</span><span class="w"> </span><span class="kn">import</span> <span class="n">RenderTreeGraph</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You need to install deeponto to use this feature (pip install deeponto). If you have already, check &quot;</span>
-              <span class="s2">&quot;whether it&#39;s installed properly. </span><span class="se">\n</span><span class="s2">   ----&gt; Error: &quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"You need to install deeponto to use this feature (pip install deeponto). If you have already, check "</span>
+              <span class="s2">"whether it's installed properly. </span><span class="se">\n</span><span class="s2">   ----&gt; Error: "</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">)</span>
         <span class="k">return</span>
@@ -530,24 +530,24 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ce</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">complex_concepts</span><span class="p">):</span>
             <span class="n">tree</span> <span class="o">=</span> <span class="n">verbalizer</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ce</span><span class="p">))</span>
             <span class="n">tree</span><span class="o">.</span><span class="n">render_image</span><span class="p">()</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;range_node.png&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Prediction_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"range_node.png"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Prediction_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.png"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the &quot;</span>
-              <span class="s2">&quot;verbalization possible. Otherwise check the error message: </span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the "</span>
+              <span class="s2">"verbalization possible. Otherwise check the error message: </span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">complex_concepts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No complex classes found!&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"No complex classes found!"</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">complex_concepts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Image generated successfully!&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Image generated successfully!"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Images generated successfully!&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Images generated successfully!"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_file_base_name">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.get_file_base_name">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_file_base_name</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Extract the base name of a file from a given file path, excluding its extension.</span>
 
 <span class="sd">    Parameters:</span>
@@ -557,39 +557,39 @@
 <span class="sd">        str: The base name of the file without its extension.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; get_file_base_name(&quot;/path/to/file.txt&quot;)</span>
-<span class="sd">        &#39;file&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; get_file_base_name("/path/to/file.txt")</span>
+<span class="sd">        'file'</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span></div>
 
 
 
 <div class="viewcode-block" id="prepare_output_path">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.prepare_output_path">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">prepare_output_path</span><span class="p">(</span><span class="n">base_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Create the output directory if it doesn&#39;t exist and return the full path for an output file.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prepare_output_path</span><span class="p">(</span><span class="n">base_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"results"</span><span class="p">,</span> <span class="n">extension</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"csv"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Create the output directory if it doesn't exist and return the full path for an output file.</span>
 
 <span class="sd">    Parameters:</span>
 <span class="sd">        base_name (str): The base name of the output file (without extension).</span>
-<span class="sd">        output_dir (str, optional): Directory where the output file will be saved. Defaults to &quot;results&quot;.</span>
-<span class="sd">        extension (str, optional): File extension to use. Defaults to &quot;.csv&quot;.</span>
+<span class="sd">        output_dir (str, optional): Directory where the output file will be saved. Defaults to "results".</span>
+<span class="sd">        extension (str, optional): File extension to use. Defaults to ".csv".</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The full path to the output file.</span>
 
 <span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; prepare_output_path(&quot;summary&quot;)</span>
-<span class="sd">        &#39;results/summary.csv&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; prepare_output_path("summary")</span>
+<span class="sd">        'results/summary.csv'</span>
+<span class="sd">    """</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">extension</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="assert_class_expression_type">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/utils/static_funcs/index.html#ontolearn.utils.assert_class_expression_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">assert_class_expression_type</span><span class="p">(</span><span class="n">class_expr</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check whether the given object is a valid OWL class expression.</span>
 
 <span class="sd">    This function verifies if the input object is an instance of any recognized OWL class</span>
@@ -604,7 +604,7 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; assert_class_expression_type(some_owl_expression)</span>
 <span class="sd">        True</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">expression_types</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">OWLObjectUnionOf</span><span class="p">,</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">,</span>
         <span class="n">OWLObjectMaxCardinality</span><span class="p">,</span> <span class="n">OWLObjectMinCardinality</span><span class="p">,</span> <span class="n">OWLObjectExactCardinality</span><span class="p">,</span>

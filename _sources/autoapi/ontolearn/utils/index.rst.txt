@@ -40,6 +40,7 @@ Functions
    ontolearn.utils.f1_set_similarity
    ontolearn.utils.concept_reducer
    ontolearn.utils.concept_reducer_properties
+   ontolearn.utils.import_owlready2
    ontolearn.utils.jaccard_similarity
    ontolearn.utils.parametrized_performance_debugger
    ontolearn.utils.performance_debugger
@@ -114,6 +115,11 @@ Package Contents
 
    Returns: List of OWL Restrictions
 
+
+
+.. py:function:: import_owlready2()
+
+   Import ``owlready2`` if installed, else raise a clear, actionable ``ImportError``.
 
 
 .. py:data:: Factory

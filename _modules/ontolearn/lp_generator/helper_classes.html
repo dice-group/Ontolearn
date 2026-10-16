@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -120,17 +120,18 @@
 <div class="viewcode-block" id="ConceptDescriptionGenerator">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/helper_classes/index.html#ontolearn.lp_generator.helper_classes.ConceptDescriptionGenerator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConceptDescriptionGenerator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Learning problem generator.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">,</span> <span class="n">refinement_operator</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                 <span class="n">num_sub_roots</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span>
+                 <span class="n">num_sub_roots</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">refinement_operator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="n">depth</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_sub_roots</span> <span class="o">=</span> <span class="n">num_sub_roots</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ConceptDescriptionGenerator.apply_rho">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/helper_classes/index.html#ontolearn.lp_generator.helper_classes.ConceptDescriptionGenerator.apply_rho">[docs]</a>
@@ -144,10 +145,10 @@
         <span class="n">roots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_rho</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
         <span class="n">Refinements</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="n">Refinements</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;|Thing refinements|: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roots</span><span class="p">))</span>
-        <span class="n">roots_sample</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">roots</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sub_roots</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Size of sample: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roots_sample</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">root</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">roots_sample</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Refining roots...&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"|Thing refinements|: "</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roots</span><span class="p">))</span>
+        <span class="n">roots_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">roots</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sub_roots</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Size of sample: "</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">roots_sample</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">root</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">roots_sample</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Refining roots..."</span><span class="p">):</span>
             <span class="n">Refinements</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_rho</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">Refinements</span></div>
 </div>
@@ -157,18 +158,19 @@
 <div class="viewcode-block" id="KB2Data">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.helper_classes.KB2Data">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KB2Data</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.</span>
 <span class="sd">    A refinement operator is used to generate a large number of concepts, from which we filter and retain the shortest</span>
 <span class="sd">    non-redundant concepts. We export each concept and its instances (eventually positive and negative examples) into</span>
 <span class="sd">    a json file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_num_lps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">beyond_alc</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
                  <span class="n">max_child_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">refinement_expressivity</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
                  <span class="n">downsample_refinements</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sample_fillers_count</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_sub_roots</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
-                 <span class="n">min_num_pos_examples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">knowledge_base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_pos_neg_examples_per_lp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                 <span class="n">min_num_pos_examples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">knowledge_base</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_pos_neg_examples_per_lp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args</span>
 <span class="sd">        - kb_path: path to the owl file representing the knowledge base/ontology</span>
 <span class="sd">        - storage_path: directory in which to store the data to be generated. Not the directory needs not to exists, it would be created automatically</span>
@@ -177,9 +179,11 @@
 <span class="sd">        - max_child_length: the maximum length of refinements to be generated for a given node</span>
 <span class="sd">        - depth, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated</span>
 <span class="sd">        - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity&lt;1, this must be set to True</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        - random_seed: seed used for every random sampling step performed while generating data (independent of the global `random` module state)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">knowledge_base</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">path</span> <span class="o">==</span> <span class="n">knowledge_base</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;Path argument and knowledge base&#39;s path do not match&quot;</span>
+            <span class="k">assert</span> <span class="n">path</span> <span class="o">==</span> <span class="n">knowledge_base</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">"Path argument and knowledge base's path do not match"</span>
         <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">KnowledgeBase</span><span class="p">):</span>
@@ -187,11 +191,11 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">TripleStore</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No knowledge base provided or path provided. Please provide a value to &#39;path&#39; or &quot;</span>
-                             <span class="s2">&quot;&#39;knowledge_base&#39; arguments&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No knowledge base provided or path provided. Please provide a value to 'path' or "</span>
+                             <span class="s2">"'knowledge_base' arguments"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">storage_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Storage path must be provided. Please provide a value to &#39;storage_path&#39;&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)]</span><span class="si">}</span><span class="s1">/LPs/&#39;</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"Storage path must be provided. Please provide a value to 'storage_path'"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)]</span><span class="si">}</span><span class="s1">/LPs/'</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="n">storage_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_num_lps</span> <span class="o">=</span> <span class="n">max_num_lps</span>
@@ -205,8 +209,8 @@
         <span class="k">if</span> <span class="n">max_pos_neg_examples_per_lp</span><span class="p">:</span>
             <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_count</span><span class="p">()</span>
             <span class="k">assert</span> <span class="n">max_pos_neg_examples_per_lp</span> <span class="o">&lt;=</span> <span class="n">count</span><span class="p">,</span> \
-                <span class="p">(</span><span class="s2">&quot;The maximum number of examples per learning problem cannot be greater &quot;</span>
-                 <span class="s2">&quot;than the number of individuals in the knowledge base&quot;</span><span class="p">)</span>
+                <span class="p">(</span><span class="s2">"The maximum number of examples per learning problem cannot be greater "</span>
+                 <span class="s2">"than the number of individuals in the knowledge base"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span> <span class="o">=</span> <span class="n">max_pos_neg_examples_per_lp</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_optimal_number_of_examples</span><span class="p">()</span>
@@ -221,7 +225,8 @@
                                     <span class="n">use_card_restrictions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                     <span class="n">use_numeric_datatypes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_time_datatypes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                     <span class="n">use_boolean_datatype</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                    <span class="n">expressivity</span><span class="o">=</span><span class="n">refinement_expressivity</span><span class="p">)</span>
+                                    <span class="n">expressivity</span><span class="o">=</span><span class="n">refinement_expressivity</span><span class="p">,</span>
+                                    <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rho</span> <span class="o">=</span> <span class="n">ExpressRefinement</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span> <span class="n">max_child_length</span><span class="o">=</span><span class="n">max_child_length</span><span class="p">,</span>
                                     <span class="n">sample_fillers_count</span><span class="o">=</span><span class="n">sample_fillers_count</span><span class="p">,</span>
@@ -229,10 +234,12 @@
                                     <span class="n">use_card_restrictions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                     <span class="n">use_numeric_datatypes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_time_datatypes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                                     <span class="n">use_boolean_datatype</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                    <span class="n">expressivity</span><span class="o">=</span><span class="n">refinement_expressivity</span><span class="p">)</span>
+                                    <span class="n">expressivity</span><span class="o">=</span><span class="n">refinement_expressivity</span><span class="p">,</span>
+                                    <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lp_gen</span> <span class="o">=</span> <span class="n">ConceptDescriptionGenerator</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">,</span> <span class="n">refinement_operator</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
                                                   <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
-                                                  <span class="n">num_sub_roots</span><span class="o">=</span><span class="n">num_sub_roots</span><span class="p">)</span>
+                                                  <span class="n">num_sub_roots</span><span class="o">=</span><span class="n">num_sub_roots</span><span class="p">,</span>
+                                                  <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">)</span>
 
 <div class="viewcode-block" id="KB2Data.find_optimal_number_of_examples">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.helper_classes.KB2Data.find_optimal_number_of_examples">[docs]</a>
@@ -246,19 +253,19 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.helper_classes.KB2Data.generate_descriptions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"#"</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Started generating data on the &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span>
-            <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; knowledge base&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;#&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Started generating data on the "</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span>
+            <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">" knowledge base"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"#"</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">()</span>
         <span class="n">All_individuals</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">())</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of individuals in the knowledge base: </span><span class="si">{}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">All_individuals</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Number of individuals in the knowledge base: </span><span class="si">{}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">All_individuals</span><span class="p">)))</span>
         <span class="n">Concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lp_gen</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
         <span class="n">non_redundancy_hash_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">show_some_length</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">Concepts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span>
-                            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Filtering process...&quot;</span><span class="p">):</span>
+                            <span class="n">desc</span><span class="o">=</span><span class="s2">"Filtering process..."</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span> <span class="ow">in</span> <span class="n">non_redundancy_hash_map</span> <span class="ow">and</span> \
                     <span class="bp">self</span><span class="o">.</span><span class="n">min_num_pos_examples</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_count</span><span class="p">(</span><span class="n">concept</span><span class="p">):</span>
                 <span class="n">non_redundancy_hash_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">concept</span><span class="p">)]</span> <span class="o">=</span> <span class="n">concept</span>
@@ -266,13 +273,13 @@
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_redundancy_hash_map</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_num_lps</span><span class="p">:</span>
                 <span class="k">break</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Concepts generation done!</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of atomic concepts: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_concept_names</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Longest concept length: &quot;</span><span class="p">,</span>
-              <span class="nb">max</span><span class="p">({</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="p">[</span><span class="n">concept_len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">non_redundancy_hash_map</span><span class="o">.</span><span class="n">values</span><span class="p">()]}),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total number of concepts: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_redundancy_hash_map</span><span class="p">),</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Concepts generation done!</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Number of atomic concepts: "</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_concept_names</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Longest concept length: "</span><span class="p">,</span>
+              <span class="nb">max</span><span class="p">({</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="p">[</span><span class="n">concept_len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">non_redundancy_hash_map</span><span class="o">.</span><span class="n">values</span><span class="p">()]}),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Total number of concepts: "</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_redundancy_hash_map</span><span class="p">),</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_concepts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">non_redundancy_hash_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data generation completed&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Data generation completed"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
@@ -292,8 +299,8 @@
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">):</span>
             <span class="n">num_pos_ex</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
             <span class="n">num_neg_ex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_examples</span> <span class="o">-</span> <span class="n">num_pos_ex</span>
-        <span class="n">positive</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">num_pos_ex</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)))</span>
-        <span class="n">negative</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">neg</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">num_neg_ex</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)))</span>
+        <span class="n">positive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">num_pos_ex</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)))</span>
+        <span class="n">negative</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">neg</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">num_neg_ex</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">positive</span><span class="p">,</span> <span class="n">negative</span></div>
 
 
@@ -301,22 +308,22 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.helper_classes.KB2Data.save_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Sample examples and save data...&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_concepts</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Sample examples and save data..."</span><span class="p">):</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">concept</span><span class="p">))</span>
             <span class="n">neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">())</span> <span class="o">-</span> <span class="n">pos</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]</span>
-            <span class="n">neg</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">]</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">]</span>
+            <span class="n">neg</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">]</span>
             <span class="n">positive</span><span class="p">,</span> <span class="n">negative</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_examples</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
             <span class="n">concept_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dl_syntax_renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">concept</span><span class="o">.</span><span class="n">get_nnf</span><span class="p">())</span>
-            <span class="n">data</span><span class="p">[</span><span class="n">concept_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;positive examples&#39;</span><span class="p">:</span> <span class="n">positive</span><span class="p">,</span> <span class="s1">&#39;negative examples&#39;</span><span class="p">:</span> <span class="n">negative</span><span class="p">,</span>
-                                  <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">concept</span><span class="o">.</span><span class="n">get_nnf</span><span class="p">())}</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">concept_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'positive examples'</span><span class="p">:</span> <span class="n">positive</span><span class="p">,</span> <span class="s1">'negative examples'</span><span class="p">:</span> <span class="n">negative</span><span class="p">,</span>
+                                  <span class="s1">'length'</span><span class="p">:</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">concept</span><span class="o">.</span><span class="n">get_nnf</span><span class="p">())}</span>
         <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="si">}</span><span class="s1">/LPs.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_train</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="si">}</span><span class="s1">/LPs.json'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_train</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_train</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Data saved at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Data saved at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

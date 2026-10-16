@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -109,53 +109,37 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Set</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClassExpression</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncodedLearningProblem</span><span class="p">,</span> <span class="n">AbstractScorer</span><span class="p">,</span> <span class="n">AbstractKnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">F1</span> <span class="k">as</span> <span class="n">_F1</span><span class="p">,</span> <span class="n">Accuracy</span> <span class="k">as</span> <span class="n">_Accuracy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.search</span><span class="w"> </span><span class="kn">import</span> <span class="n">EvaluatedConcept</span>
 
 
-<div class="viewcode-block" id="f1">
-<a class="viewcode-back" href="../../autoapi/ontolearn/quality_funcs/index.html#ontolearn.quality_funcs.f1">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">f1</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_tp_tn_fp_fn</span><span class="p">(</span><span class="n">individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neg</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
 
     <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
     <span class="n">tn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
-
     <span class="n">fp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
     <span class="n">fn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">tp</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fn</span>
 
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">recall</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span>
 
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">precision</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span>
-
-    <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">recall</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span>
-
-    <span class="n">f_1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">((</span><span class="n">precision</span> <span class="o">*</span> <span class="n">recall</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">f_1</span></div>
+<div class="viewcode-block" id="f1">
+<a class="viewcode-back" href="../../autoapi/ontolearn/quality_funcs/index.html#ontolearn.quality_funcs.f1">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f1</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">):</span>
+    <span class="n">tp</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fn</span> <span class="o">=</span> <span class="n">_tp_tn_fp_fn</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
+    <span class="n">applicable</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">_F1</span><span class="p">()</span><span class="o">.</span><span class="n">score2</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">tn</span><span class="o">=</span><span class="n">tn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">score</span> <span class="k">if</span> <span class="n">applicable</span> <span class="k">else</span> <span class="mi">0</span></div>
 
 
 
 <div class="viewcode-block" id="acc">
 <a class="viewcode-back" href="../../autoapi/ontolearn/quality_funcs/index.html#ontolearn.quality_funcs.acc">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">acc</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Set</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Set</span><span class="p">):</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neg</span><span class="p">,</span> <span class="nb">set</span><span class="p">)</span>
-
-    <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
-    <span class="n">tn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
-
-    <span class="n">fp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
-    <span class="n">fn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">individuals</span><span class="p">))</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">tn</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">tn</span> <span class="o">+</span> <span class="n">fp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span></div>
+    <span class="n">tp</span><span class="p">,</span> <span class="n">tn</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">fn</span> <span class="o">=</span> <span class="n">_tp_tn_fp_fn</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">_Accuracy</span><span class="p">()</span><span class="o">.</span><span class="n">score2</span><span class="p">(</span><span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">fn</span><span class="p">,</span> <span class="n">fp</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">tn</span><span class="o">=</span><span class="n">tn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">score</span></div>
 
 
 
@@ -163,7 +147,7 @@
 <a class="viewcode-back" href="../../autoapi/ontolearn/quality_funcs/index.html#ontolearn.quality_funcs.evaluate_concept">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_concept</span><span class="p">(</span><span class="n">kb</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">,</span> <span class="n">concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">quality_func</span><span class="p">:</span> <span class="n">AbstractScorer</span><span class="p">,</span>
                      <span class="n">encoded_learning_problem</span><span class="p">:</span> <span class="n">EncodedLearningProblem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluatedConcept</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.</span>
+<span class="w">    </span><span class="sd">"""Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get</span>
@@ -175,7 +159,7 @@
 <span class="sd">        encoded_learning_problem: The encoded learning problem.</span>
 <span class="sd">    Return:</span>
 <span class="sd">        The evaluated concept.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">e</span> <span class="o">=</span> <span class="n">EvaluatedConcept</span><span class="p">()</span>
     <span class="n">e</span><span class="o">.</span><span class="n">inds</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">concept</span><span class="p">)</span>

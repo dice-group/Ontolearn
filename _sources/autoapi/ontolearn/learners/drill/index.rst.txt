@@ -4,6 +4,14 @@ ontolearn.learners.drill
 .. py:module:: ontolearn.learners.drill
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.drill.logger
+
+
 Classes
 -------
 
@@ -18,7 +26,9 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10)
+.. py:data:: logger
+
+.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10, random_state: int = None)
 
    Bases: :py:obj:`ontolearn.learners.base.RefinementBasedConceptLearner`
 
@@ -37,6 +47,11 @@ Module Contents
 
 
    .. py:attribute:: learning_problem
+      :value: None
+
+
+
+   .. py:attribute:: random_state
       :value: None
 
 
@@ -446,8 +461,6 @@ Module Contents
 
 
    .. py:attribute:: instance_embeddings
-      :value: None
-
 
 
    .. py:attribute:: reward_func

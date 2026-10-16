@@ -143,7 +143,7 @@ We consider that you have already an OWL 2.0 ontology locally (for example a fil
 <p>The simplest way is to use the path of your local ontology as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
 
-<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;file://KGs/Family/father.owl&quot;</span><span class="p">)</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"file://KGs/Family/father.owl"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>What happens in the background is that the ontology located in this path will be loaded
@@ -168,7 +168,7 @@ It can be done as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLClass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.iri</span><span class="w"> </span><span class="kn">import</span> <span class="n">IRI</span>
 
-<span class="n">iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="p">(</span><span class="s1">&#39;http://example.com/father#&#39;</span><span class="p">,</span> <span class="s1">&#39;Father&#39;</span><span class="p">)</span>
+<span class="n">iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="p">(</span><span class="s1">'http://example.com/father#'</span><span class="p">,</span> <span class="s1">'Father'</span><span class="p">)</span>
 <span class="n">father_concept</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">iri</span><span class="p">)</span>
 <span class="n">concepts_to_ignore</span> <span class="o">=</span> <span class="p">{</span><span class="n">father_concept</span><span class="p">}</span>  <span class="c1"># you can add more than 1</span>
 
@@ -189,8 +189,8 @@ We cover different ways of accessing them.</p>
 are classified by an <a class="reference external" href="https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/class_expression/index.html#owlapy.class_expression.class_expression.OWLClassExpression">OWLClassExpression</a>. As a class expression, we will simply use the
 concept ‘male’.</p>
 <!--pytest-codeblocks:cont-->
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">NS</span> <span class="o">=</span> <span class="s1">&#39;http://example.com/father#&#39;</span>
-<span class="n">male_concept</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span><span class="s1">&#39;male&#39;</span><span class="p">))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">NS</span> <span class="o">=</span> <span class="s1">'http://example.com/father#'</span>
+<span class="n">male_concept</span> <span class="o">=</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">IRI</span><span class="p">(</span><span class="n">NS</span><span class="p">,</span><span class="s1">'male'</span><span class="p">))</span>
 
 <span class="n">male_individuals</span> <span class="o">=</span> <span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">(</span><span class="n">male_concept</span><span class="p">)</span>
 </pre></div>
@@ -272,14 +272,14 @@ knowledge base:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontosample.classic_samplers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomNodeSampler</span>
 
 <span class="c1"># 1. Initialize KnowledgeBase object using the path of the ontology</span>
-<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="p">)</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span><span class="p">)</span>
 
 <span class="c1"># 2. Initialize the sampler and generate the sample</span>
 <span class="n">sampler</span> <span class="o">=</span> <span class="n">RandomNodeSampler</span><span class="p">(</span><span class="n">kb</span><span class="p">)</span>
 <span class="n">sampled_kb</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span> <span class="c1"># will generate a sample with 30 nodes</span>
 
 <span class="c1"># 3. Save the sampled ontology</span>
-<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;some_name&quot;</span><span class="p">)</span>
+<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"some_name"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Here is another example where this time we use an LPC sampler:</p>
@@ -288,15 +288,15 @@ knowledge base:</p>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
 <span class="c1"># 0. Load json that stores the learning problem</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/uncle_lp2.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"examples/uncle_lp2.json"</span><span class="p">)</span> <span class="k">as</span> <span class="n">json_file</span><span class="p">:</span>
     <span class="n">examples</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
 
 <span class="c1"># 1. Initialize KnowledgeBase object using the path of the ontology</span>
-<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="p">)</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">KnowledgeBase</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span><span class="p">)</span>
 
 <span class="c1"># 2. Initialize learning problem (required only for LPF and LPC samplers)</span>
-<span class="n">pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">&#39;positive_examples&#39;</span><span class="p">]))))</span>
-<span class="n">neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">&#39;negative_examples&#39;</span><span class="p">]))))</span>
+<span class="n">pos</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">'positive_examples'</span><span class="p">]))))</span>
+<span class="n">neg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">OWLNamedIndividual</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">,</span> <span class="nb">set</span><span class="p">(</span><span class="n">examples</span><span class="p">[</span><span class="s1">'negative_examples'</span><span class="p">]))))</span>
 <span class="n">lp</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span>
 
 <span class="c1"># 3. Initialize the sampler and generate the sample</span>
@@ -304,7 +304,7 @@ knowledge base:</p>
 <span class="n">sampled_kb</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">nodes_number</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span><span class="n">jump_prob</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
 
 <span class="c1"># 4. Save the sampled ontology</span>
-<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;some_other_name&quot;</span><span class="p">)</span>
+<span class="n">sampler</span><span class="o">.</span><span class="n">save_sample</span><span class="p">(</span><span class="n">kb</span><span class="o">=</span><span class="n">sampled_kb</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"some_other_name"</span><span class="p">)</span>
 </pre></div>
 </div>
 <blockquote>
@@ -332,7 +332,7 @@ already have one and just want to try things out, see <a class="reference intern
 concept learner:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.triple_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TripleStore</span>
 
-<span class="n">kb</span> <span class="o">=</span> <span class="n">TripleStore</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;http://your_domain/some_path/sparql&quot;</span><span class="p">)</span>
+<span class="n">kb</span> <span class="o">=</span> <span class="n">TripleStore</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">"http://your_domain/some_path/sparql"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Notice that the triplestore endpoint is enough to initialize an object of <code class="docutils literal notranslate"><span class="pre">TripleStore</span></code>.

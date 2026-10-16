@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;ALCSAT Learner - SAT-based ALC concept learning.&quot;&quot;&quot;</span>
+<span class="sd">"""ALCSAT Learner - SAT-based ALC concept learning."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
@@ -128,7 +128,7 @@
 <div class="viewcode-block" id="ALCSAT">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.alcsat.ALCSAT">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ALCSAT</span><span class="p">(</span><span class="n">SATBaseLearner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    ALCSAT: SAT-based ALC concept learner.</span>
 <span class="sd">    </span>
 <span class="sd">    This learner uses SAT solvers to find ALC concept expressions that fit positive and negative examples.</span>
@@ -150,11 +150,11 @@
 <span class="sd">        _structure (Structure): Internal structure representation of the knowledge base.</span>
 <span class="sd">        _ind_to_owl (dict): Mapping from internal individual indices to OWL individuals.</span>
 <span class="sd">        _owl_to_ind (dict): Mapping from OWL individuals to internal indices.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;max_concept_size&#39;</span><span class="p">,</span> <span class="s1">&#39;start_concept_size&#39;</span><span class="p">,</span> <span class="s1">&#39;operators&#39;</span><span class="p">,</span> <span class="s1">&#39;tree_templates&#39;</span><span class="p">,</span> <span class="s1">&#39;type_encoding&#39;</span><span class="p">)</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'max_concept_size'</span><span class="p">,</span> <span class="s1">'start_concept_size'</span><span class="p">,</span> <span class="s1">'operators'</span><span class="p">,</span> <span class="s1">'tree_templates'</span><span class="p">,</span> <span class="s1">'type_encoding'</span><span class="p">)</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;alcsat&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'alcsat'</span>
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">,</span>
@@ -165,19 +165,19 @@
                  <span class="n">operators</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">tree_templates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">type_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize ALCSAT learner.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            knowledge_base: The knowledge base to use for learning.</span>
-<span class="sd">            reasoner: Optional reasoner (if None, uses the KB&#39;s reasoner).</span>
+<span class="sd">            reasoner: Optional reasoner (if None, uses the KB's reasoner).</span>
 <span class="sd">            max_runtime: Maximum allowed runtime in seconds.</span>
 <span class="sd">            max_concept_size: Maximum concept tree depth to search. Defaults to 10.</span>
 <span class="sd">            start_concept_size: Starting concept size for incremental search. Defaults to 1.</span>
 <span class="sd">            operators: Set of ALC operators to use. Defaults to {NEG, AND, OR, EX, ALL}.</span>
 <span class="sd">            tree_templates: Whether to use tree template optimization. Defaults to True.</span>
 <span class="sd">            type_encoding: Whether to use type encoding optimization. Defaults to True.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">reasoner</span><span class="p">,</span> <span class="n">max_runtime</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">max_concept_size</span> <span class="o">=</span> <span class="n">max_concept_size</span>
@@ -187,7 +187,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">type_encoding</span> <span class="o">=</span> <span class="n">type_encoding</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_tree_to_owl_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">STreeNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert a syntax tree from FittingALC to an OWL class expression.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
@@ -195,70 +195,70 @@
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            OWL class expression.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         
         <span class="n">node_label</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         
         <span class="c1"># Get base IRI for the ontology</span>
         <span class="n">onto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">onto</span><span class="p">,</span> <span class="s1">&#39;get_ontology_iri&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">onto</span><span class="p">,</span> <span class="s1">'get_ontology_iri'</span><span class="p">):</span>
             <span class="n">base_iri</span> <span class="o">=</span> <span class="n">onto</span><span class="o">.</span><span class="n">get_ontology_iri</span><span class="p">()</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Fallback: try to extract from any class IRI</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">some_class</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">onto</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">()))</span>
-                <span class="n">base_iri</span> <span class="o">=</span> <span class="n">some_class</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">base_iri</span> <span class="o">=</span> <span class="n">some_class</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">as_str</span><span class="p">()</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">'#'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-                <span class="n">base_iri</span> <span class="o">=</span> <span class="s2">&quot;http://example.org/ontology&quot;</span>
+                <span class="n">base_iri</span> <span class="o">=</span> <span class="s2">"http://example.org/ontology"</span>
 
         <span class="c1"># Handle atomic concepts</span>
-        <span class="k">if</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;TOP&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"TOP"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
-        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;BOT&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"BOT"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">OWLNothing</span>
-        <span class="k">elif</span> <span class="n">node_label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ex.&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">node_label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"ex."</span><span class="p">):</span>
             <span class="c1"># Existential restriction</span>
             <span class="n">role_name</span> <span class="o">=</span> <span class="n">node_label</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
-            <span class="n">prop</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">role_name</span><span class="p">))</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="n">role_name</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_to_owl_expression</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">return</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">filler</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
-        <span class="k">elif</span> <span class="n">node_label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;all.&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="n">node_label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"all."</span><span class="p">):</span>
             <span class="c1"># Universal restriction</span>
             <span class="n">role_name</span> <span class="o">=</span> <span class="n">node_label</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
-            <span class="n">prop</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">role_name</span><span class="p">))</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">OWLObjectProperty</span><span class="p">(</span><span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="n">role_name</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_to_owl_expression</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">return</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">filler</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
-        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;NEG&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"NEG"</span><span class="p">:</span>
             <span class="c1"># Negation</span>
             <span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
                 <span class="n">child_expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_to_owl_expression</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">return</span> <span class="n">OWLObjectComplementOf</span><span class="p">(</span><span class="n">child_expr</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
-        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;AND&quot;</span> <span class="ow">or</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;⊓&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"AND"</span> <span class="ow">or</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"⊓"</span><span class="p">:</span>
             <span class="c1"># Conjunction</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">operands</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_tree_to_owl_expression</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
                 <span class="k">return</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">(</span><span class="n">operands</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
-        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;OR&quot;</span> <span class="ow">or</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">&quot;⊔&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"OR"</span> <span class="ow">or</span> <span class="n">node_label</span> <span class="o">==</span> <span class="s2">"⊔"</span><span class="p">:</span>
             <span class="c1"># Disjunction</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">operands</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_tree_to_owl_expression</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">]</span>
                 <span class="k">return</span> <span class="n">OWLObjectUnionOf</span><span class="p">(</span><span class="n">operands</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLThing</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Assume it&#39;s a concept name</span>
-            <span class="n">concept_iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">node_label</span><span class="p">)</span>
+            <span class="c1"># Assume it's a concept name</span>
+            <span class="n">concept_iri</span> <span class="o">=</span> <span class="n">IRI</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">base_iri</span> <span class="o">+</span> <span class="s2">"#"</span> <span class="o">+</span> <span class="n">node_label</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">OWLClass</span><span class="p">(</span><span class="n">concept_iri</span><span class="p">)</span>
     
 <div class="viewcode-block" id="ALCSAT.fit">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.alcsat.ALCSAT.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lp</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find ALC concept expressions that explain positive and negative examples.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
@@ -266,7 +266,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>

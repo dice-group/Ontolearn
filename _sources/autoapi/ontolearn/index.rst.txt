@@ -43,7 +43,6 @@ Submodules
    /autoapi/ontolearn/scripts/index
    /autoapi/ontolearn/search/index
    /autoapi/ontolearn/semantic_caching/index
-   /autoapi/ontolearn/tentris/index
    /autoapi/ontolearn/triple_store/index
    /autoapi/ontolearn/utils/index
    /autoapi/ontolearn/value_splitter/index
@@ -62,6 +61,6 @@ Package Contents
 ----------------
 
 .. py:data:: __version__
-   :value: '0.10.0'
+   :value: '0.11.0'
 
 

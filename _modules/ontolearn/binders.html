@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;Pyhon binders of other concept learners.&quot;&quot;&quot;</span>
+<span class="sd">"""Pyhon binders of other concept learners."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
@@ -134,15 +134,15 @@
 <div class="viewcode-block" id="DLLearnerBinder">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DLLearnerBinder</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    dl-learner python binder.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kb_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">max_runtime</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">binary_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;binary_path must be given </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">binary_path</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;binary path </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span>
-        <span class="k">assert</span> <span class="n">model</span><span class="p">,</span> <span class="s2">&quot;model must be given&quot;</span>
-        <span class="k">assert</span> <span class="n">kb_path</span><span class="p">,</span> <span class="s2">&quot;kb_path must be given&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">binary_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kb_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="s2">"."</span><span class="p">,</span> <span class="n">max_runtime</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">binary_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"binary_path must be given </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">binary_path</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"binary path </span><span class="si">{</span><span class="n">binary_path</span><span class="si">}</span><span class="s2"> does not exist"</span>
+        <span class="k">assert</span> <span class="n">model</span><span class="p">,</span> <span class="s2">"model must be given"</span>
+        <span class="k">assert</span> <span class="n">kb_path</span><span class="p">,</span> <span class="s2">"kb_path must be given"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">binary_path</span> <span class="o">=</span> <span class="n">binary_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kb_path</span> <span class="o">=</span> <span class="n">kb_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">model</span>
@@ -157,7 +157,7 @@
 <div class="viewcode-block" id="DLLearnerBinder.write_dl_learner_config">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.write_dl_learner_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_dl_learner_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">neg</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes config file for dl-learner.</span>
+<span class="w">        </span><span class="sd">"""Writes config file for dl-learner.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            pos: A list of URIs of individuals indicating positive examples in concept learning problem.</span>
@@ -165,83 +165,83 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Path of generated config file.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neg</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
 
         <span class="n">Text</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="n">pos_string</span> <span class="o">=</span> <span class="s2">&quot;{ &quot;</span>
-        <span class="n">neg_string</span> <span class="o">=</span> <span class="s2">&quot;{ &quot;</span>
+        <span class="n">pos_string</span> <span class="o">=</span> <span class="s2">"{ "</span>
+        <span class="n">neg_string</span> <span class="o">=</span> <span class="s2">"{ "</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pos</span><span class="p">:</span>
-            <span class="n">pos_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
-                <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">,&quot;</span>
+            <span class="n">pos_string</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
+                <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">,"</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">neg</span><span class="p">:</span>
-            <span class="n">neg_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
-                <span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\&quot;</span><span class="s2">,&quot;</span>
+            <span class="n">neg_string</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span>
+                <span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\"</span><span class="s2">,"</span>
 
         <span class="n">pos_string</span> <span class="o">=</span> <span class="n">pos_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">pos_string</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
+        <span class="n">pos_string</span> <span class="o">+=</span> <span class="s2">"}"</span>
 
         <span class="n">neg_string</span> <span class="o">=</span> <span class="n">neg_string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">neg_string</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
+        <span class="n">neg_string</span> <span class="o">+=</span> <span class="s2">"}"</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;rendering = </span><span class="se">\&quot;</span><span class="s2">dlsyntax</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;// knowledge source definition&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"rendering = </span><span class="se">\"</span><span class="s2">dlsyntax</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"// knowledge source definition"</span><span class="p">)</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;cli.type = </span><span class="se">\&quot;</span><span class="s2">org.dllearner.cli.CLI</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ks.type = </span><span class="se">\&quot;</span><span class="s2">OWL File</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"cli.type = </span><span class="se">\"</span><span class="s2">org.dllearner.cli.CLI</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"ks.type = </span><span class="se">\"</span><span class="s2">OWL File</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;// knowledge source definition&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"// knowledge source definition"</span><span class="p">)</span>
         <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="s2">&quot;ks.fileName = </span><span class="se">\&quot;</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb_path</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\&quot;</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;reasoner.type = </span><span class="se">\&quot;</span><span class="s2">closed world reasoner</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;reasoner.sources = { ks }&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="s2">"ks.fileName = </span><span class="se">\"</span><span class="s2">"</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb_path</span> <span class="o">+</span> <span class="s1">'</span><span class="se">\"</span><span class="s1">'</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"reasoner.type = </span><span class="se">\"</span><span class="s2">closed world reasoner</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"reasoner.sources = { ks }"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;lp.type = </span><span class="se">\&quot;</span><span class="s2">PosNegLPStandard</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;accuracyMethod.type = </span><span class="se">\&quot;</span><span class="s2">fmeasure</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;lp.positiveExamples =&quot;</span> <span class="o">+</span> <span class="n">pos_string</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;lp.negativeExamples =&quot;</span> <span class="o">+</span> <span class="n">neg_string</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.writeSearchTree = </span><span class="se">\&quot;</span><span class="s2">true</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"lp.type = </span><span class="se">\"</span><span class="s2">PosNegLPStandard</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"accuracyMethod.type = </span><span class="se">\"</span><span class="s2">fmeasure</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"lp.positiveExamples ="</span> <span class="o">+</span> <span class="n">pos_string</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"lp.negativeExamples ="</span> <span class="o">+</span> <span class="n">neg_string</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.writeSearchTree = </span><span class="se">\"</span><span class="s2">true</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;op.type = </span><span class="se">\&quot;</span><span class="s2">rho</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;op.useNumericDatatypes = </span><span class="se">\&quot;</span><span class="s2">false</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;op.useCardinalityRestrictions = </span><span class="se">\&quot;</span><span class="s2">false</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"op.type = </span><span class="se">\"</span><span class="s2">rho</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"op.useNumericDatatypes = </span><span class="se">\"</span><span class="s2">false</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"op.useCardinalityRestrictions = </span><span class="se">\"</span><span class="s2">false</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;celoe&#39;</span><span class="p">:</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.type = </span><span class="se">\&quot;</span><span class="s2">celoe</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.stopOnFirstDefinition = </span><span class="se">\&quot;</span><span class="s2">true</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;ocel&#39;</span><span class="p">:</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.type = </span><span class="se">\&quot;</span><span class="s2">ocel</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.showBenchmarkInformation = </span><span class="se">\&quot;</span><span class="s2">true</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;eltl&#39;</span><span class="p">:</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.type = </span><span class="se">\&quot;</span><span class="s2">eltl</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.maxNrOfResults = </span><span class="se">\&quot;</span><span class="s2">1</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.stopOnFirstDefinition = </span><span class="se">\&quot;</span><span class="s2">true</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'celoe'</span><span class="p">:</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.type = </span><span class="se">\"</span><span class="s2">celoe</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.stopOnFirstDefinition = </span><span class="se">\"</span><span class="s2">true</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'ocel'</span><span class="p">:</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.type = </span><span class="se">\"</span><span class="s2">ocel</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.showBenchmarkInformation = </span><span class="se">\"</span><span class="s2">true</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'eltl'</span><span class="p">:</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.type = </span><span class="se">\"</span><span class="s2">eltl</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.maxNrOfResults = </span><span class="se">\"</span><span class="s2">1</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.stopOnFirstDefinition = </span><span class="se">\"</span><span class="s2">true</span><span class="se">\"</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong algorithm chosen.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Wrong algorithm chosen.'</span><span class="p">)</span>
 
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;alg.maxExecutionTimeInSeconds = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">))</span>
-        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"alg.maxExecutionTimeInSeconds = "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">))</span>
+        <span class="n">Text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="n">pathToConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S_</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.conf&#39;</span>
+        <span class="n">pathToConfig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">+</span> <span class="s1">'/'</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">'_'</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">_%H%M%S_</span><span class="si">%f</span><span class="s2">"</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'.conf'</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pathToConfig</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">wb</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pathToConfig</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">wb</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Text</span><span class="p">:</span>
-                <span class="n">wb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
-                <span class="n">wb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+                <span class="n">wb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span>
+                <span class="n">wb</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">pathToConfig</span></div>
 
 
 <div class="viewcode-block" id="DLLearnerBinder.fit">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lp</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">max_runtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit dl-learner model on a given positive and negative examples.</span>
+<span class="w">        </span><span class="sd">"""Fit dl-learner model on a given positive and negative examples.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            lp:PosNegLPStandard</span>
@@ -251,7 +251,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">max_runtime</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span>
 
@@ -261,7 +261,7 @@
         <span class="n">res</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">binary_path</span><span class="p">,</span> <span class="n">pathToConfig</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">total_runtime</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">total_runtime</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">best_predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_dl_learner_output</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(),</span> <span class="n">pathToConfig</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">best_predictions</span><span class="p">[</span><span class="s1">&#39;Runtime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_runtime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_predictions</span><span class="p">[</span><span class="s1">'Runtime'</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_runtime</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
@@ -270,7 +270,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PredictedConcept</span><span class="p">:</span>
         <span class="c1"># @ TODO:</span>
         <span class="c1"># Convert string to OWL class object</span>
-        <span class="c1"># {&#39;Prediction&#39;: &#39;Child&#39;, &#39;Accuracy&#39;: 1.0, &#39;F-measure&#39;: 1.0, &#39;NumClassTested&#39;: 3, &#39;Runtime&#39;: 3.502}</span>
+        <span class="c1"># {'Prediction': 'Child', 'Accuracy': 1.0, 'F-measure': 1.0, 'NumClassTested': 3, 'Runtime': 3.502}</span>
 
         <span class="k">return</span> <span class="n">PredictedConcept</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">best_hypothesis</span><span class="p">())</span></div>
 
@@ -278,29 +278,29 @@
 <div class="viewcode-block" id="DLLearnerBinder.best_hypothesis">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.best_hypothesis">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">best_hypothesis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Return predictions if exists.</span>
+<span class="w">        </span><span class="sd">""" Return predictions if exists.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            The prediction or the string &#39;No prediction found.&#39;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            The prediction or the string 'No prediction found.'</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_predictions</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_predictions</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No prediction found.&#39;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">'No prediction found.'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DLLearnerBinder.parse_dl_learner_output">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.parse_dl_learner_output">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parse_dl_learner_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_of_dl_learner</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the output received from executing dl-learner.</span>
+<span class="w">        </span><span class="sd">"""Parse the output received from executing dl-learner.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            output_of_dl_learner: The output of dl-learner to parse.</span>
 <span class="sd">            file_path: The file path to store the output.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A dictionary of {&#39;Prediction&#39;: ..., &#39;Accuracy&#39;: ..., &#39;F-measure&#39;: ...}.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}.</span>
+<span class="sd">        """</span>
         <span class="n">solutions</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">best_concept_str</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">acc</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
@@ -315,64 +315,64 @@
         <span class="c1"># OCEL  =&gt; Algorithm stopped (4505 descriptions tested).</span>
 
         <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">txt_path</span> <span class="o">=</span> <span class="n">file_path</span> <span class="o">+</span> <span class="s1">&#39;.txt&#39;</span>  <span class="c1"># self.storage_path + &#39;/output_&#39; + self.name + &#39;_&#39; + str(time.time()) + &#39;.txt&#39;</span>
+        <span class="n">txt_path</span> <span class="o">=</span> <span class="n">file_path</span> <span class="o">+</span> <span class="s1">'.txt'</span>  <span class="c1"># self.storage_path + '/output_' + self.name + '_' + str(time.time()) + '.txt'</span>
 
         <span class="c1"># (1) Store output of dl learner and extract solutions.</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">txt_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">txt_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">th</span><span class="p">,</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">output_of_dl_learner</span><span class="p">):</span>
-                <span class="n">w</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sentence</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s1">&#39;solutions&#39;</span> <span class="ow">in</span> <span class="n">sentence</span> <span class="ow">and</span> <span class="s1">&#39;1:&#39;</span> <span class="ow">in</span> <span class="n">output_of_dl_learner</span><span class="p">[</span><span class="n">th</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">w</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sentence</span> <span class="o">+</span> <span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">'solutions'</span> <span class="ow">in</span> <span class="n">sentence</span> <span class="ow">and</span> <span class="s1">'1:'</span> <span class="ow">in</span> <span class="n">output_of_dl_learner</span><span class="p">[</span><span class="n">th</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
                     <span class="n">solutions</span> <span class="o">=</span> <span class="n">output_of_dl_learner</span><span class="p">[</span><span class="n">th</span><span class="p">:]</span>
 
-                <span class="k">if</span> <span class="s1">&#39;Algorithm&#39;</span> <span class="ow">in</span> <span class="n">sentence</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">'Algorithm'</span> <span class="ow">in</span> <span class="n">sentence</span><span class="p">:</span>
                     <span class="n">search_info</span> <span class="o">=</span> <span class="n">sentence</span>
 
             <span class="c1"># check whether solutions found</span>
             <span class="k">if</span> <span class="n">solutions</span><span class="p">:</span>  <span class="c1"># if solution found, check the correctness of relevant part of dl-learner output.</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">solutions</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-                    <span class="k">assert</span> <span class="s1">&#39;solutions&#39;</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="s1">'solutions'</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">solutions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-                    <span class="k">assert</span> <span class="s1">&#39;1: &#39;</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">5</span><span class="p">]</span>
+                    <span class="k">assert</span> <span class="s1">'1: '</span> <span class="ow">in</span> <span class="n">solutions</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">5</span><span class="p">]</span>
                 <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">solutions</span><span class="p">))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;####&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">'####'</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">(</span><span class="n">solutions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;####&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">'####'</span><span class="p">)</span>
                     <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">solutions</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># no solution found.</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#################&#39;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#######</span><span class="si">{}</span><span class="s1">##########&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#################&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#################'</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#######</span><span class="si">{}</span><span class="s1">##########'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#################'</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">output_of_dl_learner</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="s1">&#39;descriptions&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">'descriptions'</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
                         <span class="n">search_info</span> <span class="o">=</span> <span class="n">i</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#################&#39;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#######</span><span class="si">{}</span><span class="s1">##########&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;#################&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#################'</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#######</span><span class="si">{}</span><span class="s1">##########'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">'#################'</span><span class="p">)</span>
 
-                <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+ descriptions tested&#39;</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
+                <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+ descriptions tested'</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
                 <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
                 <span class="c1"># Get the numbers</span>
-                <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+'</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
 
-                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Model&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_concept_str</span><span class="p">,</span> <span class="s1">&#39;Accuracy&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span>
-                        <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_measure</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span> <span class="s1">&#39;NumClassTested&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_expression_tested</span><span class="p">)}</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">'Model'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">'Prediction'</span><span class="p">:</span> <span class="n">best_concept_str</span><span class="p">,</span> <span class="s1">'Accuracy'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span>
+                        <span class="s1">'F-measure'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_measure</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span> <span class="s1">'NumClassTested'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_expression_tested</span><span class="p">)}</span>
 
         <span class="c1"># top_predictions must have the following form</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;solutions ......:</span>
+<span class="w">        </span><span class="sd">"""solutions ......:</span>
 <span class="sd">        1: Parent(pred.acc.: 100.00 %, F - measure: 100.00 %)</span>
 <span class="sd">        2: ⊤ (pred.acc.: 50.00 %, F-measure: 66.67 %)</span>
 <span class="sd">        3: Person(pred.acc.: 50.00 %, F - measure: 66.67 %)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">best_solution</span> <span class="o">=</span> <span class="n">solutions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;ocel&#39;</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot; parse differently&quot;&quot;&quot;</span>
-            <span class="n">token</span> <span class="o">=</span> <span class="s1">&#39;(accuracy &#39;</span>
-            <span class="n">start_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;1: &#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'ocel'</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">""" parse differently"""</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="s1">'(accuracy '</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="s1">'1: '</span><span class="p">)</span>
             <span class="n">end_index</span> <span class="o">=</span> <span class="n">best_solution</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
             <span class="n">best_concept_str</span> <span class="o">=</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># -1 due to white space between *) (*.</span>
             <span class="n">quality_info</span> <span class="o">=</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">end_index</span><span class="p">:]</span>
@@ -380,21 +380,21 @@
             <span class="c1"># quality_info     =&gt; *(accuracy 100%, length 16, depth 2)*</span>
 
             <span class="c1"># Create a list to hold the numbers</span>
-            <span class="n">predicted_accuracy_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;accuracy \d*%&#39;</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
+            <span class="n">predicted_accuracy_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'accuracy \d*%'</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
 
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">predicted_accuracy_info</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-            <span class="k">assert</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;%&#39;</span>  <span class="c1"># percentage sign</span>
-            <span class="n">acc</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+\.?\d+&#39;</span><span class="p">,</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+ descriptions tested&#39;</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'%'</span>  <span class="c1"># percentage sign</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+\.?\d+'</span><span class="p">,</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+ descriptions tested'</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
             <span class="c1"># Get the numbers</span>
-            <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+'</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;celoe&#39;</span><span class="p">,</span> <span class="s1">&#39;eltl&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'celoe'</span><span class="p">,</span> <span class="s1">'eltl'</span><span class="p">]:</span>
             <span class="c1"># e.g. =&gt; 1: Sister ⊔ (∃ married.Brother) (pred. acc.: 90.24%, F-measure: 91.11%)</span>
             <span class="c1"># Heuristic =&gt; Quality info start with *(pred. acc.: *</span>
-            <span class="n">token</span> <span class="o">=</span> <span class="s1">&#39;(pred. acc.: &#39;</span>
-            <span class="n">start_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;1: &#39;</span><span class="p">)</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="s1">'(pred. acc.: '</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="s1">'1: '</span><span class="p">)</span>
             <span class="n">end_index</span> <span class="o">=</span> <span class="n">best_solution</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
             <span class="n">best_concept_str</span> <span class="o">=</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># -1 due to white space between *) (*.</span>
             <span class="n">quality_info</span> <span class="o">=</span> <span class="n">best_solution</span><span class="p">[</span><span class="n">end_index</span><span class="p">:]</span>
@@ -402,46 +402,46 @@
             <span class="c1"># quality_info     =&gt; *(pred. acc.: 79.27%, F-measure: 82.83%)*</span>
 
             <span class="c1"># Create a list to hold the numbers</span>
-            <span class="n">predicted_accuracy_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;pred. acc.: \d+.\d+%&#39;</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
-            <span class="n">f_measure_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;F-measure: \d+.\d+%&#39;</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
+            <span class="n">predicted_accuracy_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'pred. acc.: \d+.\d+%'</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
+            <span class="n">f_measure_info</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'F-measure: \d+.\d+%'</span><span class="p">,</span> <span class="n">quality_info</span><span class="p">)</span>
 
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">predicted_accuracy_info</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">f_measure_info</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 
-            <span class="k">assert</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;%&#39;</span>  <span class="c1"># percentage sign</span>
-            <span class="k">assert</span> <span class="n">f_measure_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;%&#39;</span>  <span class="c1"># percentage sign</span>
+            <span class="k">assert</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'%'</span>  <span class="c1"># percentage sign</span>
+            <span class="k">assert</span> <span class="n">f_measure_info</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'%'</span>  <span class="c1"># percentage sign</span>
 
-            <span class="n">acc</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+\.?\d+&#39;</span><span class="p">,</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">f_measure</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+\.?\d+&#39;</span><span class="p">,</span> <span class="n">f_measure_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">acc</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+\.?\d+'</span><span class="p">,</span> <span class="n">predicted_accuracy_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">f_measure</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+\.?\d+'</span><span class="p">,</span> <span class="n">f_measure_info</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">search_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># search_info is expected to be &quot; Algorithm terminated successfully (time: 252ms, 188 descriptions</span>
-                <span class="c1"># tested, 69 nodes in the search tree).&quot;</span>
-                <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+ descriptions tested&#39;</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
+                <span class="c1"># search_info is expected to be " Algorithm terminated successfully (time: 252ms, 188 descriptions</span>
+                <span class="c1"># tested, 69 nodes in the search tree)."</span>
+                <span class="n">_</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+ descriptions tested'</span><span class="p">,</span> <span class="n">search_info</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;eltl&#39;</span>
+                    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'eltl'</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
                     <span class="c1"># Get the numbers</span>
-                    <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">num_expression_tested</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">'\d+'</span><span class="p">,</span> <span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span>
         <span class="c1"># 100% into range between 1.0 and 0.0</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Prediction&#39;</span><span class="p">:</span> <span class="n">best_concept_str</span><span class="p">,</span> <span class="s1">&#39;Accuracy&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span> <span class="s1">&#39;F-measure&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_measure</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span>
-                <span class="s1">&#39;NumClassTested&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_expression_tested</span><span class="p">)}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'Prediction'</span><span class="p">:</span> <span class="n">best_concept_str</span><span class="p">,</span> <span class="s1">'Accuracy'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span> <span class="s1">'F-measure'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">f_measure</span><span class="p">)</span> <span class="o">*</span> <span class="mf">.01</span><span class="p">,</span>
+                <span class="s1">'NumClassTested'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_expression_tested</span><span class="p">)}</span></div>
 
 
 <div class="viewcode-block" id="DLLearnerBinder.train">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.train">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Dummy method, currently it does nothing.&quot;&quot;&quot;</span></div>
+<span class="w">        </span><span class="sd">""" Dummy method, currently it does nothing."""</span></div>
 
 
 <div class="viewcode-block" id="DLLearnerBinder.fit_from_iterable">
 <a class="viewcode-back" href="../../autoapi/ontolearn/binders/index.html#ontolearn.binders.DLLearnerBinder.fit_from_iterable">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_from_iterable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_runtime</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit dl-learner model on a list of given positive and negative examples.</span>
+<span class="w">        </span><span class="sd">"""Fit dl-learner model on a list of given positive and negative examples.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            dataset: A list of tuple (s,p,n) where</span>
@@ -452,7 +452,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">max_runtime</span><span class="p">:</span>

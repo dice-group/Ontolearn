@@ -4,6 +4,14 @@ ontolearn.learners.celoe
 .. py:module:: ontolearn.learners.celoe
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.learners.celoe.logger
+
+
 Classes
 -------
 
@@ -14,6 +22,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: CELOE(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase = None, reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None, refinement_operator: Optional[ontolearn.abstracts.BaseRefinement[ontolearn.search.OENode]] = None, quality_func: Optional[ontolearn.abstracts.AbstractScorer] = None, heuristic_func: Optional[ontolearn.abstracts.AbstractHeuristic] = None, terminate_on_goal: Optional[bool] = None, iter_bound: Optional[int] = None, max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None, max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True)
 
@@ -214,6 +224,22 @@ Module Contents
    .. py:method:: updating_node(node: ontolearn.search.OENode)
 
       Removes the node from the heuristic sorted set and inserts it again.
+
+      `heuristic_queue` is a `SortedSet` keyed by `HeuristicOrderedNode`, i.e. it orders
+      entries by `node.heuristic` (then by concept). Refining `node` changes `node.h_exp`
+      and, via `heuristic_func.apply(...)`, `node.heuristic` itself - so `node` has to be
+      pulled out of the sorted structure *before* it is mutated and re-inserted *after*,
+      otherwise the set's internal ordering invariant (built from the heuristic value at
+      insertion time) would no longer match the node's current heuristic value.
+
+      `discard()` looks the node up by its *current* key. If the node's heuristic already
+      changed since it was added to the queue (e.g. it was mutated somewhere other than
+      through this context manager, or it is being updated a second time without ever
+      having been re-added), the lookup can miss and `SortedKeyList.remove()` raises
+      `ValueError`. That would indicate the node's queue membership and its `heuristic`
+      attribute have gone out of sync with each other - worth investigating if it is
+      ever observed - but there is nothing to undo here: the node is simply not present
+      in the queue, so we fall through to `yield`/re-`add()` as normal.
 
       :param Node to update.:
 

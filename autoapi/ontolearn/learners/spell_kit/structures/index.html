@@ -97,6 +97,7 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="../../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../tree_learner_refinement_inherit/index.html">ontolearn.learners.tree_learner_refinement_inherit</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
@@ -118,7 +119,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../../../scripts/index.html">ontolearn.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../search/index.html">ontolearn.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../tentris/index.html">ontolearn.tentris</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../triple_store/index.html">ontolearn.triple_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../utils/index.html">ontolearn.utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../value_splitter/index.html">ontolearn.value_splitter</a></li>
@@ -164,43 +164,46 @@
 <h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.namespaces" title="ontolearn.learners.spell_kit.structures.namespaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespaces</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.logger" title="ontolearn.learners.spell_kit.structures.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Signature</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.namespaces" title="ontolearn.learners.spell_kit.structures.namespaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">namespaces</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_onto" title="ontolearn.learners.spell_kit.structures.tag_onto"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_onto</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.Signature" title="ontolearn.learners.spell_kit.structures.Signature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Signature</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_ni" title="ontolearn.learners.spell_kit.structures.tag_ni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_ni</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_onto" title="ontolearn.learners.spell_kit.structures.tag_onto"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_onto</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_type" title="ontolearn.learners.spell_kit.structures.tag_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_type</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_ni" title="ontolearn.learners.spell_kit.structures.tag_ni"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_ni</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_class" title="ontolearn.learners.spell_kit.structures.tag_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_class</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_type" title="ontolearn.learners.spell_kit.structures.tag_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_type</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_thing" title="ontolearn.learners.spell_kit.structures.tag_thing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_thing</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_class" title="ontolearn.learners.spell_kit.structures.tag_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_class</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_object_prop" title="ontolearn.learners.spell_kit.structures.tag_object_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_object_prop</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_thing" title="ontolearn.learners.spell_kit.structures.tag_thing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_thing</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_data_prop" title="ontolearn.learners.spell_kit.structures.tag_data_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_data_prop</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_object_prop" title="ontolearn.learners.spell_kit.structures.tag_object_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_object_prop</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_annotation_prop" title="ontolearn.learners.spell_kit.structures.tag_annotation_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_annotation_prop</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_data_prop" title="ontolearn.learners.spell_kit.structures.tag_data_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_data_prop</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_resource" title="ontolearn.learners.spell_kit.structures.attr_resource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_resource</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.tag_annotation_prop" title="ontolearn.learners.spell_kit.structures.tag_annotation_prop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag_annotation_prop</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_about" title="ontolearn.learners.spell_kit.structures.attr_about"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_about</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_resource" title="ontolearn.learners.spell_kit.structures.attr_resource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_resource</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_datatype" title="ontolearn.learners.spell_kit.structures.attr_datatype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_datatype</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_about" title="ontolearn.learners.spell_kit.structures.attr_about"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_about</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.learners.spell_kit.structures.attr_datatype" title="ontolearn.learners.spell_kit.structures.attr_datatype"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attr_datatype</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -300,6 +303,11 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="ontolearn.learners.spell_kit.structures.logger">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.structures.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.structures.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="ontolearn.learners.spell_kit.structures.namespaces">
 <span class="sig-prename descclassname"><span class="pre">ontolearn.learners.spell_kit.structures.</span></span><span class="sig-name descname"><span class="pre">namespaces</span></span><a class="headerlink" href="#ontolearn.learners.spell_kit.structures.namespaces" title="Link to this definition"></a></dt>

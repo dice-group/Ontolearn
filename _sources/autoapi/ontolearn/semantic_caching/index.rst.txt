@@ -9,6 +9,14 @@ ontolearn.semantic_caching
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   ontolearn.semantic_caching.logger
+
+
 Classes
 -------
 
@@ -35,6 +43,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: concept_generator(path_kg)
 

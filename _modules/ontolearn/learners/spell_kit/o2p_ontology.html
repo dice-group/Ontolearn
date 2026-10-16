@@ -83,11 +83,11 @@
              
   <h1>Source code for ontolearn.learners.spell_kit.o2p_ontology</h1><div class="highlight"><pre>
 <span></span><span class="n">SPECIAL_CHARS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="sa">r</span><span class="s2">&quot;\sqsubseteq&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2291</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\exists&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2203</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\sqcap&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2293</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\equiv&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u2261</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\top&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="se">\u22A4</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\sqsubseteq"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\u2291</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\exists"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\u2203</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\sqcap"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\u2293</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\equiv"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\u2261</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\top"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\u22A4</span><span class="s2">"</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -197,7 +197,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">next_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">__i</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;NC_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__i</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">"NC_</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__i</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">created_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">name</span></div>
 </div>
@@ -207,7 +207,7 @@
 <div class="viewcode-block" id="OntologyObject">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OntologyObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class for all entities in the ontology.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The base class for all entities in the ontology."""</span>
 
 <div class="viewcode-block" id="OntologyObject.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.OntologyObject.to_latex">[docs]</a>
@@ -237,7 +237,7 @@
 <div class="viewcode-block" id="SubProperty.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SubProperty.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">&quot;\sqsubseteq&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">"\sqsubseteq"</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
 </div>
 
 
@@ -296,7 +296,7 @@
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.ObjectProperty.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_of</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse_of</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">-"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inverse_of</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span></div>
 </div>
 
@@ -313,7 +313,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_safe_varname</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">varcount</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="s2">&quot;Y</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">cls</span><span class="o">.</span><span class="n">varcount</span></div>
+        <span class="k">return</span> <span class="s2">"Y</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">cls</span><span class="o">.</span><span class="n">varcount</span></div>
 
 
     <span class="n">expression_types</span> <span class="o">=</span> <span class="p">{}</span>
@@ -364,16 +364,16 @@
 <div class="viewcode-block" id="Rule">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Rule">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Rule</span><span class="p">(</span><span class="n">OntologyObject</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A ontology expression of the form A \sqsubseteq B.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A ontology expression of the form A \sqsubseteq B."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">object_</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        :param subject:</span>
 <span class="sd">        :type subject: Expression</span>
 <span class="sd">        :param object_:</span>
 <span class="sd">        :type object_: Expression</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Rule</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__subject</span> <span class="o">=</span> <span class="n">subject</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__object</span> <span class="o">=</span> <span class="n">object_</span>
@@ -397,10 +397,10 @@
 <div class="viewcode-block" id="Rule.normalize">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Rule.normalize">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a normalization of this rule.</span>
+<span class="w">        </span><span class="sd">"""Return a normalization of this rule.</span>
 
 <span class="sd">        :return: list of new rules</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">()</span></div>
 </div>
 
@@ -441,14 +441,14 @@
 <div class="viewcode-block" id="SubClassOf.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">&quot;\sqsubseteq&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">"\sqsubseteq"</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
 
-        <span class="c1"># return &#39;%s %s %s&#39; % (self.subject, &#39;-&gt;&#39;, self.object)</span>
+        <span class="c1"># return '%s %s %s' % (self.subject, '-&gt;', self.object)</span>
 
 <div class="viewcode-block" id="SubClassOf.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SubClassOf.to_latex">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> \sqsubseteq </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">to_latex</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span></div>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">"</span><span class="si">%s</span><span class="s2"> \sqsubseteq </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">to_latex</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span></div>
 </div>
 
 
@@ -468,7 +468,7 @@
 <div class="viewcode-block" id="EquivalentClass.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.EquivalentClass.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">&quot;\equiv&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">"\equiv"</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
 </div>
 
 
@@ -481,12 +481,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span></div>
 
-        <span class="c1"># raise FeatureNotSupported(&#39;rule disjointWith&#39;)</span>
+        <span class="c1"># raise FeatureNotSupported('rule disjointWith')</span>
 
 <div class="viewcode-block" id="DisjointWith.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.DisjointWith.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="s2">&quot; disjoint &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="s2">" disjoint "</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">object</span><span class="p">)</span></div>
 </div>
 
 
@@ -514,7 +514,7 @@
 <div class="viewcode-block" id="ClassIdentifier">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ClassIdentifier</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class in the ontology.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A class in the ontology."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ClassIdentifier</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span>
@@ -534,7 +534,7 @@
 <div class="viewcode-block" id="ClassIdentifier.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.ClassIdentifier.to_latex">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span></div>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">"</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span></div>
 </div>
 
 
@@ -542,7 +542,7 @@
 <div class="viewcode-block" id="TopClass">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.TopClass">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TopClass</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class in the ontology.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A class in the ontology."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">TopClass</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -556,13 +556,13 @@
 <div class="viewcode-block" id="TopClass.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.TopClass.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="sa">r</span><span class="s2">&quot;\top&quot;</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="sa">r</span><span class="s2">"\top"</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="TopClass.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.TopClass.to_latex">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;\top&quot;</span></div>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">"\top"</span></div>
 </div>
 
 
@@ -570,7 +570,7 @@
 <div class="viewcode-block" id="Restriction">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Restriction">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Restriction</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""""""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quantifier</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Restriction</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -608,7 +608,7 @@
 <div class="viewcode-block" id="Intersection">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Intersection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Intersection</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""""""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Intersection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -651,14 +651,14 @@
 <div class="viewcode-block" id="Intersection.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Intersection.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">sep</span> <span class="o">=</span> <span class="s2">&quot; </span><span class="si">%s</span><span class="s2"> &quot;</span> <span class="o">%</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">&quot;\sqcap&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s2">&quot;(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span></div>
+        <span class="n">sep</span> <span class="o">=</span> <span class="s2">" </span><span class="si">%s</span><span class="s2"> "</span> <span class="o">%</span> <span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">"\sqcap"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">"(</span><span class="si">%s</span><span class="s2">)"</span> <span class="o">%</span> <span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Intersection.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Intersection.to_latex">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot; \sqcap &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">to_latex</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">" \sqcap "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">to_latex</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Intersection.__and__">
@@ -672,7 +672,7 @@
 <div class="viewcode-block" id="Union">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Union">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Union</span><span class="p">(</span><span class="n">Expression</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""""""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">children</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Union</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -683,12 +683,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="p">[]</span></div>
 
-        <span class="c1"># raise FeatureNotSupported(&quot;union in RHS&quot;)</span>
+        <span class="c1"># raise FeatureNotSupported("union in RHS")</span>
 
 <div class="viewcode-block" id="Union.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Union.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">sep</span> <span class="o">=</span> <span class="s2">&quot; | &quot;</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="s2">" | "</span>
         <span class="k">return</span> <span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span></div>
 </div>
 
@@ -706,12 +706,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="p">[]</span></div>
 
-        <span class="c1"># raise FeatureNotSupported(&#39;complement&#39;)</span>
+        <span class="c1"># raise FeatureNotSupported('complement')</span>
 
 <div class="viewcode-block" id="Complement.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Complement.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;not </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="s2">"not </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="p">))</span></div>
 </div>
 
 
@@ -726,14 +726,14 @@
 <div class="viewcode-block" id="OneOf.normalize_rhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.OneOf.normalize_rhs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">&quot;oneOf in RHS&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">"oneOf in RHS"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="OneOf.__str__">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.OneOf.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">sep</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span>
-        <span class="k">return</span> <span class="s2">&quot;one_of(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span></div>
+        <span class="n">sep</span> <span class="o">=</span> <span class="s2">", "</span>
+        <span class="k">return</span> <span class="s2">"one_of(</span><span class="si">%s</span><span class="s2">)"</span> <span class="o">%</span> <span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span></div>
 </div>
 
 
@@ -761,7 +761,7 @@
 <div class="viewcode-block" id="HasSelf.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.HasSelf.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;hasSelf </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"hasSelf </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HasSelf.normalize_rhs">
@@ -787,16 +787,16 @@
 <div class="viewcode-block" id="SomeValues.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">&quot;\exists&quot;</span><span class="p">],</span> <span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"</span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">SPECIAL_CHARS</span><span class="p">[</span><span class="s2">"\exists"</span><span class="p">],</span> <span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SomeValues.to_latex">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.SomeValues.to_latex">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="o">.</span><span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;\exists </span><span class="si">%s</span><span class="s2">.\!</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span>
+            <span class="k">return</span> <span class="sa">r</span><span class="s2">"\exists </span><span class="si">%s</span><span class="s2">.\!</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;\exists </span><span class="si">%s</span><span class="s2">.\!(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span></div>
+            <span class="k">return</span> <span class="sa">r</span><span class="s2">"\exists </span><span class="si">%s</span><span class="s2">.\!(</span><span class="si">%s</span><span class="s2">)"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="o">.</span><span class="n">to_latex</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="SomeValues.normalize_lhs">
@@ -842,13 +842,13 @@
 <div class="viewcode-block" id="AllValues.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.AllValues.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;all </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"all </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_class</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AllValues.normalize_rhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.AllValues.normalize_rhs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">&quot;quantifier allValues&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">"quantifier allValues"</span><span class="p">)</span></div>
 </div>
 
 
@@ -862,13 +862,13 @@
 <div class="viewcode-block" id="Cardinality.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Cardinality.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;count(</span><span class="si">%s</span><span class="s2">) = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"count(</span><span class="si">%s</span><span class="s2">) = </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Cardinality.normalize_rhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.Cardinality.normalize_rhs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">&quot;quantifier cardinality&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">"quantifier cardinality"</span><span class="p">)</span></div>
 </div>
 
 
@@ -882,13 +882,13 @@
 <div class="viewcode-block" id="MinCardinality.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;count(</span><span class="si">%s</span><span class="s2">) &gt;= </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"count(</span><span class="si">%s</span><span class="s2">) &gt;= </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MinCardinality.normalize_rhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.MinCardinality.normalize_rhs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">&quot;quantifier minCardinality&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">"quantifier minCardinality"</span><span class="p">)</span></div>
 </div>
 
 
@@ -902,13 +902,13 @@
 <div class="viewcode-block" id="MaxCardinality.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;count(</span><span class="si">%s</span><span class="s2">) &lt;= </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"count(</span><span class="si">%s</span><span class="s2">) &lt;= </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="MaxCardinality.normalize_rhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.MaxCardinality.normalize_rhs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">&quot;quantifier maxCardinality&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">FeatureNotSupported</span><span class="p">(</span><span class="s2">"quantifier maxCardinality"</span><span class="p">)</span></div>
 </div>
 
 
@@ -922,7 +922,7 @@
 <div class="viewcode-block" id="HasValue.to_string">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.HasValue.to_string">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prop</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;value(</span><span class="si">%s</span><span class="s2">) = </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">"value(</span><span class="si">%s</span><span class="s2">) = </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HasValue.normalize_rhs">
@@ -930,7 +930,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">normalize_rhs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="p">,</span> <span class="p">[]</span></div>
 
-        <span class="c1"># raise FeatureNotSupported(&#39;hasValue&#39;)</span>
+        <span class="c1"># raise FeatureNotSupported('hasValue')</span>
 
 <div class="viewcode-block" id="HasValue.normalize_lhs">
 <a class="viewcode-back" href="../../../../autoapi/ontolearn/learners/spell_kit/o2p_ontology/index.html#ontolearn.learners.spell_kit.o2p_ontology.HasValue.normalize_lhs">[docs]</a>

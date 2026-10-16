@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;NCES utils.&quot;&quot;&quot;</span>
+<span class="sd">"""NCES utils."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -120,7 +120,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.lp_generator</span><span class="w"> </span><span class="kn">import</span> <span class="n">LPGen</span>
 
 
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;TOKENIZERS_PARALLELISM&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;false&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"TOKENIZERS_PARALLELISM"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"false"</span>
 
 
 <div class="viewcode-block" id="SimpleSolution">
@@ -128,14 +128,14 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">SimpleSolution</span><span class="p">:</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vocab</span><span class="p">,</span> <span class="n">atomic_concept_names</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;SimpleSolution&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'SimpleSolution'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atomic_concept_names</span> <span class="o">=</span> <span class="n">atomic_concept_names</span>
-        <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">BPE</span><span class="p">(</span><span class="n">unk_token</span><span class="o">=</span><span class="s1">&#39;[UNK]&#39;</span><span class="p">))</span>
-        <span class="n">trainer</span> <span class="o">=</span> <span class="n">BpeTrainer</span><span class="p">(</span><span class="n">special_tokens</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;[UNK]&quot;</span><span class="p">,</span> <span class="s2">&quot;[CLS]&quot;</span><span class="p">,</span> <span class="s2">&quot;[SEP]&quot;</span><span class="p">,</span> <span class="s2">&quot;[PAD]&quot;</span><span class="p">,</span> <span class="s2">&quot;[MASK]&quot;</span><span class="p">],</span><span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">BPE</span><span class="p">(</span><span class="n">unk_token</span><span class="o">=</span><span class="s1">'[UNK]'</span><span class="p">))</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">BpeTrainer</span><span class="p">(</span><span class="n">special_tokens</span><span class="o">=</span><span class="p">[</span><span class="s2">"[UNK]"</span><span class="p">,</span> <span class="s2">"[CLS]"</span><span class="p">,</span> <span class="s2">"[SEP]"</span><span class="p">,</span> <span class="s2">"[PAD]"</span><span class="p">,</span> <span class="s2">"[MASK]"</span><span class="p">],</span><span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">tokenizer</span><span class="o">.</span><span class="n">pre_tokenizer</span> <span class="o">=</span> <span class="n">WhitespaceSplit</span><span class="p">()</span>
         <span class="n">tokenizer</span><span class="o">.</span><span class="n">train_from_iterator</span><span class="p">(</span><span class="n">vocab</span><span class="p">,</span> <span class="n">trainer</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">PreTrainedTokenizerFast</span><span class="p">(</span><span class="n">tokenizer_object</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token</span> <span class="o">=</span> <span class="s2">&quot;[PAD]&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token</span> <span class="o">=</span> <span class="s2">"[PAD]"</span>
 
 <div class="viewcode-block" id="SimpleSolution.predict">
 <a class="viewcode-back" href="../../autoapi/ontolearn/nces_utils/index.html#ontolearn.nces_utils.SimpleSolution.predict">[docs]</a>
@@ -145,7 +145,7 @@
             <span class="c1"># If no atomic class found, then randomly pick and use the first 3</span>
             <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_concept_names</span><span class="p">)</span>
             <span class="n">atomic_classes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_concept_names</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s2">&quot; ⊔ &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">atomic_classes</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">" ⊔ "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">atomic_classes</span><span class="p">)</span></div>
 </div>
 
 
@@ -178,9 +178,9 @@
 <div class="viewcode-block" id="try_get_embs">
 <a class="viewcode-back" href="../../autoapi/ontolearn/nces_utils/index.html#ontolearn.nces_utils.try_get_embs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">try_get_embs</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">num_examples</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Depending on the KGE model, some individuals do not get assigned to any embedding during training. This function filters out such individuals from the provided positive/negative examples. It also</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">_</span> <span class="o">=</span> <span class="n">embeddings</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -199,7 +199,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">new_pos</span><span class="p">:</span>
                 <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">embeddings</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="n">num_examples</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="c1">#if contains_prefix:</span>
-                <span class="c1">#    pos = list(map(lambda x: x.split(&quot;/&quot;)[-1], pos))</span>
+                <span class="c1">#    pos = list(map(lambda x: x.split("/")[-1], pos))</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_pos</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
                 <span class="n">pos</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -242,24 +242,24 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_training_data</span><span class="p">(</span><span class="n">kb_path</span><span class="p">,</span><span class="n">kb</span><span class="p">,</span> <span class="n">max_num_lps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">refinement_expressivity</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">refs_sample_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
                            <span class="n">beyond_alc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">storage_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">storage_path</span> <span class="o">=</span> <span class="s2">&quot;./Training_Data&quot;</span>
+        <span class="n">storage_path</span> <span class="o">=</span> <span class="s2">"./Training_Data"</span>
     <span class="n">lp_gen</span> <span class="o">=</span> <span class="n">LPGen</span><span class="p">(</span><span class="n">kb_path</span><span class="o">=</span><span class="n">kb_path</span><span class="p">,</span> <span class="n">kb</span><span class="o">=</span><span class="n">kb</span><span class="p">,</span> <span class="n">max_num_lps</span><span class="o">=</span><span class="n">max_num_lps</span><span class="p">,</span> <span class="n">refinement_expressivity</span><span class="o">=</span><span class="n">refinement_expressivity</span><span class="p">,</span>
                    <span class="n">num_sub_roots</span><span class="o">=</span><span class="n">refs_sample_size</span><span class="p">,</span>
                    <span class="n">beyond_alc</span><span class="o">=</span><span class="n">beyond_alc</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="n">storage_path</span><span class="p">)</span>
     <span class="n">lp_gen</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading generated data...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Loading generated data..."</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/LPs.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/LPs.json"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">lps</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lps</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="n">lps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lps</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of learning problems:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lps</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Number of learning problems:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lps</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/LPs.json&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/LPs.json"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">'utf-8'</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">lps</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lps</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="n">lps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lps</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of learning problems:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lps</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Number of learning problems:"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lps</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">lps</span></div>
 
 </pre></div>

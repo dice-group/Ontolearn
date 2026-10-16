@@ -127,8 +127,6 @@ Module Contents
 
 
    .. py:attribute:: operators
-      :value: None
-
 
 
    .. py:attribute:: tree_templates

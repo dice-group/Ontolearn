@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,13 +106,15 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">RefinementBasedConceptLearner</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractScorer</span><span class="p">,</span> <span class="n">BaseRefinement</span><span class="p">,</span> <span class="n">AbstractHeuristic</span><span class="p">,</span> <span class="n">EncodedPosNegLPStandardKind</span><span class="p">,</span> \
     <span class="n">AbstractKnowledgeBase</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..quality_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_concept</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..search</span><span class="w"> </span><span class="kn">import</span> <span class="n">OENode</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">,</span> <span class="n">EvaluatedConcept</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">,</span> <span class="n">QualityOrderedNode</span><span class="p">,</span> <span class="n">LengthOrderedNode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..search</span><span class="w"> </span><span class="kn">import</span> <span class="n">OENode</span><span class="p">,</span> <span class="n">TreeNode</span><span class="p">,</span> <span class="n">HeuristicOrderedNode</span><span class="p">,</span> <span class="n">QualityOrderedNode</span><span class="p">,</span> <span class="n">LengthOrderedNode</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Dict</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">owlapy</span>
@@ -128,13 +130,15 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">concept_len</span>
 
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <span class="n">_concept_operand_sorter</span> <span class="o">=</span> <span class="n">ConceptOperandSorter</span><span class="p">()</span>
 
 
 <div class="viewcode-block" id="CELOE">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CELOE</span><span class="p">(</span><span class="n">RefinementBasedConceptLearner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class Expression Learning for Ontology Engineering.</span>
+<span class="w">    </span><span class="sd">"""Class Expression Learning for Ontology Engineering.</span>
 <span class="sd">    Attributes:</span>
 <span class="sd">        best_descriptions (EvaluatedDescriptionSet[OENode, QualityOrderedNode]): Best hypotheses ordered.</span>
 <span class="sd">        best_only (bool): If False pick only nodes with quality &lt; 1.0, else pick without quality restrictions.</span>
@@ -148,7 +152,7 @@
 <span class="sd">        max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.</span>
 <span class="sd">        max_runtime (int): Limit to stop the algorithm after n seconds.</span>
 <span class="sd">        min_he (int): Minimal value of horizontal expansion.</span>
-<span class="sd">        name (str): Name of the model = &#39;celoe_python&#39;.</span>
+<span class="sd">        name (str): Name of the model = 'celoe_python'.</span>
 <span class="sd">        _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.</span>
 <span class="sd">        operator (BaseRefinement): Operator used to generate refinements.</span>
 <span class="sd">        quality_func (AbstractScorer) The quality function to be used.</span>
@@ -159,11 +163,11 @@
 <span class="sd">                            takes to execute.</span>
 <span class="sd">        terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;best_descriptions&#39;</span><span class="p">,</span> <span class="s1">&#39;max_he&#39;</span><span class="p">,</span> <span class="s1">&#39;min_he&#39;</span><span class="p">,</span> <span class="s1">&#39;best_only&#39;</span><span class="p">,</span> <span class="s1">&#39;calculate_min_max&#39;</span><span class="p">,</span> <span class="s1">&#39;heuristic_queue&#39;</span><span class="p">,</span> \
-        <span class="s1">&#39;search_tree&#39;</span><span class="p">,</span> <span class="s1">&#39;_learning_problem&#39;</span><span class="p">,</span> <span class="s1">&#39;_max_runtime&#39;</span><span class="p">,</span> <span class="s1">&#39;_seen_norm_concepts&#39;</span>
+<span class="sd">    """</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">'best_descriptions'</span><span class="p">,</span> <span class="s1">'max_he'</span><span class="p">,</span> <span class="s1">'min_he'</span><span class="p">,</span> <span class="s1">'best_only'</span><span class="p">,</span> <span class="s1">'calculate_min_max'</span><span class="p">,</span> <span class="s1">'heuristic_queue'</span><span class="p">,</span> \
+        <span class="s1">'search_tree'</span><span class="p">,</span> <span class="s1">'_learning_problem'</span><span class="p">,</span> <span class="s1">'_max_runtime'</span><span class="p">,</span> <span class="s1">'_seen_norm_concepts'</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;celoe_python&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'celoe_python'</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -178,7 +182,7 @@
                  <span class="n">max_results</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
                  <span class="n">best_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">calculate_min_max</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Create a new instance of CELOE.</span>
+<span class="w">        </span><span class="sd">""" Create a new instance of CELOE.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            best_only (bool): If False pick only nodes with quality &lt; 1.0, else pick without quality restrictions.</span>
@@ -188,9 +192,9 @@
 <span class="sd">            refinement_operator (BaseRefinement[OENode]): Operator used to generate refinements.</span>
 <span class="sd">                                                        Defaults to `ModifiedCELOERefinement`.</span>
 <span class="sd">            heuristic_func (AbstractHeuristic): Function to guide the search heuristic. Defaults to `CELOEHeuristic`.</span>
-<span class="sd">            iter_bound (int): Limit to stop the algorithm after n refinement steps are done. Defaults to 10&#39;000.</span>
+<span class="sd">            iter_bound (int): Limit to stop the algorithm after n refinement steps are done. Defaults to 10'000.</span>
 <span class="sd">            knowledge_base (AbstractKnowledgeBase): The knowledge base that the concept learner is using.</span>
-<span class="sd">            max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested. Defaults to 10&#39;000.</span>
+<span class="sd">            max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested. Defaults to 10'000.</span>
 <span class="sd">            max_runtime (int): Limit to stop the algorithm after n seconds. Defaults to 5.</span>
 <span class="sd">            max_results (int): Maximum hypothesis to store. Defaults to 10.</span>
 <span class="sd">            quality_func (AbstractScorer) The quality function to be used. Defaults to `F1`.</span>
@@ -199,7 +203,7 @@
 <span class="sd">            terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.</span>
 
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knowledge_base</span><span class="o">=</span><span class="n">knowledge_base</span><span class="p">,</span>
                          <span class="n">reasoner</span><span class="o">=</span><span class="n">reasoner</span><span class="p">,</span>
                          <span class="n">refinement_operator</span><span class="o">=</span><span class="n">refinement_operator</span><span class="p">,</span>
@@ -232,7 +236,7 @@
                 <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">node</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No Node with lesser accuracy found&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No Node with lesser accuracy found"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># from reimplementation, pick without quality criterion</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
@@ -261,25 +265,41 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">make_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">parent_node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OENode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_root</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OENode</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">OENode</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="n">parent_node</span><span class="o">=</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">is_root</span><span class="o">=</span><span class="n">is_root</span><span class="p">)</span></div>
 
-    <span class="c1"># TODO:CD: Why do we need this ?</span>
+
 <div class="viewcode-block" id="CELOE.updating_node">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.updating_node">[docs]</a>
     <span class="nd">@contextmanager</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">updating_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">OENode</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Removes the node from the heuristic sorted set and inserts it again.</span>
+
+<span class="sd">        `heuristic_queue` is a `SortedSet` keyed by `HeuristicOrderedNode`, i.e. it orders</span>
+<span class="sd">        entries by `node.heuristic` (then by concept). Refining `node` changes `node.h_exp`</span>
+<span class="sd">        and, via `heuristic_func.apply(...)`, `node.heuristic` itself - so `node` has to be</span>
+<span class="sd">        pulled out of the sorted structure *before* it is mutated and re-inserted *after*,</span>
+<span class="sd">        otherwise the set's internal ordering invariant (built from the heuristic value at</span>
+<span class="sd">        insertion time) would no longer match the node's current heuristic value.</span>
+
+<span class="sd">        `discard()` looks the node up by its *current* key. If the node's heuristic already</span>
+<span class="sd">        changed since it was added to the queue (e.g. it was mutated somewhere other than</span>
+<span class="sd">        through this context manager, or it is being updated a second time without ever</span>
+<span class="sd">        having been re-added), the lookup can miss and `SortedKeyList.remove()` raises</span>
+<span class="sd">        `ValueError`. That would indicate the node's queue membership and its `heuristic`</span>
+<span class="sd">        attribute have gone out of sync with each other - worth investigating if it is</span>
+<span class="sd">        ever observed - but there is nothing to undo here: the node is simply not present</span>
+<span class="sd">        in the queue, so we fall through to `yield`/re-`add()` as normal.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            Node to update.</span>
 
 <span class="sd">        Yields:</span>
 <span class="sd">            The node itself.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="c1"># TODO:CD: We need to understand this</span>
-            <span class="k">pass</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Could not find </span><span class="si">%s</span><span class="s2"> in heuristic_queue by its current heuristic key; "</span>
+                            <span class="s2">"its heuristic may have been mutated while it was queued."</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
         <span class="k">yield</span> <span class="n">node</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 
@@ -301,24 +321,24 @@
 <div class="viewcode-block" id="CELOE.fit">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find hypotheses that explain pos and neg.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
-        <span class="n">max_runtime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;max_runtime&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">max_runtime</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"max_runtime"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">learning_problem</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_learning_problem</span><span class="p">(</span><span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="p">,</span> <span class="s2">&quot;search_tree cannot be None&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="p">,</span> <span class="s2">"search_tree cannot be None"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span> <span class="o">=</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">encode_kb</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span> <span class="k">if</span> <span class="n">max_runtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span>
         <span class="n">root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_node</span><span class="p">(</span><span class="n">_concept_operand_sorter</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_class</span><span class="p">),</span> <span class="n">is_root</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_node</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;The length of heuristic_queue must be equal to 1 after root init.&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"The length of heuristic_queue must be equal to 1 after root init."</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_bound</span><span class="p">):</span>
             <span class="n">most_promising</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_node_to_expand</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
             <span class="n">tree_parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree_node</span><span class="p">(</span><span class="n">most_promising</span><span class="p">)</span>
             <span class="n">minimum_length</span> <span class="o">=</span> <span class="n">most_promising</span><span class="o">.</span><span class="n">h_exp</span>
-            <span class="c1"># print(&quot;now refining %s&quot;, most_promising)</span>
+            <span class="c1"># print("now refining %s", most_promising)</span>
             <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">downward_refinement</span><span class="p">(</span><span class="n">most_promising</span><span class="p">):</span>
                 <span class="c1"># we ignore all refinements with lower length</span>
                 <span class="c1"># (this also avoids duplicate node children)</span>
@@ -343,14 +363,14 @@
 <div class="viewcode-block" id="CELOE.encoded_learning_problem">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.encoded_learning_problem">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">encoded_learning_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EncodedPosNegLPStandardKind</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetch the most recently used learning problem from the fit method.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Fetch the most recently used learning problem from the fit method."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span></div>
 
 
 <div class="viewcode-block" id="CELOE.tree_node">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.tree_node">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tree_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">OENode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TreeNode</span><span class="p">[</span><span class="n">OENode</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the TreeNode of the given node.</span>
 
 <span class="sd">        Args:</span>
@@ -358,7 +378,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            TreeNode of the given node.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span></div>
 
 
@@ -391,41 +411,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">inds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">norm_seen</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_descriptions</span><span class="o">.</span><span class="n">maybe_add</span><span class="p">(</span><span class="n">ref</span><span class="p">):</span>
             <span class="c1">#if logger.isEnabledFor(logging.DEBUG):</span>
-            <span class="c1"># print(&quot;Better description found: %s&quot;, ref)</span>
+            <span class="c1"># print("Better description found: %s", ref)</span>
             <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
         <span class="c1"># TODO: implement noise</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_add_node_evald</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="n">OENode</span><span class="p">,</span> <span class="n">eval_</span><span class="p">:</span> <span class="n">EvaluatedConcept</span><span class="p">,</span> <span class="n">tree_parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TreeNode</span><span class="p">[</span><span class="n">OENode</span><span class="p">]]):</span>  <span class="c1"># pragma: no cover</span>
-        <span class="n">norm_concept</span> <span class="o">=</span> <span class="n">CESimplifier</span><span class="p">()</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">norm_concept</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_norm_concepts</span><span class="p">:</span>
-            <span class="n">norm_seen</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">norm_seen</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_seen_norm_concepts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">norm_concept</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">search_tree</span><span class="p">[</span><span class="n">ref</span><span class="o">.</span><span class="n">concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">TreeNode</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">tree_parent</span><span class="p">,</span> <span class="n">is_root</span><span class="o">=</span><span class="n">ref</span><span class="o">.</span><span class="n">is_root</span><span class="p">)</span>
-
-        <span class="n">ref</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">eval_</span><span class="o">.</span><span class="n">q</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_tested_concepts</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">quality</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># &gt; too weak</span>
-            <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">ref</span><span class="o">.</span><span class="n">quality</span> <span class="o">&lt;=</span> <span class="mf">1.0</span>
-        <span class="c1"># TODO: expression rewriting</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_func</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">eval_</span><span class="o">.</span><span class="n">inds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_learning_problem</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">norm_seen</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_descriptions</span><span class="o">.</span><span class="n">maybe_add</span><span class="p">(</span><span class="n">ref</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Better description found: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">heuristic_queue</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
-        <span class="c1"># TODO: implement noise</span>
-        <span class="k">return</span> <span class="kc">True</span>
-
     <span class="k">def</span><span class="w"> </span><span class="nf">_log_current_best</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;######## </span><span class="si">{</span><span class="n">heading_step</span><span class="si">}</span><span class="s1"> step Best Hypotheses ###########&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'######## </span><span class="si">{</span><span class="n">heading_step</span><span class="si">}</span><span class="s1"> step Best Hypotheses ###########'</span><span class="p">)</span>
 
         <span class="n">predictions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">top_n</span><span class="p">,</span> <span class="n">return_node</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictions</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="se">\t</span><span class="si">{1}</span><span class="se">\t</span><span class="si">{2}</span><span class="s1">:</span><span class="si">{3}</span><span class="se">\t</span><span class="s1">Heuristic:</span><span class="si">{4}</span><span class="s1">:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">'</span><span class="si">{0}</span><span class="s1">-</span><span class="se">\t</span><span class="si">{1}</span><span class="se">\t</span><span class="si">{2}</span><span class="s1">:</span><span class="si">{3}</span><span class="se">\t</span><span class="s1">Heuristic:</span><span class="si">{4}</span><span class="s1">:'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">ith</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">),</span>
                 <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
                 <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">))</span>
@@ -433,12 +430,12 @@
 <div class="viewcode-block" id="CELOE.show_search_tree">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.show_search_tree">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">show_search_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">top_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Show search tree.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rdr</span> <span class="o">=</span> <span class="n">DLSyntaxObjectRenderer</span><span class="p">()</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;######## </span><span class="si">{</span><span class="n">heading_step</span><span class="si">}</span><span class="s1"> step Search Tree ###########&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'######## </span><span class="si">{</span><span class="n">heading_step</span><span class="si">}</span><span class="s1"> step Search Tree ###########'</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">tree_node_as_length_ordered_concept</span><span class="p">(</span><span class="n">tn</span><span class="p">:</span> <span class="n">TreeNode</span><span class="p">[</span><span class="n">OENode</span><span class="p">]):</span>
             <span class="k">return</span> <span class="n">LengthOrderedNode</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">len</span><span class="p">)</span>
@@ -456,15 +453,15 @@
 
             <span class="n">render_str</span> <span class="o">=</span> <span class="n">rdr</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">)</span>
 
-            <span class="n">depths</span> <span class="o">=</span> <span class="s2">&quot;`&quot;</span> <span class="o">*</span> <span class="n">depth</span>
+            <span class="n">depths</span> <span class="o">=</span> <span class="s2">"`"</span> <span class="o">*</span> <span class="n">depth</span>
 
             <span class="k">if</span> <span class="n">best_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">heur_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">best_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">best_idx</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">best_idx</span> <span class="o">=</span> <span class="s2">""</span>
                 <span class="k">if</span> <span class="n">heur_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">heur_idx</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">heur_idx</span> <span class="o">=</span> <span class="s2">""</span>
 
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%3s</span><span class="s2">] [</span><span class="si">%4s</span><span class="s2">] </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="se">\t</span><span class="s2"> HE:</span><span class="si">%s</span><span class="s2"> Q:</span><span class="si">%f</span><span class="s2"> Heur:</span><span class="si">%s</span><span class="s2"> |RC|:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">best_idx</span><span class="p">,</span> <span class="n">heur_idx</span><span class="p">,</span> <span class="n">depths</span><span class="p">,</span> <span class="n">render_str</span><span class="p">,</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"[</span><span class="si">%3s</span><span class="s2">] [</span><span class="si">%4s</span><span class="s2">] </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> </span><span class="se">\t</span><span class="s2"> HE:</span><span class="si">%s</span><span class="s2"> Q:</span><span class="si">%f</span><span class="s2"> Heur:</span><span class="si">%s</span><span class="s2"> |RC|:</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">best_idx</span><span class="p">,</span> <span class="n">heur_idx</span><span class="p">,</span> <span class="n">depths</span><span class="p">,</span> <span class="n">render_str</span><span class="p">,</span>
                                                                            <span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">h_exp</span><span class="p">,</span> <span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
                                                                            <span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">,</span> <span class="n">tn</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">refinement_count</span><span class="p">))</span>
 
@@ -473,14 +470,14 @@
 
         <span class="c1"># print_partial_tree_recursive(self.search_tree[self.start_class])</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;######## &#39;</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">,</span> <span class="s1">&#39;step Best Hypotheses ###########&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">'######## '</span><span class="p">,</span> <span class="n">heading_step</span><span class="p">,</span> <span class="s1">'step Best Hypotheses ###########'</span><span class="p">)</span>
 
         <span class="n">predictions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">best_hypotheses</span><span class="p">(</span><span class="n">top_n</span><span class="p">,</span> <span class="n">return_node</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">ith</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">predictions</span><span class="p">):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">-</span><span class="se">\t</span><span class="si">{1}</span><span class="se">\t</span><span class="si">{2}</span><span class="s1">:</span><span class="si">{3}</span><span class="se">\t</span><span class="s1">Heuristic:</span><span class="si">{4}</span><span class="s1">:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ith</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rdr</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">),</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">'</span><span class="si">{0}</span><span class="s1">-</span><span class="se">\t</span><span class="si">{1}</span><span class="se">\t</span><span class="si">{2}</span><span class="s1">:</span><span class="si">{3}</span><span class="se">\t</span><span class="s1">Heuristic:</span><span class="si">{4}</span><span class="s1">:'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ith</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">rdr</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">concept</span><span class="p">),</span>
                                                               <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality_func</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
                                                               <span class="n">node</span><span class="o">.</span><span class="n">heuristic</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;######## Search Tree ###########</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">'######## Search Tree ###########</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="CELOE.update_min_max_horiz_exp">
@@ -497,16 +494,16 @@
                 <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="n">node</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">h_exp</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_he</span><span class="p">:</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot; we can stop instantly when another node with min. &quot;&quot;&quot;</span>
+<span class="w">                    </span><span class="sd">""" we can stop instantly when another node with min. """</span>
                     <span class="k">return</span>
                 <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">heuristic</span> <span class="o">&lt;</span> <span class="n">threshold_score</span><span class="p">:</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot; we can stop traversing nodes when their score is too low. &quot;&quot;&quot;</span>
+<span class="w">                    </span><span class="sd">""" we can stop traversing nodes when their score is too low. """</span>
                     <span class="k">break</span>
             <span class="c1"># inc. minimum since we found no other node which also has min. horiz. exp.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">min_he</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 
-            <span class="c1"># print(&quot;minimum horizontal expansion is now %d&quot;, self.min_he)</span>
+            <span class="c1"># print("minimum horizontal expansion is now %d", self.min_he)</span>
 
 <div class="viewcode-block" id="CELOE.clean">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/index.html#ontolearn.learners.celoe.CELOE.clean">[docs]</a>

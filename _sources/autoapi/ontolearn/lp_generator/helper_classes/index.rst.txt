@@ -16,7 +16,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: ConceptDescriptionGenerator(knowledge_base, refinement_operator, depth=2, max_length=10, num_sub_roots=150)
+.. py:class:: ConceptDescriptionGenerator(knowledge_base, refinement_operator, depth=2, max_length=10, num_sub_roots=150, random_seed=None)
 
    Learning problem generator.
 
@@ -42,18 +42,24 @@ Module Contents
 
 
 
+   .. py:attribute:: rnd
+
+
    .. py:method:: apply_rho(concept)
 
 
    .. py:method:: generate()
 
 
-.. py:class:: KB2Data(path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2, downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1, knowledge_base=None, max_pos_neg_examples_per_lp=None)
+.. py:class:: KB2Data(path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2, downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1, knowledge_base=None, max_pos_neg_examples_per_lp=None, random_seed=None)
 
    This class takes an owl file, loads it into a knowledge base using ontolearn.knowledge_base.KnowledgeBase.
    A refinement operator is used to generate a large number of concepts, from which we filter and retain the shortest
    non-redundant concepts. We export each concept and its instances (eventually positive and negative examples) into
    a json file.
+
+
+   .. py:attribute:: rnd
 
 
    .. py:attribute:: max_num_lps

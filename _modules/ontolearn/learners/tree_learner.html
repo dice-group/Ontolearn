@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -105,7 +105,7 @@
 <span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
-
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -126,7 +126,7 @@
     <span class="n">OWLDataAllValuesFrom</span><span class="p">,</span>
     <span class="n">OWLClass</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">HasFiller</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">HasFiller</span><span class="p">,</span> <span class="n">OWLDataOneOf</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ontolearn.triple_store</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
@@ -134,23 +134,27 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">sklearn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_datatype</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLDatatype</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_umap_reduced_embeddings</span><span class="p">,</span> <span class="n">plot_decision_tree_of_expressions</span><span class="p">,</span> \
     <span class="n">plot_topk_feature_importance</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_expression_to_dl</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_iterable_verbose</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="explain_inference">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.explain_inference">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">explain_inference</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Given a trained Decision Tree, extract the paths from root to leaf nodes for each entities</span>
 <span class="sd">    https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#understanding-the-decision-tree-structure</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">np_X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">values</span>
     <span class="c1"># () feature[i] denotes a feature id used for splitting node i.</span>
     <span class="c1"># feature represents the feature id OWLClassExpressions used for splitting nodes of decision tree.</span>
@@ -180,7 +184,7 @@
                      <span class="n">node_indicator</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">sample_id</span><span class="p">]:</span> <span class="n">node_indicator</span><span class="o">.</span><span class="n">indptr</span><span class="p">[</span><span class="n">sample_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
                      <span class="p">]</span>
 
-        <span class="c1"># print(&quot;Rules used to predict sample {id}:\n&quot;.format(id=sample_id))</span>
+        <span class="c1"># print("Rules used to predict sample {id}:\n".format(id=sample_id))</span>
 
         <span class="n">decision_path</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">node_index</span><span class="p">:</span>
@@ -190,13 +194,13 @@
 
             <span class="c1"># check if value of the split feature for sample 0 is below threshold</span>
             <span class="k">if</span> <span class="n">np_X</span><span class="p">[</span><span class="n">sample_id</span><span class="p">,</span> <span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">]]</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">[</span><span class="n">node_id</span><span class="p">]:</span>
-                <span class="n">threshold_sign</span> <span class="o">=</span> <span class="s2">&quot;&lt;=&quot;</span>
+                <span class="n">threshold_sign</span> <span class="o">=</span> <span class="s2">"&lt;="</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">threshold_sign</span> <span class="o">=</span> <span class="s2">&quot;&gt;&quot;</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+                <span class="n">threshold_sign</span> <span class="o">=</span> <span class="s2">"&gt;"</span>
+<span class="w">            </span><span class="sd">"""</span>
 <span class="sd">            print(</span>
-<span class="sd">                &quot;decision node {node} : (X[{sample}, {feature}] = {value}) &quot;</span>
-<span class="sd">                &quot;{inequality} {threshold})\t OWL:{expression}&quot;.format(</span>
+<span class="sd">                "decision node {node} : (X[{sample}, {feature}] = {value}) "</span>
+<span class="sd">                "{inequality} {threshold})\t OWL:{expression}".format(</span>
 <span class="sd">                    node=node_id,</span>
 <span class="sd">                    sample=sample_id,</span>
 <span class="sd">                    feature=feature[node_id],</span>
@@ -206,13 +210,13 @@
 <span class="sd">                    expression=owl_class_expression_features[feature[node_id]]</span>
 <span class="sd">                )</span>
 <span class="sd">            )</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">decision_path</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;node_id&quot;</span><span class="p">:</span> <span class="n">node_id</span><span class="p">,</span>
-                                  <span class="s2">&quot;feature_id&quot;</span><span class="p">:</span> <span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">],</span>
-                                  <span class="s2">&quot;feature_value_of_individual&quot;</span><span class="p">:</span> <span class="n">np_X</span><span class="p">[</span><span class="n">sample_id</span><span class="p">,</span> <span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">]],</span>
-                                  <span class="s2">&quot;inequality&quot;</span><span class="p">:</span> <span class="n">threshold_sign</span><span class="p">,</span>
-                                  <span class="s2">&quot;threshold_value&quot;</span><span class="p">:</span> <span class="n">threshold</span><span class="p">[</span><span class="n">node_id</span><span class="p">],</span>
-                                  <span class="s2">&quot;owl_expression&quot;</span><span class="p">:</span> <span class="n">owl_class_expression_features</span><span class="p">[</span><span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">]]})</span>
+<span class="sd">            """</span>
+            <span class="n">decision_path</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"node_id"</span><span class="p">:</span> <span class="n">node_id</span><span class="p">,</span>
+                                  <span class="s2">"feature_id"</span><span class="p">:</span> <span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">],</span>
+                                  <span class="s2">"feature_value_of_individual"</span><span class="p">:</span> <span class="n">np_X</span><span class="p">[</span><span class="n">sample_id</span><span class="p">,</span> <span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">]],</span>
+                                  <span class="s2">"inequality"</span><span class="p">:</span> <span class="n">threshold_sign</span><span class="p">,</span>
+                                  <span class="s2">"threshold_value"</span><span class="p">:</span> <span class="n">threshold</span><span class="p">[</span><span class="n">node_id</span><span class="p">],</span>
+                                  <span class="s2">"owl_expression"</span><span class="p">:</span> <span class="n">owl_class_expression_features</span><span class="p">[</span><span class="n">feature</span><span class="p">[</span><span class="n">node_id</span><span class="p">]]})</span>
 
         <span class="n">reports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">decision_path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">reports</span></div>
@@ -224,10 +228,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">concepts_reducer</span><span class="p">(</span>
         <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">],</span> <span class="n">reduced_cls</span><span class="p">:</span> <span class="n">Callable</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">OWLObjectUnionOf</span><span class="p">,</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf"""</span>
     <span class="n">dl_concept_path</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concepts</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;c is not OWL: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"c is not OWL: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="n">dl_concept_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">dl_concept_path</span> <span class="o">=</span> <span class="n">c</span>
         <span class="k">else</span><span class="p">:</span>
@@ -238,7 +242,7 @@
 <div class="viewcode-block" id="contains_nominal">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.contains_nominal">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">contains_nominal</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLObjectHasValue).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLObjectHasValue)."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectOneOf</span><span class="p">,</span> <span class="n">OWLObjectHasValue</span><span class="p">)):</span>
         <span class="k">return</span> <span class="kc">True</span>
 
@@ -259,7 +263,7 @@
 <div class="viewcode-block" id="contains_cardinality">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.contains_cardinality">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">contains_cardinality</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns True if the OWL expression contains a cardinality restriction.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Returns True if the OWL expression contains a cardinality restriction."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectMinCardinality</span><span class="p">,</span> <span class="n">OWLObjectMaxCardinality</span><span class="p">,</span> <span class="n">OWLObjectExactCardinality</span><span class="p">)):</span>
         <span class="k">return</span> <span class="kc">True</span>
     
@@ -280,45 +284,114 @@
     <span class="k">return</span> <span class="kc">False</span></div>
 
 
+<div class="viewcode-block" id="PropertyType">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.PropertyType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PropertyType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">BOOLEAN</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">STRING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">DATE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">NUMERIC</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+
+<span class="n">_NUMERIC_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"integer"</span><span class="p">,</span> <span class="s2">"decimal"</span><span class="p">,</span> <span class="s2">"float"</span><span class="p">,</span> <span class="s2">"double"</span><span class="p">,</span> <span class="s2">"long"</span><span class="p">,</span> <span class="s2">"int"</span><span class="p">,</span> <span class="s2">"short"</span><span class="p">,</span> <span class="s2">"byte"</span><span class="p">,</span>
+    <span class="s2">"nonNegativeInteger"</span><span class="p">,</span> <span class="s2">"nonPositiveInteger"</span><span class="p">,</span> <span class="s2">"positiveInteger"</span><span class="p">,</span>
+    <span class="s2">"negativeInteger"</span><span class="p">,</span> <span class="s2">"unsignedLong"</span><span class="p">,</span> <span class="s2">"unsignedInt"</span><span class="p">,</span> <span class="s2">"unsignedShort"</span><span class="p">,</span>
+    <span class="s2">"unsignedByte"</span><span class="p">,</span> <span class="s2">"real"</span><span class="p">,</span> <span class="s2">"rational"</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">_STRING_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"string"</span><span class="p">,</span> <span class="s2">"normalizedString"</span><span class="p">,</span> <span class="s2">"token"</span><span class="p">,</span> <span class="s2">"language"</span><span class="p">,</span>
+    <span class="s2">"Name"</span><span class="p">,</span> <span class="s2">"NCName"</span><span class="p">,</span> <span class="s2">"NMTOKEN"</span><span class="p">,</span> <span class="s2">"PlainLiteral"</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">_DATE_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"dateTime"</span><span class="p">,</span> <span class="s2">"dateTimeStamp"</span><span class="p">,</span> <span class="s2">"date"</span><span class="p">,</span> <span class="s2">"time"</span><span class="p">,</span>
+    <span class="s2">"gYear"</span><span class="p">,</span> <span class="s2">"gYearMonth"</span><span class="p">,</span> <span class="s2">"gMonthDay"</span><span class="p">,</span> <span class="s2">"gDay"</span><span class="p">,</span> <span class="s2">"gMonth"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_classify_datatype_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Map an XSD datatype IRI remainder to a DataPropertyType category."""</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"boolean"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">BOOLEAN</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_NUMERIC_TYPES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">NUMERIC</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_STRING_TYPES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">STRING</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_DATE_TYPES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">DATE</span>
+    <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">OTHER</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_classify_literal</span><span class="p">(</span><span class="n">literal</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Map an OWLLiteral to a DataPropertyType category."""</span>
+    <span class="k">if</span> <span class="n">literal</span><span class="o">.</span><span class="n">is_boolean</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">BOOLEAN</span>
+    <span class="k">if</span> <span class="n">literal</span><span class="o">.</span><span class="n">is_string</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">STRING</span>
+    <span class="k">if</span> <span class="n">literal</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="ow">or</span> <span class="n">literal</span><span class="o">.</span><span class="n">is_double</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">NUMERIC</span>
+    <span class="c1"># Fall back to classifying by the literal's datatype IRI</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_classify_datatype_name</span><span class="p">(</span><span class="n">literal</span><span class="o">.</span><span class="n">get_datatype</span><span class="p">()</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">remainder</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">PropertyType</span><span class="o">.</span><span class="n">OTHER</span>
+
+
 <div class="viewcode-block" id="contains_data_property">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.contains_data_property">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">contains_data_property</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns True if the OWL expression contains a data property.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">contains_data_property</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">include_boolean</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Returns True if the OWL expression contains a data property."""</span>
+    <span class="n">found</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">PropertyType</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLDataSomeValuesFrom</span><span class="p">,</span> <span class="n">OWLDataAllValuesFrom</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">filler</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">get_filler</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLDataOneOf</span><span class="p">):</span>
+            <span class="n">found</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_classify_literal</span><span class="p">(</span><span class="n">literal</span><span class="p">)</span> <span class="k">for</span> <span class="n">literal</span> <span class="ow">in</span> <span class="n">filler</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">OWLDatatype</span><span class="p">):</span>
+            <span class="n">found</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">_classify_datatype_name</span><span class="p">(</span><span class="n">filler</span><span class="o">.</span><span class="n">iri</span><span class="o">.</span><span class="n">remainder</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">found</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">PropertyType</span><span class="o">.</span><span class="n">OTHER</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">OWLObjectHasValue</span><span class="p">):</span>
+        <span class="n">found</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">_classify_literal</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">get_filler</span><span class="p">()))</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectIntersectionOf</span><span class="p">,</span> <span class="n">OWLObjectUnionOf</span><span class="p">,</span> <span class="n">OWLObjectComplementOf</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">operands</span><span class="p">():</span>
+            <span class="n">sub</span> <span class="o">=</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sub</span><span class="p">:</span>
+                <span class="n">found</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
     
-    <span class="c1"># Check operands (for unions, intersections, complements)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectIntersectionOf</span><span class="p">,</span> <span class="n">OWLObjectUnionOf</span><span class="p">,</span> <span class="n">OWLObjectComplementOf</span><span class="p">)):</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">OWLObjectComplementOf</span><span class="p">):</span>
+        <span class="n">sub</span> <span class="o">=</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">get_operand</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">sub</span><span class="p">:</span>
+            <span class="n">found</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">HasFiller</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">contains_data_property</span><span class="p">(</span><span class="n">op</span><span class="p">)</span> <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">operands</span><span class="p">())</span>
+            <span class="n">sub</span> <span class="o">=</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">get_filler</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">sub</span><span class="p">:</span>
+                <span class="n">found</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
             <span class="k">pass</span>
-    
-    <span class="c1"># Check filler (for restrictions)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">HasFiller</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">expr</span><span class="o">.</span><span class="n">get_filler</span><span class="p">())</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-            <span class="k">pass</span>
-    
-    <span class="k">return</span> <span class="kc">False</span></div>
+    <span class="k">return</span> <span class="n">found</span></div>
+
 
 
 <div class="viewcode-block" id="TDL">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TDL</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tree-based Description Logic Concept Learner&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Tree-based Description Logic Concept Learner"""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">,</span>
                  <span class="n">use_inverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                 <span class="n">use_data_properties</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_data_properties_boolean</span><span class="p">:</span><span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_data_properties_string</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_data_properties_date</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">use_data_properties_numeric</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">use_nominals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">use_card_restrictions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">kwargs_classifier</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">max_runtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">max_runtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">grid_search_over</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">grid_search_apply</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                 <span class="n">kwargs_grid_search</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span>
+                 <span class="n">kwargs_grid_search</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">report_classification</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
                  <span class="n">plot_tree</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">plot_embeddings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -327,31 +400,36 @@
                  <span class="n">verbalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span> <span class="o">=</span> <span class="n">use_inverse</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span> <span class="o">=</span> <span class="n">use_data_properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_boolean</span> <span class="o">=</span> <span class="n">use_data_properties_boolean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_string</span> <span class="o">=</span> <span class="n">use_data_properties_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_date</span> <span class="o">=</span> <span class="n">use_data_properties_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_numeric</span> <span class="o">=</span> <span class="n">use_data_properties_numeric</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_nominals</span> <span class="o">=</span> <span class="n">use_nominals</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span> <span class="o">=</span> <span class="n">use_card_restrictions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
         <span class="k">if</span> <span class="n">grid_search_over</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">grid_search_apply</span><span class="p">:</span>
             <span class="n">grid_search_over</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;criterion&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;entropy&quot;</span><span class="p">,</span> <span class="s2">&quot;gini&quot;</span><span class="p">,</span> <span class="s2">&quot;log_loss&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;splitter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;best&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;max_features&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;log2&quot;</span><span class="p">],</span>
-                <span class="s2">&quot;min_samples_leaf&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
-                <span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+                <span class="s2">"criterion"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"entropy"</span><span class="p">,</span> <span class="s2">"gini"</span><span class="p">,</span> <span class="s2">"log_loss"</span><span class="p">],</span>
+                <span class="s2">"splitter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"random"</span><span class="p">,</span> <span class="s2">"best"</span><span class="p">],</span>
+                <span class="s2">"max_features"</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"sqrt"</span><span class="p">,</span> <span class="s2">"log2"</span><span class="p">],</span>
+                <span class="s2">"min_samples_leaf"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+                <span class="s2">"max_depth"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
             <span class="p">}</span>
         <span class="k">elif</span> <span class="n">grid_search_apply</span> <span class="ow">and</span> <span class="n">grid_search_over</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">grid_search_over</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
-        <span class="n">kwargs_grid_search</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;cv&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="c1"># Fresh copy: avoids sharing/mutating a default (or caller-owned) dict across instances</span>
+        <span class="n">kwargs_grid_search</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs_grid_search</span><span class="p">)</span> <span class="k">if</span> <span class="n">kwargs_grid_search</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">kwargs_grid_search</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"cv"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
         
         <span class="k">assert</span> <span class="p">(</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">KnowledgeBase</span><span class="p">)</span>
                 <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">ontolearn</span><span class="o">.</span><span class="n">triple_store</span><span class="o">.</span><span class="n">TripleStore</span><span class="p">)</span>
-        <span class="p">),</span> <span class="s2">&quot;knowledge_base must be a KnowledgeBase or TripleStore instance&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Knowledge Base: </span><span class="si">{</span><span class="n">knowledge_base</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="p">),</span> <span class="s2">"knowledge_base must be a KnowledgeBase or TripleStore instance"</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Knowledge Base: </span><span class="si">{</span><span class="n">knowledge_base</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">grid_search_over</span> <span class="o">=</span> <span class="n">grid_search_over</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kwargs_grid_search</span> <span class="o">=</span> <span class="n">kwargs_grid_search</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span> <span class="o">=</span> <span class="n">knowledge_base</span>
@@ -378,14 +456,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_should_include_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owl_class_expression</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine if an OWL class expression should be included as a feature based on configuration flags.</span>
+<span class="w">        </span><span class="sd">"""Determine if an OWL class expression should be included as a feature based on configuration flags.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            owl_class_expression: The OWL class expression to evaluate</span>
 <span class="sd">            </span>
 <span class="sd">        Returns:</span>
 <span class="sd">            True if the expression should be included, False otherwise</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Should always include atomic classes</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">,</span> <span class="n">OWLClass</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
@@ -398,8 +476,15 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span> <span class="ow">and</span> <span class="n">contains_cardinality</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         
-        <span class="c1"># Exclude expressions containing data properties if flag is disabled</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span> <span class="ow">and</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">):</span>
+        <span class="c1"># exclude expressions containing specific data properties</span>
+        <span class="n">property_types</span> <span class="o">=</span> <span class="n">contains_data_property</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">)</span>
+        <span class="n">data_property_toggles</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">PropertyType</span><span class="o">.</span><span class="n">BOOLEAN</span><span class="p">:</span>  <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_boolean</span><span class="p">,</span>
+                <span class="n">PropertyType</span><span class="o">.</span><span class="n">STRING</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_string</span><span class="p">,</span>
+                <span class="n">PropertyType</span><span class="o">.</span><span class="n">DATE</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_date</span><span class="p">,</span>
+                <span class="n">PropertyType</span><span class="o">.</span><span class="n">NUMERIC</span><span class="p">:</span>  <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_numeric</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">data_property_toggles</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">property_types</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         
         <span class="k">return</span> <span class="kc">True</span>
@@ -408,14 +493,14 @@
                      <span class="n">owl_named_individual</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span>
                      <span class="n">features</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span>
                      <span class="n">individuals_to_feature_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an OWL class expression as a feature for the given individual.</span>
+<span class="w">        </span><span class="sd">"""Add an OWL class expression as a feature for the given individual.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            owl_class_expression: The OWL class expression to add</span>
 <span class="sd">            owl_named_individual: The individual this feature applies to</span>
 <span class="sd">            features: Dictionary mapping DL string representations to OWL expressions</span>
 <span class="sd">            individuals_to_feature_mapping: Dictionary mapping individuals to their feature sets</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">str_dl_concept</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">)</span>
         <span class="n">individuals_to_feature_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">owl_named_individual</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">str_dl_concept</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
@@ -424,7 +509,7 @@
 
 <div class="viewcode-block" id="TDL.extract_expressions_from_owl_individuals">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL.extract_expressions_from_owl_individuals">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">extract_expressions_from_owl_individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_expressions_from_owl_individuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">start_time</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span>
             <span class="n">Tuple</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]]:</span>
         <span class="c1"># () Store mappings from str dl concept to owl class expression objects.</span>
         <span class="n">features</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -433,9 +518,13 @@
         
         <span class="k">for</span> <span class="n">owl_named_individual</span> <span class="ow">in</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span>
                                        <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-                                       <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Extracting information about examples&quot;</span><span class="p">):</span>
+                                       <span class="n">desc</span><span class="o">=</span><span class="s2">"Extracting information about examples"</span><span class="p">):</span>
+            <span class="c1">#check if max_runtime exceeded</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="ow">and</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Execution terminated: max_runtime of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="si">}</span><span class="s2"> seconds exceeded."</span><span class="p">)</span>
+
             <span class="c1"># Extract base expressions from ABox</span>
-            <span class="k">for</span> <span class="n">owl_class_expression</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">abox</span><span class="p">(</span><span class="n">individual</span><span class="o">=</span><span class="n">owl_named_individual</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;expression&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">owl_class_expression</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">abox</span><span class="p">(</span><span class="n">individual</span><span class="o">=</span><span class="n">owl_named_individual</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"expression"</span><span class="p">):</span>
                 <span class="c1"># Apply filters based on configuration flags</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_include_expression</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">):</span>
                     <span class="k">continue</span>
@@ -447,7 +536,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_extract_inverse_property_features</span><span class="p">(</span><span class="n">owl_named_individual</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">individuals_to_feature_mapping</span><span class="p">)</span>
             
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_string</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_date</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_numeric</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_boolean</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_extract_data_property_features</span><span class="p">(</span><span class="n">owl_named_individual</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">individuals_to_feature_mapping</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="p">:</span>
@@ -456,36 +545,49 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">num_individuals</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">make_iterable_verbose</span><span class="p">(</span><span class="n">individuals</span><span class="p">)))</span>
             <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s2">&quot;First hop features cannot be extracted.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  - Number of individuals processed: </span><span class="si">{</span><span class="n">num_individuals</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;  - Number of features extracted: 0</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  - use_inverse: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  - use_data_properties: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  - use_card_restrictions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Possible causes:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;  - The knowledge base is empty or contains no relevant axioms about the individuals.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;  - All features were filtered out by configuration flags.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;  - The individuals provided do not exist in the knowledge base.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Please check your configuration and input data.&quot;</span>
+                <span class="s2">"First hop features cannot be extracted.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - Number of individuals processed: </span><span class="si">{</span><span class="n">num_individuals</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"  - Number of features extracted: 0</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_inverse: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_data_properties_boolean: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_boolean</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_data_properties_string: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_string</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_data_properties_date: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_date</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_data_properties_numeric: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_numeric</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  - use_card_restrictions: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"Possible causes:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"  - The knowledge base is empty or contains no relevant axioms about the individuals.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"  - All features were filtered out by configuration flags.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"  - The individuals provided do not exist in the knowledge base.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"Please check your configuration and input data."</span>
             <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unique OWL Class Expressions as features: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  - Including inverse property features&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  - Including data property features&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  - Including cardinality restriction features&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unique OWL Class Expressions as features: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">feature_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"inverse properties"</span><span class="p">:</span>        <span class="bp">self</span><span class="o">.</span><span class="n">use_inverse</span><span class="p">,</span>
+                <span class="s2">"nominals"</span><span class="p">:</span>                  <span class="bp">self</span><span class="o">.</span><span class="n">use_nominals</span><span class="p">,</span>
+                <span class="s2">"cardinality restrictions"</span><span class="p">:</span>  <span class="bp">self</span><span class="o">.</span><span class="n">use_card_restrictions</span><span class="p">,</span>
+                <span class="s2">"boolean data properties"</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_boolean</span><span class="p">,</span>
+                <span class="s2">"string data properties"</span><span class="p">:</span>    <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_string</span><span class="p">,</span>
+                <span class="s2">"date data properties"</span><span class="p">:</span>      <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_date</span><span class="p">,</span>
+                <span class="s2">"numeric data properties"</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">use_data_properties_numeric</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="n">enabled</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="n">feature_options</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">flag</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">enabled</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Enabled feature types: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         
         <span class="c1"># Convert features dict to list</span>
         <span class="n">features_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
-        
+       
         <span class="c1"># Construct binary feature matrix</span>
         <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">owl_named_individual</span> <span class="ow">in</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="n">individuals</span><span class="p">,</span>
                                        <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-                                       <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Constructing Training Data&quot;</span><span class="p">):</span>
+                                       <span class="n">desc</span><span class="o">=</span><span class="s2">"Constructing Training Data"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="ow">and</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Execution terminated: max_runtime of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span><span class="si">}</span><span class="s2"> seconds exceeded."</span><span class="p">)</span>
+
             <span class="n">binary_sparse_representation</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">features_of_owl_named_individual</span> <span class="o">=</span> <span class="n">individuals_to_feature_mapping</span><span class="p">[</span><span class="n">owl_named_individual</span><span class="o">.</span><span class="n">str</span><span class="p">]</span>
 
@@ -503,68 +605,75 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_inverse_property_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span> 
                                           <span class="n">features</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span>
                                           <span class="n">individuals_to_feature_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features based on inverse object properties.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Extract features based on inverse object properties."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Get all object properties in the knowledge base</span>
             <span class="k">for</span> <span class="n">obj_prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">():</span>
                 <span class="c1"># Get inverse property values</span>
                 <span class="n">inverse_prop</span> <span class="o">=</span> <span class="n">obj_prop</span><span class="o">.</span><span class="n">get_inverse_property</span><span class="p">()</span>
-                
+
                 <span class="c1"># Check if this individual is the object of any property assertion</span>
                 <span class="c1"># by checking all individuals that have this property pointing to our individual</span>
                 <span class="k">for</span> <span class="n">other_ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">individuals</span><span class="p">():</span>
                     <span class="k">if</span> <span class="n">other_ind</span> <span class="o">==</span> <span class="n">individual</span><span class="p">:</span>
                         <span class="k">continue</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="c1"># Get object property values for the other individual</span>
+                        <span class="c1"># Get object property values for the other individual. This is the</span>
+                        <span class="c1"># only reasoner call in the loop body, so only it is allowed to fail</span>
+                        <span class="c1"># and be skipped - a bug in the feature-construction code below must</span>
+                        <span class="c1"># propagate instead of being silently treated as "no result found".</span>
                         <span class="n">prop_values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">get_object_property_values</span><span class="p">(</span><span class="n">other_ind</span><span class="p">,</span> <span class="n">obj_prop</span><span class="p">))</span>
-                        <span class="k">if</span> <span class="n">individual</span> <span class="ow">in</span> <span class="n">prop_values</span><span class="p">:</span>
-                            <span class="c1"># Create inverse existential restriction: ∃r⁻.⊤</span>
-                            <span class="n">inv_exist</span> <span class="o">=</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">inverse_prop</span><span class="p">,</span> 
-                                                               <span class="n">filler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
-                            <span class="n">str_dl_concept</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">inv_exist</span><span class="p">)</span>
-                            <span class="n">individuals_to_feature_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">individual</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">str_dl_concept</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
-                                <span class="n">features</span><span class="p">[</span><span class="n">str_dl_concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv_exist</span>
-                            
-                            <span class="c1"># Create inverse universal restriction: ∀r⁻.⊤</span>
-                            <span class="n">inv_univ</span> <span class="o">=</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">inverse_prop</span><span class="p">,</span>
-                                                             <span class="n">filler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
-                            <span class="n">str_dl_concept</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">inv_univ</span><span class="p">)</span>
-                            <span class="n">individuals_to_feature_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">individual</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">str_dl_concept</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
-                                <span class="n">features</span><span class="p">[</span><span class="n">str_dl_concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv_univ</span>
-                            <span class="k">break</span>  <span class="c1"># Found at least one, that&#39;s enough for the feature</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Could not fetch object property values for </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+                                     <span class="n">other_ind</span><span class="p">,</span> <span class="n">obj_prop</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                         <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">individual</span> <span class="ow">in</span> <span class="n">prop_values</span><span class="p">:</span>
+                        <span class="c1"># Create inverse existential restriction: ∃r⁻.⊤</span>
+                        <span class="n">inv_exist</span> <span class="o">=</span> <span class="n">OWLObjectSomeValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">inverse_prop</span><span class="p">,</span>
+                                                           <span class="n">filler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
+                        <span class="n">str_dl_concept</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">inv_exist</span><span class="p">)</span>
+                        <span class="n">individuals_to_feature_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">individual</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">str_dl_concept</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+                            <span class="n">features</span><span class="p">[</span><span class="n">str_dl_concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv_exist</span>
+
+                        <span class="c1"># Create inverse universal restriction: ∀r⁻.⊤</span>
+                        <span class="n">inv_univ</span> <span class="o">=</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">inverse_prop</span><span class="p">,</span>
+                                                         <span class="n">filler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span><span class="p">)</span>
+                        <span class="n">str_dl_concept</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">inv_univ</span><span class="p">)</span>
+                        <span class="n">individuals_to_feature_mapping</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">individual</span><span class="o">.</span><span class="n">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">str_dl_concept</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+                            <span class="n">features</span><span class="p">[</span><span class="n">str_dl_concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">inv_univ</span>
+                        <span class="k">break</span>  <span class="c1"># Found at least one, that's enough for the feature</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Error extracting inverse property features for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">individual</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Error extracting inverse property features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: Error extracting inverse property features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_data_property_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span>
                                        <span class="n">features</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span>
                                        <span class="n">individuals_to_feature_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract features based on data properties.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Extract features based on data properties."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Get data properties for this individual</span>
             <span class="k">for</span> <span class="n">data_prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">get_data_properties_for_ind</span><span class="p">(</span><span class="n">individual</span><span class="p">):</span>
                 <span class="c1"># Get data property values</span>
                 <span class="n">data_values</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">get_data_property_values</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="n">data_prop</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">data_values</span><span class="p">:</span>
-                    <span class="c1"># For each data value, we already have features from abox(mode=&quot;expression&quot;)</span>
+                    <span class="c1"># For each data value, we already have features from abox(mode="expression")</span>
                     <span class="c1"># This method can be extended to add additional data property features</span>
                     <span class="c1"># such as numeric ranges, etc.</span>
                     <span class="c1"># TODO: Create new OWL CLassExpressions based on data property values</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data property values for </span><span class="si">{</span><span class="n">data_prop</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">data_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                   <span class="c1"># print(f"Data property values for {data_prop}: {data_values}")</span>
                     <span class="k">pass</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Error extracting data property features for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">individual</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Error extracting data property features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: Error extracting data property features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_cardinality_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual</span><span class="p">:</span> <span class="n">OWLNamedIndividual</span><span class="p">,</span>
                                      <span class="n">features</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OWLClassExpression</span><span class="p">],</span>
                                      <span class="n">individuals_to_feature_mapping</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract cardinality restriction features based on object properties.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Extract cardinality restriction features based on object properties."""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Get object properties for this individual</span>
             <span class="k">for</span> <span class="n">obj_prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_base</span><span class="o">.</span><span class="n">get_object_properties_for_ind</span><span class="p">(</span><span class="n">individual</span><span class="p">):</span>
@@ -603,16 +712,17 @@
                             <span class="k">if</span> <span class="n">str_dl_concept</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
                                 <span class="n">features</span><span class="p">[</span><span class="n">str_dl_concept</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_card</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Error extracting cardinality features for </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">individual</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Error extracting cardinality features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Warning: Error extracting cardinality features: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TDL.create_training_data">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL.create_training_data">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create_training_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_training_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">,</span> <span class="n">start_time</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
         <span class="c1"># (1) Initialize ordering over positive and negative examples.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating a Training Dataset&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Creating a Training Dataset"</span><span class="p">)</span>
         <span class="n">positive_examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]</span>
         <span class="n">negative_examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]</span>
         <span class="n">positive_examples</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">learning_problem</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
@@ -622,12 +732,12 @@
         <span class="c1"># (3) Iterate over examples to extract unique features.</span>
         <span class="n">examples</span> <span class="o">=</span> <span class="n">positive_examples</span> <span class="o">+</span> <span class="n">negative_examples</span>
         <span class="c1"># For the sake of convenience. sort features in ascending order of string lengths of DL representations.</span>
-        <span class="n">X</span><span class="p">,</span> <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_expressions_from_owl_individuals</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_expressions_from_owl_individuals</span><span class="p">(</span><span class="n">examples</span><span class="p">,</span> <span class="n">start_time</span><span class="p">)</span>
         <span class="c1"># (4) Creating a tabular data for the binary classification problem.</span>
         <span class="c1"># X = self.construct_sparse_binary_representations(features, examples, examples_to_features)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">examples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">examples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">])</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">examples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"label"</span><span class="p">])</span>
         <span class="c1"># Remove redundant columns</span>
         <span class="n">same_value_columns</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">same_value_columns</span><span class="p">]</span>
@@ -638,7 +748,7 @@
 <div class="viewcode-block" id="TDL.construct_owl_expression_from_tree">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL.construct_owl_expression_from_tree">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_owl_expression_from_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLObjectIntersectionOf</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Construct an OWL class expression from a decision tree&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">""" Construct an OWL class expression from a decision tree"""</span>
 
         <span class="n">positive_examples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]</span>
         <span class="n">positive_examples</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="n">y</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -650,25 +760,25 @@
         <span class="k">for</span> <span class="n">sequence_of_reasoning_steps</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">make_iterable_verbose</span><span class="p">(</span><span class="n">explain_inference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span>
                                             <span class="n">X</span><span class="o">=</span><span class="n">vector_representation_of_positive_examples</span><span class="p">),</span>
                                             <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">,</span>
-                                            <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Constructing Description Logic Concepts&quot;</span><span class="p">),</span> <span class="n">positive_examples</span><span class="p">):</span>
+                                            <span class="n">desc</span><span class="o">=</span><span class="s2">"Constructing Description Logic Concepts"</span><span class="p">),</span> <span class="n">positive_examples</span><span class="p">):</span>
             <span class="n">concepts_per_reasoning_step</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sequence_of_reasoning_steps</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;inequality&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">:</span>
-                    <span class="n">owl_class_expression</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;owl_expression&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="s2">"inequality"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"&gt;"</span><span class="p">:</span>
+                    <span class="n">owl_class_expression</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">"owl_expression"</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">owl_class_expression</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">&quot;owl_expression&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_object_complement_of</span><span class="p">()</span>
+                    <span class="n">owl_class_expression</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s2">"owl_expression"</span><span class="p">]</span><span class="o">.</span><span class="n">get_object_complement_of</span><span class="p">()</span>
 
                 <span class="n">concepts_per_reasoning_step</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">owl_class_expression</span><span class="p">)</span>
                 <span class="c1"># TODO : CD: No need to perform retrieval.</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">                </span><span class="sd">"""</span>
 <span class="sd">                print(i,owl_class_expression)</span>
 <span class="sd">                retrival_result = pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}</span>
 
 <span class="sd">                if retrival_result:</span>
 <span class="sd">                    concepts_per_reasoning_step.append(owl_class_expression)</span>
 <span class="sd">                else:</span>
-<span class="sd">                    raise RuntimeError(&quot;Incorrect retrival&quot;)</span>
-<span class="sd">                &quot;&quot;&quot;</span>
+<span class="sd">                    raise RuntimeError("Incorrect retrival")</span>
+<span class="sd">                """</span>
             <span class="n">pred</span> <span class="o">=</span> <span class="n">concepts_reducer</span><span class="p">(</span><span class="n">concepts</span><span class="o">=</span><span class="n">concepts_per_reasoning_step</span><span class="p">,</span> <span class="n">reduced_cls</span><span class="o">=</span><span class="n">OWLObjectIntersectionOf</span><span class="p">)</span>
             <span class="n">prediction_per_example</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pred</span><span class="p">,</span> <span class="n">pos</span><span class="p">))</span>
 
@@ -677,10 +787,67 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">prediction_per_example</span><span class="p">)</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_maybe_plot_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Plot a UMAP-reduced view of the training features, if enabled. Shared by TDL and TDL_refinement."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_embeddings</span><span class="p">:</span>
+            <span class="n">plot_umap_reduced_embeddings</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="s2">"umap_visualization.pdf"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_decision_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Optionally grid-search classifier hyperparameters, then train self.clf on (X, y).</span>
+<span class="sd">        Shared by TDL and TDL_refinement."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_search_over</span><span class="p">:</span>
+            <span class="n">grid_search</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">GridSearchCV</span><span class="p">(</span>
+                <span class="n">tree</span><span class="o">.</span><span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="p">),</span>
+                <span class="n">param_grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_search_over</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_grid_search</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">grid_search</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grid_search</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
+        <span class="c1"># Training</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Training starts!"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_report_and_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Report classification metrics and render the configured tree/feature-importance plots.</span>
+<span class="sd">        Shared by TDL and TDL_refinement."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_classification</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span> <span class="o">=</span> <span class="s2">"Classification Report: Negatives: -1 and Positives 1 </span><span class="se">\n</span><span class="s2">"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span> <span class="o">+=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+                                                                                  <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Negative"</span><span class="p">,</span>
+                                                                                                <span class="s2">"Positive"</span><span class="p">])</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_tree</span><span class="p">:</span>
+            <span class="n">plot_decision_tree_of_expressions</span><span class="p">(</span><span class="n">feature_names</span><span class="o">=</span><span class="p">[</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">],</span>
+                                              <span class="n">cart_tree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_feature_importance</span><span class="p">:</span>
+            <span class="n">plot_topk_feature_importance</span><span class="p">(</span><span class="n">feature_names</span><span class="o">=</span><span class="p">[</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">],</span>
+                                         <span class="n">cart_tree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_finalize_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Build the conjunctive/disjunctive OWL predictions from the trained tree and optionally verbalize them.</span>
+<span class="sd">        Shared by TDL and TDL_refinement."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">owl_class_expressions</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="c1"># Each item can be considered is a path of OWL Class Expressions</span>
+        <span class="c1"># starting from the root node in the decision tree and</span>
+        <span class="c1"># ending in a leaf node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLObjectIntersectionOf</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Computing conjunctive_concepts..."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_owl_expression_from_tree</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">owl_class_expressions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Computing disjunction_of_conjunctive_concepts..."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disjunction_of_conjunctive_concepts</span> <span class="o">=</span> <span class="n">concepts_reducer</span><span class="p">(</span><span class="n">concepts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">,</span>  <span class="n">reduced_cls</span><span class="o">=</span><span class="n">OWLObjectUnionOf</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbalize</span><span class="p">:</span>
+            <span class="n">verbalize_learner_prediction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">disjunction_of_conjunctive_concepts</span><span class="p">)</span>
+
 <div class="viewcode-block" id="TDL.fit">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">learning_problem</span><span class="p">:</span> <span class="n">PosNegLPStandard</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_runtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the learner to the given learning problem</span>
+<span class="w">        </span><span class="sd">"""Fit the learner to the given learning problem</span>
 
 <span class="sd">        (1) Extract multi-hop information about E^+ and E^-.</span>
 <span class="sd">        (2) Create OWL Class Expressions from (1)</span>
@@ -694,63 +861,25 @@
 <span class="sd">        :param learning_problem: The learning problem</span>
 <span class="sd">        :param max_runtime:total runtime of the learning</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">learning_problem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Learning problem cannot be None.&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">assert</span> <span class="n">learning_problem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"Learning problem cannot be None."</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">learning_problem</span><span class="p">,</span> <span class="n">PosNegLPStandard</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Learning problem must be PosNegLPStandard. Currently:</span><span class="si">{</span><span class="n">learning_problem</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Learning problem must be PosNegLPStandard. Currently:</span><span class="si">{</span><span class="n">learning_problem</span><span class="si">}</span><span class="s2">."</span>
 
         <span class="k">if</span> <span class="n">max_runtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_runtime</span> <span class="o">=</span> <span class="n">max_runtime</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">X</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
         <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]</span>
-        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_training_data</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">=</span><span class="n">learning_problem</span><span class="p">)</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_training_data</span><span class="p">(</span><span class="n">learning_problem</span><span class="o">=</span><span class="n">learning_problem</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">)</span>
         <span class="c1"># CD: Remember so that if user wants to use them</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_embeddings</span><span class="p">:</span>
-            <span class="n">plot_umap_reduced_embeddings</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="s2">&quot;umap_visualization.pdf&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_search_over</span><span class="p">:</span>
-            <span class="n">grid_search</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">GridSearchCV</span><span class="p">(</span>
-                <span class="n">tree</span><span class="o">.</span><span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="p">),</span>
-                <span class="n">param_grid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_search_over</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_grid_search</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">grid_search</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">grid_search</span><span class="o">.</span><span class="n">best_params_</span><span class="p">)</span>
-        <span class="c1"># Training</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training starts!&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs_classifier</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report_classification</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span> <span class="o">=</span> <span class="s2">&quot;Classification Report: Negatives: -1 and Positives 1 </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span> <span class="o">+=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">classification_report</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-                                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
-                                                                                  <span class="n">target_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Negative&quot;</span><span class="p">,</span>
-                                                                                                <span class="s2">&quot;Positive&quot;</span><span class="p">])</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__classification_report</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_tree</span><span class="p">:</span>
-            <span class="n">plot_decision_tree_of_expressions</span><span class="p">(</span><span class="n">feature_names</span><span class="o">=</span><span class="p">[</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">],</span>
-                                              <span class="n">cart_tree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">plot_feature_importance</span><span class="p">:</span>
-            <span class="n">plot_topk_feature_importance</span><span class="p">(</span><span class="n">feature_names</span><span class="o">=</span><span class="p">[</span><span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">],</span>
-                                         <span class="n">cart_tree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">owl_class_expressions</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="c1"># Each item can be considered is a path of OWL Class Expressions</span>
-        <span class="c1"># starting from the root node in the decision tree and</span>
-        <span class="c1"># ending in a leaf node.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLObjectIntersectionOf</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing conjunctive_concepts...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_owl_expression_from_tree</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">owl_class_expressions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Computing disjunction_of_conjunctive_concepts...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">disjunction_of_conjunctive_concepts</span> <span class="o">=</span> <span class="n">concepts_reducer</span><span class="p">(</span><span class="n">concepts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conjunctive_concepts</span><span class="p">,</span>  <span class="n">reduced_cls</span><span class="o">=</span><span class="n">OWLObjectUnionOf</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbalize</span><span class="p">:</span>
-            <span class="n">verbalize_learner_prediction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">disjunction_of_conjunctive_concepts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maybe_plot_embeddings</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_decision_tree</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_report_and_plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_finalize_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
 
@@ -764,7 +893,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">best_hypotheses</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the prediction&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the prediction"""</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">disjunction_of_conjunctive_concepts</span>
         <span class="k">else</span><span class="p">:</span>
@@ -777,8 +906,8 @@
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/tree_learner/index.html#ontolearn.learners.TDL.predict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">],</span> <span class="n">proba</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Predict the likelihoods of individuals belonging to the classes&quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Unavailable. Predict the likelihoods of individuals belonging to the classes&quot;</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">""" Predict the likelihoods of individuals belonging to the classes"""</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Unavailable. Predict the likelihoods of individuals belonging to the classes"</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

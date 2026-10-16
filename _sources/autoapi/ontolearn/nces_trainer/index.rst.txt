@@ -69,8 +69,6 @@ Module Contents
 
 
    .. py:attribute:: num_workers
-      :value: 8
-
 
 
    .. py:attribute:: storage_path

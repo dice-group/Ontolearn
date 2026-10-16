@@ -98,6 +98,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../spell/index.html">ontolearn.learners.spell</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../spell_kit/index.html">ontolearn.learners.spell_kit</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../tree_learner/index.html">ontolearn.learners.tree_learner</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../tree_learner_refinement_inherit/index.html">ontolearn.learners.tree_learner_refinement_inherit</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
@@ -119,7 +120,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">ontolearn.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../search/index.html">ontolearn.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../tentris/index.html">ontolearn.tentris</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../triple_store/index.html">ontolearn.triple_store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../utils/index.html">ontolearn.utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../value_splitter/index.html">ontolearn.value_splitter</a></li>
@@ -509,7 +509,12 @@ takes to execute.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="ontolearn.learners.clip.CLIP.train">
 <span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Adam'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">record_runtime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_sizes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle_examples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/ontolearn/learners/clip.html#CLIP.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.learners.clip.CLIP.train" title="Link to this definition"></a></dt>
-<dd><p>Train RL agent on learning problems.</p>
+<dd><p>Optional training hook; a no-op by default.</p>
+<p>Training is learner-specific: learners that require training (e.g. Drill, NCES, NCES2,
+ROCES, CLIP) override this method with their own signatures, while purely symbolic
+learners (e.g. CELOE, OCEL) need no training. This default exists so that untrainable
+learners can be used in generic pipelines that call <code class="docutils literal notranslate"><span class="pre">train()</span></code> uniformly
+(e.g. <code class="xref py py-meth docutils literal notranslate"><span class="pre">ontolearn.experiments.Experiments.carry_out_kfold_cross_validation()</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>self.</p>

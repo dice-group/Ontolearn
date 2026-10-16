@@ -88,7 +88,7 @@
 <span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
 <span class="c1">#</span>
 <span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
-<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
 <span class="c1"># in the Software without restriction, including without limitation the rights</span>
 <span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
 <span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
@@ -97,7 +97,7 @@
 <span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
 <span class="c1"># copies or substantial portions of the Software.</span>
 <span class="c1">#</span>
-<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
 <span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
 <span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
 <span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
@@ -106,7 +106,7 @@
 <span class="c1"># SOFTWARE.</span>
 <span class="c1"># -----------------------------------------------------------------------------</span>
 
-<span class="sd">&quot;&quot;&quot;SPELL Learner - SAT-based concept learning using SPELL fitting.&quot;&quot;&quot;</span>
+<span class="sd">"""SPELL Learner - SAT-based concept learning using SPELL fitting."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
@@ -120,7 +120,7 @@
 <div class="viewcode-block" id="SPELL">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/spell/index.html#ontolearn.learners.SPELL">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SPELL</span><span class="p">(</span><span class="n">SATBaseLearner</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    SPELL: SAT-based concept learner using general SPELL fitting.</span>
 
 <span class="sd">    This learner uses SAT solvers to find concept expressions that fit positive and negative examples.</span>
@@ -139,11 +139,11 @@
 <span class="sd">        _structure (Structure): Internal structure representation of the knowledge base.</span>
 <span class="sd">        _ind_to_owl (dict): Mapping from internal individual indices to OWL individuals.</span>
 <span class="sd">        _owl_to_ind (dict): Mapping from OWL individuals to internal indices.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;max_query_size&#39;</span><span class="p">,</span> <span class="s1">&#39;starting_query_size&#39;</span><span class="p">,</span> <span class="s1">&#39;search_mode&#39;</span><span class="p">)</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'max_query_size'</span><span class="p">,</span> <span class="s1">'starting_query_size'</span><span class="p">,</span> <span class="s1">'search_mode'</span><span class="p">)</span>
 
-    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;spell&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">'spell'</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">AbstractKnowledgeBase</span><span class="p">,</span>
@@ -151,21 +151,21 @@
                  <span class="n">max_runtime</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
                  <span class="n">max_query_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
                  <span class="n">starting_query_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-                 <span class="n">search_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;full_approx&#39;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                 <span class="n">search_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'full_approx'</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize SPELL learner.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            knowledge_base: The knowledge base to use for learning.</span>
-<span class="sd">            reasoner: Optional reasoner (if None, uses the KB&#39;s reasoner).</span>
+<span class="sd">            reasoner: Optional reasoner (if None, uses the KB's reasoner).</span>
 <span class="sd">            max_runtime: Maximum allowed runtime in seconds.</span>
 <span class="sd">            max_query_size: Maximum query size to search. Defaults to 10.</span>
 <span class="sd">            starting_query_size: Starting query size for incremental search. Defaults to 1.</span>
-<span class="sd">            search_mode: Search mode - &#39;exact&#39;, &#39;neg_approx&#39;, or &#39;full_approx&#39;. Defaults to &#39;full_approx&#39;.</span>
+<span class="sd">            search_mode: Search mode - 'exact', 'neg_approx', or 'full_approx'. Defaults to 'full_approx'.</span>
 <span class="sd">                  - exact: Search for queries that cover all positive examples</span>
 <span class="sd">                  - neg_approx: Allow approximation on negative examples</span>
 <span class="sd">                  - full_approx: Allow approximation on both positive and negative examples</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">knowledge_base</span><span class="p">,</span> <span class="n">reasoner</span><span class="p">,</span> <span class="n">max_runtime</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">max_query_size</span> <span class="o">=</span> <span class="n">max_query_size</span>
@@ -173,20 +173,20 @@
 
         <span class="c1"># Convert string mode to enum</span>
         <span class="n">mode_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;exact&#39;</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">exact</span><span class="p">,</span>
-            <span class="s1">&#39;neg_approx&#39;</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">neg_approx</span><span class="p">,</span>
-            <span class="s1">&#39;full_approx&#39;</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">full_approx</span>
+            <span class="s1">'exact'</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">exact</span><span class="p">,</span>
+            <span class="s1">'neg_approx'</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">neg_approx</span><span class="p">,</span>
+            <span class="s1">'full_approx'</span><span class="p">:</span> <span class="n">fitting</span><span class="o">.</span><span class="n">mode</span><span class="o">.</span><span class="n">full_approx</span>
         <span class="p">}</span>
 
         <span class="k">if</span> <span class="n">search_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mode_map</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">search_mode</span><span class="si">}</span><span class="s2">. Must be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">mode_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid mode: </span><span class="si">{</span><span class="n">search_mode</span><span class="si">}</span><span class="s2">. Must be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">mode_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">search_mode</span> <span class="o">=</span> <span class="n">mode_map</span><span class="p">[</span><span class="n">search_mode</span><span class="p">]</span>
 
 <div class="viewcode-block" id="SPELL.fit">
 <a class="viewcode-back" href="../../../autoapi/ontolearn/learners/spell/index.html#ontolearn.learners.SPELL.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lp</span><span class="p">:</span> <span class="n">PosNegLPStandard</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find concept expressions that explain positive and negative examples.</span>
 
 <span class="sd">        Args:</span>
@@ -194,7 +194,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            self</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
 
         <span class="bp">self</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>

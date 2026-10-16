@@ -71,8 +71,6 @@ Module Contents
 
 
    .. py:attribute:: num_individuals
-      :value: 0
-
 
 
    .. py:attribute:: length
@@ -118,8 +116,6 @@ Module Contents
 
 
    .. py:attribute:: quality
-      :value: None
-
 
 
    .. py:attribute:: owl_class
@@ -128,8 +124,6 @@ Module Contents
 
 
    .. py:attribute:: length
-      :value: None
-
 
 
    .. py:attribute:: type

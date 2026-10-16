@@ -96,6 +96,7 @@ Submodules
    /autoapi/ontolearn/learners/spell/index
    /autoapi/ontolearn/learners/spell_kit/index
    /autoapi/ontolearn/learners/tree_learner/index
+   /autoapi/ontolearn/learners/tree_learner_refinement_inherit/index
 
 
 Classes
@@ -118,6 +119,7 @@ Classes
    ontolearn.learners.SPARQLQueryLearner
    ontolearn.learners.SPELL
    ontolearn.learners.TDL
+   ontolearn.learners.TDL_refinement
 
 
 Package Contents
@@ -244,7 +246,13 @@ Package Contents
 
    .. py:method:: train(*args, **kwargs)
 
-      Train RL agent on learning problems.
+      Optional training hook; a no-op by default.
+
+      Training is learner-specific: learners that require training (e.g. Drill, NCES, NCES2,
+      ROCES, CLIP) override this method with their own signatures, while purely symbolic
+      learners (e.g. CELOE, OCEL) need no training. This default exists so that untrainable
+      learners can be used in generic pipelines that call ``train()`` uniformly
+      (e.g. :meth:`ontolearn.experiments.Experiments.carry_out_kfold_cross_validation`).
 
       :returns: self.
 
@@ -616,8 +624,6 @@ Package Contents
 
 
    .. py:attribute:: operators
-      :value: None
-
 
 
    .. py:attribute:: tree_templates
@@ -839,6 +845,22 @@ Package Contents
    .. py:method:: updating_node(node: ontolearn.search.OENode)
 
       Removes the node from the heuristic sorted set and inserts it again.
+
+      `heuristic_queue` is a `SortedSet` keyed by `HeuristicOrderedNode`, i.e. it orders
+      entries by `node.heuristic` (then by concept). Refining `node` changes `node.h_exp`
+      and, via `heuristic_func.apply(...)`, `node.heuristic` itself - so `node` has to be
+      pulled out of the sorted structure *before* it is mutated and re-inserted *after*,
+      otherwise the set's internal ordering invariant (built from the heuristic value at
+      insertion time) would no longer match the node's current heuristic value.
+
+      `discard()` looks the node up by its *current* key. If the node's heuristic already
+      changed since it was added to the queue (e.g. it was mutated somewhere other than
+      through this context manager, or it is being updated a second time without ever
+      having been re-added), the lookup can miss and `SortedKeyList.remove()` raises
+      `ValueError`. That would indicate the node's queue membership and its `heuristic`
+      attribute have gone out of sync with each other - worth investigating if it is
+      ever observed - but there is nothing to undo here: the node is simply not present
+      in the queue, so we fall through to `yield`/re-`add()` as normal.
 
       :param Node to update.:
 
@@ -1112,13 +1134,19 @@ Package Contents
 
    .. py:method:: train(data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=0.001, decay_rate=0.0, clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False)
 
-      Train RL agent on learning problems.
+      Optional training hook; a no-op by default.
+
+      Training is learner-specific: learners that require training (e.g. Drill, NCES, NCES2,
+      ROCES, CLIP) override this method with their own signatures, while purely symbolic
+      learners (e.g. CELOE, OCEL) need no training. This default exists so that untrainable
+      learners can be used in generic pipelines that call ``train()`` uniformly
+      (e.g. :meth:`ontolearn.experiments.Experiments.carry_out_kfold_cross_validation`).
 
       :returns: self.
 
 
 
-.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10)
+.. py:class:: Drill(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, path_embeddings: str = None, refinement_operator: ontolearn.refinement_operators.LengthBasedRefinement = None, use_inverse: bool = True, use_data_properties: bool = True, use_card_restrictions: bool = True, use_nominals: bool = True, min_cardinality_restriction: int = 2, max_cardinality_restriction: int = 5, positive_type_bias: int = 1, quality_func: Callable = None, reward_func: object = None, batch_size=None, num_workers: int = 1, iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None, max_len_replay_memory=256, epsilon_decay: float = 0.01, epsilon_min: float = 0.0, num_epochs_per_replay: int = 2, num_episodes_per_replay: int = 2, learning_rate: float = 0.001, max_runtime=None, num_of_sequential_actions=3, stop_at_goal=True, num_episode: int = 10, random_state: int = None)
 
    Bases: :py:obj:`ontolearn.learners.base.RefinementBasedConceptLearner`
 
@@ -1137,6 +1165,11 @@ Package Contents
 
 
    .. py:attribute:: learning_problem
+      :value: None
+
+
+
+   .. py:attribute:: random_state
       :value: None
 
 
@@ -2531,7 +2564,7 @@ Package Contents
 
 
 
-.. py:class:: TDL(knowledge_base, use_inverse: bool = True, use_data_properties: bool = True, use_nominals: bool = True, use_card_restrictions: bool = True, kwargs_classifier: dict = None, max_runtime: int = 1, grid_search_over: dict = None, grid_search_apply: bool = False, kwargs_grid_search: dict = {}, report_classification: bool = True, plot_tree: bool = False, plot_embeddings: bool = False, plot_feature_importance: bool = False, verbose: int = 10, verbalize: bool = False)
+.. py:class:: TDL(knowledge_base, use_inverse: bool = True, use_data_properties_boolean: bool = True, use_data_properties_string: bool = True, use_data_properties_date: bool = True, use_data_properties_numeric: bool = True, use_nominals: bool = True, use_card_restrictions: bool = True, kwargs_classifier: dict = None, max_runtime: int = None, grid_search_over: dict = None, grid_search_apply: bool = False, kwargs_grid_search: dict = None, report_classification: bool = True, plot_tree: bool = False, plot_embeddings: bool = False, plot_feature_importance: bool = False, verbose: int = 10, verbalize: bool = False)
 
    Tree-based Description Logic Concept Learner
 
@@ -2541,7 +2574,22 @@ Package Contents
 
 
 
-   .. py:attribute:: use_data_properties
+   .. py:attribute:: use_data_properties_boolean
+      :value: True
+
+
+
+   .. py:attribute:: use_data_properties_string
+      :value: True
+
+
+
+   .. py:attribute:: use_data_properties_date
+      :value: True
+
+
+
+   .. py:attribute:: use_data_properties_numeric
       :value: True
 
 
@@ -2601,7 +2649,7 @@ Package Contents
 
 
    .. py:attribute:: max_runtime
-      :value: 1
+      :value: None
 
 
 
@@ -2648,10 +2696,10 @@ Package Contents
 
 
 
-   .. py:method:: extract_expressions_from_owl_individuals(individuals: List[owlapy.owl_individual.OWLNamedIndividual]) -> Tuple[numpy.ndarray, List[owlapy.class_expression.OWLClassExpression]]
+   .. py:method:: extract_expressions_from_owl_individuals(individuals: List[owlapy.owl_individual.OWLNamedIndividual], start_time: float = None) -> Tuple[numpy.ndarray, List[owlapy.class_expression.OWLClassExpression]]
 
 
-   .. py:method:: create_training_data(learning_problem: ontolearn.learning_problem.PosNegLPStandard) -> Tuple[pandas.DataFrame, pandas.DataFrame]
+   .. py:method:: create_training_data(learning_problem: ontolearn.learning_problem.PosNegLPStandard, start_time: float = None) -> Tuple[pandas.DataFrame, pandas.DataFrame]
 
 
    .. py:method:: construct_owl_expression_from_tree(X: pandas.DataFrame, y: pandas.DataFrame) -> List[owlapy.class_expression.OWLObjectIntersectionOf]
@@ -2695,6 +2743,102 @@ Package Contents
 
 
       Predict the likelihoods of individuals belonging to the classes
+
+
+
+.. py:class:: TDL_refinement(knowledge_base, use_inverse: bool = False, use_data_properties_numeric: bool = True, use_data_properties_boolean: bool = True, use_data_properties_string: bool = True, use_data_properties_date: bool = True, use_nominals: bool = False, use_card_restrictions: bool = True, kwargs_classifier: dict = None, max_runtime: int = None, grid_search_over: dict = None, grid_search_apply: bool = False, kwargs_grid_search: dict = None, report_classification: bool = False, plot_tree: bool = False, plot_embeddings: bool = False, plot_feature_importance: bool = False, verbose: int = 10, verbalize: bool = False, feature_refinement: bool = True, plot_importance_evo: bool = False, refine_iterations: int = 3, topk: int = 30)
+
+   Bases: :py:obj:`ontolearn.learners.TDL`
+
+
+   Tree-based Description Logic Concept Learner
+
+
+   .. py:attribute:: feature_refinement
+      :value: True
+
+
+
+   .. py:attribute:: plot_importance_evo
+      :value: False
+
+
+
+   .. py:attribute:: refine_iterations
+      :value: 3
+
+
+
+   .. py:attribute:: topk
+      :value: 30
+
+
+
+   .. py:attribute:: concept_per_iteration
+      :type:  List
+      :value: []
+
+
+
+   .. py:attribute:: top_feature_dicts
+      :type:  List
+      :value: []
+
+
+
+   .. py:attribute:: initial_importance_dict
+      :type:  Dict
+
+
+   .. py:attribute:: use_data_properties
+
+
+   .. py:attribute:: data_property_datatype_dict
+      :type:  Dict[owlapy.owl_property.OWLDataProperty, owlapy.owl_datatype.OWLDatatype]
+
+
+   .. py:method:: extract_expressions_from_owl_individuals(individuals: List[owlapy.owl_individual.OWLNamedIndividual], start_time: float = None) -> Tuple[numpy.ndarray, List[owlapy.class_expression.OWLClassExpression]]
+
+
+   .. py:method:: plot_perm_feature_importances(perm_importance_result, feat_name)
+
+      bar plot the permutation feature importance
+
+
+
+   .. py:method:: plot_shap_feature_importances(shap_vals, feat_name)
+
+      Bar plot the mean absolute SHAP feature importance
+
+
+
+   .. py:method:: refine_numerical_features(topk_expressions: list[owlapy.class_expression.OWLClassExpression], iteration: int)
+
+      Refine numerical features based on data property values and fitted distributions.
+
+
+
+   .. py:method:: plot_importance_evolution(initial_dict, refined_dicts, top_k=10)
+
+
+   .. py:method:: fit(learning_problem: ontolearn.learning_problem.PosNegLPStandard = None, max_runtime: int = None)
+
+      Fit the learner to the given learning problem
+
+      (1) Extract multi-hop information about E^+ and E^-.
+      (2) Create OWL Class Expressions from (1)
+      (3) Build a binary sparse training data X where
+          first |E+| rows denote the binary representations of positives
+          Remaining rows denote the binary representations of E⁻
+      (4) Create binary labels.
+      (5) Train a decision tree classifier on (3) and (4)
+      (6) If feature refinement is enabled, refine the numerical dp features based on SHAP values and data property ranges.
+      (4) Construct a set of DL concept for each e \in E^+
+      (5) Union (4)
+
+      :param learning_problem: The learning problem
+      :param max_runtime:total runtime of the learning
+
 
 
 

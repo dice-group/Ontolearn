@@ -186,7 +186,7 @@ Module Contents
 
 
    .. py:attribute:: max_nr_fillers
-      :type:  DefaultDict[owlapy.owl_property.OWLObjectPropertyExpression, int]
+      :type:  Dict[owlapy.owl_property.OWLObjectPropertyExpression, int]
 
 
    .. py:attribute:: dp_splits
@@ -356,7 +356,7 @@ Module Contents
 
 
 
-.. py:class:: ExpressRefinement(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, downsample: bool = True, expressivity: float = 0.8, sample_fillers_count: int = 5, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, max_child_length: int = 10, use_inverse: bool = True, use_card_restrictions: bool = True, use_numeric_datatypes: bool = True, use_time_datatypes: bool = True, use_boolean_datatype: bool = True, card_limit: int = 10)
+.. py:class:: ExpressRefinement(knowledge_base: ontolearn.abstracts.AbstractKnowledgeBase, downsample: bool = True, expressivity: float = 0.8, sample_fillers_count: int = 5, value_splitter: Optional[ontolearn.value_splitter.AbstractValueSplitter] = None, max_child_length: int = 10, use_inverse: bool = True, use_card_restrictions: bool = True, use_numeric_datatypes: bool = True, use_time_datatypes: bool = True, use_boolean_datatype: bool = True, card_limit: int = 10, random_seed: Optional[int] = None)
 
    Bases: :py:obj:`ModifiedCELOERefinement`
 
@@ -365,7 +365,7 @@ Module Contents
 
 
    .. py:attribute:: __slots__
-      :value: ('expressivity', 'downsample', 'sample_fillers_count', 'generator')
+      :value: ('expressivity', 'downsample', 'sample_fillers_count', 'generator', 'rnd')
 
 
 
@@ -383,6 +383,9 @@ Module Contents
 
    .. py:attribute:: generator
       :type:  ontolearn.concept_generator.ConceptGenerator
+
+
+   .. py:attribute:: rnd
 
 
    .. py:method:: refine_atomic_concept(ce: owlapy.class_expression.OWLClass) -> Iterable[owlapy.class_expression.OWLClassExpression]

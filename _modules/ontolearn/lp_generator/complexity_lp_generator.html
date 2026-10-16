@@ -1,0 +1,691 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ontolearn.lp_generator.complexity_lp_generator &mdash; Ontolearn  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Ontolearn
+              <img src="../../../_static/Ontolearn_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/01_introduction.html">About Ontolearn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/02_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/03_examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/04_knowledge_base.html">Knowledge Bases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/05_evaluate_ce.html">Evaluate a class expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/06_concept_learners.html">Concept Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/09_further_resources.html">Further Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/ontolearn/index.html">ontolearn</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Ontolearn</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">ontolearn.lp_generator.complexity_lp_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for ontolearn.lp_generator.complexity_lp_generator</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="c1"># MIT License</span>
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) 2024 Ontolearn Team</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the "Software"), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="c1"># -----------------------------------------------------------------------------</span>
+<span class="sd">"""Goal-directed, complexity-controlled learning-problem generation.</span>
+
+<span class="sd">``ontolearn.lp_generator.LPGen``/``KB2Data`` synthesize learning problems bottom-up: they</span>
+<span class="sd">refine ``owl:Thing`` with ``ExpressRefinement`` and keep whatever non-redundant concepts fall</span>
+<span class="sd">out, sorted by length only as a dedup tie-break. There is no way to ask for "a learning problem</span>
+<span class="sd">whose target uses exactly a nested existential restriction and an object intersection, depth &lt;= 3".</span>
+
+<span class="sd">This module instead samples a target ``OWLClassExpression`` **top-down from an explicit DL-construct</span>
+<span class="sd">grammar** (:class:`ComplexityProfile`): the caller names which constructors are allowed</span>
+<span class="sd">(intersection, union, existential/universal restriction, cardinality restrictions, has-value,</span>
+<span class="sd">negation, inverse roles) and bounds on length/depth, and the generator recursively builds concepts</span>
+<span class="sd">that respect that budget. Each candidate is turned into a learning problem via reasoner-based</span>
+<span class="sd">retrieval (``kb.individuals_set``).</span>
+
+<span class="sd">Candidates are additionally ranked by an explicit **difficulty score** (:class:`DifficultyWeights`)</span>
+<span class="sd">combining four signals: normalized target length/depth, how far the best "cheap" one-step</span>
+<span class="sd">hypothesis (an atomic class, its negation, or a bare ``exists r.Top``) falls short of solving the</span>
+<span class="sd">LP outright, and the density of *near-miss negatives* -- individuals that satisfy the target with</span>
+<span class="sd">exactly one top-level conjunct dropped (e.g. the right class but the wrong relation), which is</span>
+<span class="sd">exactly where a greedy top-down learner is most likely to overgeneralize. :meth:`generate`</span>
+<span class="sd">oversamples candidates and keeps the hardest ``num_lps`` of them, and biases the negative sample</span>
+<span class="sd">towards near-misses via ``hard_negative_ratio``, so the returned problems are pointed at the</span>
+<span class="sd">learner's actual failure modes rather than generic random negatives.</span>
+
+<span class="sd">The grammar and probes are built purely from the knowledge base's own signature</span>
+<span class="sd">(``kb.ontology.classes_in_signature()``, ``kb.get_object_properties()``), so the same</span>
+<span class="sd">:class:`ComplexityProfile` curriculum runs unmodified across knowledge graphs with very different</span>
+<span class="sd">shapes -- e.g. Family, Mutagenesis, Carcinogenesis, Biopax, Lymphography. Relation-based constructs</span>
+<span class="sd">(∃/∀/cardinality/has-value) are silently dropped from the grammar on a KB that exposes no object</span>
+<span class="sd">properties (e.g. Lymphography) rather than raising, so a curriculum degrades gracefully instead of</span>
+<span class="sd">crashing on such KBs.</span>
+
+<span class="sd">A :class:`ComplexityProfile` curriculum (e.g. atomic -&gt; conjunctive -&gt; nested existential -&gt;</span>
+<span class="sd">cardinality -&gt; full ALCQ) can then be run through :meth:`GoalDirectedLPGenerator.generate_benchmark`</span>
+<span class="sd">to build a graded benchmark suite, e.g. to measure how a learner's F1 degrades as target-concept</span>
+<span class="sd">complexity grows -- see ``examples/benchmark_complexity_lp_generator_with_tdl.py``.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">FrozenSet</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy</span><span class="w"> </span><span class="kn">import</span> <span class="n">owl_expression_to_dl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.class_expression</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">OWLClass</span><span class="p">,</span>
+    <span class="n">OWLClassExpression</span><span class="p">,</span>
+    <span class="n">OWLObjectAllValuesFrom</span><span class="p">,</span>
+    <span class="n">OWLObjectComplementOf</span><span class="p">,</span>
+    <span class="n">OWLObjectExactCardinality</span><span class="p">,</span>
+    <span class="n">OWLObjectIntersectionOf</span><span class="p">,</span>
+    <span class="n">OWLObjectMaxCardinality</span><span class="p">,</span>
+    <span class="n">OWLObjectMinCardinality</span><span class="p">,</span>
+    <span class="n">OWLObjectSomeValuesFrom</span><span class="p">,</span>
+    <span class="n">OWLObjectUnionOf</span><span class="p">,</span>
+    <span class="n">OWLThing</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_individual</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLNamedIndividual</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">owlapy.owl_property</span><span class="w"> </span><span class="kn">import</span> <span class="n">OWLObjectProperty</span><span class="p">,</span> <span class="n">OWLObjectPropertyExpression</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.knowledge_base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KnowledgeBase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.learning_problem</span><span class="w"> </span><span class="kn">import</span> <span class="n">PosNegLPStandard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ontolearn.utils.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">concept_len</span>
+
+<span class="n">Individuals</span> <span class="o">=</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">OWLNamedIndividual</span><span class="p">]</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"DLConstruct"</span><span class="p">,</span>
+    <span class="s2">"ComplexityProfile"</span><span class="p">,</span>
+    <span class="s2">"DifficultyWeights"</span><span class="p">,</span>
+    <span class="s2">"GeneratedLearningProblem"</span><span class="p">,</span>
+    <span class="s2">"GoalDirectedLPGenerator"</span><span class="p">,</span>
+    <span class="s2">"save_benchmark"</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="DLConstruct">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.DLConstruct">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DLConstruct</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""DL constructors a :class:`ComplexityProfile` can allow/forbid."""</span>
+    <span class="n">ATOMIC</span> <span class="o">=</span> <span class="s2">"atomic"</span>
+    <span class="n">NEGATION</span> <span class="o">=</span> <span class="s2">"negation"</span>
+    <span class="n">INTERSECTION</span> <span class="o">=</span> <span class="s2">"intersection"</span>
+    <span class="n">UNION</span> <span class="o">=</span> <span class="s2">"union"</span>
+    <span class="n">EXISTENTIAL</span> <span class="o">=</span> <span class="s2">"existential"</span>
+    <span class="n">UNIVERSAL</span> <span class="o">=</span> <span class="s2">"universal"</span>
+    <span class="n">MIN_CARDINALITY</span> <span class="o">=</span> <span class="s2">"min_cardinality"</span>
+    <span class="n">MAX_CARDINALITY</span> <span class="o">=</span> <span class="s2">"max_cardinality"</span>
+    <span class="n">EXACT_CARDINALITY</span> <span class="o">=</span> <span class="s2">"exact_cardinality"</span>
+    <span class="n">HAS_VALUE</span> <span class="o">=</span> <span class="s2">"has_value"</span></div>
+
+
+
+<span class="n">_RESTRICTION_CONSTRUCTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span>
+    <span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXISTENTIAL</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">UNIVERSAL</span><span class="p">,</span>
+    <span class="n">DLConstruct</span><span class="o">.</span><span class="n">MIN_CARDINALITY</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">MAX_CARDINALITY</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXACT_CARDINALITY</span><span class="p">,</span>
+<span class="p">})</span>
+
+
+<div class="viewcode-block" id="DifficultyWeights">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/complexity_lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.DifficultyWeights">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DifficultyWeights</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Weights combining four difficulty signals into one score in (roughly) ``[0, 1]``.</span>
+
+<span class="sd">    :param length: weight on ``length / profile.max_length`` (longer target -&gt; harder).</span>
+<span class="sd">    :param depth: weight on ``depth / profile.max_depth`` (deeper nesting -&gt; harder).</span>
+<span class="sd">    :param baseline_hardness: weight on ``1 - baseline_f1`` -- how far the best cheap one-step</span>
+<span class="sd">        hypothesis falls short of solving the LP outright.</span>
+<span class="sd">    :param near_miss: weight on the fraction of positives that have a matching near-miss negative</span>
+<span class="sd">        (an individual satisfying the target with exactly one top-level conjunct dropped) -- these</span>
+<span class="sd">        are the negatives a greedy learner is most likely to accidentally cover.</span>
+<span class="sd">    """</span>
+    <span class="n">length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span>
+    <span class="n">depth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.15</span>
+    <span class="n">baseline_hardness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.40</span>
+    <span class="n">near_miss</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.20</span></div>
+
+
+
+<div class="viewcode-block" id="ComplexityProfile">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.ComplexityProfile">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComplexityProfile</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A named point (or curriculum step) in the space of "how complex should the target be".</span>
+
+<span class="sd">    :param name: identifier used to tag generated problems and group benchmark results.</span>
+<span class="sd">    :param allowed_constructs: DL constructors :meth:`GoalDirectedLPGenerator.generate` may use</span>
+<span class="sd">        when sampling a target concept. Relation-based constructs (∃/∀/cardinality/has-value) are</span>
+<span class="sd">        silently unavailable on a knowledge base exposing no object properties.</span>
+<span class="sd">    :param min_length/max_length: bounds on ``concept_len`` of the (NNF) target.</span>
+<span class="sd">    :param min_depth/max_depth: bounds on restriction-nesting depth (see</span>
+<span class="sd">        :meth:`GoalDirectedLPGenerator.concept_depth`); a bare named class has depth 0.</span>
+<span class="sd">    :param max_arity: maximum number of operands sampled under one intersection/union.</span>
+<span class="sd">    :param card_limit: cardinality restrictions sample ``n`` uniformly from ``[1, card_limit]``.</span>
+<span class="sd">    :param use_inverse_roles: if True, restrictions may use ``r-`` in place of ``r``.</span>
+<span class="sd">    :param min_pos/min_neg: an LP is discarded unless the target has at least this many</span>
+<span class="sd">        positive and negative instances in the knowledge base.</span>
+<span class="sd">    :param max_examples_per_side: positives/negatives are subsampled down to this cap.</span>
+<span class="sd">    :param max_baseline_f1: an LP is discarded if the best of a pool of "cheap" one-step</span>
+<span class="sd">        hypotheses (an atomic class, its negation, or a bare ``exists r.Top``) already reaches</span>
+<span class="sd">        this F1 -- i.e. it is trivially solvable without the constructs being tested.</span>
+<span class="sd">    :param min_difficulty: an LP is discarded if its :class:`DifficultyWeights`-weighted score</span>
+<span class="sd">        falls below this bar. ``0.0`` (default) disables this filter.</span>
+<span class="sd">    :param oversample_factor: :meth:`GoalDirectedLPGenerator.generate` collects up to</span>
+<span class="sd">        ``num_lps * oversample_factor`` passing candidates (subject to ``max_attempts``) before</span>
+<span class="sd">        ranking by difficulty and keeping the hardest ``num_lps`` -- i.e. it actively searches</span>
+<span class="sd">        for hard problems instead of returning the first ones found.</span>
+<span class="sd">    :param hard_negative_ratio: fraction of the sampled negatives drawn from the near-miss pool</span>
+<span class="sd">        (when one exists) rather than arbitrary non-instances.</span>
+<span class="sd">    :param difficulty_weights: see :class:`DifficultyWeights`.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">allowed_constructs</span><span class="p">:</span> <span class="n">FrozenSet</span><span class="p">[</span><span class="n">DLConstruct</span><span class="p">]</span>
+    <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">min_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">max_arity</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">card_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">use_inverse_roles</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">min_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">min_neg</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">max_examples_per_side</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">max_baseline_f1</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span>
+    <span class="n">min_difficulty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">oversample_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">hard_negative_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">difficulty_weights</span><span class="p">:</span> <span class="n">DifficultyWeights</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DifficultyWeights</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="GeneratedLearningProblem">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GeneratedLearningProblem">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GeneratedLearningProblem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A goal-directed learning problem: a sampled target concept plus its (E+, E-)."""</span>
+    <span class="n">profile_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">target_concept</span><span class="p">:</span> <span class="n">OWLClassExpression</span>
+    <span class="n">dl</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">pos</span><span class="p">:</span> <span class="n">Individuals</span>
+    <span class="n">neg</span><span class="p">:</span> <span class="n">Individuals</span>
+    <span class="n">length</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">construct_histogram</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">baseline_f1</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">difficulty</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">num_near_miss_negatives</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="GeneratedLearningProblem.to_lp">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GeneratedLearningProblem.to_lp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PosNegLPStandard</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Build the ``PosNegLPStandard`` consumed by Ontolearn learners (e.g. TDL)."""</span>
+        <span class="k">return</span> <span class="n">PosNegLPStandard</span><span class="p">(</span><span class="n">pos</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">),</span> <span class="n">neg</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neg</span><span class="p">))</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_f1</span><span class="p">(</span><span class="n">pos</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">covered</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span> <span class="o">&amp;</span> <span class="n">covered</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tp</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span> <span class="o">&amp;</span> <span class="n">covered</span><span class="p">)</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">covered</span><span class="p">)</span>
+    <span class="n">precision</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fp</span><span class="p">)</span>
+    <span class="n">recall</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">/</span> <span class="p">(</span><span class="n">tp</span> <span class="o">+</span> <span class="n">fn</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">precision</span> <span class="o">*</span> <span class="n">recall</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_conjuncts</span><span class="p">(</span><span class="n">ce</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Flatten a top-level intersection into its conjuncts (``[ce]`` if `ce` isn't one)."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="n">OWLObjectIntersectionOf</span><span class="p">):</span>
+        <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">op</span> <span class="ow">in</span> <span class="n">ce</span><span class="o">.</span><span class="n">operands</span><span class="p">():</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_conjuncts</span><span class="p">(</span><span class="n">op</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">ce</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GoalDirectedLPGenerator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Samples target concepts from an explicit DL-construct grammar and turns them into LPs.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")</span>
+<span class="sd">        gen = GoalDirectedLPGenerator(kb, seed=1)</span>
+<span class="sd">        profile = ComplexityProfile(</span>
+<span class="sd">            name="nested-existential",</span>
+<span class="sd">            allowed_constructs=frozenset({DLConstruct.EXISTENTIAL, DLConstruct.INTERSECTION}),</span>
+<span class="sd">            max_length=8, max_depth=3,</span>
+<span class="sd">        )</span>
+<span class="sd">        lps = gen.generate(profile, num_lps=10)</span>
+<span class="sd">        model = TDL(kb).fit(lps[0].to_lp())</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_base</span><span class="p">:</span> <span class="n">KnowledgeBase</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">probe_cap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kb</span> <span class="o">=</span> <span class="n">knowledge_base</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_individuals</span><span class="p">:</span> <span class="n">Individuals</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atomic_classes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClass</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">ontology</span><span class="o">.</span><span class="n">classes_in_signature</span><span class="p">()</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">OWLThing</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">object_properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLObjectProperty</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">get_object_properties</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_classes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Knowledge base exposes no named classes to build targets from."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_probe</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">Individuals</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_baseline_probe</span><span class="p">(</span><span class="n">probe_cap</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------ hardness / baseline</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_baseline_probe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">probe_cap</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">Individuals</span><span class="p">]]:</span>
+        <span class="n">cheap</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atomic_classes</span><span class="p">:</span>
+            <span class="n">cheap</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="n">cheap</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">negation</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_properties</span><span class="p">:</span>
+            <span class="n">cheap</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">existential_restriction</span><span class="p">(</span><span class="n">OWLThing</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cheap</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cheap</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">probe_cap</span><span class="p">:</span>
+            <span class="n">cheap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">cheap</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">probe_cap</span><span class="p">)</span>
+        <span class="n">extensions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">Individuals</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ce</span> <span class="ow">in</span> <span class="n">cheap</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">extensions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ce</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">ce</span><span class="p">)))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="n">extensions</span>
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator.baseline_f1">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.baseline_f1">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">baseline_f1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Best F1 any single "cheap" one-step hypothesis reaches on (pos, neg)."""</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_probe</span><span class="p">:</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">_f1</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">best</span><span class="p">:</span>
+                <span class="n">best</span> <span class="o">=</span> <span class="n">score</span>
+        <span class="k">return</span> <span class="n">best</span></div>
+
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator.near_miss_negatives">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.near_miss_negatives">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">near_miss_negatives</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Individuals</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Individuals satisfying `target` with exactly one top-level conjunct dropped, minus `pos`.</span>
+
+<span class="sd">        E.g. for ``C = Compound ⊓ (∃ hasChild.Father)`` these are individuals that are a</span>
+<span class="sd">        ``Compound`` but whose child (if any) isn't a ``Father``, or that have a ``Father`` child</span>
+<span class="sd">        but aren't a ``Compound`` -- the negatives one ablated conjunct away from being positive,</span>
+<span class="sd">        which is exactly what trips up a greedy top-down learner.</span>
+<span class="sd">        """</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">_conjuncts</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">frozenset</span><span class="p">()</span>
+        <span class="n">near</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)):</span>
+            <span class="n">ablated</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">]</span>
+            <span class="n">ce</span> <span class="o">=</span> <span class="n">ablated</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ablated</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">ablated</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">near</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">ce</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">near</span><span class="p">)</span> <span class="o">-</span> <span class="n">pos</span></div>
+
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator.difficulty_score">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.difficulty_score">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">difficulty_score</span><span class="p">(</span><span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">base_f1</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                          <span class="n">pos</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">near_miss</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Combine length/depth/baseline-hardness/near-miss-density into one score in ``[0, 1]``."""</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">difficulty_weights</span>
+        <span class="n">norm_length</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">norm_depth</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">depth</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">max_depth</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">near_density</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">near_miss</span><span class="p">)</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">),</span> <span class="mi">1</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">length</span> <span class="o">*</span> <span class="n">norm_length</span> <span class="o">+</span> <span class="n">w</span><span class="o">.</span><span class="n">depth</span> <span class="o">*</span> <span class="n">norm_depth</span>
+                <span class="o">+</span> <span class="n">w</span><span class="o">.</span><span class="n">baseline_hardness</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">base_f1</span><span class="p">)</span> <span class="o">+</span> <span class="n">w</span><span class="o">.</span><span class="n">near_miss</span> <span class="o">*</span> <span class="n">near_density</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------ concept-shape utilities</span>
+<div class="viewcode-block" id="GoalDirectedLPGenerator.concept_depth">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.concept_depth">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concept_depth</span><span class="p">(</span><span class="n">ce</span><span class="p">:</span> <span class="n">OWLClassExpression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Restriction-nesting depth: a named class or ``has value`` atom has depth 0."""</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectIntersectionOf</span><span class="p">,</span> <span class="n">OWLObjectUnionOf</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">((</span><span class="n">GoalDirectedLPGenerator</span><span class="o">.</span><span class="n">concept_depth</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">ce</span><span class="o">.</span><span class="n">operands</span><span class="p">()),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="n">OWLObjectComplementOf</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">GoalDirectedLPGenerator</span><span class="o">.</span><span class="n">concept_depth</span><span class="p">(</span><span class="n">ce</span><span class="o">.</span><span class="n">get_operand</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="p">(</span><span class="n">OWLObjectSomeValuesFrom</span><span class="p">,</span> <span class="n">OWLObjectAllValuesFrom</span><span class="p">,</span>
+                            <span class="n">OWLObjectMinCardinality</span><span class="p">,</span> <span class="n">OWLObjectMaxCardinality</span><span class="p">,</span> <span class="n">OWLObjectExactCardinality</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">GoalDirectedLPGenerator</span><span class="o">.</span><span class="n">concept_depth</span><span class="p">(</span><span class="n">ce</span><span class="o">.</span><span class="n">get_filler</span><span class="p">())</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLObjectPropertyExpression</span><span class="p">:</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">object_properties</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">profile</span><span class="o">.</span><span class="n">use_inverse_roles</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">prop</span><span class="o">.</span><span class="n">get_inverse_property</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">prop</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_atom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">,</span> <span class="n">hist</span><span class="p">:</span> <span class="n">Counter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atomic_classes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">NEGATION</span> <span class="ow">in</span> <span class="n">profile</span><span class="o">.</span><span class="n">allowed_constructs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">NEGATION</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">negation</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="n">hist</span><span class="p">[</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">ATOMIC</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_rec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">,</span> <span class="n">depth_budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">length_budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                     <span class="n">hist</span><span class="p">:</span> <span class="n">Counter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OWLClassExpression</span><span class="p">:</span>
+        <span class="c1"># Intersection/union don't add restriction-nesting depth (see `concept_depth`), so they</span>
+        <span class="c1"># stay available even once `depth_budget` is exhausted; only ∃/∀/cardinality/has-value -</span>
+        <span class="c1"># which each need at least one object property - are gated on `depth_budget &gt; 0` and on</span>
+        <span class="c1"># the knowledge base actually exposing object properties (e.g. Lymphography has none, so</span>
+        <span class="c1"># the grammar degrades to intersection/union/negation of atomic classes on it).</span>
+        <span class="n">has_properties</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">object_properties</span><span class="p">)</span>
+        <span class="n">depth_free</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">profile</span><span class="o">.</span><span class="n">allowed_constructs</span>
+                      <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">INTERSECTION</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">UNION</span><span class="p">)</span>
+                      <span class="ow">or</span> <span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">HAS_VALUE</span> <span class="ow">and</span> <span class="n">has_properties</span><span class="p">)]</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">depth_free</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">depth_budget</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">has_properties</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">+=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">profile</span><span class="o">.</span><span class="n">allowed_constructs</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_RESTRICTION_CONSTRUCTS</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">length_budget</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_atom</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+
+        <span class="n">construct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">construct</span> <span class="ow">in</span> <span class="p">(</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">INTERSECTION</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">UNION</span><span class="p">):</span>
+            <span class="n">arity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_arity</span><span class="p">))</span>
+            <span class="n">parts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">remaining_len</span> <span class="o">=</span> <span class="n">length_budget</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">arity</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">remaining_len</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">share</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">remaining_len</span> <span class="o">//</span> <span class="p">(</span><span class="n">arity</span> <span class="o">-</span> <span class="n">i</span><span class="p">))</span>
+                <span class="n">sub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rec</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">depth_budget</span><span class="p">,</span> <span class="n">share</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+                <span class="n">remaining_len</span> <span class="o">-=</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">parts</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_atom</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">construct</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">construct</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">INTERSECTION</span> \
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">construct</span> <span class="ow">in</span> <span class="p">(</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXISTENTIAL</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">UNIVERSAL</span><span class="p">):</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_property</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+            <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rec</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">depth_budget</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">length_budget</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">construct</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">existential_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span> <span class="k">if</span> <span class="n">construct</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXISTENTIAL</span> \
+                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">universal_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">construct</span> <span class="ow">in</span> <span class="p">(</span><span class="n">DLConstruct</span><span class="o">.</span><span class="n">MIN_CARDINALITY</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">MAX_CARDINALITY</span><span class="p">,</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">EXACT_CARDINALITY</span><span class="p">):</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_property</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+            <span class="n">card</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">card_limit</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">depth_budget</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">length_budget</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rec</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">depth_budget</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">length_budget</span> <span class="o">-</span> <span class="mi">3</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">thing</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">construct</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">construct</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">MIN_CARDINALITY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">min_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">construct</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">MAX_CARDINALITY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">max_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">exact_cardinality_restriction</span><span class="p">(</span><span class="n">filler</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">construct</span> <span class="o">==</span> <span class="n">DLConstruct</span><span class="o">.</span><span class="n">HAS_VALUE</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_property</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_individuals</span><span class="p">))</span>
+            <span class="n">hist</span><span class="p">[</span><span class="n">construct</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">generator</span><span class="o">.</span><span class="n">has_value_restriction</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">prop</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_atom</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>  <span class="c1"># pragma: no cover - defensive fallback</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">cap</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Individuals</span><span class="p">:</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">individuals</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">cap</span><span class="p">:</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">cap</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_negatives</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">neg</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">near_miss</span><span class="p">:</span> <span class="n">Individuals</span><span class="p">,</span> <span class="n">cap</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                           <span class="n">hard_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Individuals</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Sample negatives biased towards `near_miss`, capped at `cap`."""</span>
+        <span class="n">target_n</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">cap</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">))</span>
+        <span class="n">near_pool</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">near_miss</span><span class="p">)</span>
+        <span class="n">far_pool</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">neg</span> <span class="o">-</span> <span class="n">near_miss</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">near_pool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">far_pool</span><span class="p">)</span>
+        <span class="n">n_hard</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">near_pool</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">hard_ratio</span> <span class="o">*</span> <span class="n">target_n</span><span class="p">)))</span>
+        <span class="n">chosen</span> <span class="o">=</span> <span class="n">near_pool</span><span class="p">[:</span><span class="n">n_hard</span><span class="p">]</span> <span class="o">+</span> <span class="n">far_pool</span><span class="p">[:</span> <span class="n">target_n</span> <span class="o">-</span> <span class="n">n_hard</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chosen</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">target_n</span><span class="p">:</span>
+            <span class="n">chosen</span> <span class="o">+=</span> <span class="n">near_pool</span><span class="p">[</span><span class="n">n_hard</span><span class="p">:</span> <span class="n">n_hard</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_n</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">chosen</span><span class="p">))]</span>
+        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">chosen</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------ public API</span>
+<div class="viewcode-block" id="GoalDirectedLPGenerator.sample_target">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.sample_target">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">OWLClassExpression</span><span class="p">,</span> <span class="n">Counter</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Sample one target concept (in NNF) respecting `profile`, plus its construct histogram."""</span>
+        <span class="n">hist</span><span class="p">:</span> <span class="n">Counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+        <span class="n">ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rec</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_depth</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span> <span class="n">hist</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ce</span><span class="o">.</span><span class="n">get_nnf</span><span class="p">(),</span> <span class="n">hist</span></div>
+
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator.generate">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.generate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profile</span><span class="p">:</span> <span class="n">ComplexityProfile</span><span class="p">,</span> <span class="n">num_lps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3000</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">GeneratedLearningProblem</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Sample the `num_lps` **hardest** distinct, non-trivial learning problems matching</span>
+<span class="sd">        `profile`: up to ``num_lps * profile.oversample_factor`` passing candidates are collected</span>
+<span class="sd">        (subject to `max_attempts` sampling attempts total), ranked by</span>
+<span class="sd">        :meth:`difficulty_score` and the top `num_lps` are kept.</span>
+<span class="sd">        """</span>
+        <span class="n">pool_target</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">num_lps</span><span class="p">,</span> <span class="n">num_lps</span> <span class="o">*</span> <span class="n">profile</span><span class="o">.</span><span class="n">oversample_factor</span><span class="p">)</span>
+        <span class="n">candidates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">GeneratedLearningProblem</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">seen_ext</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">seen_dl</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">attempts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pool_target</span> <span class="ow">and</span> <span class="n">attempts</span> <span class="o">&lt;</span> <span class="n">max_attempts</span><span class="p">:</span>
+            <span class="n">attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">ce</span><span class="p">,</span> <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_target</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
+
+            <span class="n">length</span> <span class="o">=</span> <span class="n">concept_len</span><span class="p">(</span><span class="n">ce</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">min_length</span> <span class="o">&lt;=</span> <span class="n">length</span> <span class="o">&lt;=</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_length</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">depth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">concept_depth</span><span class="p">(</span><span class="n">ce</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">profile</span><span class="o">.</span><span class="n">min_depth</span> <span class="o">&lt;=</span> <span class="n">depth</span> <span class="o">&lt;=</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_depth</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">dl</span> <span class="o">=</span> <span class="n">owl_expression_to_dl</span><span class="p">(</span><span class="n">ce</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dl</span> <span class="ow">in</span> <span class="n">seen_dl</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kb</span><span class="o">.</span><span class="n">individuals_set</span><span class="p">(</span><span class="n">ce</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">seen_ext</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">neg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_individuals</span> <span class="o">-</span> <span class="n">pos</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">profile</span><span class="o">.</span><span class="n">min_pos</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">neg</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">profile</span><span class="o">.</span><span class="n">min_neg</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">base_f1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_f1</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">neg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">base_f1</span> <span class="o">&gt;=</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_baseline_f1</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">near_miss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">near_miss_negatives</span><span class="p">(</span><span class="n">ce</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">neg</span>
+            <span class="n">difficulty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">difficulty_score</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">base_f1</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">near_miss</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">difficulty</span> <span class="o">&lt;</span> <span class="n">profile</span><span class="o">.</span><span class="n">min_difficulty</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">seen_ext</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+            <span class="n">seen_dl</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dl</span><span class="p">)</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GeneratedLearningProblem</span><span class="p">(</span>
+                <span class="n">profile_name</span><span class="o">=</span><span class="n">profile</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">target_concept</span><span class="o">=</span><span class="n">ce</span><span class="p">,</span>
+                <span class="n">dl</span><span class="o">=</span><span class="n">dl</span><span class="p">,</span>
+                <span class="n">pos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample_examples</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_examples_per_side</span><span class="p">),</span>
+                <span class="n">neg</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample_negatives</span><span class="p">(</span><span class="n">neg</span><span class="p">,</span> <span class="n">near_miss</span><span class="p">,</span> <span class="n">profile</span><span class="o">.</span><span class="n">max_examples_per_side</span><span class="p">,</span>
+                                            <span class="n">profile</span><span class="o">.</span><span class="n">hard_negative_ratio</span><span class="p">),</span>
+                <span class="n">length</span><span class="o">=</span><span class="n">length</span><span class="p">,</span>
+                <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+                <span class="n">construct_histogram</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hist</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+                <span class="n">baseline_f1</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">base_f1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="n">difficulty</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">difficulty</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="n">num_near_miss_negatives</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">near_miss</span><span class="p">),</span>
+            <span class="p">))</span>
+        <span class="n">candidates</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">lp</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">difficulty</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">candidates</span><span class="p">[:</span><span class="n">num_lps</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="GoalDirectedLPGenerator.generate_benchmark">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.GoalDirectedLPGenerator.generate_benchmark">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_benchmark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">profiles</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ComplexityProfile</span><span class="p">],</span> <span class="n">num_lps_per_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+                            <span class="n">max_attempts_per_profile</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3000</span>
+                            <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">GeneratedLearningProblem</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Run :meth:`generate` for each profile in a curriculum; returns `{profile.name: [...]}`."""</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">profile</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">profile</span><span class="p">,</span> <span class="n">num_lps_per_profile</span><span class="p">,</span> <span class="n">max_attempts_per_profile</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">profile</span> <span class="ow">in</span> <span class="n">profiles</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="save_benchmark">
+<a class="viewcode-back" href="../../../autoapi/ontolearn/lp_generator/index.html#ontolearn.lp_generator.complexity_lp_generator.save_benchmark">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_benchmark</span><span class="p">(</span><span class="n">benchmark</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">GeneratedLearningProblem</span><span class="p">]],</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Serialize a benchmark (as returned by :meth:`GoalDirectedLPGenerator.generate_benchmark`)</span>
+<span class="sd">    to JSON: `{dl_string: {"profile", "positive_examples", "negative_examples", "length", "depth",</span>
+<span class="sd">    "construct_histogram", "baseline_f1", "difficulty", "num_near_miss_negatives"}}`, individuals</span>
+<span class="sd">    kept as full IRIs.</span>
+<span class="sd">    """</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">profile_name</span><span class="p">,</span> <span class="n">lps</span> <span class="ow">in</span> <span class="n">benchmark</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">lps</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">lp</span><span class="o">.</span><span class="n">dl</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"profile"</span><span class="p">:</span> <span class="n">profile_name</span><span class="p">,</span>
+                <span class="s2">"positive_examples"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lp</span><span class="o">.</span><span class="n">pos</span><span class="p">),</span>
+                <span class="s2">"negative_examples"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">str</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lp</span><span class="o">.</span><span class="n">neg</span><span class="p">),</span>
+                <span class="s2">"length"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
+                <span class="s2">"depth"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span>
+                <span class="s2">"construct_histogram"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">construct_histogram</span><span class="p">,</span>
+                <span class="s2">"baseline_f1"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">baseline_f1</span><span class="p">,</span>
+                <span class="s2">"difficulty"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">difficulty</span><span class="p">,</span>
+                <span class="s2">"num_near_miss_negatives"</span><span class="p">:</span> <span class="n">lp</span><span class="o">.</span><span class="n">num_near_miss_negatives</span><span class="p">,</span>
+            <span class="p">}</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">fh</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2026, The Ontolearn team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

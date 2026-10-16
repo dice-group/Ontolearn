@@ -92,7 +92,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">ontolearn.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../search/index.html">ontolearn.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../semantic_caching/index.html">ontolearn.semantic_caching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../tentris/index.html">ontolearn.tentris</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../triple_store/index.html">ontolearn.triple_store</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">ontolearn.utils</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a><ul>
@@ -109,6 +108,7 @@
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.f1_set_similarity"><code class="docutils literal notranslate"><span class="pre">f1_set_similarity()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.concept_reducer"><code class="docutils literal notranslate"><span class="pre">concept_reducer()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.concept_reducer_properties"><code class="docutils literal notranslate"><span class="pre">concept_reducer_properties()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.import_owlready2"><code class="docutils literal notranslate"><span class="pre">import_owlready2()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.Factory"><code class="docutils literal notranslate"><span class="pre">Factory</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.DEFAULT_FMT"><code class="docutils literal notranslate"><span class="pre">DEFAULT_FMT</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#ontolearn.utils.flag_for_performance"><code class="docutils literal notranslate"><span class="pre">flag_for_performance</span></code></a></li>
@@ -212,43 +212,46 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.concept_reducer_properties" title="ontolearn.utils.concept_reducer_properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">concept_reducer_properties</span></code></a>(...)</p></td>
 <td><p>Map a set of owl concepts and a set of properties into OWL Restrictions</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.jaccard_similarity" title="ontolearn.utils.jaccard_similarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jaccard_similarity</span></code></a>(→ float)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.import_owlready2" title="ontolearn.utils.import_owlready2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">import_owlready2</span></code></a>()</p></td>
+<td><p>Import <code class="docutils literal notranslate"><span class="pre">owlready2</span></code> if installed, else raise a clear, actionable <code class="docutils literal notranslate"><span class="pre">ImportError</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.jaccard_similarity" title="ontolearn.utils.jaccard_similarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jaccard_similarity</span></code></a>(→ float)</p></td>
 <td><p>Compute Jaccard Similarity</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.parametrized_performance_debugger" title="ontolearn.utils.parametrized_performance_debugger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parametrized_performance_debugger</span></code></a>([fmt])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.parametrized_performance_debugger" title="ontolearn.utils.parametrized_performance_debugger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parametrized_performance_debugger</span></code></a>([fmt])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.performance_debugger" title="ontolearn.utils.performance_debugger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">performance_debugger</span></code></a>(func_name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.performance_debugger" title="ontolearn.utils.performance_debugger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">performance_debugger</span></code></a>(func_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.create_experiment_folder" title="ontolearn.utils.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>([folder_name])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.create_experiment_folder" title="ontolearn.utils.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>([folder_name])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.serializer" title="ontolearn.utils.serializer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serializer</span></code></a>(*, object_, path, serialized_name)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.serializer" title="ontolearn.utils.serializer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serializer</span></code></a>(*, object_, path, serialized_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.deserializer" title="ontolearn.utils.deserializer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deserializer</span></code></a>(*, path, serialized_name)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.deserializer" title="ontolearn.utils.deserializer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deserializer</span></code></a>(*, path, serialized_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.apply_TSNE_on_df" title="ontolearn.utils.apply_TSNE_on_df"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_TSNE_on_df</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.apply_TSNE_on_df" title="ontolearn.utils.apply_TSNE_on_df"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_TSNE_on_df</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.balanced_sets" title="ontolearn.utils.balanced_sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">balanced_sets</span></code></a>(→ Tuple[Set, Set])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.balanced_sets" title="ontolearn.utils.balanced_sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">balanced_sets</span></code></a>(→ Tuple[Set, Set])</p></td>
 <td><p>Balance given two sets through sampling without replacement.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.read_csv" title="ontolearn.utils.read_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_csv</span></code></a>(→ Union[None, pandas.DataFrame])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.read_csv" title="ontolearn.utils.read_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_csv</span></code></a>(→ Union[None, pandas.DataFrame])</p></td>
 <td><p>Path leads a folder containing embeddings in csv format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.assertion_path_isfile" title="ontolearn.utils.assertion_path_isfile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assertion_path_isfile</span></code></a>(→ bool)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.assertion_path_isfile" title="ontolearn.utils.assertion_path_isfile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assertion_path_isfile</span></code></a>(→ bool)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.sanity_checking_args" title="ontolearn.utils.sanity_checking_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sanity_checking_args</span></code></a>(args)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.sanity_checking_args" title="ontolearn.utils.sanity_checking_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sanity_checking_args</span></code></a>(args)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.read_individuals_file" title="ontolearn.utils.read_individuals_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_individuals_file</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.read_individuals_file" title="ontolearn.utils.read_individuals_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_individuals_file</span></code></a>(...)</p></td>
 <td><p>Read a text file containing IRIs of Named Individuals (one per line) and return the content as a set of OWL</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#ontolearn.utils.read_named_classes_file" title="ontolearn.utils.read_named_classes_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_named_classes_file</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#ontolearn.utils.read_named_classes_file" title="ontolearn.utils.read_named_classes_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_named_classes_file</span></code></a>(...)</p></td>
 <td><p>Read a text file containing IRIs of OWL Named Classes (one per line) and return the content as a set of OWL</p></td>
 </tr>
 </tbody>
@@ -328,6 +331,12 @@
 </dd>
 </dl>
 <p>Returns: List of OWL Restrictions</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ontolearn.utils.import_owlready2">
+<span class="sig-prename descclassname"><span class="pre">ontolearn.utils.</span></span><span class="sig-name descname"><span class="pre">import_owlready2</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/ontolearn/utils/_lazy_owlready2.html#import_owlready2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ontolearn.utils.import_owlready2" title="Link to this definition"></a></dt>
+<dd><p>Import <code class="docutils literal notranslate"><span class="pre">owlready2</span></code> if installed, else raise a clear, actionable <code class="docutils literal notranslate"><span class="pre">ImportError</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
