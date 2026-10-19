@@ -11,6 +11,12 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Changed
+- `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
+  removal, `BaseConceptLearner.train()` documented as an optional hook,
+  unit-test coverage for previously weak modules) and its priority list
+  refreshed.
+
 ## [0.11.0] - 2026-10-15
 
 ### Removed
