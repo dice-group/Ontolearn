@@ -11,6 +11,16 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Changed
+- NCES/NCES2/ROCES tests (`tests/test_nces*.py`, `tests/test_roces.py`) run in
+  ~20s instead of ~100s: `test_nces.py` and `test_nces_trainer.py` now use the
+  shipped pretrained family embeddings/model instead of training embeddings
+  via a `dicee` subprocess and the synthesizer for 5 epochs on every run;
+  NCES2/ROCES (no shipped weights) train briefly on a few LPs. Quality
+  thresholds raised (0.1 -> 0.4 pretrained NCES, 0.3 NCES2/ROCES), and the
+  tests run in a temporary working directory so they no longer leave
+  `*-Experiment-*`, `temp_embeddings/` and `temp_triples/` behind. (#559)
+
 ## [0.11.0] - 2026-10-15
 
 ### Removed
