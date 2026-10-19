@@ -19,7 +19,9 @@ date) and use that section as the basis for the GitHub release notes.
   it for every concept. (#515)
 
 ### Changed
-- Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out).
+- Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
+  symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
+  alongside the JVM segfaulted CI (#515).
 - Removed `tests/test_example_concept_learning_neural_evaluation.py`, which was
   100% commented out and imported the long-gone `ontolearn.concept_learner`.
 - `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
