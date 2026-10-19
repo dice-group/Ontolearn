@@ -11,7 +11,19 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Fixed
+- `ontolearn.semantic_caching.retrieve` called `NeuralOntology(path_of_kb=...)`,
+  an argument removed from owlapy, so the neural-reasoner path raised
+  `TypeError` whenever no KGE model path was given. It now trains/loads via
+  `path_neural_embedding` and caches the reasoner per KG instead of rebuilding
+  it for every concept. (#515)
+
 ### Changed
+- Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
+  symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
+  alongside the JVM segfaulted CI (#515).
+- Removed `tests/test_example_concept_learning_neural_evaluation.py`, which was
+  100% commented out and imported the long-gone `ontolearn.concept_learner`.
 - `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
   removal, `BaseConceptLearner.train()` documented as an optional hook,
   unit-test coverage for previously weak modules) and its priority list

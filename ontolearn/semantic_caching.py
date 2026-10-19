@@ -23,6 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """python examples/retrieval_eval.py"""
+import functools
 from owlapy.owl_literal import OWLBottomObjectProperty, OWLTopObjectProperty
 
 from owlapy.owl_reasoner import EBR
@@ -43,7 +44,7 @@ from owlapy.class_expression import (
 from owlapy.owl_property import OWLObjectInverseOf
 import logging
 import time
-from typing import Tuple, Set
+from typing import Optional, Tuple, Set
 from owlapy import owl_expression_to_dl
 from itertools import chain
 import os
@@ -537,15 +538,19 @@ def non_semantic_caching_size(func, cache_size):
 
 
 
+@functools.lru_cache(maxsize=4)
+def _neural_reasoner(path_kg: str, path_kge_model: Optional[str]) -> EBR:
+    """Build (once per KG/model) the neural reasoner; training a KGE from a .owl file is expensive."""
+    if path_kge_model:
+        return EBR(NeuralOntology(path_neural_embedding=path_kge_model, gamma=0.9))
+    return EBR(NeuralOntology(path_neural_embedding=path_kg, train_if_not_exists=True, gamma=0.9))
+
+
 def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str], Set[str]]:
     '''Retrieve instances with neural reasoner'''
     'take a concept c and returns it set of retrieved individual'
 
-    if path_kge_model:
-        neural_owl_reasoner = EBR(NeuralOntology(path_neural_embedding=path_kge_model, gamma=0.9))
-    else:
-        neural_owl_reasoner = EBR(NeuralOntology(path_of_kb=path_kg, gamma=0.9))
-    retrievals = concept_retrieval(neural_owl_reasoner, expression) # Retrieving with our reasoner
+    retrievals = concept_retrieval(_neural_reasoner(path_kg, path_kge_model), expression) # Retrieving with our reasoner
     return retrievals
 
 
