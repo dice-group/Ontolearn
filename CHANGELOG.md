@@ -12,6 +12,10 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Changed
+- `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
+  removal, `BaseConceptLearner.train()` documented as an optional hook,
+  unit-test coverage for previously weak modules) and its priority list
+  refreshed.
 - NCES/NCES2/ROCES tests (`tests/test_nces*.py`, `tests/test_roces.py`) run in
   ~20s instead of ~100s: `test_nces.py` and `test_nces_trainer.py` now use the
   shipped pretrained family embeddings/model instead of training embeddings
