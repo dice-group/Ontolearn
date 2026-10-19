@@ -22,6 +22,10 @@ date) and use that section as the basis for the GitHub release notes.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out).
 - Removed `tests/test_example_concept_learning_neural_evaluation.py`, which was
   100% commented out and imported the long-gone `ontolearn.concept_learner`.
+- `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
+  removal, `BaseConceptLearner.train()` documented as an optional hook,
+  unit-test coverage for previously weak modules) and its priority list
+  refreshed.
 
 ## [0.11.0] - 2026-10-15
 
