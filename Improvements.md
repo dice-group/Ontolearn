@@ -61,11 +61,6 @@ fixed; none remain open as of this writing.
 
 ## 6. Testing gaps
 
-- **Two test files are 100% commented out** and run zero assertions while
-  still being collected by pytest: `tests/test_semantic_cache.py` (68/68
-  lines) and `tests/test_example_concept_learning_neural_evaluation.py`
-  (168/168 lines). Either restore them or delete them — as-is they give a
-  false sense of coverage.
 - The committed coverage report (`docs/usage/09_further_resources.md:191-244`,
   v0.10.0, 82% overall) is out of date: `quality_funcs`, `nces_utils`,
   `incomplete_kb`, `data_struct`, `value_splitter` and `utils/static_funcs`
@@ -117,6 +112,5 @@ fixed; none remain open as of this writing.
 
 ## Suggested priority order
 
-1. Delete or restore the two fully-commented-out test files in §6.
-2. Everything else (logging migration, `EvoLearner` seeding, packaging
+1. Everything else (logging migration, `EvoLearner` seeding, packaging
    modernization, lint tightening) as incremental follow-ups, not blocking.
