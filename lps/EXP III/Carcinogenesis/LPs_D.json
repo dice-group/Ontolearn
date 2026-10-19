@@ -9055,7 +9055,7 @@
            "http://dl-learner.org/carcinogenesis#ether-932",
            "http://dl-learner.org/carcinogenesis#sulfide-1864"
         ],
-        "(Compound ⊓ (≤ 9 hasAtom.⊤)) ⊔ (∃ hasBond⁻.(Carbon-22 ⊔ (∀ inBond.(Barium ⊔ (∃ mouse_lymph.{true})))))": {
+        "Compound ⊔ (∃ hasBond.(Carbon-22 ⊔ (∀ inBond.(Barium ⊔ (∃ mouse_lymph.{true})))))": {
          "positive_examples": [
             "http://dl-learner.org/carcinogenesis#bond8850",
             "http://dl-learner.org/carcinogenesis#bond2606",
