@@ -69,11 +69,6 @@ fixed; none remain open as of this writing.
 
 ## 6. Testing gaps
 
-- **Two test files are 100% commented out** and run zero assertions while
-  still being collected by pytest: `tests/test_semantic_cache.py` (68/68
-  lines) and `tests/test_example_concept_learning_neural_evaluation.py`
-  (168/168 lines). Either restore them or delete them — as-is they give a
-  false sense of coverage.
 - The committed coverage report (`docs/usage/09_further_resources.md:191-244`,
   v0.10.0, 82% overall) shows specific weak spots worth targeted tests:
   `ontolearn/incomplete_kb.py` 8% (73/79 statements missed),
@@ -126,9 +121,5 @@ fixed; none remain open as of this writing.
 
 ## Suggested priority order
 
-1. All three correctness bugs originally listed in §1 are fixed; none remain.
-2. Delete or restore the two fully-commented-out test files in §6.
-3. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
-   dedicated refactor (largest single win, but the biggest single change).
-4. Everything else (logging migration, packaging modernization, lint
-   tightening) as incremental follow-ups, not blocking.
+1. Everything else (logging migration, `EvoLearner` seeding, packaging
+   modernization, lint tightening) as incremental follow-ups, not blocking.
