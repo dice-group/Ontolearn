@@ -37,6 +37,11 @@ date) and use that section as the basis for the GitHub release notes.
   trained quality varies run to run), and the
   tests run in a temporary working directory so they no longer leave
   `*-Experiment-*`, `temp_embeddings/` and `temp_triples/` behind. (#559)
+- CI (`.github/workflows/test.yml`): `push` now only triggers on `develop`/`main`
+  (PRs run via `pull_request`), so branches with an open PR are no longer tested
+  twice; superseded runs are cancelled; and on PRs only the tests of the touched
+  learner(s) run unless shared code changed (`.github/scripts/select_tests.py`;
+  unmapped files fall back to the full suite, docs-only PRs skip the test job). (#645)
 
 ## [0.11.0] - 2026-10-15
 
