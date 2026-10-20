@@ -28,6 +28,15 @@ date) and use that section as the basis for the GitHub release notes.
   removal, `BaseConceptLearner.train()` documented as an optional hook,
   unit-test coverage for previously weak modules) and its priority list
   refreshed.
+- NCES/NCES2/ROCES tests (`tests/test_nces*.py`, `tests/test_roces.py`) run in
+  ~20s instead of ~100s: `test_nces.py` and `test_nces_trainer.py` now use the
+  shipped pretrained family embeddings/model instead of training embeddings
+  via a `dicee` subprocess and the synthesizer for 5 epochs on every run;
+  NCES2/ROCES (no shipped weights) train briefly on a few LPs. Quality
+  thresholds raised (0.1 -> 0.4 pretrained NCES, 0.3 NCES2; ROCES stays at 0.1 because its
+  trained quality varies run to run), and the
+  tests run in a temporary working directory so they no longer leave
+  `*-Experiment-*`, `temp_embeddings/` and `temp_triples/` behind. (#559)
 - CI (`.github/workflows/test.yml`): `push` now only triggers on `develop`/`main`
   (PRs run via `pull_request`), so branches with an open PR are no longer tested
   twice; superseded runs are cancelled; and on PRs only the tests of the touched
