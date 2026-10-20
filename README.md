@@ -89,7 +89,7 @@ are available online at [10.5281/zenodo.14720669](https://zenodo.org/records/147
 
 ### 4.4 Other Algorithms
 
-Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
 
 #### Drill
 DRILL requires a knowledge graph embedding model for each knowledge base.
@@ -116,7 +116,7 @@ We run all approaches with their default configuration and set their maximum run
 The learning problems of the 12 benchmarking datasets used in Experiment II are 
 available from different sources. 10 out of the 12 learning problems are provided 
 by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remaining 
-2 learning problems can be downloaded using the following command:
+2 learning problems are provided by [Ontolearn](https://github.com/dice-group/Ontolearn) team and can be downloaded using the following command:
 
 ```shell
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
@@ -129,7 +129,7 @@ They are also included in this repository and can be found in the directory `lps
 The knowledge bases of the 12 benchmarking datasets used for experiment I are 
 available from different sources. 10 out of the 12 knowledge bases are provided 
 by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), while the remaining 
-2 knowledge bases can be downloaded using the following command:
+2 knowledge bases are provided by [Ontolearn](https://github.com/dice-group/Ontolearn) team and can be downloaded using the following command:
 
 ```shell
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
@@ -137,7 +137,7 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 
 ### 5.4 Other Algorithms
 
-We refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
+Again, we refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) of the Ontolearn project. 
 
 #### Drill
 
@@ -162,6 +162,7 @@ We use the learning problem generator introduced by [NCES] to generate 10 learni
 ALCI, ALCQ and ALC(D) using the Carcinogenesis dataset.
 The target concepts are generated using only the constructors of the corresponding Description Logic fragment(e.g. target concepts for learning problems in ALCI use only constructors from ALC and inverse roles).
 For each learning problem, we configure both PruneCEL2 and CELOE to support the same Description Logic fragment as that used in the target concept. 
+
 ### 6.2 Learning problems
 
 The learning problems used in Experiment II are available in the directory `lps/Exp III`.
@@ -170,9 +171,6 @@ The learning problems used in Experiment II are available in the directory `lps/
 
 The knowledge bases of the Carcinogenesis datasets used for experiment III are 
 provided by [SML-Bench](https://github.com/SmartDataAnalytics/SML-Bench), 
-
-
-
 
 ## 7. References
 
