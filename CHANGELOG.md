@@ -32,6 +32,8 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- CI caches the `KGs`/`LPs`/`NCESData`/`CLIPData` archives with `actions/cache`,
+  so runs no longer download them from `files.dice-research.org` every time. (#637)
 - `print()` calls in `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
   `learners/spell_kit/structures.py`, and `learners/drill.py` now go through
