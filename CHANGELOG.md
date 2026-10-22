@@ -56,6 +56,11 @@ date) and use that section as the basis for the GitHub release notes.
   time. (#599)
 
 ### Added
+- `best_hypotheses(..., return_info=True)` on `CELOE`/`OCEL`, `EvoLearner`,
+  `Drill`, `NCES`, `NCES2` and `ROCES` returns `(hypotheses, info)`, where
+  `info` holds the `quality` and `length` of each hypothesis. `fit` and the
+  default return value are unchanged. `TDL`, the SAT learners and `NERO` don't
+  have a node-based `best_hypotheses` and are not covered yet. (#498)
 - `ontolearn.lp_generator.GoalDirectedLPGenerator`
   (`ontolearn/lp_generator/complexity_lp_generator.py`), a goal-directed,
   complexity-controlled learning-problem generator. Unlike `LPGen`/`KB2Data`,

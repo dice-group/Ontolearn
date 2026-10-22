@@ -383,9 +383,11 @@ class NCES(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1, return_node: bool = False) \
+    def best_hypotheses(self, n=1, return_node: bool = False, return_info: bool = False) \
             -> Union[OWLClassExpression, Iterable[OWLClassExpression],
-                     AbstractNode, Iterable[AbstractNode], None]:
+                     AbstractNode, Iterable[AbstractNode], Tuple, None]:
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         if self.best_predictions is None:
             print("NCES needs to be fitted to a problem first")
             return None
