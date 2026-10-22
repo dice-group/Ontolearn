@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 import os
@@ -70,7 +71,7 @@ class TestSemanticCache:
 
 
 class TestSemanticCacheNeural:
-    """Neural (EBR) retrieval with a pretrained KGE, run in a child process.
+    """Neural (EBR) retrieval, training a KGE on a copy of father.owl, run in a child process.
 
     Combining torch/lightning with the JVM segfaulted CI inside the pytest process (#515). A child
     process turns such a crash into a failed assertion on the return code instead of killing the suite.
@@ -78,14 +79,17 @@ class TestSemanticCacheNeural:
     SCRIPT = """
 import json
 from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cache
-args = ("KGs/Family/father.owl", "KGs/Family/father_trained_model", 100, "EBR")
+import sys
+args = (sys.argv[1], None, 100, "EBR")
 semantic, _ = run_semantic_cache(*args, "LRU", 0, "cold", True)
 non_semantic, _ = run_non_semantic_cache(*args, True)
 print("RESULT", json.dumps({"semantic": semantic["hit_ratio"], "non_semantic": non_semantic["hit_ratio"]}))
 """
 
-    def test_neural_retrieval(self):
-        proc = subprocess.run([sys.executable, "-c", self.SCRIPT], capture_output=True, text=True, timeout=900)
+    def test_neural_retrieval(self, tmp_path):
+        # The KGE is trained next to the KG, so work on a copy to leave KGs/ untouched.
+        path_kg = shutil.copy("KGs/Family/father.owl", tmp_path)
+        proc = subprocess.run([sys.executable, "-c", self.SCRIPT, str(path_kg)], capture_output=True, text=True, timeout=900)
         assert proc.returncode == 0, f"Neural retrieval process failed (code {proc.returncode}):\n{proc.stderr[-2000:]}"
         line = next(l for l in proc.stdout.splitlines() if l.startswith("RESULT "))
         hit_ratio = json.loads(line[len("RESULT "):])
