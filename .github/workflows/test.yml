@@ -1,9 +1,52 @@
 name: Python package
 
-on: [push, pull_request]
+# Pull requests are tested via `pull_request`; `push` only covers the long-lived
+# branches, so a PR branch is not tested twice (once per event).
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same PR/branch makes the in-progress run obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.select.outputs.run }}
+      pytest_args: ${{ steps.select.outputs.pytest_args }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # On pull requests, run only the tests of the learner(s) touched, unless
+      # shared code changed (see .github/scripts/select_tests.py). Pushes to
+      # develop/main and manual runs always run the full suite.
+      - name: Select tests
+        id: select
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" > changed_files.txt
+            selection=$(python .github/scripts/select_tests.py < changed_files.txt)
+          else
+            selection=ALL
+          fi
+          echo "Selected: $selection"
+          case "$selection" in
+            NONE) echo "run=false" >> "$GITHUB_OUTPUT"; echo "pytest_args=" >> "$GITHUB_OUTPUT" ;;
+            ALL)  echo "run=true"  >> "$GITHUB_OUTPUT"; echo "pytest_args=" >> "$GITHUB_OUTPUT" ;;
+            *)    echo "run=true"  >> "$GITHUB_OUTPUT"; echo "pytest_args=$selection" >> "$GITHUB_OUTPUT" ;;
+          esac
+
   build:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     # Safety net: a healthy run takes ~35-45 minutes. Without this, a hung
     # step (e.g. #622) runs until GitHub's ~360min default job timeout
@@ -93,5 +136,5 @@ jobs:
       - name: Testing and coverage report
         run: |
           pip install coverage
-          coverage run -m pytest -p no:warnings -x --durations=0
+          coverage run -m pytest -p no:warnings -x --durations=0 ${{ needs.changes.outputs.pytest_args }}
           coverage report -m

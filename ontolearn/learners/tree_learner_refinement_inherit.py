@@ -49,7 +49,7 @@ class TDL_refinement(TDL):
         max_runtime: int = None,
         grid_search_over: dict = None,
         grid_search_apply: bool = False,
-        kwargs_grid_search: dict = {},
+        kwargs_grid_search: dict = None,
         report_classification: bool = False,
         plot_tree: bool = False,
         plot_embeddings: bool = False,

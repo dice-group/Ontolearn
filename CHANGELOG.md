@@ -11,7 +11,43 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Fixed
+- `ontolearn.semantic_caching.retrieve` called `NeuralOntology(path_of_kb=...)`,
+  an argument removed from owlapy, so the neural-reasoner path raised
+  `TypeError` whenever no KGE model path was given. It now trains/loads via
+  `path_neural_embedding` and caches the reasoner per KG instead of rebuilding
+  it for every concept. (#515)
+
+### Changed
+- Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
+  symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
+  alongside the JVM segfaulted CI (#515).
+- Removed `tests/test_example_concept_learning_neural_evaluation.py`, which was
+  100% commented out and imported the long-gone `ontolearn.concept_learner`.
+- `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
+  removal, `BaseConceptLearner.train()` documented as an optional hook,
+  unit-test coverage for previously weak modules) and its priority list
+  refreshed.
+- NCES/NCES2/ROCES tests (`tests/test_nces*.py`, `tests/test_roces.py`) run in
+  ~20s instead of ~100s: `test_nces.py` and `test_nces_trainer.py` now use the
+  shipped pretrained family embeddings/model instead of training embeddings
+  via a `dicee` subprocess and the synthesizer for 5 epochs on every run;
+  NCES2/ROCES (no shipped weights) train briefly on a few LPs. Quality
+  thresholds raised (0.1 -> 0.4 pretrained NCES, 0.3 NCES2; ROCES stays at 0.1 because its
+  trained quality varies run to run), and the
+  tests run in a temporary working directory so they no longer leave
+  `*-Experiment-*`, `temp_embeddings/` and `temp_triples/` behind. (#559)
+- CI (`.github/workflows/test.yml`): `push` now only triggers on `develop`/`main`
+  (PRs run via `pull_request`), so branches with an open PR are no longer tested
+  twice; superseded runs are cancelled; and on PRs only the tests of the touched
+  learner(s) run unless shared code changed (`.github/scripts/select_tests.py`;
+  unmapped files fall back to the full suite, docs-only PRs skip the test job). (#645)
+
+## [0.11.0] - 2026-10-15
+
 ### Removed
+- `ontolearn/logging_tentris.conf`, a leftover logging config from the
+  removed `tentris.py`, unused anywhere in the package.
 - `CELOE._add_node_evald` (`ontolearn/learners/celoe.py`), dead code with no
   call sites — a near-duplicate of `_add_node`.
 - `ontolearn/tentris.py`, a stale, self-marked-TODO script unused anywhere
@@ -20,6 +56,29 @@ date) and use that section as the basis for the GitHub release notes.
   time. (#599)
 
 ### Added
+- `ontolearn.lp_generator.GoalDirectedLPGenerator`
+  (`ontolearn/lp_generator/complexity_lp_generator.py`), a goal-directed,
+  complexity-controlled learning-problem generator. Unlike `LPGen`/`KB2Data`,
+  which refine `owl:Thing` bottom-up and keep whatever falls out, it samples
+  target concepts top-down from an explicit DL-construct grammar
+  (`ComplexityProfile` / `DLConstruct`: intersection, union, ∃, ∀,
+  cardinality, has-value, negation, plus length/depth/arity bounds),
+  retrieves E+/E- via the reasoner and discards trivially-solvable problems
+  (a cheap one-step baseline hypothesis already separates E+/E-).
+  `generate_benchmark()` runs a curriculum of profiles and `save_benchmark()`
+  persists it.
+  - Difficulty-aware: `DifficultyWeights`/`difficulty_score` combine target
+    length/depth, (1 - baseline F1) and near-miss-negative density;
+    `generate()` oversamples and keeps the hardest `num_lps`, biasing
+    negatives towards near-misses (`hard_negative_ratio`).
+  - Works on any knowledge base, including ones with no object properties
+    (relation-based constructs are dropped from the grammar).
+  - Example sweeping several KGs with TDL:
+    `examples/benchmark_complexity_lp_generator_with_tdl.py`.
+- Unit tests for previously weakly-covered modules: `quality_funcs`
+  (31% -> 100%), `nces_utils` (39% -> 87%), `incomplete_kb` (8% -> 91%),
+  `data_struct` (~60% -> 97%), `value_splitter` incl. `EntropyValueSplitter`
+  (33% -> 100%) and `utils/static_funcs` (37% -> 92%).
 - `Drill.__init__` (`ontolearn/learners/drill.py`) accepts a `random_state`
   param, seeding a dedicated `random.Random` instance (used for exploration/
   example sampling instead of the global `random` module) plus `torch`/CUDA,
@@ -34,6 +93,10 @@ date) and use that section as the basis for the GitHub release notes.
 ### Changed
 - CI caches the `KGs`/`LPs`/`NCESData`/`CLIPData` archives with `actions/cache`,
   so runs no longer download them from `files.dice-research.org` every time. (#637)
+- Version bumped to 0.11.0 (`setup.py`, `ontolearn/__init__.py`, README
+  badges, docs). The `setup.py` trove classifier and the README/installation
+  docs now state Python 3.11, matching `python_requires='>=3.11'` (they still
+  said 3.10).
 - `print()` calls in `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
   `learners/spell_kit/structures.py`, and `learners/drill.py` now go through
@@ -117,6 +180,29 @@ date) and use that section as the basis for the GitHub release notes.
   by default, matching the other learners. (#585)
 
 ### Fixed
+- `LPGen`/`KB2Data` relied on a module-level `random.seed(42)` that reseeded
+  the global `random` module on every import, so the same seed did not
+  reproduce the same learning problems once anything else touched global
+  random state. `LPGen`, `KB2Data`, `ConceptDescriptionGenerator` and
+  `ExpressRefinement` now take a `random_seed` and use their own
+  `random.Random` instance; the import-time seeding is gone. (#595)
+- `TripleStore` instance retrieval returned too few individuals for class
+  expressions with a `⊤` filler such as `∃r.⊤` on a triplestore without
+  reasoning (#581): owlapy <= 1.6.5 rendered the filler as an explicit
+  `?s a owl:Thing` pattern that raw triples never satisfy, so such branches
+  matched nothing (e.g. 127 instead of 259 instances on Carcinogenesis).
+  Resolved by the owlapy 1.6.6 upgrade (#600); a regression test now guards
+  the generated SPARQL.
+- `TDL`/`TDL_refinement` (`ontolearn/learners/tree_learner.py`,
+  `tree_learner_refinement_inherit.py`) declared `kwargs_grid_search: dict = {}`,
+  a mutable default argument that was mutated in place via
+  `.setdefault("cv", 10)`, so state leaked between unrelated learner
+  instances (and into caller-supplied dicts). The default is now `None` and
+  each instance gets its own copy.
+- `CLIPDatasetInference.__getitem__` (`ontolearn/data_struct.py`) built the
+  negative-example tensor from the *positive* examples (`embeddings.loc[pos]`
+  instead of `embeddings.loc[neg]`), so `CLIP`'s length predictor ignored the
+  negatives at inference time even though it was trained with them. (#638)
 - Two bare `except:` clauses swallowed everything, including
   `KeyboardInterrupt`/`SystemExit`: `NCESBaseDataset.decompose`'s numeric-token
   check (`ontolearn/data_struct.py:289`) narrowed to `ValueError` (the only
@@ -402,7 +488,8 @@ Maintenance release.
 - Closed-world behaviour used by default for negation
   (`FastInstanceChecker`).
 
-[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.10.0...develop
+[Unreleased]: https://github.com/dice-group/Ontolearn/compare/0.11.0...develop
+[0.11.0]: https://github.com/dice-group/Ontolearn/compare/0.10.0...0.11.0
 [0.10.0]: https://github.com/dice-group/Ontolearn/compare/0.9.2...0.10.0
 [0.9.2]: https://github.com/dice-group/Ontolearn/compare/0.9.1...0.9.2
 [0.9.1]: https://github.com/dice-group/Ontolearn/compare/0.9.0...0.9.1
