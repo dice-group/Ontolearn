@@ -42,6 +42,12 @@ date) and use that section as the basis for the GitHub release notes.
   twice; superseded runs are cancelled; and on PRs only the tests of the touched
   learner(s) run unless shared code changed (`.github/scripts/select_tests.py`;
   unmapped files fall back to the full suite, docs-only PRs skip the test job). (#645)
+- CI (`.github/workflows/test.yml`): the test suite is split into `learners`,
+  `neural` and `triplestore` matrix jobs that run in parallel
+  (`.github/scripts/split_tests.py`; new test files land in `learners` unless
+  matched). Only `triplestore` starts Fuseki, every job restores the data
+  cache, and the PR test selection still applies (groups with nothing selected
+  are not started). (#651)
 
 ## [0.11.0] - 2026-10-15
 
