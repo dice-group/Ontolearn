@@ -87,13 +87,29 @@ jobs:
         run: |
           ruff check ontolearn/learners --exclude ontolearn/learners/spell_kit --line-length=200
 
+      # Bump the version suffix when the archives on files.dice-research.org change.
+      - name: Cache external files
+        id: data-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            KGs.zip
+            LPs.zip
+            CLIPData.zip
+            NCESData.zip
+          key: ontolearn-data-v1
+
       - name: Get external files
+        if: steps.data-cache.outputs.cache-hit != 'true'
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
           wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
           wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
           wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip
-          unzip KGs.zip && unzip LPs.zip && unzip NCESData.zip && unzip CLIPData.zip
+
+      - name: Unzip external files
+        run: |
+          unzip -q KGs.zip && unzip -q LPs.zip && unzip -q NCESData.zip && unzip -q CLIPData.zip
 
       - name: Wait for Fuseki to start
         run: |

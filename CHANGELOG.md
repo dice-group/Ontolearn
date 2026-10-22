@@ -91,6 +91,8 @@ date) and use that section as the basis for the GitHub release notes.
   `F`) instead of relying on ruff's shipped default. (#594)
 
 ### Changed
+- CI caches the `KGs`/`LPs`/`NCESData`/`CLIPData` archives with `actions/cache`,
+  so runs no longer download them from `files.dice-research.org` every time. (#637)
 - Version bumped to 0.11.0 (`setup.py`, `ontolearn/__init__.py`, README
   badges, docs). The `setup.py` trove classifier and the README/installation
   docs now state Python 3.11, matching `python_requires='>=3.11'` (they still
