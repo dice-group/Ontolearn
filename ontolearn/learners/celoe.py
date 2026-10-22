@@ -32,7 +32,7 @@ from ..learning_problem import PosNegLPStandard
 from ..quality_funcs import evaluate_concept
 from ..search import OENode, TreeNode, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
 
-from typing import Optional, Union, Iterable, Dict
+from typing import Optional, Union, Iterable, Dict, Tuple
 import owlapy
 
 from owlapy.class_expression import OWLClassExpression
@@ -153,9 +153,13 @@ class CELOE(RefinementBasedConceptLearner):
             # from reimplementation, pick without quality criterion
             return self.heuristic_queue[-1]
 
-    def best_hypotheses(self, n: int = 1, return_node: bool = False) -> Union[
+    def best_hypotheses(self, n: int = 1, return_node: bool = False, return_info: bool = False) -> Union[
         OWLClassExpression | Iterable[OWLClassExpression],
-        OENode | Iterable[OENode]]:
+        OENode | Iterable[OENode], Tuple]:
+        """Best `n` hypotheses. With `return_info`, returns `(hypotheses, info)` where `info` holds the
+        quality and length of each hypothesis."""
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         x = islice(self.best_descriptions, n)
         if n == 1:
             if return_node:

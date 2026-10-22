@@ -47,6 +47,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
 from ontolearn.triple_store import TripleStoreOntology
+from ontolearn.utils.static_funcs import concept_len
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
 _X = TypeVar('_X', bound=AbstractLearningProblem)  #:
@@ -228,6 +229,20 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         Once finished, the results can be queried with the `best_hypotheses` function."""
         pass
+
+    @staticmethod
+    def _hypotheses_with_info(nodes):
+        """Turn the search nodes returned by `best_hypotheses(return_node=True)` into `(hypotheses, info)`.
+
+        `info` has the same shape as `hypotheses` (one dict, or a list of dicts) and holds the
+        `quality` of each hypothesis (None if the learner did not score it) and its `length`.
+        """
+        if nodes is None:
+            return None, None
+        if isinstance(nodes, (list, tuple)):
+            pairs = [BaseConceptLearner._hypotheses_with_info(node) for node in nodes]
+            return [h for h, _ in pairs], [i for _, i in pairs]
+        return nodes.concept, {"quality": nodes.quality, "length": concept_len(nodes.concept)}
 
     @abstractmethod
     def best_hypotheses(self, n=10) -> Iterable[OWLClassExpression]:

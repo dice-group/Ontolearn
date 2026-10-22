@@ -824,7 +824,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
 
-    def best_hypotheses(self, n=1, return_node: bool = False) -> Union[OWLClassExpression, List[OWLClassExpression]]:
+    def best_hypotheses(self, n=1, return_node: bool = False, return_info: bool = False) \
+            -> Union[OWLClassExpression, List[OWLClassExpression], Tuple]:
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         assert self.search_tree is not None, "Search tree is not initialized"
         assert len(self.search_tree) >= 1, "Search tree is empty"
 
