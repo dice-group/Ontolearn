@@ -24,6 +24,7 @@
 
 """NCES: Neural Class Expression Synthesis."""
 
+import logging
 import os
 import json
 import glob
@@ -48,6 +49,8 @@ from ontolearn.nces_utils import SimpleSolution, generate_training_data
 from ontolearn.search import NCESNode
 from ontolearn.utils import read_csv
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+
+logger = logging.getLogger(__name__)
 
 
 class NCES(BaseNCES):
@@ -96,18 +99,18 @@ class NCES(BaseNCES):
                 self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
             try:
                 import dicee
-                print('\nĆheck packages... OK: dicee is installed.')
+                logger.info('Check packages... OK: dicee is installed.')
                 del dicee
             except ImportError:
-                print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
+                logger.warning('dicee is not installed, will first install it...')
                 subprocess.run('pip install dicee==0.3.2')
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
-                      +"Poor performance is expected as we will also train the synthesizer for a few epochs."
-                       "\nFor maximum performance, use pretrained models or train embeddings for many epochs, "
-                       "and the neural synthesizer on massive amounts of data and for many epochs. "
-                       "See the example script in `examples/train_nces.py` for this. "
-                       "Use `python examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
+                logger.warning("Embeddings not found. Will quickly train embeddings beforehand. "
+                               "Poor performance is expected as we will also train the synthesizer for a few epochs. "
+                               "For maximum performance, use pretrained models or train embeddings for many epochs, "
+                               "and the neural synthesizer on massive amounts of data and for many epochs. "
+                               "See the example script in `examples/train_nces.py` for this. "
+                               "Use `python examples/train_nces.py -h` to view options.")
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
                     self.path_temp_embeddings, str) else "temp_embeddings"
@@ -145,14 +148,14 @@ class NCES(BaseNCES):
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
             except Exception as e:
-                print(f"Error while training embeddings: {e}")
+                logger.error(f"Error while training embeddings: {e}")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
+                logger.warning(f"Will also train {self.name} for 5 epochs")
             self.instance_embeddings = read_csv(self.path_of_embeddings)
             self.input_size = self.instance_embeddings.shape[1]
             self.model = self.get_synthesizer(self.path_of_trained_models)
-            print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
+            logger.info(f"Using embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.")
             if self.auto_train:
                 # Train NCES for 5 epochs. num_workers=0: this quick,
                 # low-fidelity convenience path (see the printed warning
@@ -224,8 +227,8 @@ class NCES(BaseNCES):
             del Models[name]
 
         if self.load_pretrained and path is None:
-            print("\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. "
-                  "Will return models with random weights.\x1b[0m")
+            logger.warning("The path to pretrained models is None and load_pretrained is True. "
+                           "Will return models with random weights.")
             return Models
         elif self.load_pretrained and path and glob.glob(path+"/*.pt"):
             num_loaded_models = 0
@@ -240,23 +243,20 @@ class NCES(BaseNCES):
                             num_loaded_models += 1
                             loaded_model_names.append(model_name)
                         except Exception as e:
-                            print(f"Could not load pretrained weights for {model_name}. "
-                                  f"Please consider training the model!")
-                            print("\n", e)
-                            pass
+                            logger.warning(f"Could not load pretrained weights for {model_name}. "
+                                           f"Please consider training the model! ({e})")
             if num_loaded_models == len(Models):
-                print("\n Loaded NCES weights!\n")
+                logger.info("Loaded NCES weights!")
                 return Models
             elif num_loaded_models > 0:
-                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. "
-                                           f"Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
+                logger.warning(f"Some model weights could not be loaded. "
+                               f"Successful ones are: {loaded_model_names}")
                 return Models
             else:
-                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, "
-                                           "initializing models with random weights"+"\x1b[0m"+"\n")
+                logger.warning("No pretrained weights were provided, initializing models with random weights")
                 return Models
         else:
-            print("\nNo pretrained weights were provided, initializing models with random weights.\n")
+            logger.warning("No pretrained weights were provided, initializing models with random weights.")
             return Models
 
     def refresh(self, path=None):
@@ -339,7 +339,7 @@ class NCES(BaseNCES):
                         # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
-                    print("Prediction: ", prediction_str)
+                    logger.info(f"Prediction: {prediction_str}")
             predictions.append(concept)
         return predictions
 
@@ -389,7 +389,7 @@ class NCES(BaseNCES):
         if return_info:
             return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         if self.best_predictions is None:
-            print("NCES needs to be fitted to a problem first")
+            logger.warning("NCES needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
             if return_node:
@@ -450,7 +450,7 @@ class NCES(BaseNCES):
                 per_lp_preds.append(ce)
             predictions_as_owl_class_expressions.append(per_lp_preds)
             if verbose:
-                print("Predictions: ", predictions_str)
+                logger.info(f"Predictions: {predictions_str}")
         return predictions_as_owl_class_expressions
 
     def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000,

@@ -24,6 +24,7 @@
 
 """NCES2: Neural Class Expression Synthesis in ALCHIQ(D)."""
 
+import logging
 import os
 import json
 import glob
@@ -47,6 +48,8 @@ from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution, generate_training_data
 from ontolearn.search import NCESNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+
+logger = logging.getLogger(__name__)
 
 
 class NCES2(BaseNCES):
@@ -94,10 +97,10 @@ class NCES2(BaseNCES):
             self.m = [self.m]
 
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True "
-                  f"and auto_train is True. Will quickly train neural synthesizers. "
-                  f"However, it is advisable that you properly train {self.name} using the "
-                  f"example script in `examples/train_nces.py`.\x1b[0m\n")
+            logger.warning(f"Path to pretrained models is None and load_pretrained is True "
+                           f"and auto_train is True. Will quickly train neural synthesizers. "
+                           f"However, it is advisable that you properly train {self.name} using the "
+                           f"example script in `examples/train_nces.py`.")
             # num_workers=0: see the comment on the equivalent call in
             # NCES._set_prerequisites (nces.py) - same quick-training,
             # coverage-run-deadlock-risk rationale (#610/#622).
@@ -158,15 +161,14 @@ class NCES2(BaseNCES):
                                                    self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and path is None:
-            print("\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. "
-                  "Will return models with random weights.\x1b[0m\n")
+            logger.warning("Path to pretrained models is None and load_pretrained is True. "
+                           "Will return models with random weights.")
             return Models
 
         elif self.load_pretrained and path and len(glob.glob(path + "/*.pt")) == 0:
-            print("\n"+"\x1b[0;30;43m"+f"No pretrained model found! If {self.path_of_trained_models} "
-                                       f"is empty or does not exist, set the `load_pretrained` parameter to `False` or "
-                                       f"make sure `save_model` was set to `True` in the .train() "
-                                       f"method."+"\x1b[0m"+"\n")
+            logger.error(f"No pretrained model found! If {self.path_of_trained_models} "
+                         f"is empty or does not exist, set the `load_pretrained` parameter to `False` or "
+                         f"make sure `save_model` was set to `True` in the .train() method.")
             raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
 
         elif self.load_pretrained and path and glob.glob(path + "/*.pt"):
@@ -189,7 +191,7 @@ class NCES2(BaseNCES):
                             emb_model.load_state_dict(weights)
                             Models[str(m)]["emb_model"] = emb_model
             if num_loaded_models == len(self.m):
-                print(f"\nLoaded {self.name} weights!\n")
+                logger.info(f"Loaded {self.name} weights!")
                 return Models
             elif num_loaded_models > 0:
                 models_to_remove = []
@@ -198,17 +200,16 @@ class NCES2(BaseNCES):
                         models_to_remove.append(name)
                 for name in models_to_remove:
                     del Models[name]
-                print("\x1b[0;30;43m"+f"!!!Some pretrained weights could not be found, successfully "
-                                      f"loaded models are {loaded_model_names}"+"\x1b[0m"+"\n")
+                logger.warning(f"Some pretrained weights could not be found, successfully "
+                               f"loaded models are {loaded_model_names}")
                 return Models
             else:
-                print("\x1b[0;30;43m"+"!!!No pretrained weights were found, initializing models "
-                                      "with random weights"+"\x1b[0m"+"\n")
+                logger.warning("No pretrained weights were found, initializing models with random weights")
                 return Models
         else:
             if verbose:
-                print(f"\nNo pretrained weights were provided, initializing models with random weights. "
-                      f"You may want to first train the synthesizer using {self.name}.train()\n")
+                logger.warning(f"No pretrained weights were provided, initializing models with random weights. "
+                               f"You may want to first train the synthesizer using {self.name}.train()")
             return Models
 
     def refresh(self, path=None):
@@ -294,7 +295,7 @@ class NCES2(BaseNCES):
                         # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
-                    print("Prediction: ", prediction_str)
+                    logger.info(f"Prediction: {prediction_str}")
             predictions.append(concept)
         return predictions
 
@@ -339,7 +340,7 @@ class NCES2(BaseNCES):
         if return_info:
             return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         if self.best_predictions is None:
-            print(f"{self.name} needs to be fitted to a problem first")
+            logger.warning(f"{self.name} needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
             if return_node:
@@ -405,7 +406,7 @@ class NCES2(BaseNCES):
                 per_lp_preds.append(ce)
             predictions_as_owl_class_expressions.append(per_lp_preds)
             if verbose:
-                print("Predictions: ", predictions_str)
+                logger.info(f"Predictions: {predictions_str}")
         return predictions_as_owl_class_expressions
 
     def train(self, data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000,
@@ -430,7 +431,7 @@ class NCES2(BaseNCES):
         self.path_of_trained_models = storage_path+"/trained_models"
         if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
-        print(num_workers)
+        logger.debug(f"num_workers: {num_workers}")
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
                               eta_min=eta_min, clip_value=clip_value, num_workers=num_workers,
                               storage_path=storage_path)
