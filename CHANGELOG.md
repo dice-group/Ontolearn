@@ -12,6 +12,8 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `NCESTrainer` and `CLIPTrainer` raised a bare `ValueError` for an unsupported optimizer; the
+  message was a `print` placed after the `raise` and never ran. It is now the exception message.
 - `TripleStoreReasoner.instances(ce, direct=False)` only expanded subclasses for the root
   variable's type triple, so class expressions with fillers (e.g.
   `Grandfather ⊓ ∃hasChild.Grandparent`) missed individuals typed only by a subclass of the
@@ -33,6 +35,9 @@ date) and use that section as the basis for the GitHub release notes.
   training, grid-search parameters, classification report) through `logging` instead of `print`.
   The duplicate verbose `print` after each "Error extracting ... features" warning is removed,
   as the same error was already logged.
+- `NERO` (`verbose` levels map to `info`/`debug`; the "queue exceeded max" notice is now an
+  unconditional `warning`), `NCESTrainer` and `CLIPTrainer` report through `logging` instead of
+  `print`; the decorative `#`/`*` banners are gone.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).

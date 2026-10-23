@@ -29,12 +29,15 @@ none remain open as of this writing.
   `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
   `learners/nces.py`, `learners/nces2.py`, `learners/tree_learner.py`,
+  `learners/nero.py`, `nces_trainer.py`, `clip_trainer.py`,
   `learners/spell_kit/structures.py` (except `structure_to_dot`, whose
   `print()`s are genuine DOT-graph text output, not log messages), and
-  `learners/drill.py`. `print(` still appears **~230 times** across the rest
+  `learners/drill.py`. `print(` still appears **~155 calls** across the rest
   of `ontolearn/**/*.py`; remaining offenders include
-  `learners/celoe.py` (11), `learners/sparql_query_learner.py` (4), and
-  `data_struct.py` (10) — several of these overlap with the broad-except
+  `lp_generator/helper_classes.py` (14), `binders.py` (13),
+  `utils/static_funcs.py` (11), `learning_problem_generator.py` (10),
+  `search.py` (9), `data_struct.py` (8) and `learners/celoe.py` (7, mostly
+  the intentional `show_search_tree` display methods) — several of these overlap with the broad-except
   cleanup below and are best converted alongside that work. Routing the rest
   through the existing logger (with levels) would make output
   controllable/filterable instead of unconditionally printed.

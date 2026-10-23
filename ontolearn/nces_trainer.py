@@ -23,6 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """Trainer for NCES instances"""
+import logging
 import numpy as np
 import copy
 import torch
@@ -37,6 +38,8 @@ from torch.nn.utils.rnn import pad_sequence
 import time
 from collections import defaultdict
 from ontolearn.data_struct import NCESDataset, ROCESDataset, TriplesDataset
+
+logger = logging.getLogger(__name__)
 
 def before_pad(arg):
     arg_temp = []
@@ -111,8 +114,7 @@ class NCESTrainer:
         elif optimizer == 'RMSprop':
             return torch.optim.RMSprop(parameters, lr=self.learning_rate)
         else:
-            raise ValueError
-            print('Unsupported optimizer')
+            raise ValueError(f"Unsupported optimizer: {optimizer}")
             
     def get_data_idxs(self):
         data_idxs = [(self.synthesizer.triples_data.entity2idx.loc[t[0]].values[0],
@@ -135,10 +137,7 @@ class NCESTrainer:
         size_model = sum([p.numel() for p in synthesizer["model"].parameters()])
         if synthesizer["emb_model"]:
             size_emb_model = sum([p.numel() for p in synthesizer["emb_model"].parameters()])
-        print("#"*30+"Trainable model size"+"#"*30)
-        print("Synthesizer: ", size_model)
-        print("Embedding model: ", size_emb_model)
-        print("#"*30+"Trainable model size"+"#"*30)
+        logger.info(f"Trainable model size: synthesizer: {size_model}, embedding model: {size_emb_model}")
 
     def collate_batch(self, batch):  # pragma: no cover
         pos_emb_list = []
@@ -203,19 +202,15 @@ class NCESTrainer:
         for model_name in self.synthesizer.model:
             self.show_num_trainable_params(self.synthesizer.model[model_name])
             if device.type == "cpu":
-                print("Training on CPU, it may take long...")
+                logger.info("Training on CPU, it may take long...")
             else:
-                print("GPU available !")
-            print()
-            print("#"*80)
-            print()
+                logger.info("GPU available !")
             model = copy.deepcopy(self.synthesizer.model[model_name])
             if model["model"].name == "SetTransformer":
                 start_message = "{}: {} ({} inducing points) starts training... \n".format(self.synthesizer.name, model["model"].name, model["model"].m)
             else:
                 start_message = "{}: {} starts training... \n".format(self.synthesizer.name, model["model"].name)
-            print(start_message)
-            print("#"*80, "\n")
+            logger.info(start_message.strip())
             desc = model["model"].name
             if model["model"].name != model_name:
                 desc += "_" + model_name
@@ -303,9 +298,8 @@ class NCESTrainer:
                 with open(self.storage_path+"/runtime/runtime"+"_"+desc+".json", "w") as file:
                     json.dump(runtime_info, file, indent=3)
             results_dict = dict()
-            print("Top performance: loss: {:.4f}, soft accuracy: {:.2f}% ... "
-                  "hard accuracy: {:.2f}%".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
-            print()
+            logger.info("Top performance: loss: {:.4f}, soft accuracy: {:.2f}% ... "
+                        "hard accuracy: {:.2f}%".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
             results_dict.update({"Train Max Soft Acc": max(Train_acc['soft']), "Train Max Hard Acc": max(Train_acc['hard']),
                                  "Train Min Loss": min(Train_loss)})
             
@@ -345,7 +339,7 @@ class NCESTrainer:
                             "num_relations": self.synthesizer.num_relations,
                             "kernel_size": self.synthesizer.kernel_size,
                             "num_of_output_channels": self.synthesizer.num_of_output_channels}, f)
-                print("{} saved".format(model["model"].name))
+                logger.info("{} saved".format(model["model"].name))
                 if not os.path.exists(self.storage_path+"/metrics/"):
                     os.mkdir(self.storage_path+"/metrics/")
                 with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
