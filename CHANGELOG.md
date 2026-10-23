@@ -22,6 +22,9 @@ date) and use that section as the basis for the GitHub release notes.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).
+- `tests/test_semantic_cache.py` now also covers the neural (EBR) retrieval path, using the
+  a KGE trained on a temporary copy of `father.owl`, in a child process so a torch + JVM
+  crash fails that one test instead of killing the suite. (#515)
 - Removed `tests/test_example_concept_learning_neural_evaluation.py`, which was
   100% commented out and imported the long-gone `ontolearn.concept_learner`.
 - `Improvements.md` pruned of items already resolved (`CELOE._add_node_evald`
