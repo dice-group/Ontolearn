@@ -23,6 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """Node representation."""
+import logging
 import weakref
 from _weakref import ReferenceType
 from abc import abstractmethod, ABCMeta
@@ -36,6 +37,8 @@ from owlapy.utils import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 from owlapy import owl_expression_to_dl
+
+logger = logging.getLogger(__name__)
 
 _N = TypeVar('_N')  #:
 
@@ -546,7 +549,7 @@ def _get_top_n_nodes(nodes: Iterable[_N], n: int, key: str, length_func: Callabl
     try:
         score_func = key_funcs[key]
     except KeyError:
-        print('Wrong Key:{0}\tProgram exist.'.format(key))
+        logger.error('Wrong Key:{0}'.format(key))
         raise KeyError(key)
     return sorted(nodes, key=score_func, reverse=True)[:n]
 
@@ -655,10 +658,8 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
             self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # put again into queue.
             return node
         except KeyError:
-            print(most_promising_str, 'is not found')
-            print('####')
-            for k, v in self.nodes.items():
-                print(k)
+            logger.error(f'{most_promising_str} is not found among the nodes')
+            logger.debug('Known nodes: %s', list(self.nodes))
             raise
 
     def get_top_n(self, n: int, key='quality') -> List[LBLNode]:  # pragma: no cover

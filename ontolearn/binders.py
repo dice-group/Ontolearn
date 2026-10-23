@@ -23,6 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """Pyhon binders of other concept learners."""
+import logging
 import subprocess
 from datetime import datetime
 from typing import List, Dict
@@ -31,6 +32,8 @@ import re
 import time
 import os
 from .learning_problem import PosNegLPStandard
+
+logger = logging.getLogger(__name__)
 
 
 class PredictedConcept:
@@ -183,7 +186,7 @@ class DLLearnerBinder:
         if self.best_predictions:
             return self.best_predictions
         else:
-            print('No prediction found.')
+            logger.warning('No prediction found.')
 
     def parse_dl_learner_output(self, output_of_dl_learner: List[str], file_path: str) -> Dict:
         """Parse the output received from executing dl-learner.
@@ -229,23 +232,15 @@ class DLLearnerBinder:
                     assert len(solutions) > 0
                     assert '1: ' in solutions[1][:5]
                 except AssertionError:
-                    print(type(solutions))
-                    print('####')
-                    print(solutions[0])
-                    print('####')
-                    print(len(solutions))
+                    logger.debug('Unexpected DL-Learner output: type=%s, first=%s, length=%d',
+                                 type(solutions), solutions[0], len(solutions))
             else:
                 # no solution found.
-                print('#################')
-                print('#######{}##########'.format(self.name))
-                print('#################')
+                logger.warning('%s found no solution', self.name)
                 for i in output_of_dl_learner[-3:-1]:
-                    print(i)
+                    logger.debug(i)
                     if 'descriptions' in i:
                         search_info = i
-                print('#################')
-                print('#######{}##########'.format(self.name))
-                print('#################')
 
                 _ = re.findall(r'\d+ descriptions tested', search_info)
                 assert len(_) == 1
