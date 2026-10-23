@@ -12,6 +12,12 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `TripleStoreReasoner.instances(ce, direct=False)` only expanded subclasses for the root
+  variable's type triple, so class expressions with fillers (e.g.
+  `Grandfather ⊓ ∃hasChild.Grandparent`) missed individuals typed only by a subclass of the
+  filler. Every type triple is now expanded, each with its own variable, and `instances_count` and
+  `is_subset_of_individuals` share the same helper (`with_subclass_closure`), which also removes
+  the shared-variable scoping bug of #575 from those two. (#571)
 - `ontolearn.semantic_caching.retrieve` called `NeuralOntology(path_of_kb=...)`,
   an argument removed from owlapy, so the neural-reasoner path raised
   `TypeError` whenever no KGE model path was given. It now trains/loads via
