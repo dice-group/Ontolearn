@@ -25,6 +25,10 @@ date) and use that section as the basis for the GitHub release notes.
   it for every concept. (#515)
 
 ### Changed
+- `NCES`, `NCES2` (and so `ROCES`) report status, warnings and verbose predictions through
+  `logging` instead of `print`, without the ANSI colour codes, so the output can be filtered or
+  silenced with the standard logging configuration. A leftover debug `print(num_workers)` in
+  `NCES2.train` is now a debug log.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).
