@@ -176,6 +176,25 @@ def suf(direct: bool):
     return " " if direct else "* "
 
 
+# A type triple `?var a <Class>` as emitted by the Owl2SparqlConverter, for the root variable as well as
+# for filler variables (`?s_1 a <Class>`). owl:NamedIndividual has no subclasses, so it is left alone.
+_TYPE_TRIPLE = re.compile(r"(\?\w+) a (?=<(?!http://www\.w3\.org/2002/07/owl#NamedIndividual>))")
+
+
+def with_subclass_closure(sparql: str) -> str:
+    """Make every type triple `?v a <C>` of a converted class expression match instances of subclasses of
+    `<C>` too, i.e. `?v a ?some_cls_i. ?some_cls_i rdfs:subClassOf* <C>`, so that indirect instances are found
+    without materialized type assertions. Each occurrence gets its own variable so that uses inside/outside
+    constructs like FILTER NOT EXISTS don't accidentally share a binding."""
+    counter = count()
+
+    def _expand(match: re.Match) -> str:
+        var = f"?some_cls_{next(counter)}"
+        return f"{match.group(1)} a {var}. \n {var} <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
+
+    return _TYPE_TRIPLE.sub(_expand, sparql)
+
+
 class TripleStoreOntology(AbstractOWLOntology):
 
     def __init__(self, triplestore_address: str, use_cache: bool = False):
@@ -484,15 +503,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
             seen_set.add(ce)
         ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
         if not direct:
-            counter = count()
-
-            def _replace_with_subclass_filter(_match: re.Match) -> str:
-                # Each occurrence gets its own variable so that uses inside/outside
-                # constructs like FILTER NOT EXISTS don't accidentally share a binding.
-                var = f"?some_cls_{next(counter)}"
-                return f"?x a {var}. \n {var} <http://www.w3.org/2000/01/rdf-schema#subClassOf>* "
-
-            ce_to_sparql = re.sub(r"\?x a ", _replace_with_subclass_filter, ce_to_sparql)
+            ce_to_sparql = with_subclass_closure(ce_to_sparql)
         yield from send_http_request_to_ts_and_fetch_results(self.url, ce_to_sparql, OWLNamedIndividual)
         if not direct:
             for cls in self.equivalent_classes(ce):
@@ -506,10 +517,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
         through an owl:equivalentClass axiom on `ce`."""
         ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce, count=True)
         if not direct:
-            ce_to_sparql = ce_to_sparql.replace(
-                "?x a ",
-                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
-            )
+            ce_to_sparql = with_subclass_closure(ce_to_sparql)
         bindings = self.query(ce_to_sparql).json()["results"]["bindings"]
         return int(bindings[0]["cnt"]["value"]) if bindings else 0
 
@@ -522,10 +530,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
             return True
         ce_pattern = "\n".join(self._owl2sparql_converter.convert("?x", ce))
         if not direct:
-            ce_pattern = ce_pattern.replace(
-                "?x a ",
-                "?x a ?some_cls. \n ?some_cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
-            )
+            ce_pattern = with_subclass_closure(ce_pattern)
         values = " ".join(f"<{i.str}>" for i in individuals)
         ask_query = f"ASK {{ VALUES ?x {{ {values} }} FILTER NOT EXISTS {{ {ce_pattern} }} }}"
         return not self.query(ask_query).json()["boolean"]

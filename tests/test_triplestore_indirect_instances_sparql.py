@@ -15,9 +15,12 @@ import re
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ontolearn.triple_store import TripleStoreOntology, TripleStoreReasoner
-from owlapy.class_expression import OWLClass, OWLObjectComplementOf, OWLObjectIntersectionOf
+from ontolearn.triple_store import TripleStoreOntology, TripleStoreReasoner, with_subclass_closure
+from owlapy.class_expression import (OWLClass, OWLObjectComplementOf, OWLObjectIntersectionOf,
+                                     OWLObjectSomeValuesFrom)
 from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_property import OWLObjectProperty
 
 NS = "http://example.org/family#"
 URL = "http://localhost:3030/fake/sparql"
@@ -81,3 +84,58 @@ class TestIndirectInstancesSparqlScoping(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSubclassClosureOfFillers(unittest.TestCase):
+    """https://github.com/dice-group/Ontolearn/issues/571: the subclass closure must cover every type
+    triple of the converted query, not only the one on the root variable."""
+
+    def setUp(self):
+        self.grandfather = OWLClass(IRI.create(NS, "Grandfather"))
+        self.grandparent = OWLClass(IRI.create(NS, "Grandparent"))
+        self.has_child = OWLObjectProperty(IRI.create(NS, "hasChild"))
+        self.ce = OWLObjectIntersectionOf(
+            [self.grandfather, OWLObjectSomeValuesFrom(self.has_child, self.grandparent)])
+        self.reasoner = TripleStoreReasoner(TripleStoreOntology(URL))
+
+    def test_filler_type_triple_is_expanded(self):
+        query = with_subclass_closure(self.reasoner._owl2sparql_converter.as_query("?x", self.ce))
+        bindings = SUBCLASS_BINDING_RE.findall(query)
+        self.assertEqual({iri for _, iri in bindings}, {self.grandfather.str, self.grandparent.str})
+        self.assertEqual(len({var for var, _ in bindings}), 2)
+        self.assertIn("?s_1 a ?some_cls_", query)
+
+    def test_owl_named_individual_is_not_expanded(self):
+        sparql = "SELECT ?x WHERE { ?x a <http://www.w3.org/2002/07/owl#NamedIndividual> . ?x a <http://e.org/A> . }"
+        self.assertEqual(SUBCLASS_BINDING_RE.findall(with_subclass_closure(sparql)), [("?some_cls_0", "http://e.org/A")])
+
+    def test_count_and_subset_queries_scope_each_occurrence(self):
+        ce = OWLObjectIntersectionOf([OWLObjectComplementOf(OWLClass(IRI.create(NS, "Daughter"))),
+                                      OWLClass(IRI.create(NS, "Female"))])
+        resp = MagicMock()
+        resp.json.return_value = {"head": {"vars": ["cnt"]}, "boolean": False,
+                                  "results": {"bindings": [{"cnt": {"value": "0"}}]}}
+        with patch.object(TripleStoreReasoner, "query", return_value=resp) as mocked_query:
+            self.reasoner.instances_count(ce)
+            self.reasoner.is_subset_of_individuals([OWLNamedIndividual(IRI.create(NS, "a"))], ce)
+        self.assertEqual(mocked_query.call_count, 2)
+        for call in mocked_query.call_args_list:
+            variables = [var for var, _ in SUBCLASS_BINDING_RE.findall(call.args[0])]
+            self.assertEqual(len(variables), 2)
+            self.assertEqual(len(variables), len(set(variables)))
+
+    def test_indirect_instances_found_through_subclass_fillers(self):
+        """Run the rewritten query on a tiny graph where the only type assertions are for subclasses."""
+        from rdflib import Graph
+        g = Graph()
+        g.parse(format="turtle", data=f"""
+            @prefix : <{NS}> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+            :Grandfather rdfs:subClassOf :Father .  :Grandparent rdfs:subClassOf :Parent .
+            :GrandfatherOfTwo rdfs:subClassOf :Grandfather .  :GreatGrandparent rdfs:subClassOf :Grandparent .
+            :a a :GrandfatherOfTwo ; :hasChild :b .   :b a :GreatGrandparent .
+            :c a :GrandfatherOfTwo ; :hasChild :d .   :d a :Parent .
+        """)
+        base = self.reasoner._owl2sparql_converter.as_query("?x", self.ce)
+        names = lambda q: {str(r[0]).split("#")[1] for r in g.query(q)}
+        self.assertEqual(names(base), set())  # no asserted Grandfather/Grandparent types
+        self.assertEqual(names(with_subclass_closure(base)), {"a"})  # c's child is only a Parent, not a Grandparent
