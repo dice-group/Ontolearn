@@ -29,6 +29,10 @@ date) and use that section as the basis for the GitHub release notes.
   `logging` instead of `print`, without the ANSI colour codes, so the output can be filtered or
   silenced with the standard logging configuration. A leftover debug `print(num_workers)` in
   `NCES2.train` is now a debug log.
+- `TDL` / `TDL_refinement` (`learners/tree_learner.py`) report progress (feature extraction,
+  training, grid-search parameters, classification report) through `logging` instead of `print`.
+  The duplicate verbose `print` after each "Error extracting ... features" warning is removed,
+  as the same error was already logged.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).

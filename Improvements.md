@@ -28,11 +28,11 @@ none remain open as of this writing.
   appropriate levels — `info`/`warning`/`debug`/`error`) in
   `knowledge_base.py`, `semantic_caching.py`,
   `learners/tree_learner_refinement_inherit.py`,
-  `learners/nces.py`, `learners/nces2.py`,
+  `learners/nces.py`, `learners/nces2.py`, `learners/tree_learner.py`,
   `learners/spell_kit/structures.py` (except `structure_to_dot`, whose
   `print()`s are genuine DOT-graph text output, not log messages), and
-  `learners/drill.py`. `print(` still appears **~245 times** across the rest
-  of `ontolearn/**/*.py`; remaining offenders include `learners/tree_learner.py` (16),
+  `learners/drill.py`. `print(` still appears **~230 times** across the rest
+  of `ontolearn/**/*.py`; remaining offenders include
   `learners/celoe.py` (11), `learners/sparql_query_learner.py` (4), and
   `data_struct.py` (10) — several of these overlap with the broad-except
   cleanup below and are best converted alongside that work. Routing the rest
