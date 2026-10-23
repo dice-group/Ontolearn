@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+import logging
 import os
 import pandas
 import matplotlib.pyplot as plt
@@ -42,6 +43,8 @@ from owlapy.class_expression import (
     OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectSomeValuesFrom,
     OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction,
     OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLDataHasValue, OWLObjectHasValue)
+
+logger = logging.getLogger(__name__)
 
 def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
     """
@@ -337,13 +340,9 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
         try:
             ontology.add_axiom(equivalent_classes_axiom)
         except AttributeError:
-            print(traceback.format_exc())
-            print("Exception at creating OWLEquivalentClassesAxiom")
-            print(equivalent_classes_axiom)
-            print(cls_a)
-            print(i)
-            print(expressions)
-            exit(1)
+            logger.error("Exception at creating OWLEquivalentClassesAxiom %s (cls_a=%s, expression=%s)\n%s",
+                         equivalent_classes_axiom, cls_a, i, traceback.format_exc())
+            raise
     ontology.save(IRI.create(path + '.owl', is_file_path=True))
 
 
@@ -382,8 +381,8 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
         from anytree.dotexport import RenderTreeGraph
         from IPython.display import Image
     except Exception as e:
-        print("You need to install deeponto to use this feature (pip install deeponto). If you have already, check "
-              "whether it's installed properly. \n   ----> Error: " + f'{e}')
+        logger.error("You need to install deeponto to use this feature (pip install deeponto). If you have already, "
+                     "check whether it's installed properly. Error: %s", e)
         if os.path.exists(tmp_file):
             os.remove(tmp_file)
         return
@@ -397,16 +396,16 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
             tree.render_image()
             os.rename("range_node.png", f"Prediction_{i}.png")
     except Exception as e:
-        print("If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the "
-              "verbalization possible. Otherwise check the error message: \n" + f'{e}')
+        logger.error("If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the "
+                     "verbalization possible. Otherwise check the error message: %s", e)
     if os.path.exists(tmp_file):
         os.remove(tmp_file)
     if len(complex_concepts) == 0:
-        print("No complex classes found!")
+        logger.warning("No complex classes found!")
     elif len(complex_concepts) == 1:
-        print("Image generated successfully!")
+        logger.info("Image generated successfully!")
     else:
-        print("Images generated successfully!")
+        logger.info("Images generated successfully!")
 
 def get_file_base_name(file_path: str) -> str:
     """

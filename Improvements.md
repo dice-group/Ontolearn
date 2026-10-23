@@ -31,16 +31,18 @@ none remain open as of this writing.
   `learners/nces.py`, `learners/nces2.py`, `learners/tree_learner.py`,
   `learners/nero.py`, `nces_trainer.py`, `clip_trainer.py`,
   `learning_problem_generator.py`, `lp_generator/helper_classes.py`,
+  `binders.py`, `utils/static_funcs.py`, `data_struct.py`, parts of `search.py`,
   `learners/spell_kit/structures.py` (except `structure_to_dot`, whose
   `print()`s are genuine DOT-graph text output, not log messages), and
-  `learners/drill.py`. `print(` still appears **~131 calls** across the rest
-  of `ontolearn/**/*.py`; remaining offenders include
-  `binders.py` (13), `utils/static_funcs.py` (11), `search.py` (9),
-  `executor.py` (9), `data_struct.py` (8) and `learners/celoe.py` (7, mostly
-  the intentional `show_search_tree` display methods) — several of these overlap with the broad-except
-  cleanup below and are best converted alongside that work. Routing the rest
-  through the existing logger (with levels) would make output
-  controllable/filterable instead of unconditionally printed.
+  `learners/drill.py`. About 95 `print(` calls remain in `ontolearn/**/*.py`,
+  and most are deliberate: the tree-display methods (`search.py`
+  `show_search_tree`/`show_current_search_tree`, `learners/celoe.py`), the
+  experiment runners and CLI entry points (`executor.py`, `experiments.py`,
+  `scripts/run.py`) and `spell_kit`'s DOT output. Still worth reviewing one by
+  one: `learners/spell_kit/fitting_alc.py` (11), `fitting.py` (5),
+  `o2p_owl_parser.py` (6), `utils/__init__.py` (6), `learning_problem.py` (4)
+  and `learners/clip.py` (4). Several overlap with the broad-except cleanup
+  below and are best converted alongside that work.
 
 ## 4. Mutable default arguments / shared state
 

@@ -12,6 +12,11 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `save_owl_class_expressions` called `exit(1)` after printing debug output when an
+  `OWLEquivalentClassesAxiom` could not be added, terminating the whole interpreter from library
+  code. It now logs the details and re-raises the original `AttributeError`.
+- `PrepareBatchOfTraining` (`data_struct.py`) batching errors (`invalid input detected during batching in
+  X`/`Y`) now carry their message in the raised `ValueError` instead of printing it beforehand.
 - `NERO` crashed whenever CUDA was available: the model was moved to the GPU for training, but the
   index tensors for `search`, `fit` and the embedding getters were built on the CPU
   (`RuntimeError: Expected all tensors to be on the same device`), and the predicted indices were
@@ -49,6 +54,9 @@ date) and use that section as the basis for the GitHub release notes.
 - `LearningProblemGenerator` and the `lp_generator` data generator (`KB2Data`) report progress and
   constraint problems through `logging` instead of `print` (the insufficient-concepts and
   unfulfilled-constraints notices are warnings).
+- `binders` (DL-Learner output parsing), `utils.static_funcs` (`save_owl_class_expressions`,
+  `verbalize`), `data_struct` and the diagnostic messages of `search` report through `logging`
+  instead of `print`. The tree-display methods of `search` still print on purpose.
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).

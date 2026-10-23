@@ -24,6 +24,7 @@
 
 """Data structures."""
 
+import logging
 import torch
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
@@ -33,6 +34,8 @@ import numpy as np
 import random
 from rdflib import graph
 from .nces_utils import try_get_embs
+
+logger = logging.getLogger(__name__)
 
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
@@ -81,9 +84,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):  # pragma: no cover
         try:
             self.Positives = p.expand(next_state_batch.shape)
         except RuntimeError as e:
-            print(p.shape)
-            print(next_state_batch.shape)
-            print(e)
+            logger.error("Cannot expand positives of shape %s to %s: %s", p.shape, next_state_batch.shape, e)
             raise
         self.Negatives = n.expand(next_state_batch.shape)
 
@@ -100,11 +101,9 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):  # pragma: no cover
         # where X[0][3] => negative example representation R^{1 \times dim}
 
         if torch.isnan(self.X).any() or torch.isinf(self.X).any():
-            print('invalid input detected during batching in X')
-            raise ValueError
+            raise ValueError('invalid input detected during batching in X')
         if torch.isnan(self.y).any() or torch.isinf(self.y).any():
-            print('invalid Q value  detected during batching in Y')
-            raise ValueError
+            raise ValueError('invalid Q value detected during batching in Y')
 
     def __len__(self):
         return len(self.X)
@@ -177,8 +176,7 @@ class TriplesData:
                 if s and p and o:
                     data.append((s,p,o))
         except FileNotFoundError as e:
-            print(e)
-            pass
+            logger.error(e)
         return data
 
     @staticmethod
@@ -351,7 +349,7 @@ class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cove
             datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
             datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
         except Exception as e:
-            print(e)
+            logger.error(e)
             return None
             #torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1]), torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
         
@@ -386,7 +384,7 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
             datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
             datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
         except KeyError:
-            print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings.index, pos+neg))}')
+            logger.warning(f'Some individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings.index, pos+neg))}')
             return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1])
         
         return datapoint_pos, datapoint_neg
