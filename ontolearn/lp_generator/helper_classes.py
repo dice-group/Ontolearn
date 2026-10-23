@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+import logging
 from ontolearn.triple_store import TripleStore
 from tqdm import tqdm
 import random
@@ -31,6 +32,8 @@ import os
 import json
 
 from ontolearn.utils.static_funcs import concept_len
+
+logger = logging.getLogger(__name__)
 
 
 class ConceptDescriptionGenerator:
@@ -54,9 +57,9 @@ class ConceptDescriptionGenerator:
         roots = self.apply_rho(self.kb.generator.thing)
         Refinements = set()
         Refinements.update(roots)
-        print("|Thing refinements|: ", len(roots))
+        logger.info(f"|Thing refinements|: {len(roots)}")
         roots_sample = self.rnd.sample(list(roots), k=self.num_sub_roots)
-        print("Size of sample: ", len(roots_sample))
+        logger.info(f"Size of sample: {len(roots_sample)}")
         for root in tqdm(roots_sample, desc="Refining roots..."):
             Refinements.update(self.apply_rho(root))
         return Refinements
@@ -152,15 +155,10 @@ class KB2Data:
         return self.kb.individuals_count()
 
     def generate_descriptions(self):
-        print()
-        print("#" * 60)
         if self.path:
-            print("Started generating data on the " + self.path.split("/")[-1].split(".")[
-            0] + " knowledge base")
-        print("#" * 60)
-        print()
+            logger.info("Started generating data on the " + self.path.split("/")[-1].split(".")[0] + " knowledge base")
         All_individuals = set(self.kb.individuals())
-        print("Number of individuals in the knowledge base: {} \n".format(len(All_individuals)))
+        logger.info("Number of individuals in the knowledge base: {}".format(len(All_individuals)))
         Concepts = self.lp_gen.generate()
         non_redundancy_hash_map = dict()
         show_some_length = True
@@ -173,13 +171,13 @@ class KB2Data:
                 continue
             if len(non_redundancy_hash_map) >= self.max_num_lps:
                 break
-        print("Concepts generation done!\n")
-        print("Number of atomic concepts: ", len(self.atomic_concept_names))
-        print("Longest concept length: ",
-              max({l for l in [concept_len(c) for c in non_redundancy_hash_map.values()]}), "\n")
-        print("Total number of concepts: ", len(non_redundancy_hash_map), "\n")
+        logger.info("Concepts generation done!")
+        logger.info(f"Number of atomic concepts: {len(self.atomic_concept_names)}")
+        logger.info("Longest concept length: {}".format(
+            max({l for l in [concept_len(c) for c in non_redundancy_hash_map.values()]})))
+        logger.info(f"Total number of concepts: {len(non_redundancy_hash_map)}")
         self.train_concepts = list(non_redundancy_hash_map.values())
-        print("Data generation completed")
+        logger.info("Data generation completed")
         return self
 
     def sample_examples(self, pos, neg):
@@ -217,4 +215,4 @@ class KB2Data:
         os.makedirs(self.storage_path, exist_ok=True)
         with open(f'{self.storage_path}/LPs.json', 'w', encoding="utf-8") as file_train:
             json.dump(data, file_train, indent=3, ensure_ascii=False)
-        print(f'Data saved at {self.storage_path}')
+        logger.info(f'Data saved at {self.storage_path}')
