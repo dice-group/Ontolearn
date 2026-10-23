@@ -12,6 +12,14 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `TripleStoreReasoner.instances(ce, direct=False)` only followed `owl:equivalentClass` for the
+  top-level class (via one extra request per equivalent class), so individuals typed by a class
+  equivalent to a filler or any other nested class (e.g. `Guardian ≡ Parent` for
+  `∃hasChild.Parent`) were missed, and `instances_count` disagreed with `instances`. The subclass
+  closure now follows `rdfs:subClassOf` and `owl:equivalentClass` in both directions at every
+  nesting level, in a single query. To keep stores without equivalence axioms as fast as before,
+  the reasoner checks once with an `ASK` whether any `owl:equivalentClass` triple exists and
+  otherwise keeps the plain `rdfs:subClassOf*` path. (#571)
 - `save_owl_class_expressions` called `exit(1)` after printing debug output when an
   `OWLEquivalentClassesAxiom` could not be added, terminating the whole interpreter from library
   code. It now logs the details and re-raises the original `AttributeError`.
