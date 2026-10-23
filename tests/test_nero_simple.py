@@ -5,6 +5,8 @@ import json
 import sys
 import unittest
 
+import torch
+
 from ontolearn.utils import compute_f1_score
 
 sys.path.append('/')
@@ -253,3 +255,13 @@ class TestNEROFunctionality(unittest.TestCase):
             traceback.print_exc()
             return False
 
+    def test_index_tensors_follow_the_model_device(self):
+        """Regression test: indices fed to the model were built on the CPU, which crashed as soon as the
+        model lived on a GPU. The "meta" device stands in for a non-CPU device so this runs on CPU-only CI."""
+        learner = NERO.__new__(NERO)
+        learner.instance_idx_mapping = {"a": 0, "b": 1}
+        learner.device = torch.device("meta")
+        indices = learner._index_tensor(["b", "a"])
+        self.assertEqual(indices.device.type, "meta")
+        self.assertEqual(tuple(indices.shape), (1, 2))
+        self.assertEqual(indices.dtype, torch.long)

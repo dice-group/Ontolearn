@@ -12,6 +12,12 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `NERO` crashed whenever CUDA was available: the model was moved to the GPU for training, but the
+  index tensors for `search`, `fit` and the embedding getters were built on the CPU
+  (`RuntimeError: Expected all tensors to be on the same device`), and the predicted indices were
+  converted with `.numpy()` straight from the GPU. Indices are now created on the model's device
+  (`NERO._index_tensor`), `forward` moves its inputs there, and results are moved back with
+  `.cpu()`. CI has no GPU and never saw this.
 - `LearningProblemGenerator` raised a bare `ValueError` for an invalid `search_algo`; the message
   was printed beforehand. It is now the exception message.
 - `NCESTrainer` and `CLIPTrainer` raised a bare `ValueError` for an unsupported optimizer; the

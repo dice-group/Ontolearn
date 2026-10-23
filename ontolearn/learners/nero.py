@@ -29,7 +29,7 @@ This module implements NERO, a neural-symbolic concept learner that combines
 neural networks with symbolic reasoning for OWL class expression learning.
 """
 
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, Iterable, List, Set, Tuple, Optional
 import time
 import torch
 from owlapy import dl_to_owl_expression
@@ -301,8 +301,8 @@ class NERO:
 
         # Initialize with neural predictions OR top refinements
         if self._is_trained and len(self.target_class_expressions) > 0:
-            idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-            idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+            idx_pos = self._index_tensor(pos)
+            idx_neg = self._index_tensor(neg)
 
             with torch.no_grad():
                 sort_scores, sort_idxs = torch.topk(
@@ -312,7 +312,7 @@ class NERO:
                 )
 
             # Initialize queue with top neural predictions
-            for idx_target in sort_idxs.detach().numpy():
+            for idx_target in sort_idxs.detach().cpu().numpy():
                 target_ce = self.target_class_expressions[idx_target]
                 try:
                     target_ce.quality = self.quality_func(
@@ -454,8 +454,8 @@ class NERO:
         start_time = time.time()
 
         # Get neural predictions
-        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+        idx_pos = self._index_tensor(pos)
+        idx_neg = self._index_tensor(neg)
 
         with torch.no_grad():
             sort_scores, sort_idxs = torch.topk(
@@ -467,7 +467,7 @@ class NERO:
         # Initialize priority queue with top predictions
         top_predictions = SearchTree()
 
-        for idx_target in sort_idxs.detach().numpy():
+        for idx_target in sort_idxs.detach().cpu().numpy():
             target_ce = self.target_class_expressions[idx_target]
             target_ce.quality = self.quality_func(
                 individuals=target_ce.str_individuals, pos=pos, neg=neg
@@ -556,6 +556,11 @@ class NERO:
             return 0.0
         return self._best_predictions['Quality']
 
+    def _index_tensor(self, individuals: Iterable[str]) -> torch.Tensor:
+        """Indices of `individuals` as a (1, n) tensor on the device the model lives on."""
+        return torch.tensor([[self.instance_idx_mapping[i] for i in individuals]], dtype=torch.long,
+                            device=self.device)
+
     def forward(self, xpos: torch.Tensor, xneg: torch.Tensor) -> torch.Tensor:
         """
         Forward pass through the neural model.
@@ -567,7 +572,7 @@ class NERO:
         Returns:
             Predictions for target class expressions
         """
-        return self.model(xpos, xneg)
+        return self.model(xpos.to(self.device), xneg.to(self.device))
 
     def positive_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
         """
@@ -579,7 +584,7 @@ class NERO:
         Returns:
             Tensor of embeddings
         """
-        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        indices = self._index_tensor(individuals)
         return self.model.positive_expression_embeddings(indices)
 
     def negative_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
@@ -592,7 +597,7 @@ class NERO:
         Returns:
             Tensor of embeddings
         """
-        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        indices = self._index_tensor(individuals)
         return self.model.negative_expression_embeddings(indices)
 
     def downward_refine(self, expression, max_length: Optional[int] = None) -> Set:
@@ -726,8 +731,8 @@ class NERO:
         set_pos, set_neg = set(pos), set(neg)
 
         # Get neural predictions
-        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+        idx_pos = self._index_tensor(pos)
+        idx_neg = self._index_tensor(neg)
 
         goal_found = False
         top_prediction_queue = SearchTree()
@@ -741,7 +746,7 @@ class NERO:
             )
 
         # Evaluate predictions
-        for idx_target in sort_idxs.detach().numpy():
+        for idx_target in sort_idxs.detach().cpu().numpy():
             target_ce = self.target_class_expressions[idx_target]
             target_ce.quality = self.quality_func(
                 individuals=target_ce.str_individuals,
