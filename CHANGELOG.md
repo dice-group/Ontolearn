@@ -12,6 +12,8 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `LearningProblemGenerator` raised a bare `ValueError` for an invalid `search_algo`; the message
+  was printed beforehand. It is now the exception message.
 - `NCESTrainer` and `CLIPTrainer` raised a bare `ValueError` for an unsupported optimizer; the
   message was a `print` placed after the `raise` and never ran. It is now the exception message.
 - `TripleStoreReasoner.instances(ce, direct=False)` only expanded subclasses for the root
@@ -38,6 +40,9 @@ date) and use that section as the basis for the GitHub release notes.
 - `NERO` (`verbose` levels map to `info`/`debug`; the "queue exceeded max" notice is now an
   unconditional `warning`), `NCESTrainer` and `CLIPTrainer` report through `logging` instead of
   `print`; the decorative `#`/`*` banners are gone.
+- `LearningProblemGenerator` and the `lp_generator` data generator (`KB2Data`) report progress and
+  constraint problems through `logging` instead of `print` (the insufficient-concepts and
+  unfulfilled-constraints notices are warnings).
 - Re-enabled `tests/test_semantic_cache.py` (previously 100% commented out), exercising only the
   symbolic (HermiT) reasoner; the neural (EBR) path is left out as in-process KGE training
   alongside the JVM segfaulted CI (#515).
