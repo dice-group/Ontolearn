@@ -33,8 +33,6 @@ from ontolearn.learners import TDL
 
 logging.getLogger("fitter").setLevel(logging.CRITICAL)
 logger = logging.getLogger(__name__)
-
-
 class TDL_refinement(TDL):
     def __init__(
         self,
