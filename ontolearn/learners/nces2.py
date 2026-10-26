@@ -24,6 +24,7 @@
 
 """NCES2: Neural Class Expression Synthesis in ALCHIQ(D)."""
 
+import logging
 import os
 import json
 import glob
@@ -47,6 +48,8 @@ from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution, generate_training_data
 from ontolearn.search import NCESNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+
+logger = logging.getLogger(__name__)
 
 
 class NCES2(BaseNCES):
@@ -94,11 +97,14 @@ class NCES2(BaseNCES):
             self.m = [self.m]
 
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True "
-                  f"and auto_train is True. Will quickly train neural synthesizers. "
-                  f"However, it is advisable that you properly train {self.name} using the "
-                  f"example script in `examples/train_nces.py`.\x1b[0m\n")
-            self.train(epochs=5, num_workers = self.num_workers)
+            logger.warning(f"Path to pretrained models is None and load_pretrained is True "
+                           f"and auto_train is True. Will quickly train neural synthesizers. "
+                           f"However, it is advisable that you properly train {self.name} using the "
+                           f"example script in `examples/train_nces.py`.")
+            # num_workers=0: see the comment on the equivalent call in
+            # NCES._set_prerequisites (nces.py) - same quick-training,
+            # coverage-run-deadlock-risk rationale (#610/#622).
+            self.train(epochs=5, num_workers=0)
             self.refresh(self.path_of_trained_models)
         else:
             self.model = self.get_synthesizer(self.path_of_trained_models)
@@ -122,9 +128,9 @@ class NCES2(BaseNCES):
                 self.embedding_dim = emb_config["embedding_dim"]
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{path} does not contain at least one of "
-                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`") from e
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             try:
                 with open(f"{path}/config.json") as f:
@@ -143,9 +149,9 @@ class NCES2(BaseNCES):
                 self.embedding_dim = emb_config["embedding_dim"]
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of "
-                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`") from e
 
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
                                               self.input_dropout, self.feature_map_dropout, self.kernel_size,
@@ -155,15 +161,14 @@ class NCES2(BaseNCES):
                                                    self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and path is None:
-            print("\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. "
-                  "Will return models with random weights.\x1b[0m\n")
+            logger.warning("Path to pretrained models is None and load_pretrained is True. "
+                           "Will return models with random weights.")
             return Models
 
         elif self.load_pretrained and path and len(glob.glob(path + "/*.pt")) == 0:
-            print("\n"+"\x1b[0;30;43m"+f"No pretrained model found! If {self.path_of_trained_models} "
-                                       f"is empty or does not exist, set the `load_pretrained` parameter to `False` or "
-                                       f"make sure `save_model` was set to `True` in the .train() "
-                                       f"method."+"\x1b[0m"+"\n")
+            logger.error(f"No pretrained model found! If {self.path_of_trained_models} "
+                         f"is empty or does not exist, set the `load_pretrained` parameter to `False` or "
+                         f"make sure `save_model` was set to `True` in the .train() method.")
             raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
 
         elif self.load_pretrained and path and glob.glob(path + "/*.pt"):
@@ -186,7 +191,7 @@ class NCES2(BaseNCES):
                             emb_model.load_state_dict(weights)
                             Models[str(m)]["emb_model"] = emb_model
             if num_loaded_models == len(self.m):
-                print(f"\nLoaded {self.name} weights!\n")
+                logger.info(f"Loaded {self.name} weights!")
                 return Models
             elif num_loaded_models > 0:
                 models_to_remove = []
@@ -195,17 +200,16 @@ class NCES2(BaseNCES):
                         models_to_remove.append(name)
                 for name in models_to_remove:
                     del Models[name]
-                print("\x1b[0;30;43m"+f"!!!Some pretrained weights could not be found, successfully "
-                                      f"loaded models are {loaded_model_names}"+"\x1b[0m"+"\n")
+                logger.warning(f"Some pretrained weights could not be found, successfully "
+                               f"loaded models are {loaded_model_names}")
                 return Models
             else:
-                print("\x1b[0;30;43m"+"!!!No pretrained weights were found, initializing models "
-                                      "with random weights"+"\x1b[0m"+"\n")
+                logger.warning("No pretrained weights were found, initializing models with random weights")
                 return Models
         else:
             if verbose:
-                print(f"\nNo pretrained weights were provided, initializing models with random weights. "
-                      f"You may want to first train the synthesizer using {self.name}.train()\n")
+                logger.warning(f"No pretrained weights were provided, initializing models with random weights. "
+                               f"You may want to first train the synthesizer using {self.name}.train()")
             return Models
 
     def refresh(self, path=None):
@@ -253,8 +257,12 @@ class NCES2(BaseNCES):
                                               sampling_strategy=self.sampling_strategy,
                                               num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
+            # num_workers=0: this builds one inference-only DataLoader per
+            # architecture in self.model, in a loop - the same fresh-worker-
+            # pool-per-architecture pattern already found to deadlock under
+            # `coverage run` in the training path (#610). See #622.
             dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers, shuffle=False)
+                                num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
 
         # Initialize a simple solution constructor
@@ -270,6 +278,10 @@ class NCES2(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except Exception:
+                # prediction_str is raw, unconstrained model output, not a validated DL
+                # expression, so the parser can legitimately fail in many different ways -
+                # this is the intended "fall back to token-level reconstruction" path, not
+                # a bug being swallowed.
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -278,9 +290,12 @@ class NCES2(BaseNCES):
 
                         concept = self.dl_parser.parse(parse_concept_str)
                     except Exception:
+                        # `concept` already holds the simple_strategy() fallback from above,
+                        # so there is nothing to undo if the stricter AST-validity rebuild
+                        # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
-                    print("Prediction: ", prediction_str)
+                    logger.info(f"Prediction: {prediction_str}")
             predictions.append(concept)
         return predictions
 
@@ -319,11 +334,13 @@ class NCES2(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1, return_node: bool = False) \
+    def best_hypotheses(self, n=1, return_node: bool = False, return_info: bool = False) \
             -> Union[OWLClassExpression, Iterable[OWLClassExpression],
-                     AbstractNode, Iterable[AbstractNode], None]:
+                     AbstractNode, Iterable[AbstractNode], Tuple, None]:
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         if self.best_predictions is None:
-            print(f"{self.name} needs to be fitted to a problem first")
+            logger.warning(f"{self.name} needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
             if return_node:
@@ -365,7 +382,8 @@ class NCES2(BaseNCES):
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
-            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+            # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
             dataloaders.append(dataloader)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
@@ -379,13 +397,16 @@ class NCES2(BaseNCES):
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except Exception:
+                    # See the equivalent fallback in fit_one() above: prediction_str is raw
+                    # model output, not a validated DL expression, so this is the intended
+                    # "fall back to token-level reconstruction" path.
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
                 per_lp_preds.append(ce)
             predictions_as_owl_class_expressions.append(per_lp_preds)
             if verbose:
-                print("Predictions: ", predictions_str)
+                logger.info(f"Predictions: {predictions_str}")
         return predictions_as_owl_class_expressions
 
     def train(self, data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000,
@@ -410,7 +431,7 @@ class NCES2(BaseNCES):
         self.path_of_trained_models = storage_path+"/trained_models"
         if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
-        print(num_workers)
+        logger.debug(f"num_workers: {num_workers}")
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
                               eta_min=eta_min, clip_value=clip_value, num_workers=num_workers,
                               storage_path=storage_path)

@@ -24,6 +24,7 @@
 
 """NCES: Neural Class Expression Synthesis."""
 
+import logging
 import os
 import json
 import glob
@@ -48,6 +49,8 @@ from ontolearn.nces_utils import SimpleSolution, generate_training_data
 from ontolearn.search import NCESNode
 from ontolearn.utils import read_csv
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+
+logger = logging.getLogger(__name__)
 
 
 class NCES(BaseNCES):
@@ -96,18 +99,18 @@ class NCES(BaseNCES):
                 self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
             try:
                 import dicee
-                print('\nĆheck packages... OK: dicee is installed.')
+                logger.info('Check packages... OK: dicee is installed.')
                 del dicee
-            except Exception:
-                print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
+            except ImportError:
+                logger.warning('dicee is not installed, will first install it...')
                 subprocess.run('pip install dicee==0.3.2')
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
-                      +"Poor performance is expected as we will also train the synthesizer for a few epochs."
-                       "\nFor maximum performance, use pretrained models or train embeddings for many epochs, "
-                       "and the neural synthesizer on massive amounts of data and for many epochs. "
-                       "See the example script in `examples/train_nces.py` for this. "
-                       "Use `python examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
+                logger.warning("Embeddings not found. Will quickly train embeddings beforehand. "
+                               "Poor performance is expected as we will also train the synthesizer for a few epochs. "
+                               "For maximum performance, use pretrained models or train embeddings for many epochs, "
+                               "and the neural synthesizer on massive amounts of data and for many epochs. "
+                               "See the example script in `examples/train_nces.py` for this. "
+                               "Use `python examples/train_nces.py -h` to view options.")
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
                     self.path_temp_embeddings, str) else "temp_embeddings"
@@ -128,6 +131,9 @@ class NCES(BaseNCES):
 
                 self.knowledge_base_path = path_temp_triples
 
+                # timeout: without one, a stalled dicee subprocess (e.g. a hung
+                # dependency call) blocks indefinitely instead of failing into
+                # the except block below. See #622.
                 subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} "
                                f"--path_to_store_single_run {path_temp_embeddings} "
                                f"--backend rdflib --save_embeddings_as_csv "
@@ -137,22 +143,28 @@ class NCES(BaseNCES):
                                f"--embedding_dim {self.dicee_emb_dim} "
                                f"--eval_mode test "
                                f"--optim 'Adam'",
-                               shell=True)
+                               shell=True, timeout=600)
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
             except Exception as e:
-                print(f"Error while training embeddings: {e}")
+                logger.error(f"Error while training embeddings: {e}")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
+                logger.warning(f"Will also train {self.name} for 5 epochs")
             self.instance_embeddings = read_csv(self.path_of_embeddings)
             self.input_size = self.instance_embeddings.shape[1]
             self.model = self.get_synthesizer(self.path_of_trained_models)
-            print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
+            logger.info(f"Using embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.")
             if self.auto_train:
-                # Train NCES for 5 epochs
-                self.train(epochs=5,num_workers = self.num_workers)
+                # Train NCES for 5 epochs. num_workers=0: this quick,
+                # low-fidelity convenience path (see the printed warning
+                # above) trains on a tiny dataset for 5 epochs, where
+                # multiprocessing DataLoader workers add no meaningful
+                # speedup but do carry the coverage-run deadlock risk from
+                # #610/#622 - the capped-but-nonzero worker count `train()`
+                # otherwise defaults to isn't safe here either.
+                self.train(epochs=5, num_workers=0)
                 self.refresh(self.path_of_trained_models)
         else:
             self.instance_embeddings = read_csv(self.path_of_embeddings)
@@ -175,9 +187,8 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception as e:
-                print(e,'\n')
                 raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy "
-                                        f"or embedding_config.json`")
+                                        f"or embedding_config.json`") from e
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             try:
                 with open(f"{path}/config.json") as f:
@@ -192,9 +203,9 @@ class NCES(BaseNCES):
                 self.rnn_n_layers = config["rnn_n_layers"]
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
-            except Exception:
+            except Exception as e:
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, "
-                                        f"inv_vocab.npy or embedding_config.json`")
+                                        f"inv_vocab.npy or embedding_config.json`") from e
 
         m1 = SetTransformer(self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -216,8 +227,8 @@ class NCES(BaseNCES):
             del Models[name]
 
         if self.load_pretrained and path is None:
-            print("\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. "
-                  "Will return models with random weights.\x1b[0m")
+            logger.warning("The path to pretrained models is None and load_pretrained is True. "
+                           "Will return models with random weights.")
             return Models
         elif self.load_pretrained and path and glob.glob(path+"/*.pt"):
             num_loaded_models = 0
@@ -232,23 +243,20 @@ class NCES(BaseNCES):
                             num_loaded_models += 1
                             loaded_model_names.append(model_name)
                         except Exception as e:
-                            print(f"Could not load pretrained weights for {model_name}. "
-                                  f"Please consider training the model!")
-                            print("\n", e)
-                            pass
+                            logger.warning(f"Could not load pretrained weights for {model_name}. "
+                                           f"Please consider training the model! ({e})")
             if num_loaded_models == len(Models):
-                print("\n Loaded NCES weights!\n")
+                logger.info("Loaded NCES weights!")
                 return Models
             elif num_loaded_models > 0:
-                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. "
-                                           f"Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
+                logger.warning(f"Some model weights could not be loaded. "
+                               f"Successful ones are: {loaded_model_names}")
                 return Models
             else:
-                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, "
-                                           "initializing models with random weights"+"\x1b[0m"+"\n")
+                logger.warning("No pretrained weights were provided, initializing models with random weights")
                 return Models
         else:
-            print("\nNo pretrained weights were provided, initializing models with random weights.\n")
+            logger.warning("No pretrained weights were provided, initializing models with random weights.")
             return Models
 
     def refresh(self, path=None):
@@ -293,8 +301,12 @@ class NCES(BaseNCES):
                                        shuffle_examples=False, max_length=self.max_length,
                                        sorted_examples=self.sorted_examples)
 
+        # num_workers=0: this fetches a single inference batch (next(iter(...))
+        # below), so multiprocessing workers add no throughput benefit while
+        # carrying the same worker-pool deadlock risk under `coverage run`
+        # already found in the training path (#610). See #622.
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers,
+                                num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
@@ -309,6 +321,11 @@ class NCES(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except Exception:
+                # prediction_str is raw, unconstrained model output, not a validated DL
+                # expression, so the parser can legitimately fail in many different ways
+                # (unbalanced parens, unknown tokens, malformed restrictions, ...) - this
+                # is the intended "fall back to token-level reconstruction" path, not a
+                # bug being swallowed.
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -317,9 +334,12 @@ class NCES(BaseNCES):
 
                         concept = self.dl_parser.parse(parse_concept_str)
                     except Exception:
+                        # `concept` already holds the simple_strategy() fallback from above,
+                        # so there is nothing to undo if the stricter AST-validity rebuild
+                        # also fails - we just keep that fallback instead of this one.
                         pass
                 elif self.verbose>0:
-                    print("Prediction: ", prediction_str)
+                    logger.info(f"Prediction: {prediction_str}")
             predictions.append(concept)
         return predictions
 
@@ -363,11 +383,13 @@ class NCES(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1, return_node: bool = False) \
+    def best_hypotheses(self, n=1, return_node: bool = False, return_info: bool = False) \
             -> Union[OWLClassExpression, Iterable[OWLClassExpression],
-                     AbstractNode, Iterable[AbstractNode], None]:
+                     AbstractNode, Iterable[AbstractNode], Tuple, None]:
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, return_node=True))
         if self.best_predictions is None:
-            print("NCES needs to be fitted to a problem first")
+            logger.warning("NCES needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
             if return_node:
@@ -404,7 +426,8 @@ class NCES(BaseNCES):
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
         dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab,
                                        shuffle_examples, max_length=self.max_length)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+        # num_workers=0: inference-only path, see the comment in fit_one above (#622).
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=0,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
@@ -418,13 +441,16 @@ class NCES(BaseNCES):
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except Exception:
+                    # See the equivalent fallback in fit_one() above: prediction_str is raw
+                    # model output, not a validated DL expression, so this is the intended
+                    # "fall back to token-level reconstruction" path.
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
                 per_lp_preds.append(ce)
             predictions_as_owl_class_expressions.append(per_lp_preds)
             if verbose:
-                print("Predictions: ", predictions_str)
+                logger.info(f"Predictions: {predictions_str}")
         return predictions_as_owl_class_expressions
 
     def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000,

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import functools
+import logging
 from typing import Any
 
 from lxml import etree
@@ -16,6 +17,8 @@ from ontolearn.learners.spell_kit.o2p_ontology import (
     Thing,
     TopClass,
 )
+
+logger = logging.getLogger(__name__)
 
 namespaces = {
     "owl": "http://www.w3.org/2002/07/owl#",
@@ -160,7 +163,7 @@ def load_owl(file: str):
     nsmap = {}
     abox = ABoxBuilder()
     num = len(abox.indmap)
-    print("Loaded {} individuals".format(num), end="\r")
+    logger.info("Loaded {} individuals".format(num))
 
     abox.declare_cn("http://www.w3.org/2002/07/owl#NamedIndividual")
 
@@ -198,7 +201,7 @@ def load_owl(file: str):
 
             num = len(abox.indmap)
             if num % 100000 == 0:
-                print("\rLoaded {} individuals".format(num), end="\r")
+                logger.info("Loaded {} individuals".format(num))
 
             for child in elem:
                 if child.tag in tag_type:
@@ -222,7 +225,7 @@ def load_owl(file: str):
 
     num = len(abox.indmap)
     abox.A.nsmap = nsmap
-    print("\rLoaded {} individuals and {} facts".format(num, facts))
+    logger.info("Loaded {} individuals and {} facts".format(num, facts))
     return onto, abox
 
 
@@ -511,25 +514,25 @@ def construct_normalized_tbox(onto: Ontology):
             continue
         t.add_range_restriction(a, b.identifier)
     if ignored_rules > 0:
-        print(
+        logger.warning(
             "Ignoring {} TBox statements due to unsupported features".format(
                 ignored_rules
             )
         )
     if ignored_domain > 0:
-        print(
+        logger.warning(
             "Ignoring {} domain restrictions due to unsupported features".format(
                 ignored_domain
             )
         )
     if ignored_range > 0:
-        print(
+        logger.warning(
             "Ignoring {} range restrictions due to unsupported features".format(
                 ignored_range
             )
         )
 
-    print(
+    logger.info(
         "Loaded {} concept names, {} role names, {} concept inclusions".format(
             len(t.cns), len(t.rns), cis
         )

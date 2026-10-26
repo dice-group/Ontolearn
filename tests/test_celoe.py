@@ -159,6 +159,23 @@ class TestCeloe:
         r = DLSyntaxObjectRenderer()
         assert r.render(best_pred)=='(¬female) ⊓ (∃ hasChild.⊤)'
 
+    def test_best_hypotheses_return_info(self):
+        kb = KnowledgeBase(path=PATH_DATA_FATHER)
+        ns = "http://example.com/father#"
+        pos = {OWLNamedIndividual(IRI.create(ns + n)) for n in ("stefan", "markus", "martin")}
+        neg = {OWLNamedIndividual(IRI.create(ns + n)) for n in ("heinz", "anna", "michelle")}
+        model = CELOE(knowledge_base=kb)
+        model.fit(learning_problem=PosNegLPStandard(pos=pos, neg=neg))
+
+        hypothesis, info = model.best_hypotheses(n=1, return_info=True)
+        assert hypothesis == model.best_hypotheses(n=1)
+        assert info["quality"] == 1.0
+        assert info["length"] > 0
+
+        hypotheses, infos = model.best_hypotheses(n=3, return_info=True)
+        assert len(hypotheses) == len(infos) == 3
+        assert all(0.0 <= i["quality"] <= 1.0 for i in infos)
+
     def test_multiple_fits(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
 

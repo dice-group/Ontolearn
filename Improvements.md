@@ -15,65 +15,48 @@ remain open as of this writing.
 
 ## 2. Code duplication
 
-- **`ontolearn/knowledge_base.py:191-262`** — `abox()` repeats the same
-  triple-traversal ~70 lines of near-identical branching, once per
-  `mode in {"native", "iri", "axiom"}`, differing only in output formatting.
-  Factor a single internal `(subject, predicate, object)` generator with
-  per-mode formatters applied on top.
+All code duplication issues originally found in this pass have been fixed;
+none remain open as of this writing.
 
 ## 3. Error handling & logging
 
 - **Logging infra is built but essentially unused.** `ontolearn/utils/log_config.py`
   and `oplogging.py` provide a real fileConfig-based setup with a TRACE
   level, but only ~8 call sites across `ontolearn/` actually use
-  `getLogger`/`oplogging`/`log_config`. Meanwhile `print(` appears **363
-  times** across `ontolearn/**/*.py`. Worst offenders: `learners/drill.py`
-  (37), `semantic_caching.py` (25), `learners/tree_learner_refinement_inherit.py`
-  (25), `learners/spell_kit/structures.py` (18), `learners/nces.py` (17).
-  `knowledge_base.py` even defines `logger = logging.getLogger(__name__)`
-  (line 54) but still uses `print()` for warnings at lines 103-104 and 289.
-  Routing these through the existing logger (with levels) would make output
-  controllable/filterable instead of unconditionally printed.
-- **Bare `except:`** in `ontolearn/data_struct.py:289,388` swallows
-  everything including `KeyboardInterrupt`/`SystemExit`. Narrow to the
-  specific expected exception type.
-- **Broad `except Exception:` that just prints and continues**, masking real
-  bugs as "no result found": `learners/tree_learner.py:525,547,592`,
-  `learners/nces.py:101,144,177,195,234,311,319`,
-  `learners/nces2.py:125,146,272,280,381`,
-  `learners/sparql_query_learner.py:252`. Also
-  `learners/celoe.py:183-185` has a bare `except ValueError: pass` next to an
-  unresolved `# TODO:CD: We need to understand this` — worth actually
-  chasing down before merging code that silently ignores it.
-- **`learners/celoe.py:290-311`** — `_add_node_evald` is dead code, a
-  near-duplicate of `_add_node` (255-288) with zero call sites anywhere in
-  the repo. Remove it.
-- **`learners/base.py:167-173`** — `BaseConceptLearner.train()` is a no-op
-  `pass` stub, yet `drill.py:251` defines its own real `train()` outside that
-  contract. The shared abstraction isn't actually shared; either give the
-  base method real shared behavior or drop it and document `train()` as
-  learner-specific.
+  `getLogger`/`oplogging`/`log_config`. `print(` calls have been routed
+  through module-level `logger = logging.getLogger(__name__)` calls (with
+  appropriate levels — `info`/`warning`/`debug`/`error`) in
+  `knowledge_base.py`, `semantic_caching.py`,
+  `learners/tree_learner_refinement_inherit.py`,
+  `learners/nces.py`, `learners/nces2.py`, `learners/tree_learner.py`,
+  `learners/nero.py`, `nces_trainer.py`, `clip_trainer.py`,
+  `learning_problem_generator.py`, `lp_generator/helper_classes.py`,
+  `binders.py`, `utils/static_funcs.py`, `data_struct.py`, parts of `search.py`,
+  `learners/spell_kit/structures.py` (except `structure_to_dot`, whose
+  `print()`s are genuine DOT-graph text output, not log messages), and
+  `learners/drill.py`. About 95 `print(` calls remain in `ontolearn/**/*.py`,
+  and most are deliberate: the tree-display methods (`search.py`
+  `show_search_tree`/`show_current_search_tree`, `learners/celoe.py`), the
+  experiment runners and CLI entry points (`executor.py`, `experiments.py`,
+  `scripts/run.py`) and `spell_kit`'s DOT output. Still worth reviewing one by
+  one: `learners/spell_kit/fitting_alc.py` (11), `fitting.py` (5),
+  `o2p_owl_parser.py` (6), `utils/__init__.py` (6), `learning_problem.py` (4)
+  and `learners/clip.py` (4). Several overlap with the broad-except cleanup
+  below and are best converted alongside that work.
 
 ## 4. Mutable default arguments / shared state
 
-- **`learners/tree_learner.py:287`** and
-  **`learners/tree_learner_refinement_inherit.py:59`** —
-  `kwargs_grid_search: dict = {}` is a classic mutable-default-argument bug.
-  The same dict is shared across every `TDL`/`TDL_refinement` instance
-  created without explicitly passing this argument, and it's mutated in
-  place (`.setdefault("cv", 10)` at tree_learner.py:317) — state can leak
-  between unrelated learner instances. Use `None` as the default and
-  construct a fresh dict inside `__init__`.
+All mutable-default-argument issues originally found in this pass have been
+fixed; none remain open as of this writing.
 
 ## 5. Reproducibility
 
-- **`learners/drill.py`** uses unseeded `random.random()`/`random.choice()`/
-  `random.sample()` (lines 648-649, 744-784) with no `random_state`/`seed`
-  constructor parameter and no `torch.manual_seed()` anywhere in
-  `Drill.__init__`. Runs aren't reproducible, and there's no way to make
-  them so via the public API. `EvoLearner`'s DEAP-driven GA has the same
-  gap — no seed parameter exposed. Worth adding a `random_state` param
-  threaded through to `random`/`numpy`/`torch`/DEAP, consistent with the
+- **`learners/drill.py`** — fixed: `Drill.__init__` now accepts a
+  `random_state` param, seeding a dedicated `random.Random` instance (used
+  for exploration/example sampling instead of the global `random` module)
+  plus `torch`/CUDA. `EvoLearner`'s DEAP-driven GA still has the same
+  gap — no seed parameter exposed. Worth adding the same `random_state`
+  treatment there, threaded through to `numpy`/DEAP, consistent with the
   sklearn convention this codebase otherwise follows (e.g. its
   `fit`/`predict` naming).
 - GPU/CUDA handling itself is fine — `clip.py:138`, `nero.py:107`,
@@ -83,17 +66,12 @@ remain open as of this writing.
 
 ## 6. Testing gaps
 
-- **Two test files are 100% commented out** and run zero assertions while
-  still being collected by pytest: `tests/test_semantic_cache.py` (68/68
-  lines) and `tests/test_example_concept_learning_neural_evaluation.py`
-  (168/168 lines). Either restore them or delete them — as-is they give a
-  false sense of coverage.
 - The committed coverage report (`docs/usage/09_further_resources.md:191-244`,
-  v0.10.0, 82% overall) shows specific weak spots worth targeted tests:
-  `ontolearn/incomplete_kb.py` 8% (73/79 statements missed),
-  `ontolearn/quality_funcs.py` 31%, `ontolearn/nces_utils.py` 39%,
-  `ontolearn/triple_store.py` 53% (237/501 missed),
-  `ontolearn/data_struct.py` 60%.
+  v0.10.0, 82% overall) is out of date: `quality_funcs`, `nces_utils`,
+  `incomplete_kb`, `data_struct`, `value_splitter` and `utils/static_funcs`
+  have since gained unit tests. The remaining weak spot is
+  `ontolearn/triple_store.py` (53%, 237/501 statements missed), which needs
+  targeted tests; the report itself should be regenerated.
 - **`README.md:3`** badge claims 86% coverage; the committed report in
   `docs/usage/09_further_resources.md:243` says 82%. Pick one source of
   truth and keep the badge in sync with it (ideally generated by CI rather
@@ -115,9 +93,6 @@ remain open as of this writing.
   (`setup.py:42-70`) with no comment on why those five specifically need
   exact pins. A short comment per exact-pin (e.g. "pinned: breaking change
   in X") would keep this from looking accidental.
-- `setup.py:122` sets `python_requires='>=3.11'` but the trove classifier at
-  `setup.py:119` still says `"Programming Language :: Python :: 3.10"` —
-  stale, should read 3.11 (CI only tests 3.11.14 anyway).
 
 ## 8. Lint configuration
 
@@ -131,14 +106,10 @@ remain open as of this writing.
 
 ## 9. Dead / orphaned code
 
-- **`ontolearn/incomplete_kb.py`** has zero real imports anywhere in
-  `ontolearn/`, `tests/`, or `examples/` (only mentioned in a docstring in
-  `ontolearn/utils/_lazy_owlready2.py:29`), and 8% test coverage. Effectively
-  orphaned — either wire it into a test/example or remove it, similar to the
-  now-deleted `tentris.py`.
-- **`ontolearn/logging_tentris.conf`** is a leftover config file from the
-  just-removed `tentris.py` (PR #602) and is now unused — safe to delete in
-  a follow-up.
+- **`ontolearn/incomplete_kb.py`** is now covered by `tests/test_incomplete_kb.py`
+  (91%), but still has no real import in `ontolearn/` or any committed
+  example (the open-world example is not yet in the repo). Either commit
+  that example or reconsider whether it should remain public surface.
 - **`ontolearn/binders.py`** and **`ontolearn/executor.py`** are each used by
   exactly one example script and nowhere else in `ontolearn/` or `tests/` —
   worth confirming they're still meant to be supported public surface rather
@@ -146,10 +117,5 @@ remain open as of this writing.
 
 ## Suggested priority order
 
-1. All three correctness bugs originally listed in §1 are fixed; none remain.
-2. Fix the two mutable-default-argument bugs in §4 (cheap, real risk).
-3. Delete or restore the two fully-commented-out test files in §6.
-4. Tackle the `tree_learner_refinement_inherit.py` duplication in §2 as a
-   dedicated refactor (largest single win, but the biggest single change).
-5. Everything else (logging migration, packaging modernization, lint
-   tightening) as incremental follow-ups, not blocking.
+1. Everything else (logging migration, `EvoLearner` seeding, packaging
+   modernization, lint tightening) as incremental follow-ups, not blocking.

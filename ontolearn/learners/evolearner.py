@@ -445,8 +445,10 @@ class EvoLearner(BaseConceptLearner):
             population = self.toolbox.population(population_size=self.population_size)
         return population
 
-    def best_hypotheses(self, n: int = 1, key: str = 'fitness', return_node: bool = False) -> Union[OWLClassExpression,
-    Iterable[OWLClassExpression]]:
+    def best_hypotheses(self, n: int = 1, key: str = 'fitness', return_node: bool = False,
+                        return_info: bool = False) -> Union[OWLClassExpression, Iterable[OWLClassExpression], Tuple]:
+        if return_info:
+            return self._hypotheses_with_info(self.best_hypotheses(n=n, key=key, return_node=True))
         assert self._result_population is not None
         assert len(self._result_population) > 0
         if n > 1:

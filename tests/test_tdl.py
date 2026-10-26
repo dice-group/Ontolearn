@@ -47,6 +47,18 @@ class TestTDLBasics(unittest.TestCase):
         with open("LPs/Family/lps.json") as json_file:
             cls.family_lps = json.load(json_file)
 
+    def test_kwargs_grid_search_not_shared_between_instances(self):
+        """kwargs_grid_search must not be a shared mutable default (and caller dicts stay untouched)."""
+        m1 = TDL(knowledge_base=self.kb_family, verbose=0)
+        m1.kwargs_grid_search["n_jobs"] = 3
+        m2 = TDL(knowledge_base=self.kb_family, verbose=0)
+        self.assertEqual(m2.kwargs_grid_search, {"cv": 10})
+
+        user_kwargs = {"n_jobs": 2}
+        m3 = TDL(knowledge_base=self.kb_family, verbose=0, kwargs_grid_search=user_kwargs)
+        self.assertEqual(user_kwargs, {"n_jobs": 2})
+        self.assertEqual(m3.kwargs_grid_search, {"n_jobs": 2, "cv": 10})
+
     def test_initialization_custom(self):
         """Test TDL initialization with custom parameters."""
         model = TDL(

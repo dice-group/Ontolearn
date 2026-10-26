@@ -29,11 +29,12 @@ This module implements NERO, a neural-symbolic concept learner that combines
 neural networks with symbolic reasoning for OWL class expression learning.
 """
 
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, Iterable, List, Set, Tuple, Optional
 import time
 import torch
 from owlapy import dl_to_owl_expression
 
+import logging
 from owlapy.class_expression import OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
@@ -43,6 +44,8 @@ from ontolearn.nero_architectures import DeepSet, SetTransformerNet
 from ontolearn.nero_utils import SearchTree, TargetClassExpression
 from ontolearn.refinement_operators import NERORefinement
 from ontolearn.utils.static_funcs import compute_f1_score
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # NERO Main Class
@@ -118,8 +121,8 @@ class NERO:
         self._is_trained = False
 
         if self.verbose > 0:
-            print(f"NERO initialized with {self.neural_architecture} architecture")
-            print(f"Device: {self.device}")
+            logger.info(f"NERO initialized with {self.neural_architecture} architecture")
+            logger.info(f"Device: {self.device}")
 
     def _initialize_instance_mapping(self):
         """Initialize mapping from individuals to indices."""
@@ -135,7 +138,7 @@ class NERO:
         """Initialize the refinement operator."""
         if self.refinement_op is None:
             if self.verbose > 0:
-                print("Initializing refinement operator...")
+                logger.info("Initializing refinement operator...")
             self.refinement_op = NERORefinement(self.kb)
             self.expression.update(self.refinement_op.expressions)
 
@@ -197,7 +200,7 @@ class NERO:
             learning_problems: List of (positive_examples, negative_examples) tuples
         """
         if self.verbose > 0:
-            print("Training NERO model...")
+            logger.info("Training NERO model...")
 
         start_time = time.time()
 
@@ -276,14 +279,14 @@ class NERO:
                 epoch_loss += loss.item()
 
             if self.verbose > 0 and (epoch + 1) % 10 == 0:
-                print(f"Epoch {epoch+1}/{self.num_epochs}, Loss: {epoch_loss:.4f}")
+                logger.info(f"Epoch {epoch+1}/{self.num_epochs}, Loss: {epoch_loss:.4f}")
 
         self.model.eval()
         self._is_trained = True
 
         if self.verbose > 0:
             training_time = time.time() - start_time
-            print(f"Training completed in {training_time:.2f} seconds")
+            logger.info(f"Training completed in {training_time:.2f} seconds")
 
     def search(self, pos: Set[str], neg: Set[str], top_k: int = 10, max_child_length: int = 10, max_queue_size: int = 10000) -> Dict:
         """
@@ -291,15 +294,15 @@ class NERO:
         Uses neural predictions to initialize and guide the search.
         """
         if self.verbose > 0:
-            print("Starting reinforcement learning search...")
+            logger.info("Starting reinforcement learning search...")
 
         start_time = time.time()
         self.search_tree = SearchTree()
 
         # Initialize with neural predictions OR top refinements
         if self._is_trained and len(self.target_class_expressions) > 0:
-            idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-            idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+            idx_pos = self._index_tensor(pos)
+            idx_neg = self._index_tensor(neg)
 
             with torch.no_grad():
                 sort_scores, sort_idxs = torch.topk(
@@ -309,7 +312,7 @@ class NERO:
                 )
 
             # Initialize queue with top neural predictions
-            for idx_target in sort_idxs.detach().numpy():
+            for idx_target in sort_idxs.detach().cpu().numpy():
                 target_ce = self.target_class_expressions[idx_target]
                 try:
                     target_ce.quality = self.quality_func(
@@ -346,8 +349,8 @@ class NERO:
                 best_hypothesis = expr
 
         if self.verbose > 0:
-            print(f"Initial best hypothesis: {best_hypothesis.name} (Quality: {best_quality:.3f})")
-            print(f"Initial queue size: {len(self.search_tree.gate)}")
+            logger.info(f"Initial best hypothesis: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+            logger.info(f"Initial queue size: {len(self.search_tree.gate)}")
 
         # Iterative refinement-based search
         iteration = 0
@@ -364,8 +367,7 @@ class NERO:
 
             queue_size = self.search_tree.items_in_queue.qsize()
             if queue_size > max_queue_size:
-                if self.verbose > 0:
-                    print(f"WARNING: Queue size ({queue_size}) exceeded max. Stopping search.")
+                logger.warning(f"Queue size ({queue_size}) exceeded max. Stopping search.")
                 break
 
             try:
@@ -403,12 +405,12 @@ class NERO:
                             best_quality = quality
                             best_hypothesis = next_concept
                             if self.verbose > 1:
-                                print(f"New best at iter {iteration}: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+                                logger.debug(f"New best at iter {iteration}: {best_hypothesis.name} (Quality: {best_quality:.3f})")
 
                         # Early stopping if perfect solution found
                         if quality >= 1.0:
                             if self.verbose > 0:
-                                print(f"Perfect solution found at iteration {iteration}")
+                                logger.info(f"Perfect solution found at iteration {iteration}")
                             runtime = time.time() - start_time
                             return {
                                 'Prediction': best_hypothesis.name,
@@ -419,7 +421,7 @@ class NERO:
                     except (AttributeError, KeyError, Exception) as e:
                         # Skip concepts that cause errors during evaluation
                         if self.verbose > 1:
-                            print(f"Skipping concept due to error: {e}")
+                            logger.debug(f"Skipping concept due to error: {e}")
                         continue
 
             if iteration % 10 == 0:
@@ -427,12 +429,12 @@ class NERO:
 
             if self.verbose > 0 and iteration % 1000 == 0:
                 elapsed = time.time() - start_time
-                print(f"Iter {iteration}, Queue: {queue_size}, Best: {best_quality:.3f}, Time: {elapsed:.1f}s")
+                logger.info(f"Iter {iteration}, Queue: {queue_size}, Best: {best_quality:.3f}, Time: {elapsed:.1f}s")
 
         runtime = time.time() - start_time
         if self.verbose > 0:
-            print(f"Search finished in {runtime:.2f}s after {iteration} iterations.")
-            print(f"Best: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+            logger.info(f"Search finished in {runtime:.2f}s after {iteration} iterations.")
+            logger.info(f"Best: {best_hypothesis.name} (Quality: {best_quality:.3f})")
 
         return {
             'Prediction': best_hypothesis.name,
@@ -452,8 +454,8 @@ class NERO:
         start_time = time.time()
 
         # Get neural predictions
-        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+        idx_pos = self._index_tensor(pos)
+        idx_neg = self._index_tensor(neg)
 
         with torch.no_grad():
             sort_scores, sort_idxs = torch.topk(
@@ -465,7 +467,7 @@ class NERO:
         # Initialize priority queue with top predictions
         top_predictions = SearchTree()
 
-        for idx_target in sort_idxs.detach().numpy():
+        for idx_target in sort_idxs.detach().cpu().numpy():
             target_ce = self.target_class_expressions[idx_target]
             target_ce.quality = self.quality_func(
                 individuals=target_ce.str_individuals, pos=pos, neg=neg
@@ -554,6 +556,11 @@ class NERO:
             return 0.0
         return self._best_predictions['Quality']
 
+    def _index_tensor(self, individuals: Iterable[str]) -> torch.Tensor:
+        """Indices of `individuals` as a (1, n) tensor on the device the model lives on."""
+        return torch.tensor([[self.instance_idx_mapping[i] for i in individuals]], dtype=torch.long,
+                            device=self.device)
+
     def forward(self, xpos: torch.Tensor, xneg: torch.Tensor) -> torch.Tensor:
         """
         Forward pass through the neural model.
@@ -565,7 +572,7 @@ class NERO:
         Returns:
             Predictions for target class expressions
         """
-        return self.model(xpos, xneg)
+        return self.model(xpos.to(self.device), xneg.to(self.device))
 
     def positive_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
         """
@@ -577,7 +584,7 @@ class NERO:
         Returns:
             Tensor of embeddings
         """
-        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        indices = self._index_tensor(individuals)
         return self.model.positive_expression_embeddings(indices)
 
     def negative_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
@@ -590,7 +597,7 @@ class NERO:
         Returns:
             Tensor of embeddings
         """
-        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        indices = self._index_tensor(individuals)
         return self.model.negative_expression_embeddings(indices)
 
     def downward_refine(self, expression, max_length: Optional[int] = None) -> Set:
@@ -724,8 +731,8 @@ class NERO:
         set_pos, set_neg = set(pos), set(neg)
 
         # Get neural predictions
-        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
-        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+        idx_pos = self._index_tensor(pos)
+        idx_neg = self._index_tensor(neg)
 
         goal_found = False
         top_prediction_queue = SearchTree()
@@ -739,7 +746,7 @@ class NERO:
             )
 
         # Evaluate predictions
-        for idx_target in sort_idxs.detach().numpy():
+        for idx_target in sort_idxs.detach().cpu().numpy():
             target_ce = self.target_class_expressions[idx_target]
             target_ce.quality = self.quality_func(
                 individuals=target_ce.str_individuals,

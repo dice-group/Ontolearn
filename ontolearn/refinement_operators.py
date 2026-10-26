@@ -803,7 +803,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 class ExpressRefinement(ModifiedCELOERefinement):
     """ A top-down refinement operator in ALCHIQ(D)."""
 
-    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count', 'generator'
+    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count', 'generator', 'rnd'
 
     expressivity: float
     downsample: bool
@@ -821,11 +821,13 @@ class ExpressRefinement(ModifiedCELOERefinement):
                  use_numeric_datatypes: bool = True,
                  use_time_datatypes: bool = True,
                  use_boolean_datatype: bool = True,
-                 card_limit: int = 10):
+                 card_limit: int = 10,
+                 random_seed: Optional[int] = None):
         self.downsample = downsample
         self.sample_fillers_count = sample_fillers_count
         self.expressivity = expressivity
         self.generator = ConceptGenerator()
+        self.rnd = random.Random(random_seed)
         super().__init__(knowledge_base,
                          value_splitter=value_splitter,
                          max_child_length=max_child_length,
@@ -859,8 +861,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
             # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
             fillers: Set[OWLClassExpression] = {OWLThing, OWLNothing}
             if len(iter_container_sub) >= self.sample_fillers_count:
-                fillers = fillers | set(random.sample(iter_container_sub, k=self.sample_fillers_count)) | \
-                          set(random.sample(iter_container_neg, k=self.sample_fillers_count))
+                fillers = fillers | set(self.rnd.sample(iter_container_sub, k=self.sample_fillers_count)) | \
+                          set(self.rnd.sample(iter_container_neg, k=self.sample_fillers_count))
             for c in fillers:
                 if self.len(c) + 2 <= self.max_child_length:
                     iter_container_restrict.append(
@@ -901,7 +903,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
             if self.downsample:  # downsampling is necessary if no enough computation resources
                 assert self.expressivity < 1, "When downsampling, the expressivity must be less than 1"
                 m = int(self.expressivity * len(container))
-                container = random.sample(container, k=max(m, 1))
+                container = self.rnd.sample(container, k=max(m, 1))
             else:
                 self.expressivity = 1.
             if ce.is_owl_thing():  # If this is satisfied then all possible refinements are subconcepts

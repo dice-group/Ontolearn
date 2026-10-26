@@ -23,6 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """Learning problem generator."""
+import logging
 import sys
 import time
 from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
@@ -38,6 +39,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State
 from .utils import balanced_sets
+
+logger = logging.getLogger(__name__)
 from .utils.static_funcs import concept_len
 
 SearchAlgos = Literal['dfs', 'strict-dfs']
@@ -186,10 +189,10 @@ class LearningProblemGenerator:  # pragma: no cover
             f'Please update the configurations for learning problem generator****'
 
         stats = np.array([[x.length, len(x.instances)] for (x, _, __) in res])
-        print(f'\nNumber of generated concepts:{len(res)}')
-        print(f'Number of generated learning problems via sampling: {len(res)}')
-        print(f'Average length of generated concepts:{stats[:, 0].mean():.3f}\n'
-              f'Average number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
+        logger.info(f'Number of generated concepts:{len(res)}')
+        logger.info(f'Number of generated learning problems via sampling: {len(res)}')
+        logger.info(f'Average length of generated concepts:{stats[:, 0].mean():.3f}\n'
+                    f'Average number of individuals belong to a generated example:{stats[:, 1].mean():.3f}')
 
         return res
 
@@ -219,7 +222,7 @@ class LearningProblemGenerator:  # pragma: no cover
             try:
                 assert len(y) >= min_num_problems
             except AssertionError:
-                print('Not enough number of problems are generated')
+                logger.error('Not enough number of problems are generated')
                 raise
 
         assert self.min_num_instances or min_num_instances
@@ -235,8 +238,8 @@ class LearningProblemGenerator:  # pragma: no cover
 
         output_sanity_check(res)
         stats = np.array([[x.length, len(x.instances)] for x in gen_examples])
-        print(f'Average length of generated examples {stats[:, 0].mean():.3f}\n'
-              f'Average number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
+        logger.info(f'Average length of generated examples {stats[:, 0].mean():.3f}\n'
+                    f'Average number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
         return res
 
     def get_examples(self, *, num_problems=None, max_length=None, min_length=None,
@@ -327,8 +330,7 @@ class LearningProblemGenerator:  # pragma: no cover
         elif self.search_algo == 'strict-dfs':
             valid_concepts = self._apply_dfs(strict=True)
         else:
-            print(f'Invalid input: search_algo:{search_algo} must be in [dfs,strict-dfs]')
-            raise ValueError
+            raise ValueError(f'Invalid input: search_algo:{search_algo} must be in [dfs,strict-dfs]')
         yield from valid_concepts
 
     def _apply_dfs(self, strict=False) -> Generator:
@@ -361,7 +363,7 @@ class LearningProblemGenerator:  # pragma: no cover
             try:
                 rl_state = next(refinements_rl)
             except StopIteration:
-                print('All top concepts are refined.')
+                logger.info('All top concepts are refined.')
                 break
 
             if rl_state.concept.is_owl_nothing():
@@ -372,7 +374,7 @@ class LearningProblemGenerator:  # pragma: no cover
                 yield rl_state
                 if strict:
                     if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
-                        print(f'|Valid Expressions|={len(valid_states_gate)}')
+                        logger.debug(f'|Valid Expressions|={len(valid_states_gate)}')
                         break
 
             temp_gate = set()
@@ -396,13 +398,13 @@ class LearningProblemGenerator:  # pragma: no cover
         try:
             assert len(valid_states_gate) >= self.num_diff_runs * self.num_problems
         except AssertionError:
-            print(f'Number of valid concepts generated:{len(valid_states_gate)}.\n'
-                  f'Required number of concepts: {self.num_diff_runs * self.num_problems}.\n'
-                  f'Please update the given constraints:'
-                  f'Increase the max length (Currently {self.max_length}).\n'
-                  f'Increase the max number of instances for concepts (Currently {self.max_num_instances}).\n'
-                  f'Decrease the min length (Currently {self.min_length}).\n'
-                  f'Decrease the max number of instances for concepts (Currently {self.min_num_instances}).\n')
+            logger.warning(f'Number of valid concepts generated:{len(valid_states_gate)}.\n'
+                           f'Required number of concepts: {self.num_diff_runs * self.num_problems}.\n'
+                           f'Please update the given constraints:'
+                           f'Increase the max length (Currently {self.max_length}).\n'
+                           f'Increase the max number of instances for concepts (Currently {self.max_num_instances}).\n'
+                           f'Decrease the min length (Currently {self.min_length}).\n'
+                           f'Decrease the max number of instances for concepts (Currently {self.min_num_instances}).')
 
     @staticmethod
     # @performance_debugger('_apply_dfs_on_state')
@@ -441,7 +443,7 @@ class LearningProblemGenerator:  # pragma: no cover
                     pass
                 continue
 
-            print('Constraints are not fulfilled')
+            logger.warning('Constraints are not fulfilled')
             # raise ValueError('We could not find ')
 
     def apply_rho_on_rl_state(self, rl_state):

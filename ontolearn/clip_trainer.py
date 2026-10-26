@@ -22,6 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
+import logging
 import numpy as np
 import copy
 import torch
@@ -32,6 +33,8 @@ from torch.optim.lr_scheduler import ExponentialLR
 from torch.nn.utils import clip_grad_value_
 from sklearn.metrics import f1_score, accuracy_score
 import time
+
+logger = logging.getLogger(__name__)
 
 
 class CLIPTrainer:
@@ -58,15 +61,11 @@ class CLIPTrainer:
         elif optimizer == 'RMSprop':
             return torch.optim.RMSprop(length_predictor.parameters(), lr=self.learning_rate)
         else:
-            raise ValueError
-            print('Unsupported optimizer')
+            raise ValueError(f"Unsupported optimizer: {optimizer}")
 
     def show_num_learnable_params(self):
-        print("*"*20+"Trainable model size"+"*"*20)
         size = sum([p.numel() for p in self.clip.length_predictor.parameters()])
-        print("Length Predictor: ", size)
-        print("*"*20+"Trainable model size"+"*"*20)
-        print()
+        logger.info(f"Trainable model size: length predictor: {size}")
     
     def train(self, train_dataloader, save_model=True, optimizer='Adam', record_runtime=True):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -74,14 +73,10 @@ class CLIPTrainer:
             self.clip.length_predictor = copy.deepcopy(self.clip.length_predictor[0])
         self.show_num_learnable_params()
         if device.type == "cpu":
-            print("Training on CPU, it may take long...")
+            logger.info("Training on CPU, it may take long...")
         else:
-            print("GPU available !")
-        print()
-        print("#"*50)
-        print()
-        print("{} starts training... \n".format(self.clip.length_predictor.name))
-        print("#"*50, "\n")
+            logger.info("GPU available !")
+        logger.info("{} starts training...".format(self.clip.length_predictor.name))
         length_predictor = copy.deepcopy(self.clip.length_predictor).train()
         desc = length_predictor.name
         if device.type == "cuda":
@@ -136,12 +131,11 @@ class CLIPTrainer:
                 json.dump(runtime_info, file, indent=3)
         results_dict = dict()
         if save_model:
-            print("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
-                  "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)), "weights saved based on Acc best score!")
+            logger.info("Top performance: loss: {:.4f}, f1: {:.2f}% ... acc: {:.2f}% "
+                        "weights saved based on Acc best score!".format(min(Train_loss), max(F1), max(Acc)))
         else:
-            print("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
-                  "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)))
-        print()
+            logger.info("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
+                        "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)))
         results_dict.update({"Train Max F1": max(F1), "Train Acc": max(Acc),
                              "Train Min Loss": min(Train_loss)})
         if save_model:  # pragma: no cover
@@ -152,7 +146,7 @@ class CLIPTrainer:
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
             torch.save(length_predictor.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
-            print("{} saved".format(length_predictor.name))
+            logger.info("{} saved".format(length_predictor.name))
             if not os.path.exists(self.storage_path+"/metrics/"):
                 os.mkdir(self.storage_path+"/metrics/")
             with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:

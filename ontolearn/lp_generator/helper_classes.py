@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+import logging
 from ontolearn.triple_store import TripleStore
 from tqdm import tqdm
 import random
@@ -32,6 +33,8 @@ import json
 
 from ontolearn.utils.static_funcs import concept_len
 
+logger = logging.getLogger(__name__)
+
 
 class ConceptDescriptionGenerator:
     """
@@ -39,12 +42,13 @@ class ConceptDescriptionGenerator:
     """
 
     def __init__(self, knowledge_base, refinement_operator, depth=2, max_length=10,
-                 num_sub_roots=150):
+                 num_sub_roots=150, random_seed=None):
         self.kb = knowledge_base
         self.rho = refinement_operator
         self.depth = depth
         self.num_sub_roots = num_sub_roots
         self.max_length = max_length
+        self.rnd = random.Random(random_seed)
 
     def apply_rho(self, concept):
         return {ref for ref in self.rho.refine(concept, max_length=self.max_length)}
@@ -53,9 +57,9 @@ class ConceptDescriptionGenerator:
         roots = self.apply_rho(self.kb.generator.thing)
         Refinements = set()
         Refinements.update(roots)
-        print("|Thing refinements|: ", len(roots))
-        roots_sample = random.sample(list(roots), k=self.num_sub_roots)
-        print("Size of sample: ", len(roots_sample))
+        logger.info(f"|Thing refinements|: {len(roots)}")
+        roots_sample = self.rnd.sample(list(roots), k=self.num_sub_roots)
+        logger.info(f"Size of sample: {len(roots_sample)}")
         for root in tqdm(roots_sample, desc="Refining roots..."):
             Refinements.update(self.apply_rho(root))
         return Refinements
@@ -72,7 +76,8 @@ class KB2Data:
     def __init__(self, path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
                  max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50,
-                 min_num_pos_examples=1,knowledge_base=None, max_pos_neg_examples_per_lp=None):
+                 min_num_pos_examples=1,knowledge_base=None, max_pos_neg_examples_per_lp=None,
+                 random_seed=None):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
@@ -82,7 +87,9 @@ class KB2Data:
         - max_child_length: the maximum length of refinements to be generated for a given node
         - depth, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
+        - random_seed: seed used for every random sampling step performed while generating data (independent of the global `random` module state)
         """
+        self.rnd = random.Random(random_seed)
         if path and knowledge_base:
             assert path == knowledge_base.path, "Path argument and knowledge base's path do not match"
         if path:
@@ -126,7 +133,8 @@ class KB2Data:
                                     use_card_restrictions=True,
                                     use_numeric_datatypes=True, use_time_datatypes=True,
                                     use_boolean_datatype=True,
-                                    expressivity=refinement_expressivity)
+                                    expressivity=refinement_expressivity,
+                                    random_seed=random_seed)
         else:
             rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length,
                                     sample_fillers_count=sample_fillers_count,
@@ -134,10 +142,12 @@ class KB2Data:
                                     use_card_restrictions=False,
                                     use_numeric_datatypes=False, use_time_datatypes=False,
                                     use_boolean_datatype=False,
-                                    expressivity=refinement_expressivity)
+                                    expressivity=refinement_expressivity,
+                                    random_seed=random_seed)
         self.lp_gen = ConceptDescriptionGenerator(knowledge_base=self.kb, refinement_operator=rho,
                                                   depth=depth,
-                                                  num_sub_roots=num_sub_roots)
+                                                  num_sub_roots=num_sub_roots,
+                                                  random_seed=random_seed)
 
     def find_optimal_number_of_examples(self):
         if self.kb.individuals_count() >= 600:
@@ -145,15 +155,10 @@ class KB2Data:
         return self.kb.individuals_count()
 
     def generate_descriptions(self):
-        print()
-        print("#" * 60)
         if self.path:
-            print("Started generating data on the " + self.path.split("/")[-1].split(".")[
-            0] + " knowledge base")
-        print("#" * 60)
-        print()
+            logger.info("Started generating data on the " + self.path.split("/")[-1].split(".")[0] + " knowledge base")
         All_individuals = set(self.kb.individuals())
-        print("Number of individuals in the knowledge base: {} \n".format(len(All_individuals)))
+        logger.info("Number of individuals in the knowledge base: {}".format(len(All_individuals)))
         Concepts = self.lp_gen.generate()
         non_redundancy_hash_map = dict()
         show_some_length = True
@@ -166,13 +171,13 @@ class KB2Data:
                 continue
             if len(non_redundancy_hash_map) >= self.max_num_lps:
                 break
-        print("Concepts generation done!\n")
-        print("Number of atomic concepts: ", len(self.atomic_concept_names))
-        print("Longest concept length: ",
-              max({l for l in [concept_len(c) for c in non_redundancy_hash_map.values()]}), "\n")
-        print("Total number of concepts: ", len(non_redundancy_hash_map), "\n")
+        logger.info("Concepts generation done!")
+        logger.info(f"Number of atomic concepts: {len(self.atomic_concept_names)}")
+        logger.info("Longest concept length: {}".format(
+            max({l for l in [concept_len(c) for c in non_redundancy_hash_map.values()]})))
+        logger.info(f"Total number of concepts: {len(non_redundancy_hash_map)}")
         self.train_concepts = list(non_redundancy_hash_map.values())
-        print("Data generation completed")
+        logger.info("Data generation completed")
         return self
 
     def sample_examples(self, pos, neg):
@@ -189,8 +194,8 @@ class KB2Data:
         elif len(pos) < len(neg):
             num_pos_ex = len(pos)
             num_neg_ex = self.num_examples - num_pos_ex
-        positive = random.sample(pos, min(num_pos_ex, len(pos)))
-        negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        positive = self.rnd.sample(pos, min(num_pos_ex, len(pos)))
+        negative = self.rnd.sample(neg, min(num_neg_ex, len(neg)))
         return positive, negative
 
     def save_data(self):
@@ -210,4 +215,4 @@ class KB2Data:
         os.makedirs(self.storage_path, exist_ok=True)
         with open(f'{self.storage_path}/LPs.json', 'w', encoding="utf-8") as file_train:
             json.dump(data, file_train, indent=3, ensure_ascii=False)
-        print(f'Data saved at {self.storage_path}')
+        logger.info(f'Data saved at {self.storage_path}')

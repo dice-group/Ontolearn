@@ -1,35 +1,73 @@
 name: Python package
 
-on: [push, pull_request]
+# Pull requests are tested via `pull_request`; `push` only covers the long-lived
+# branches, so a PR branch is not tested twice (once per event).
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same PR/branch makes the in-progress run obsolete.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  changes:
     runs-on: ubuntu-latest
-    services:
-      fuseki:
-        image: stain/jena-fuseki
-        ports:
-          - 3030:3030
-        options: >-
-          --health-cmd "curl --silent --fail http://localhost:3030 || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        env:
-          ADMIN_PASSWORD: admin
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.select.outputs.run }}
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
+      # On pull requests, run only the tests of the learner(s) touched, unless
+      # shared code changed (see .github/scripts/select_tests.py). Pushes to
+      # develop/main and manual runs always run the full suite. The selected
+      # tests are then split into one matrix job per group (see split_tests.py).
+      - name: Select tests
+        id: select
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" > changed_files.txt
+            selection=$(python .github/scripts/select_tests.py < changed_files.txt)
+          else
+            selection=ALL
+          fi
+          echo "Selected: $selection"
+          matrix=$(python .github/scripts/split_tests.py $selection)
+          echo "Matrix: $matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          if [ "$selection" = "NONE" ]; then echo "run=false" >> "$GITHUB_OUTPUT"; else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+
+  build:
+    name: build (${{ matrix.group }})
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    # Safety net: a healthy run takes at most ~35-45 minutes (the full suite
+    # in one job; each group is shorter). Without this, a hung step (e.g.
+    # #622) runs until GitHub's ~360min default job timeout instead of
+    # failing fast and visibly.
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
+      # Only `include` is used: mixing it with a one-value axis would let the
+      # entries overwrite each other. One job per test group.
       matrix:
-        python-version: ["3.11.14"]
-      max-parallel: 5
+        include: ${{ fromJSON(needs.changes.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11.14"
 
       - name: Install dependencies
         run: |
@@ -40,15 +78,39 @@ jobs:
         run: |
           ruff check ontolearn/learners --exclude ontolearn/learners/spell_kit --line-length=200
 
+      # Bump the version suffix when the archives on files.dice-research.org change.
+      - name: Cache external files
+        id: data-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            KGs.zip
+            LPs.zip
+            CLIPData.zip
+            NCESData.zip
+          key: ontolearn-data-v1
+
       - name: Get external files
+        if: steps.data-cache.outputs.cache-hit != 'true'
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
           wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
           wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
           wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip
-          unzip KGs.zip && unzip LPs.zip && unzip NCESData.zip && unzip CLIPData.zip
+
+      - name: Unzip external files
+        run: |
+          unzip -q KGs.zip && unzip -q LPs.zip && unzip -q NCESData.zip && unzip -q CLIPData.zip
+
+      # Only the triplestore tests need Fuseki. A service container cannot be
+      # made conditional, so it is started here.
+      - name: Start Fuseki
+        if: matrix.group == 'triplestore'
+        run: |
+          docker run -d -p 3030:3030 -e ADMIN_PASSWORD=admin stain/jena-fuseki
 
       - name: Wait for Fuseki to start
+        if: matrix.group == 'triplestore'
         run: |
           echo "Waiting for Fuseki to be ready..."
           until curl -s http://localhost:3030; do
@@ -57,6 +119,7 @@ jobs:
           echo "Fuseki is up!"
 
       - name: Create dataset (mutagenesis)
+        if: matrix.group == 'triplestore'
         run: |
           curl -X POST http://localhost:3030/$/datasets \
             --user admin:admin \
@@ -64,14 +127,15 @@ jobs:
             --data "dbName=mutagenesis&dbType=tdb"
 
       - name: Load OWL data into Fuseki
+        if: matrix.group == 'triplestore'
         run: |
           curl -X PUT -H "Content-Type: application/rdf+xml" \
             --data-binary @KGs/Mutagenesis/mutagenesis.owl \
             http://localhost:3030/mutagenesis/data \
             --user admin:admin
 
-      - name: Testing and coverage report
-        run: | 
+      - name: Testing and coverage report (${{ matrix.group }})
+        run: |
           pip install coverage
-          coverage run -m pytest -p no:warnings -x --durations=0
+          coverage run -m pytest -p no:warnings -x --durations=0 ${{ matrix.tests }}
           coverage report -m
