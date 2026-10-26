@@ -77,6 +77,29 @@ class TestTDLRefinementBasics(unittest.TestCase):
         self.assertEqual(model.kwargs_classifier["random_state"], 42)
         self.assertEqual(model.feature_refinement, True)
         self.assertEqual(model.refine_iterations, 3)
+        self.assertEqual(model.range_strategy, "distribution")
+
+    def test_invalid_range_strategy(self):
+        """Test that an unknown range_strategy or non-positive n_clusters is rejected."""
+        with self.assertRaises(ValueError):
+            TDL_refinement(knowledge_base=self.kb_family, range_strategy="quantiles", verbose=0)
+        with self.assertRaises(ValueError):
+            TDL_refinement(knowledge_base=self.kb_family, range_strategy="kmeans", n_clusters=0, verbose=0)
+
+    def test_kmeans_ranges(self):
+        """Test that k-means ranges are sorted, disjoint and cover every value."""
+        model = TDL_refinement(knowledge_base=self.kb_family, range_strategy="kmeans", n_clusters=3, verbose=0)
+        values = [1.0, 1.1, 1.2, 5.0, 5.2, 9.9, 10.0, 10.1]
+        ranges = model._compute_ranges(values)
+        self.assertEqual(ranges, [(1.0, 1.2), (5.0, 5.2), (9.9, 10.1)])
+        for v in values:
+            self.assertEqual(sum(model._in_interval(v, r) for r in ranges), 1)
+
+    def test_kmeans_ranges_fewer_unique_values_than_clusters(self):
+        """Test that k is capped at the number of distinct values."""
+        model = TDL_refinement(knowledge_base=self.kb_family, range_strategy="kmeans", n_clusters=5, verbose=0)
+        self.assertEqual(model._compute_ranges([2.0, 2.0, 7.0]), [(2.0, 2.0), (7.0, 7.0)])
+        self.assertEqual(model._compute_ranges([]), [])
 
 
 class TestTDLFilterLogic(unittest.TestCase):
