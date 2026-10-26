@@ -20,6 +20,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 import numpy as np
 import pandas as pd
 from sklearn import tree
+from sklearn.cluster import KMeans
 import itertools
 from shap import TreeExplainer
 import matplotlib.pyplot as plt
@@ -59,6 +60,8 @@ class TDL_refinement(TDL):
         plot_importance_evo: bool = False,
         refine_iterations: int = 3,
         topk: int = 30,
+        range_strategy: str = "distribution",
+        n_clusters: int = 5,
     ):
         super().__init__(
             knowledge_base,
@@ -85,6 +88,13 @@ class TDL_refinement(TDL):
         self.plot_importance_evo = plot_importance_evo
         self.refine_iterations = refine_iterations
         self.topk = topk
+        # how numeric data property values are partitioned into ranges: "distribution" or "kmeans"
+        if range_strategy not in ("distribution", "kmeans"):
+            raise ValueError(f"range_strategy must be 'distribution' or 'kmeans', got {range_strategy!r}.")
+        if n_clusters < 1:
+            raise ValueError(f"n_clusters must be >= 1, got {n_clusters}.")
+        self.range_strategy = range_strategy
+        self.n_clusters = n_clusters
         self.concept_per_iteration: List = list()
         self.top_feature_dicts: List = list()
         self.initial_importance_dict: Dict = dict()
@@ -93,31 +103,32 @@ class TDL_refinement(TDL):
 
     def _pack_data_property_with_range_to_dl_concept(self, property: OWLDataProperty, literal_range: tuple, type) -> str:
         """Repack the ranged data property into an DL Concept String"""
+        facet_restrictions_list: List[OWLFacetRestriction] = []
 
         xsdtype: OWLDatatype = self.data_property_datatype_dict.get(property)
         if xsdtype == OWLDatatype(XSDVocabulary.INTEGER):
-            literal_range = (int(literal_range[0]), int(literal_range[1]))
+            literal_range = tuple(None if b is None else int(b) for b in literal_range)
 
-        min_restr = OWLFacetRestriction(
-            OWLFacet.MIN_INCLUSIVE,
-            OWLLiteral(literal_range[0], xsdtype),
-        )
-        if literal_range[1] is None:
-            max_restr = OWLFacetRestriction(
-                OWLFacet.MAX_INCLUSIVE,
+        if literal_range[0] is not None:
+            min_restr = OWLFacetRestriction(
+                OWLFacet.MIN_INCLUSIVE,
                 OWLLiteral(literal_range[0], xsdtype),
             )
-        else:
+            facet_restrictions_list.append(min_restr)
+
+        if literal_range[1] is not None:
             max_restr = OWLFacetRestriction(
                 OWLFacet.MAX_INCLUSIVE,
                 OWLLiteral(literal_range[1], xsdtype),
             )
-
+            facet_restrictions_list.append(max_restr)
+       
+        if not facet_restrictions_list:
+            raise ValueError(f"Cannot create a datatype restriction with no facet restrictions for property {property} and range {literal_range}.")
         dt_range = OWLDatatypeRestriction(
             type_=xsdtype,
-            facet_restrictions=[min_restr, max_restr],
+            facet_restrictions=facet_restrictions_list,
         )
-
         packed_owl_class_expression = OWLDataSomeValuesFrom(property, dt_range)
         return packed_owl_class_expression
 
@@ -132,9 +143,31 @@ class TDL_refinement(TDL):
         std: np.float64
         mean = frozen_dist.stats(moments="m")
         std = frozen_dist.std()
-        ranges = [(mean - std, mean), (mean, mean + std), (mean - 2 * std, mean - 1 * std), (mean + std, mean + 2 * std), (mean - 3 * std, mean - 2 * std), (mean + 2 * std, mean + 3 * std)]
-
+        #TODO insert also single range <3std and > 3std, if mean unstable return uniform backup ranges
+        ranges = [(mean - std, mean), (mean, mean + std), (mean - 2 * std, mean - 1 * std), (mean + std, mean + 2 * std), (mean - 3 * std, mean - 2 * std), (mean + 2 * std, mean + 3 * std), (None, mean - 3 * std), (mean + 3 * std, None)]
         return ranges
+
+    def _compute_kmeans_ranges(self, dt_values) -> List[tuple]:
+        """Cluster the values with 1D k-means and return the [min, max] interval of each cluster."""
+        values = np.asarray(dt_values, dtype=float)
+        values = values[np.isfinite(values)]
+        unique_values = np.unique(values)
+        if len(unique_values) == 0:
+            return []
+        k = min(self.n_clusters, len(unique_values))
+        labels = KMeans(n_clusters=k, n_init=10, random_state=0).fit_predict(values.reshape(-1, 1))
+        ranges = [(values[labels == c].min(), values[labels == c].max()) for c in range(k)]
+        return sorted(ranges)
+
+    def _compute_ranges(self, dt_values) -> List[tuple]:
+        """Partition data property values into ranges using the configured range_strategy."""
+        if self.range_strategy == "kmeans":
+            return self._compute_kmeans_ranges(dt_values)
+        return self._compute_dt_pdf_ranges(self._find_best_distribution_for_dp(dt_values))
+
+    def _in_interval(self,v, interval) -> bool:
+        lo, hi = interval
+        return (lo is None or lo <= v) and (hi is None or v <= hi)
 
     def _find_best_distribution_for_dp(self, dt_values: List[float], plot: bool = False) -> dict:
         """Iteratively fit distributions on the data and choose the best one based on K-S statistic."""
@@ -169,6 +202,9 @@ class TDL_refinement(TDL):
 
     def _extract_refined_ranges_from_data_properties(self, data_property_values: dict, range_values):
         """Extract refined ranges from data property values based on the original range values."""
+        # one-sided ranges (e.g. [>= v] or [<= v]) are not refined
+        if range_values is None or len(range_values) != 2 or any(b is None for b in range_values):
+            return None
         lb, ub = range_values
         prop_values = np.sort(np.array(data_property_values))
         # where can maybe be runtime optimized
@@ -180,8 +216,7 @@ class TDL_refinement(TDL):
             if self.verbose > 0:
                 print("Warning: Lower bound and upper bound indices are the same. Refinement may not be effective.")
             return None
-        dist = self._find_best_distribution_for_dp(prop_values[lb_index[0][0] : ub_index[0][0]], plot=False)
-        return self._compute_dt_pdf_ranges(dist)
+        return self._compute_ranges(prop_values[lb_index[0][0] : ub_index[0][0]])
 
     def _extract_ranges_from_data_properties(
         self,
@@ -195,41 +230,40 @@ class TDL_refinement(TDL):
             return
         ranges_dict: dict[OWLDataProperty, List[Tuple[float, float]]] = dict()
         generated_dt_class_expressions = dict()
-        best_dists = dict()
 
         for prop in data_properties_dict:
-            best_dist = self._find_best_distribution_for_dp(data_properties_dict[prop])
-
-            print("prop" + prop.__repr__())
-            print(best_dist)
-            best_dists[prop._iri] = best_dist
-            ranges_dict.setdefault(prop, self._compute_dt_pdf_ranges(best_dist))
+            ranges_dict.setdefault(prop, self._compute_ranges(data_properties_dict[prop]))
 
         for r in ranges_dict:
             for interval in range(len(ranges_dict[r])):
-                if (np.isnan(ranges_dict[r][interval][0]) or np.isinf(ranges_dict[r][interval][0])) or (np.isnan(ranges_dict[r][interval][1]) or np.isinf(ranges_dict[r][interval][1])):
+                lo, hi = ranges_dict[r][interval]
+
+                if (lo is  not None and (np.isnan(lo) or np.isinf(lo))) or \
+                   (hi is not None and (np.isnan(hi) or np.isinf(hi))):
                     continue
+                #if (np.isnan(ranges_dict[r][interval][0]) or np.isinf(ranges_dict[r][interval][0])) or (np.isnan(ranges_dict[r][interval][1]) or np.isinf(ranges_dict[r][interval][1])):
+                    
                 new_class_expression = self._pack_data_property_with_range_to_dl_concept(r, ranges_dict[r][interval], data_properties_dict[r][0])
                 str_dl_concept = owl_expression_to_dl(new_class_expression)
                 # add concept to features
                 if str_dl_concept not in features:
                     features[str_dl_concept] = new_class_expression
+        
         # assign concept per individual, if satisfied
-
         for ind, prop in itertools.product(per_individual_data_properties.keys(), data_properties_dict.keys()):
             if prop in per_individual_data_properties.get(ind, {}):
                 for v in per_individual_data_properties[ind][prop]:
                     for interval in ranges_dict[prop]:
-                        if (np.isnan(interval[0]) or np.isinf(interval[0])) or (np.isnan(interval[1]) or np.isinf(interval[1])):
+                        if any(x is not None and (np.isnan(x) or np.isinf(x)) for x in interval):
                             continue
-                        if interval[0] <= v and v <= interval[1]:
+                        if self._in_interval(v, interval):
                             new_class_expression = self._pack_data_property_with_range_to_dl_concept(prop, interval, v)
                             str_dl_concept = owl_expression_to_dl(new_class_expression)
                             individuals_to_feature_mapping[ind.str].add(str_dl_concept)
                             if new_class_expression not in generated_dt_class_expressions:
                                 generated_dt_class_expressions[new_class_expression] = set()
                             generated_dt_class_expressions[new_class_expression].add(ind)
-                            break
+                            #break
         return generated_dt_class_expressions
 
     def _extract_data_property_features(
@@ -434,7 +468,7 @@ class TDL_refinement(TDL):
                         continue
 
                     for r in refined_ranges:
-                        if (np.isnan(r[0]) or np.isinf(r[0])) or (np.isnan(r[1]) or np.isinf(r[1])):
+                        if any(x is not None and (np.isnan(x) or np.isinf(x)) for x in r):
                             continue
                         new_class_expression = self._pack_data_property_with_range_to_dl_concept(e.get_property(), r, e.get_filler().get_facet_restrictions()[0].get_facet_value().get_datatype())
                         str_dl_concept = owl_expression_to_dl(new_class_expression)
@@ -451,9 +485,9 @@ class TDL_refinement(TDL):
                     for ind in individuals_for_e:
                         for v in self.per_individual_data_properties[ind][e.get_property()]:
                             for interval in refined_ranges:
-                                if (np.isnan(interval[0]) or np.isinf(interval[0])) or (np.isnan(interval[1]) or np.isinf(interval[1])):
+                                if any(x is not None and (np.isnan(x) or np.isinf(x)) for x in interval):
                                     continue
-                                if interval[0] <= v <= interval[1]:
+                                if self._in_interval(v, interval):
                                     new_class_expression = self._pack_data_property_with_range_to_dl_concept(
                                         e.get_property(), interval, e.get_filler().get_facet_restrictions()[0].get_facet_value().get_datatype()
                                     )
@@ -675,13 +709,12 @@ class TDL_refinement(TDL):
             X = self._refine_features_with_shap(X, y, learning_problem)
 
         self._report_and_plot(X, y)
-
         perm_feature_topk = False
         if perm_feature_topk:
             # plot permutation feature importance
             res = permutation_importance(self.clf, X.values, y.values, n_repeats=10, random_state=0, n_jobs=12)
             self.plot_perm_feature_importances(res, [owl_expression_to_dl(f) for f in self.features])
-        shap_feature_topk = False
+        shap_feature_topk = True
         # calculate SHAP values, to get topk features
         if shap_feature_topk:
             tree_explainer = TreeExplainer(self.clf)
@@ -691,7 +724,7 @@ class TDL_refinement(TDL):
                     global_importance = np.abs(sVal[:, :, 1]).mean(axis=0)
                 else:
                     global_importance = np.abs(sVal).mean(axis=0)
-
+            print([owl_expression_to_dl(f) for f in self.features])
             self.plot_shap_feature_importances(global_importance, [owl_expression_to_dl(f) for f in self.features])
 
         self._finalize_predictions(X, y)
