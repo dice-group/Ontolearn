@@ -99,6 +99,7 @@ class TestInstancesCount(unittest.TestCase):
     def setUp(self):
         self.onto = TripleStoreOntology(URL)
         self.reasoner = TripleStoreReasoner(self.onto)
+        self.reasoner._subclass_path = "<plain>*"  # skip the one-off owl:equivalentClass probe
         self.cls = OWLClass(IRI.create(NS, "Person"))
 
     def test_issues_a_count_query_instead_of_fetching_every_individual(self):

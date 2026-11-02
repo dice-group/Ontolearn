@@ -16,6 +16,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ontolearn.triple_store import TripleStoreOntology, TripleStoreReasoner, with_subclass_closure
+from ontolearn.triple_store import _PLAIN_SUBCLASS_PATH, _SUBCLASS_PATH
 from owlapy.class_expression import (OWLClass, OWLObjectComplementOf, OWLObjectIntersectionOf,
                                      OWLObjectSomeValuesFrom)
 from owlapy.iri import IRI
@@ -26,7 +27,9 @@ NS = "http://example.org/family#"
 URL = "http://localhost:3030/fake/sparql"
 
 SUBCLASS_BINDING_RE = re.compile(
-    r"(\?some_cls\w*)\s+<http://www\.w3\.org/2000/01/rdf-schema#subClassOf>\*\s+<([^>]+)>"
+    r"(\?some_cls\w*)\s+\(<http://www\.w3\.org/2000/01/rdf-schema#subClassOf>"
+    r"\|<http://www\.w3\.org/2002/07/owl#equivalentClass>\|\^<http://www\.w3\.org/2002/07/owl#equivalentClass>\)\*"
+    r"\s+<([^>]+)>"
 )
 
 
@@ -115,6 +118,7 @@ class TestSubclassClosureOfFillers(unittest.TestCase):
         resp = MagicMock()
         resp.json.return_value = {"head": {"vars": ["cnt"]}, "boolean": False,
                                   "results": {"bindings": [{"cnt": {"value": "0"}}]}}
+        self.reasoner._subclass_path = _SUBCLASS_PATH  # skip the one-off owl:equivalentClass probe
         with patch.object(TripleStoreReasoner, "query", return_value=resp) as mocked_query:
             self.reasoner.instances_count(ce)
             self.reasoner.is_subset_of_individuals([OWLNamedIndividual(IRI.create(NS, "a"))], ce)
@@ -139,3 +143,73 @@ class TestSubclassClosureOfFillers(unittest.TestCase):
         names = lambda q: {str(r[0]).split("#")[1] for r in g.query(q)}
         self.assertEqual(names(base), set())  # no asserted Grandfather/Grandparent types
         self.assertEqual(names(with_subclass_closure(base)), {"a"})  # c's child is only a Parent, not a Grandparent
+
+
+class TestEquivalentClassesInSubclassClosure(unittest.TestCase):
+    """The closure path also follows owl:equivalentClass, at every nesting level (#571)."""
+
+    def setUp(self):
+        self.reasoner = TripleStoreReasoner(TripleStoreOntology(URL))
+        self.person = OWLClass(IRI.create(NS, "Person"))
+        self.parent = OWLClass(IRI.create(NS, "Parent"))
+        self.has_child = OWLObjectProperty(IRI.create(NS, "hasChild"))
+
+    def test_filler_matches_individuals_typed_by_an_equivalent_class(self):
+        from rdflib import Graph
+        g = Graph()
+        g.parse(format="turtle", data=f"""
+            @prefix : <{NS}> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+            @prefix owl: <http://www.w3.org/2002/07/owl#> .
+            :Mother rdfs:subClassOf :Parent .
+            :Guardian owl:equivalentClass :Parent .          # declared on the other side: Guardian = Parent
+            :Carer owl:equivalentClass :Mother .              # equivalent to a subclass of Parent
+            :Unrelated rdfs:subClassOf :Person .
+            :a a :Person ; :hasChild :b .  :b a :Mother .      # subclass
+            :c a :Person ; :hasChild :d .  :d a :Guardian .    # equivalent class
+            :e a :Person ; :hasChild :f .  :f a :Carer .       # equivalent class of a subclass
+            :g a :Person ; :hasChild :h .  :h a :Unrelated .   # not a parent
+        """)
+        ce = OWLObjectIntersectionOf([self.person, OWLObjectSomeValuesFrom(self.has_child, self.parent)])
+        query = with_subclass_closure(self.reasoner._owl2sparql_converter.as_query("?x", ce))
+        self.assertEqual({str(r[0]).split("#")[1] for r in g.query(query)}, {"a", "c", "e"})
+
+    def test_instances_issues_a_single_query_without_equivalent_class_recursion(self):
+        self.reasoner._subclass_path = _SUBCLASS_PATH  # skip the one-off owl:equivalentClass probe
+        with patch("ontolearn.triple_store.requests.post", return_value=_empty_select_response()) as mocked_post:
+            list(self.reasoner.instances(self.parent, direct=False))
+        self.assertEqual(mocked_post.call_count, 1)
+
+
+class TestEquivalencePathSelection(unittest.TestCase):
+    """The equivalence-aware path is only used for stores that have owl:equivalentClass triples."""
+
+    def setUp(self):
+        self.reasoner = TripleStoreReasoner(TripleStoreOntology(URL))
+        self.sparql = "SELECT DISTINCT ?x WHERE { ?x a <http://example.org/f#A> . }"
+
+    def _closure(self, ask_response=None, ask_error=None):
+        resp = MagicMock()
+        resp.json.return_value = {"boolean": ask_response}
+        with patch.object(TripleStoreReasoner, "query", return_value=resp, side_effect=ask_error) as mocked_query:
+            return self.reasoner._closure(self.sparql), mocked_query
+
+    def test_store_without_equivalent_classes_uses_the_plain_path(self):
+        query, _ = self._closure(ask_response=False)
+        self.assertIn(_PLAIN_SUBCLASS_PATH, query)
+        self.assertNotIn("equivalentClass", query)
+
+    def test_store_with_equivalent_classes_uses_the_full_path(self):
+        query, _ = self._closure(ask_response=True)
+        self.assertIn(_SUBCLASS_PATH, query)
+
+    def test_failing_probe_falls_back_to_the_full_path(self):
+        query, _ = self._closure(ask_error=RuntimeError("endpoint does not support ASK"))
+        self.assertIn(_SUBCLASS_PATH, query)
+
+    def test_probe_runs_once_per_reasoner(self):
+        resp = MagicMock()
+        resp.json.return_value = {"boolean": False}
+        with patch.object(TripleStoreReasoner, "query", return_value=resp) as mocked_query:
+            self.reasoner._closure(self.sparql)
+            self.reasoner._closure(self.sparql)
+        self.assertEqual(mocked_query.call_count, 1)
