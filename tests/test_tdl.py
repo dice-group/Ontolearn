@@ -644,3 +644,22 @@ class TestTDLPerformance(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestTDLNoInformativeFeatures(unittest.TestCase):
+    """Regression test for #666: TDL must not crash when every feature is constant over the examples."""
+
+    def test_falls_back_to_thing(self):
+        import pandas as pd
+        kb = KnowledgeBase(path="KGs/Family/father.owl")
+        individuals = sorted(kb.individuals(), key=lambda i: i.str)
+        pos, neg = set(individuals[:2]), set(individuals[2:4])
+        model = TDL(knowledge_base=kb, kwargs_classifier={"random_state": 1}, verbose=0)
+        # Simulate a feature space in which all columns were dropped as constant.
+        examples = list(pos) + list(neg)
+        empty_X = pd.DataFrame(index=examples, columns=[])
+        y = pd.DataFrame(data=[1.0] * len(pos) + [0.0] * len(neg), index=examples, columns=["label"])
+        model.create_training_data = lambda learning_problem, start_time=None: (empty_X, y)
+        model.fit(PosNegLPStandard(pos=pos, neg=neg))
+        self.assertEqual(model.best_hypotheses(), kb.generator.thing)
+        self.assertIsNone(model.clf)

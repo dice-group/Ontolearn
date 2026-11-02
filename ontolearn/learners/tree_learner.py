@@ -675,7 +675,16 @@ class TDL:
 
     def _fit_decision_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
         """Optionally grid-search classifier hyperparameters, then train self.clf on (X, y).
-        Shared by TDL and TDL_refinement."""
+        Shared by TDL and TDL_refinement.
+
+        If no informative feature is left (every extracted feature has the same value for all examples),
+        no tree can be trained: self.clf is set to None and the learner falls back to the trivial hypothesis."""
+        if X.shape[1] == 0:
+            logger.warning("No informative features: all extracted features take the same value for the positive and "
+                           "negative examples. Falling back to the trivial hypothesis (Thing). Consider enabling more "
+                           "feature extractors (inverse properties, data properties, nominals, cardinality restrictions).")
+            self.clf = None
+            return
         if self.grid_search_over:
             grid_search = sklearn.model_selection.GridSearchCV(
                 tree.DecisionTreeClassifier(**self.kwargs_classifier),
@@ -690,6 +699,9 @@ class TDL:
     def _report_and_plot(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
         """Report classification metrics and render the configured tree/feature-importance plots.
         Shared by TDL and TDL_refinement."""
+        if self.clf is None:
+            self.__classification_report = "No classification report: no informative features, no tree was trained."
+            return
         if self.report_classification:
             self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
             self.__classification_report += sklearn.metrics.classification_report(y.values,
@@ -709,6 +721,15 @@ class TDL:
         """Build the conjunctive/disjunctive OWL predictions from the trained tree and optionally verbalize them.
         Shared by TDL and TDL_refinement."""
         self.owl_class_expressions.clear()
+        if self.clf is None:
+            # No tree was trained (no informative features): the only hypothesis available is Thing.
+            thing = self.knowledge_base.generator.thing
+            self.conjunctive_concepts = [thing]
+            self.owl_class_expressions.add(thing)
+            self.disjunction_of_conjunctive_concepts = thing
+            if self.verbalize:
+                verbalize_learner_prediction(thing)
+            return
         # Each item can be considered is a path of OWL Class Expressions
         # starting from the root node in the decision tree and
         # ending in a leaf node.

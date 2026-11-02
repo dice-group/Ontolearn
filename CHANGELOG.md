@@ -12,6 +12,11 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `TDL.fit` crashed with `ValueError: Found array with 0 feature(s)` when every extracted feature was
+  constant over the positive and negative examples (e.g. PremierLeague with inverse properties, data
+  properties, nominals and cardinality restrictions all disabled), because the constant columns were
+  dropped and sklearn received an empty matrix. It now logs a warning and falls back to the trivial
+  hypothesis `⊤`. (#666)
 - `TripleStoreReasoner.instances(ce, direct=False)` only followed `owl:equivalentClass` for the
   top-level class (via one extra request per equivalent class), so individuals typed by a class
   equivalent to a filler or any other nested class (e.g. `Guardian ≡ Parent` for
