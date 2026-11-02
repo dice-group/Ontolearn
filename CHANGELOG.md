@@ -11,7 +11,18 @@ date) and use that section as the basis for the GitHub release notes.
 
 ## [Unreleased]
 
+### Added
+- `TDL(hypothesis_extraction=...)` selects how a class expression is extracted from the trained tree:
+  `"positive_paths"` (default, the previous behaviour), `"predicted_leaves"` (union of the leaves that
+  predict the positive class, deterministic order, `⊤`/`⊥` for trees without a positive/negative leaf) and
+  `"factored_tree"` (factored expression with merged sibling subtrees, or the complement of the negative region
+  if that is shorter). `tests/test_tdl_hypothesis_extraction.py` compares the modes on a synthetic KB.
+
 ### Fixed
+- `TDL` was not reproducible across processes: the feature columns followed the (hash-seed dependent) iteration
+  order of the knowledge base, so sklearn broke ties between equally good splits differently from run to run
+  (e.g. 5-fold CV F1 of `Cousin` on Family ranged from 0.760 to 0.804 depending only on `PYTHONHASHSEED`). The
+  features are now sorted by their DL string.
 - `TDL.fit` crashed with `ValueError: Found array with 0 feature(s)` when every extracted feature was
   constant over the positive and negative examples (e.g. PremierLeague with inverse properties, data
   properties, nominals and cardinality restrictions all disabled), because the constant columns were
