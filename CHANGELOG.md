@@ -12,6 +12,11 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Fixed
+- `TDL.fit` crashed with `ValueError: Found array with 0 feature(s)` when every extracted feature was
+  constant over the positive and negative examples (e.g. PremierLeague with inverse properties, data
+  properties, nominals and cardinality restrictions all disabled), because the constant columns were
+  dropped and sklearn received an empty matrix. It now logs a warning and falls back to the trivial
+  hypothesis `⊤`. (#666)
 - `save_owl_class_expressions` called `exit(1)` after printing debug output when an
   `OWLEquivalentClassesAxiom` could not be added, terminating the whole interpreter from library
   code. It now logs the details and re-raises the original `AttributeError`.
