@@ -27,6 +27,8 @@
 import operator
 import time
 import uuid
+
+import numpy as np
 from itertools import chain
 from typing import Any, Callable, Dict, FrozenSet, List, Tuple, Iterable, Optional, Union
 
@@ -45,6 +47,7 @@ from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
+from ontolearn.ea_semantic import lexicase_select
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
@@ -89,7 +92,7 @@ class EvoLearner(BaseConceptLearner):
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
         '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', \
-        'generator', '_creator_uid'
+        'generator', '_creator_uid', 'selection', '_example_index', '_n_pos'
 
     name = 'evolearner'
 
@@ -136,7 +139,8 @@ class EvoLearner(BaseConceptLearner):
                  card_limit: int = 10,
                  population_size: int = 800,
                  num_generations: int = 200,
-                 height_limit: int = 17):
+                 height_limit: int = 17,
+                 selection: str = 'tournament'):
         """ Create a new instance of EvoLearner
 
         Args:
@@ -166,6 +170,8 @@ class EvoLearner(BaseConceptLearner):
             use_inverse (bool): Consider inversed concepts? Defaults to False.
             value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to
                                                 `EntropyValueSplitter`.
+            selection (str): Parent selection, 'tournament' (default) or 'lexicase' (see
+                             :func:`ontolearn.ea_semantic.lexicase_select`).
         """
 
         if quality_func is None:
@@ -190,6 +196,11 @@ class EvoLearner(BaseConceptLearner):
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
+        if selection not in ('tournament', 'lexicase'):
+            raise ValueError(f"selection must be 'tournament' or 'lexicase', got {selection!r}")
+        self.selection = selection
+        self._example_index = None
+        self._n_pos = 0
         self.total_fits = 0
         self.generator = ConceptGenerator()
         # DEAP's `creator` module is process-global, so plain names like "Fitness"/
@@ -339,7 +350,10 @@ class EvoLearner(BaseConceptLearner):
         toolbox.register(ToolboxVocabulary.COMPILE.value, gp.compile, pset=self.pset)
 
         toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION.value, self._fitness_func)
-        toolbox.register(ToolboxVocabulary.SELECTION.value, tools.selTournament, tournsize=self.tournament_size)
+        if self.selection == 'lexicase':
+            toolbox.register(ToolboxVocabulary.SELECTION.value, lexicase_select)
+        else:
+            toolbox.register(ToolboxVocabulary.SELECTION.value, tools.selTournament, tournsize=self.tournament_size)
         toolbox.register(ToolboxVocabulary.CROSSOVER.value, gp.cxOnePoint)
         toolbox.register("create_tree_mut", self.mut_uniform_gen.get_expression)
         toolbox.register(ToolboxVocabulary.MUTATION.value, gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
@@ -408,6 +422,11 @@ class EvoLearner(BaseConceptLearner):
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
         verbose = kwargs.pop("verbose", False)
+
+        # Fixed example order (positives first) for the per-example error vectors of the individuals
+        self._example_index = sorted(self._learning_problem.kb_pos, key=str) + \
+            sorted(self._learning_problem.kb_neg, key=str)
+        self._n_pos = len(self._learning_problem.kb_pos)
 
         population = self._initialize(learning_problem.pos, learning_problem.neg)
         self.start_time = time.time()
@@ -483,13 +502,21 @@ class EvoLearner(BaseConceptLearner):
         if ind_str in self._cache:
             individual.quality.values = (self._cache[ind_str][0],)
             individual.fitness.values = (self._cache[ind_str][1],)
+            individual.errors = self._cache[ind_str][2]
         else:
             concept = gp.compile(individual, self.pset)
             e = evaluate_concept(self.kb, concept, self.quality_func, self._learning_problem)
             individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
-            self._cache[ind_str] = (e.q, individual.fitness.values[0])
+            individual.errors = self._error_vector(e.inds)
+            self._cache[ind_str] = (e.q, individual.fitness.values[0], individual.errors)
             self._number_of_tested_concepts += 1
+
+    def _error_vector(self, covered) -> np.ndarray:
+        # True where the example is misclassified: a positive that is not covered or a negative that is covered.
+        pos_n = self._n_pos
+        return np.fromiter((((ex in covered) != (i < pos_n)) for i, ex in enumerate(self._example_index)),
+                           dtype=bool, count=len(self._example_index))
 
     def clean(self, partial: bool = False):
         # Resets classes if they already exist, names must match the ones that were created in the toolbox.
