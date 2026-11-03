@@ -54,11 +54,11 @@ fixed; none remain open as of this writing.
 - **`learners/drill.py`** — fixed: `Drill.__init__` now accepts a
   `random_state` param, seeding a dedicated `random.Random` instance (used
   for exploration/example sampling instead of the global `random` module)
-  plus `torch`/CUDA. `EvoLearner`'s DEAP-driven GA still has the same
-  gap — no seed parameter exposed. Worth adding the same `random_state`
-  treatment there, threaded through to `numpy`/DEAP, consistent with the
-  sklearn convention this codebase otherwise follows (e.g. its
-  `fit`/`predict` naming).
+  plus `torch`/CUDA.
+- **`learners/evolearner.py`** — fixed: `EvoLearner.__init__` accepts a
+  `random_state` param. DEAP draws from the global `random` module, so
+  `fit()` seeds it and restores the caller's state, under a process-wide
+  lock for concurrent seeded fits (#664).
 - GPU/CUDA handling itself is fine — `clip.py:138`, `nero.py:107`,
   `drill.py:92` all correctly guard with
   `torch.device("cuda" if torch.cuda.is_available() else "cpu")`; no
@@ -117,5 +117,5 @@ fixed; none remain open as of this writing.
 
 ## Suggested priority order
 
-1. Everything else (logging migration, `EvoLearner` seeding, packaging
+1. Everything else (logging migration, packaging
    modernization, lint tightening) as incremental follow-ups, not blocking.

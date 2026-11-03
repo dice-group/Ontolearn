@@ -25,6 +25,8 @@
 """EvoLearner: An evolutionary approach to learn concepts in ALCQ(D)."""
 
 import operator
+import random
+import threading
 import time
 import uuid
 from itertools import chain
@@ -44,7 +46,7 @@ from ontolearn.learners.base import BaseConceptLearner
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
-    owlliteral_to_primitive_string
+    owlliteral_to_primitive_string, cx_one_point_ordered, sorted_for_reproducibility
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
@@ -52,6 +54,12 @@ from ontolearn.utils.static_funcs import concept_len
 from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.search import EvoLearnerNode
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
+
+
+# Seeded fits seed and later restore Python's global `random` module, which DEAP's operators use. Holding this lock
+# for the whole seeded section keeps concurrent seeded fits (e.g. from different threads) from re-seeding each other
+# mid-run or restoring each other's state. Reentrant so that a seeded fit nested in another one does not deadlock.
+_SEEDED_FIT_LOCK = threading.RLock()
 
 
 class EvoLearner(BaseConceptLearner):
@@ -89,7 +97,7 @@ class EvoLearner(BaseConceptLearner):
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
         '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', \
-        'generator', '_creator_uid'
+        'generator', '_creator_uid', 'random_state'
 
     name = 'evolearner'
 
@@ -136,7 +144,8 @@ class EvoLearner(BaseConceptLearner):
                  card_limit: int = 10,
                  population_size: int = 800,
                  num_generations: int = 200,
-                 height_limit: int = 17):
+                 height_limit: int = 17,
+                 random_state: Optional[int] = None):
         """ Create a new instance of EvoLearner
 
         Args:
@@ -166,6 +175,21 @@ class EvoLearner(BaseConceptLearner):
             use_inverse (bool): Consider inversed concepts? Defaults to False.
             value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to
                                                 `EntropyValueSplitter`.
+            random_state (int): Seed for reproducible runs. Defaults to None (unseeded). DEAP's operators draw
+                                from Python's global `random` module, so each :meth:`fit` seeds that module with
+                                this value and restores the caller's global random state afterwards. Seeded fits
+                                hold a process-wide lock while they run, so concurrent seeded fits run one after
+                                another instead of re-seeding each other. Limitations:
+
+                                - Code running in other threads that draws from the global `random` module during
+                                  a seeded fit (including unseeded EvoLearner fits) changes its results.
+                                - Runs that stop on `max_runtime` can differ, since the number of generations
+                                  completed in that time depends on machine speed. Runs that stop on
+                                  `num_generations` or on the goal repeat.
+                                - Repeatability across processes is tested with the default local knowledge base
+                                  (owlready2-backed `StructuralReasoner`), with both initialization methods.
+                                  Other reasoners or a triplestore backend may return entities in an order this
+                                  does not control.
         """
 
         if quality_func is None:
@@ -190,6 +214,7 @@ class EvoLearner(BaseConceptLearner):
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
+        self.random_state = random_state
         self.total_fits = 0
         self.generator = ConceptGenerator()
         # DEAP's `creator` module is process-global, so plain names like "Fitness"/
@@ -238,7 +263,7 @@ class EvoLearner(BaseConceptLearner):
         pset.addPrimitive(intersection, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.INTERSECTION.value)
 
-        for op in self.kb.get_object_properties():
+        for op in sorted_for_reproducibility(self.kb.get_object_properties()):
             # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
             # remainder but different namespaces
             name = escape(op.str)
@@ -264,7 +289,7 @@ class EvoLearner(BaseConceptLearner):
             pset.addTerminal(false_, Bool, name=owlliteral_to_primitive_string(false_))
             pset.addTerminal(true_, Bool, name=owlliteral_to_primitive_string(true_))
 
-            for bool_dp in self.kb.get_boolean_data_properties():
+            for bool_dp in sorted_for_reproducibility(self.kb.get_boolean_data_properties()):
                 # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
                 # remainder but different namespaces
                 name = escape(bool_dp.str)
@@ -274,7 +299,8 @@ class EvoLearner(BaseConceptLearner):
                 pset.addPrimitive(data_has_value, [Bool], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_HAS_VALUE + name)
 
-            for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
+            for split_dp in chain(sorted_for_reproducibility(self.kb.get_time_data_properties()),
+                                  sorted_for_reproducibility(self.kb.get_numeric_data_properties())):
                 # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
                 # remainder but different namespaces
                 name = escape(split_dp.str)
@@ -292,7 +318,7 @@ class EvoLearner(BaseConceptLearner):
         if self.use_card_restrictions:
             for i in range(1, self.card_limit + 1):
                 pset.addTerminal(i, int)
-            for op in self.kb.get_object_properties():
+            for op in sorted_for_reproducibility(self.kb.get_object_properties()):
                 # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
                 # remainder but different namespaces
                 name = escape(op.str)
@@ -302,7 +328,7 @@ class EvoLearner(BaseConceptLearner):
                 pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.CARD_MAX + name)
 
-        for class_ in self.kb.get_concepts():
+        for class_ in sorted_for_reproducibility(self.kb.get_concepts()):
             if class_ == OWLThing:
                 continue
             # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
@@ -340,7 +366,7 @@ class EvoLearner(BaseConceptLearner):
 
         toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION.value, self._fitness_func)
         toolbox.register(ToolboxVocabulary.SELECTION.value, tools.selTournament, tournsize=self.tournament_size)
-        toolbox.register(ToolboxVocabulary.CROSSOVER.value, gp.cxOnePoint)
+        toolbox.register(ToolboxVocabulary.CROSSOVER.value, cx_one_point_ordered)
         toolbox.register("create_tree_mut", self.mut_uniform_gen.get_expression)
         toolbox.register(ToolboxVocabulary.MUTATION.value, gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
@@ -409,6 +435,19 @@ class EvoLearner(BaseConceptLearner):
 
         verbose = kwargs.pop("verbose", False)
 
+        if self.random_state is None:
+            self._evolve(learning_problem, verbose)
+        else:
+            with _SEEDED_FIT_LOCK:
+                saved_random_state = random.getstate()
+                random.seed(self.random_state)
+                try:
+                    self._evolve(learning_problem, verbose)
+                finally:
+                    random.setstate(saved_random_state)
+        return self.terminate()
+
+    def _evolve(self, learning_problem: PosNegLPStandard, verbose: bool) -> None:
         population = self._initialize(learning_problem.pos, learning_problem.neg)
         self.start_time = time.time()
         self._goal_found, self._result_population = self.algorithm.evolve(self.toolbox,
@@ -416,7 +455,6 @@ class EvoLearner(BaseConceptLearner):
                                                                           self.num_generations,
                                                                           self.start_time,
                                                                           verbose=verbose)
-        return self.terminate()
 
     def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) -> List[Tree]:
         reasoner = self.kb.reasoner if self.reasoner is None else self.reasoner
@@ -438,7 +476,8 @@ class EvoLearner(BaseConceptLearner):
 
         population = None
         if isinstance(self.init_method, EARandomWalkInitialization):
-            population = self.toolbox.population(population_size=self.population_size, pos=list(pos),
+            population = self.toolbox.population(population_size=self.population_size,
+                                                 pos=sorted_for_reproducibility(pos),
                                                  kb=self.kb, dp_to_prim_type=self._dp_to_prim_type,
                                                  dp_splits=self._dp_splits)
         else:
