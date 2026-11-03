@@ -19,6 +19,9 @@ date) and use that section as the basis for the GitHub release notes.
   if that is shorter). `tests/test_tdl_hypothesis_extraction.py` compares the modes on a synthetic KB.
 
 ### Fixed
+- `EvoLearner.best_hypotheses(n>1, return_node=True)` (and `return_info=True`) could report the quality, tree
+  length and depth of the wrong individual: the deduplicated hypotheses were paired with the non-deduplicated
+  population, so a duplicate of the best individual shifted every later hypothesis's reported values. (#669)
 - `TDL` was not reproducible across processes: the feature columns followed the (hash-seed dependent) iteration
   order of the knowledge base, so sklearn broke ties between equally good splits differently from run to run
   (e.g. 5-fold CV F1 of `Cousin` on Family ranged from 0.760 to 0.804 depending only on `PYTHONHASHSEED`). The
