@@ -12,6 +12,13 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Added
+- `EvoLearner(selection='lexicase')`: lexicase parent selection (`ontolearn.ea_semantic.lexicase_select`), which
+  filters the population on randomly ordered examples and breaks ties toward the shortest tree, so specialists
+  that solve different subsets of the examples survive. Every evaluated individual now carries a per-example
+  error vector (`ind.errors`), computed from the existing reasoner call at no extra cost. Default stays
+  `'tournament'`. On 8 problems x 10 seeds with equal wall-clock budgets (`examples/benchmark_evolearner_lexicase.py`)
+  it improved training F1 (+0.005, paired Wilcoxon p=0.006) and reached the goal with fewer concept tests, with no
+  measurable change in held-out F1.
 - `TDL(hypothesis_extraction=...)` selects how a class expression is extracted from the trained tree:
   `"positive_paths"` (default, the previous behaviour), `"predicted_leaves"` (union of the leaves that
   predict the positive class, deterministic order, `⊤`/`⊥` for trees without a positive/negative leaf) and
