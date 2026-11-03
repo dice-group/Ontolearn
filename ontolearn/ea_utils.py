@@ -24,8 +24,9 @@
 
 """Utils for evolutionary algorithms."""
 
+import random
 from enum import Enum
-from typing import Callable, Final, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Final, Iterable, List, Optional, Tuple, Union
 
 from deap.gp import Primitive, Terminal
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectUnionOf, OWLClassExpression, OWLDataHasValue, \
@@ -161,6 +162,66 @@ def escape(name: str) -> str:
     name = name.replace(':', '_')
 
     return re.sub(r'[\W+]', '', name)
+
+
+def _order_key(item: Any) -> Tuple[str, str]:
+    if isinstance(item, OWLLiteral):
+        return item.get_datatype().str, item.get_literal()
+    return '', item.str
+
+
+def sorted_for_reproducibility(items: Iterable[Any]) -> List[Any]:
+    """Sort OWL entities (by IRI) and literals (by datatype, then lexical form) into a fixed order.
+
+    Knowledge bases and reasoners may return entities in a different order in each process (e.g. from sets,
+    whose iteration order depends on hashing). EvoLearner makes random choices by list position, so it puts
+    such collections in this order first; otherwise seeded runs would differ between processes. Only the order
+    changes, not the probabilities.
+    """
+    return sorted(items, key=_order_key)
+
+
+def cx_one_point_ordered(ind1: Tree, ind2: Tree) -> Tuple[Tree, Tree]:
+    """One-point crossover for strongly typed trees, with a reproducible choice of node type.
+
+    Follows the typed branch of :func:`deap.gp.cxOnePoint`: pick a node type present in both trees uniformly at
+    random, then swap a random subtree of that type between them. DEAP collects the shared types in a ``set`` of
+    Python classes, which hash by memory address, so the type it picks can differ between processes even when
+    ``random`` is seeded. Here the shared types are listed in the order they first occur in ``ind1``, so seeded runs
+    repeat exactly; the probabilities are unchanged.
+
+    Differences from :func:`deap.gp.cxOnePoint`: DEAP's untyped branch (taken when ``ind1.root.ret`` is the
+    untyped ``__type__``) is not implemented, since EvoLearner's trees are always typed; and because the types are
+    drawn from a list instead of a set, the sequence of random draws differs, so seeded results are not comparable
+    with runs that used :func:`deap.gp.cxOnePoint`.
+
+    Args:
+        ind1: First tree participating in the crossover.
+        ind2: Second tree participating in the crossover.
+
+    Returns:
+        The two trees, modified in place.
+    """
+    if len(ind1) < 2 or len(ind2) < 2:
+        return ind1, ind2
+
+    types1: Dict[type, List[int]] = {}
+    types2: Dict[type, List[int]] = {}
+    for idx, node in enumerate(ind1[1:], 1):
+        types1.setdefault(node.ret, []).append(idx)
+    for idx, node in enumerate(ind2[1:], 1):
+        types2.setdefault(node.ret, []).append(idx)
+    common_types = [t for t in types1 if t in types2]
+
+    if common_types:
+        type_ = random.choice(common_types)
+        index1 = random.choice(types1[type_])
+        index2 = random.choice(types2[type_])
+        slice1 = ind1.searchSubtree(index1)
+        slice2 = ind2.searchSubtree(index2)
+        ind1[slice1], ind2[slice2] = ind2[slice2], ind1[slice1]
+
+    return ind1, ind2
 
 
 def ind_to_string(ind: List[Tree]) -> str:

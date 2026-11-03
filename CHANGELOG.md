@@ -17,6 +17,22 @@ date) and use that section as the basis for the GitHub release notes.
   predict the positive class, deterministic order, `⊤`/`⊥` for trees without a positive/negative leaf) and
   `"factored_tree"` (factored expression with merged sibling subtrees, or the complement of the negative region
   if that is shorter). `tests/test_tdl_hypothesis_extraction.py` compares the modes on a synthetic KB.
+- `EvoLearner(random_state=...)` for reproducible runs (#664). DEAP's operators draw from the global `random`
+  module, so `fit()` seeds it with this value and restores the caller's random state afterwards. Seeded fits hold
+  a process-wide lock, so concurrent seeded fits run one after another instead of re-seeding each other; code in
+  other threads that draws from `random` during a seeded fit (including unseeded fits) still changes its results.
+  To make seeded runs repeat across processes:
+  - primitives, positive examples, reasoner-returned types, and the properties and neighbours used by the random
+    walk initialization are put in a fixed order (by IRI; literals by datatype and value) before random choices.
+    This applies to unseeded runs too; it changes only the order, not the probabilities;
+  - crossover uses the new `ea_utils.cx_one_point_ordered` instead of `deap.gp.cxOnePoint`, whose choice of node
+    type depends on memory addresses. It implements only DEAP's typed branch (EvoLearner's trees are always typed)
+    and makes a different sequence of random draws, so seeded results are not comparable with runs from before
+    this change.
+
+  Repeatability across processes is tested with the default local knowledge base and both initialization methods.
+  Runs that stop on `max_runtime` can still differ, since the number of generations completed depends on machine
+  speed.
 
 ### Fixed
 - `EvoLearner.best_hypotheses(n>1, return_node=True)` (and `return_info=True`) could report the quality, tree

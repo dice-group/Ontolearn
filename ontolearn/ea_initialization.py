@@ -36,7 +36,8 @@ from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
 
 from ontolearn.abstracts import AbstractKnowledgeBase
-from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string
+from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string, \
+    sorted_for_reproducibility
 import random
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Final, List, Set, Union
@@ -235,7 +236,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
         return type_counts
 
     def _select_type(self, ind: OWLNamedIndividual) -> OWLClass:
-        types_ind = list(self.type_counts.keys() & self._get_types(ind))
+        types_ind = sorted_for_reproducibility(self.type_counts.keys() & self._get_types(ind))
         weights = [self.type_counts[t] for t in types_ind]
         return random.choices(types_ind, weights=weights)[0]
 
@@ -246,13 +247,17 @@ class EARandomWalkInitialization(AbstractEAInitialization):
             inds.remove(OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual")))
         return inds if inds else {OWLThing}
 
+    def _sorted_types(self, ind: OWLNamedIndividual) -> List[OWLClass]:
+        return sorted_for_reproducibility(self._get_types(ind))
+
     @lru_cache(maxsize=_cache_size)
     def _get_properties(self, ind: OWLNamedIndividual) -> List[Property]:
         properties: List[Property] = list(self.kb.get_object_properties_for_ind(ind))
         for p in self.kb.get_data_properties_for_ind(ind):
             if p in self.dp_to_prim_type:
                 properties.append(p)
-        return properties
+        # Random walks sample from this list by position; the reasoner's order can differ between processes.
+        return sorted_for_reproducibility(properties)
 
     def _select_pairs(self, properties: List[Property], ind: OWLNamedIndividual) -> List[PropObjPair]:
         ind_nbrs: Dict[Property, List[Object]] = dict()
@@ -308,7 +313,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
             if isinstance(next_pair.property_, OWLObjectProperty):
                 self._add_primitive(expr, pset, next_pair.property_, OperatorVocabulary.EXISTENTIAL)
                 assert isinstance(next_pair.object_, OWLNamedIndividual)
-                type_ = random.choice(list(self._get_types(next_pair.object_)))
+                type_ = random.choice(self._sorted_types(next_pair.object_))
                 self._add_object_terminal(expr, pset, type_)
             elif isinstance(next_pair.property_, OWLDataProperty):
                 if next_pair.property_ in self.kb.get_boolean_data_properties():
@@ -320,7 +325,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
                 raise NotImplementedError(next_pair.property_)
 
         else:
-            type_ = random.choice(list(self._get_types(second_ind)))
+            type_ = random.choice(self._sorted_types(second_ind))
             self._add_object_terminal(expr, pset, type_)
 
     def _build_bool_property(self, expr: Tree, pair: PropObjPair, pset: PrimitiveSetTyped):
@@ -344,10 +349,11 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     @lru_cache(maxsize=_cache_size)
     def _get_property_values(self, ind: OWLNamedIndividual, property_: Property) -> List[Object]:
+        # Sorted for the same reason as in `_get_properties`.
         if isinstance(property_, OWLObjectProperty):
-            return list(self.kb.get_object_property_values(ind, property_))
+            return sorted_for_reproducibility(self.kb.get_object_property_values(ind, property_))
         elif isinstance(property_, OWLDataProperty):
-            return list(self.kb.get_data_property_values(ind, property_))
+            return sorted_for_reproducibility(self.kb.get_data_property_values(ind, property_))
         else:
             raise NotImplementedError(property_)
 
