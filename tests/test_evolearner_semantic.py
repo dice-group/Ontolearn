@@ -61,3 +61,53 @@ def test_lexicase_learns_and_keeps_consistent_errors():
         covered = kb.individuals_set(gp.compile(ind, model.pset))
         expected = [(e in covered) != (i < n_pos) for i, e in enumerate(model._example_index)]
         assert ind.errors.tolist() == expected
+
+
+def _uncle():
+    with open('examples/synthetic_problems.json') as f:
+        settings = json.load(f)
+    ex = settings['problems']['Uncle']
+    lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in ex['positive_examples']},
+                          neg={OWLNamedIndividual(i) for i in ex['negative_examples']})
+    return KnowledgeBase(path=settings['data_path'][3:]), lp
+
+
+def test_default_selection_is_tournament_and_still_sets_errors():
+    # Regression: the default must stay the original tournament selection, and the new error vectors must be
+    # attached to every individual regardless of the selection method.
+    kb, lp = _uncle()
+    random.seed(1)
+    model = EvoLearner(knowledge_base=kb, population_size=50, num_generations=3, max_runtime=120,
+                       terminate_on_goal=False)
+    assert model.selection == 'tournament'
+    model.fit(lp)
+    assert all(ind.errors.dtype == bool and len(ind.errors) == len(model._example_index)
+               for ind in model._result_population)
+
+
+def test_cache_hit_restores_the_same_errors():
+    # Regression: an individual whose tree was evaluated before must get its error vector back from the cache.
+    kb, lp = _uncle()
+    random.seed(2)
+    model = EvoLearner(knowledge_base=kb, population_size=20, num_generations=1, max_runtime=120,
+                       terminate_on_goal=False)
+    model.fit(lp)
+    original = model._result_population[0]
+    twin = model.toolbox.clone(original)
+    del twin.fitness.values
+    del twin.errors
+    tested_before = model.number_of_tested_concepts
+    model._fitness_func(twin)
+    assert model.number_of_tested_concepts == tested_before  # served from the cache, no new reasoner call
+    assert np.array_equal(twin.errors, original.errors)
+
+
+def test_lexicase_finds_a_perfect_hypothesis_on_a_simple_problem():
+    # Regression on an easy problem (Uncle on Family): lexicase must still be able to solve it completely.
+    kb, lp = _uncle()
+    random.seed(1)
+    model = EvoLearner(knowledge_base=kb, selection='lexicase', population_size=200, num_generations=30,
+                       max_runtime=120, terminate_on_goal=True)
+    model.fit(lp)
+    best = next(model._get_top_hypotheses(model._result_population, 1))
+    assert best.quality == 1.0

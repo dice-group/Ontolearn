@@ -28,19 +28,25 @@ def lexicase_select(population: List[Tree], k: int) -> List[Tree]:
     Returns:
         The selected individuals (references, not copies, like :func:`deap.tools.selTournament`).
     """
-    errors = np.stack([ind.errors for ind in population])  # (pop, examples), True = misclassified
+    # One row per individual, one column per training example; True = that individual misclassifies the example.
+    errors = np.stack([ind.errors for ind in population])
     lengths = np.fromiter((len(ind) for ind in population), dtype=np.int64, count=len(population))
     n_pop, n_cases = errors.shape
     selected = []
     for _ in range(k):
+        # Candidates still in the running for this selection (indices into `population`)
         pool = np.arange(n_pop)
+        # Examples are visited in a fresh random order for every selection: different selections therefore favour
+        # different specialists, which is what keeps the population diverse.
         for case in random.sample(range(n_cases), n_cases):
             col = errors[pool, case]
             if col.all():
                 continue  # nobody is right on this example: it cannot discriminate
-            pool = pool[~col]
+            pool = pool[~col]  # keep only the candidates that get this example right
             if len(pool) == 1:
-                break
+                break  # a single candidate is left, the remaining examples cannot change the outcome
+        # Several candidates survived every example (they make the same errors on all examples that could
+        # discriminate): prefer the shortest tree (parsimony), choosing randomly among equally short ones.
         if len(pool) > 1:
             shortest = pool[lengths[pool] == lengths[pool].min()]
             chosen = int(random.choice(list(shortest)))

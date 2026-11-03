@@ -119,7 +119,12 @@ class EvoLearner(BaseConceptLearner):
     _dp_to_prim_type: Dict[OWLDataProperty, Any]
     _dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
     _split_properties: List[OWLDataProperty]
-    _cache: Dict[str, Tuple[float, float]]
+    # Maps the string form of a tree to (quality, fitness, error vector), so identical trees are evaluated only once.
+    _cache: Dict[str, Tuple[float, float, np.ndarray]]
+    # All training examples in a fixed order, positives first. Position i of an individual's `errors` vector refers
+    # to `_example_index[i]`; the first `_n_pos` entries are the positive examples.
+    _example_index: Optional[List[OWLNamedIndividual]]
+    _n_pos: int
 
     def __init__(self,
                  knowledge_base: AbstractKnowledgeBase,
@@ -170,8 +175,13 @@ class EvoLearner(BaseConceptLearner):
             use_inverse (bool): Consider inversed concepts? Defaults to False.
             value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to
                                                 `EntropyValueSplitter`.
-            selection (str): Parent selection, 'tournament' (default) or 'lexicase' (see
-                             :func:`ontolearn.ea_semantic.lexicase_select`).
+            selection (str): How parents are selected. 'tournament' (default) keeps the original behaviour: the best
+                             of `tournament_size` random individuals, judged by the scalar fitness only.
+                             'lexicase' uses each individual's per-example errors instead (see
+                             :func:`ontolearn.ea_semantic.lexicase_select`), so individuals that solve different
+                             subsets of the examples are kept and can be recombined. In a time-matched benchmark it
+                             improved training F1 and reached the goal with fewer concept tests, with no measurable
+                             change in held-out F1.
         """
 
         if quality_func is None:
@@ -350,6 +360,7 @@ class EvoLearner(BaseConceptLearner):
         toolbox.register(ToolboxVocabulary.COMPILE.value, gp.compile, pset=self.pset)
 
         toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION.value, self._fitness_func)
+        # Only the parent selection depends on `self.selection`; crossover, mutation and fitness are shared.
         if self.selection == 'lexicase':
             toolbox.register(ToolboxVocabulary.SELECTION.value, lexicase_select)
         else:
@@ -423,7 +434,8 @@ class EvoLearner(BaseConceptLearner):
 
         verbose = kwargs.pop("verbose", False)
 
-        # Fixed example order (positives first) for the per-example error vectors of the individuals
+        # Fix an order of the training examples (positives first, each sorted for reproducibility). Every individual
+        # evaluated during this fit stores one boolean per example in this order (see `_fitness_func`).
         self._example_index = sorted(self._learning_problem.kb_pos, key=str) + \
             sorted(self._learning_problem.kb_neg, key=str)
         self._n_pos = len(self._learning_problem.kb_pos)
@@ -497,6 +509,15 @@ class EvoLearner(BaseConceptLearner):
                                  len(ind), ind.height)
 
     def _fitness_func(self, individual: Tree):
+        """Evaluate `individual` in place and set its `quality`, `fitness` and `errors`.
+
+        `errors` is a boolean numpy array with one entry per training example (order: `_example_index`), True where
+        the individual's concept misclassifies that example. It is derived from the instances that the reasoner
+        already returned for the quality computation, so it costs no extra reasoning. Results are cached by tree
+        string, and a cache hit restores all three attributes, so an individual has valid `errors` whenever it has a
+        valid fitness (an individual whose fitness was invalidated by crossover or mutation has stale `errors` until
+        it is evaluated again).
+        """
         ind_str = ind_to_string(individual)
         # experimental
         if ind_str in self._cache:
@@ -513,7 +534,15 @@ class EvoLearner(BaseConceptLearner):
             self._number_of_tested_concepts += 1
 
     def _error_vector(self, covered) -> np.ndarray:
-        # True where the example is misclassified: a positive that is not covered or a negative that is covered.
+        """Per-example misclassification vector of a concept.
+
+        Args:
+            covered: The individuals that the concept instantiates (as returned by the knowledge base).
+
+        Returns:
+            A boolean array aligned with `_example_index`: True for a positive example that is not covered and for a
+            negative example that is covered, False for a correctly classified example.
+        """
         pos_n = self._n_pos
         return np.fromiter((((ex in covered) != (i < pos_n)) for i, ex in enumerate(self._example_index)),
                            dtype=bool, count=len(self._example_index))
