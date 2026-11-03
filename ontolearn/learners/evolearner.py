@@ -472,7 +472,7 @@ class EvoLearner(BaseConceptLearner):
                 best_inds_distinct.append(ind)
         best_concepts = [gp.compile(ind, self.pset) for ind in best_inds_distinct[:n]]
 
-        for con, ind in zip(best_concepts, best_inds):
+        for con, ind in zip(best_concepts, best_inds_distinct):
             individuals_count = len(self.kb.individuals_set(con))
             yield EvoLearnerNode(con, concept_len(con), individuals_count, ind.quality.values[0],
                                  len(ind), ind.height)
