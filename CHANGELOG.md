@@ -12,6 +12,18 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Added
+- `TDLForest` (experimental, `ontolearn.learners.TDLForest`): `TDL` with a forest of bagged decision trees on the
+  same binary class-expression features, in a class of its own (`TDL` is unchanged). `mode` selects how a forest
+  becomes a hypothesis: `"feature_selection"` (forest ranks features, one tree on the top `top_k`), `"rules"`
+  (positive-leaf paths of all trees, out-of-bag precision filter, greedy set cover, union), `"vote"` (exact majority
+  vote of 3/5/7 trees as one class expression; combinatorial size, `predict` is the practical interface),
+  `"forest_predictor"` (the forest is the model via `predict`; `best_hypotheses` is the best single tree) and
+  `"tree"` (a plain `TDL` tree with the same interface, as reference). Fits are reproducible given `random_state`,
+  including across processes (the training rows are put in a canonical order, bagging draws rows by position).
+  `examples/benchmark_tdl_forest.py` evaluates it with repeated stratified 5-fold CV (4 repeats), nested 3-fold CV for
+  the hyperparameters, scoring under the reasoner's semantics and problem-level statistics (20 problems). Result: no
+  forest mode beats the single tree; tuned vs. tuned the best (`forest_vote`) is -0.003 F1 (95% CI [-0.012, +0.006]),
+  the others are worse. Kept as an opt-in experiment, not a recommendation.
 - `EvoLearner(selection='lexicase')`: lexicase parent selection (`ontolearn.ea_semantic.lexicase_select`), which
   filters the population on randomly ordered examples and breaks ties toward the shortest tree, so specialists
   that solve different subsets of the examples survive. Every evaluated individual now carries a per-example

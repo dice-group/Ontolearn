@@ -104,6 +104,7 @@ from .roces import ROCES
 from .sparql_query_learner import SPARQLQueryLearner
 from .spell import SPELL
 from .tree_learner import TDL
+from .tree_learner_forest import TDLForest
 from .tree_learner_refinement_inherit import TDL_refinement
 
 __all__ = [
@@ -122,5 +123,6 @@ __all__ = [
     'SPARQLQueryLearner',
     'SPELL',
     'TDL',
+    'TDLForest',
     'TDL_refinement'
 ]
