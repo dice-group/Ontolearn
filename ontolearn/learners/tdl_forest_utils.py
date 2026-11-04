@@ -16,7 +16,7 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
 #: Ways to use a forest in ``TDLForest(mode=...)``; see :class:`ontolearn.learners.tree_learner_forest.TDLForest`.
-FOREST_MODES = ("tree", "feature_selection", "rules", "vote", "forest_predictor")
+FOREST_MODES = ("tree", "feature_selection", "rules", "vote", "forest_predictor", "best_tree", "pruned")
 
 Rule = Tuple[Tuple[int, bool], ...]
 
@@ -177,3 +177,45 @@ def positive_region_predictor(clf: DecisionTreeClassifier, X_train: np.ndarray, 
                            if clf.tree_.children_left[node] == -1
                            and clf.classes_[int(np.argmax(clf.tree_.value[node, 0]))] == 1])
     return lambda rows: np.isin(clf.apply(rows), leaves).astype(int)
+
+
+def rules_f1(X: np.ndarray, y: np.ndarray, rules: Sequence[Rule]) -> float:
+    """F1 of the union of `rules` (positive class) on the rows `X` with labels `y`; 0 if nothing is predicted."""
+    covered = np.zeros(len(y), dtype=bool)
+    for rule in rules:
+        covered |= rule_mask(X, rule)
+    tp = int((covered & (y == 1)).sum())
+    return 0.0 if tp == 0 else 2 * tp / (int(covered.sum()) + int((y == 1).sum()))
+
+
+def prune_rules(rules: Sequence[Rule], X: np.ndarray, y: np.ndarray, tolerance: float = 0.0) -> List[Rule]:
+    """Derefine a union of rules on held-out rows (reduced-error pruning of a class expression).
+
+    The hypothesis is the union of the conjunctions `rules`. Two kinds of edit make it simpler and more general:
+    dropping one literal from a conjunction (a conjunction keeps at least one literal) and dropping a whole
+    conjunction (at least one stays). Each round applies the edit with the best F1 on `(X, y)`; it is accepted if
+    that F1 is not more than `tolerance` below the current one, so with ``tolerance=0`` ties are resolved in favour
+    of the simpler hypothesis. Pruning stops when no edit is acceptable. `(X, y)` must be rows the rules were not
+    fitted on (e.g. out-of-bag rows), otherwise the edits just undo the fit.
+
+    If `y` has no positive row there is nothing to measure and the rules are returned unchanged.
+    """
+    rules = [tuple(r) for r in rules]
+    if not rules or int((y == 1).sum()) == 0:
+        return rules
+    current = rules_f1(X, y, rules)
+    while True:
+        best_score, best = -1.0, None
+        for i, rule in enumerate(rules):
+            edits = []
+            if len(rules) > 1:
+                edits.append(rules[:i] + rules[i + 1:])  # drop the whole conjunction
+            if len(rule) > 1:
+                edits += [rules[:i] + [rule[:j] + rule[j + 1:]] + rules[i + 1:] for j in range(len(rule))]
+            for edit in edits:
+                score = rules_f1(X, y, edit)
+                if score > best_score + 1e-12:  # the first of equally good edits wins: deterministic
+                    best_score, best = score, edit
+        if best is None or best_score < current - tolerance - 1e-12:
+            return rules
+        rules, current = best, best_score

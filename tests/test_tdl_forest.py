@@ -7,8 +7,8 @@ from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import TDL, TDLForest
 from ontolearn.learners.tdl_forest_utils import (candidate_rules, fit_bagged_trees, majority_subsets,
-                                                 positive_leaf_rules, positive_region_predictor, rule_mask,
-                                                 select_rules, top_features)
+                                                 positive_leaf_rules, positive_region_predictor, prune_rules,
+                                                 rule_mask, rules_f1, select_rules, top_features)
 
 
 def _toy(n=120, seed=0):
@@ -58,6 +58,50 @@ def test_select_rules_covers_positives_and_rejects_imprecise_rules():
     assert select_rules(candidate_rules(trees, X, y), X, y, min_precision=1.01) == []
 
 
+def test_prune_rules_drops_what_held_out_rows_do_not_support():
+    # column 0 is the signal; column 1 is noise that the first rule memorised; the second rule is spurious.
+    X = np.array([[1, 1], [1, 0], [1, 0], [0, 1], [0, 0], [0, 0], [0, 1], [0, 0]], dtype=float)
+    y = np.array([1, 1, 1, 0, 0, 0, 0, 0])
+    rules = [((0, True), (1, True)), ((1, True), (0, False))]
+    # on the rows the rules were not fitted on: [1,0] positives need column 1 dropped, the second rule covers negatives
+    pruned = prune_rules(rules, X, y)
+    assert pruned == [((0, True),)]
+    assert rules_f1(X, y, pruned) == 1.0 > rules_f1(X, y, rules)
+
+
+def test_prune_rules_never_gets_worse_and_is_a_noop_without_positives():
+    rng = np.random.RandomState(0)
+    X = (rng.rand(60, 6) > 0.5).astype(float)
+    y = (X[:, 0] * X[:, 1] + (rng.rand(60) > 0.9) > 0).astype(int)
+    rules = [((0, True), (1, True), (2, True)), ((3, False), (4, True)), ((5, True),)]
+    pruned = prune_rules(rules, X, y)
+    assert rules_f1(X, y, pruned) >= rules_f1(X, y, rules)
+    assert sum(map(len, pruned)) <= sum(map(len, rules)) and len(pruned) <= len(rules)
+    assert prune_rules(rules, X, np.zeros(60, dtype=int)) == rules
+    assert prune_rules([], X, y) == []
+
+
+def test_pruned_hypothesis_is_not_longer_than_best_tree():
+    from owlapy import owl_expression_to_dl
+    kb, lp, pos, neg = _uncle()
+    kwargs = dict(knowledge_base=kb, verbose=0, report_classification=False, n_trees=15)
+    best = TDLForest(mode='best_tree', **kwargs).fit(lp)
+    pruned = TDLForest(mode='pruned', **kwargs).fit(lp)
+    assert not pruned.fell_back
+    assert len(owl_expression_to_dl(pruned.best_hypotheses(1))) <= len(owl_expression_to_dl(best.best_hypotheses(1)))
+
+
+def test_a_tree_that_predicts_positive_everywhere_gives_thing():
+    # The root-only tree has the empty rule; its conjunction is Thing (concepts_reducer would return None).
+    kb, lp, pos, neg = _uncle()
+    model = TDLForest(knowledge_base=kb, mode='pruned', verbose=0, report_classification=False)
+    X, y = model.training_data(lp)
+    model.X, model.y = X, y
+    model._use_rules(X, y, X.values.astype(float), y.values.ravel().astype(int), [()])
+    assert model.best_hypotheses(1) == kb.generator.thing
+    assert model.predict_rows(X.values.astype(float)).tolist() == [1] * len(y)
+
+
 def test_majority_subsets_counts():
     assert len(majority_subsets(3)) == 3  # C(3, 2)
     assert len(majority_subsets(5)) == 10  # C(5, 3)
@@ -95,7 +139,8 @@ def _f1(covered, pos, neg):
     return 2 * tp / (2 * tp + fp + (len(pos) - tp))
 
 
-@pytest.mark.parametrize('mode', ['tree', 'feature_selection', 'rules', 'vote', 'forest_predictor'])
+@pytest.mark.parametrize('mode', ['tree', 'feature_selection', 'rules', 'vote', 'forest_predictor', 'best_tree',
+                                  'pruned'])
 def test_every_mode_learns_a_good_hypothesis(mode):
     kb, lp, pos, neg = _uncle()
     model = TDLForest(knowledge_base=kb, mode=mode, verbose=0, report_classification=False, n_trees=15, vote_trees=3,
@@ -110,6 +155,8 @@ def test_every_mode_learns_a_good_hypothesis(mode):
     ('feature_selection', {}),
     ('feature_selection', {'hypothesis_extraction': 'predicted_leaves'}),
     ('rules', {}),
+    ('best_tree', {}),
+    ('pruned', {}),
     ('vote', {'vote_trees': 3, 'kwargs_classifier': {'max_depth': 3}}),
 ])
 def test_row_predictions_equal_retrieving_the_hypothesis(mode, kwargs):

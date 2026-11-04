@@ -12,7 +12,8 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.verbalizer import verbalize_learner_prediction
 
 from .tdl_forest_utils import (FOREST_MODES, candidate_rules, fit_bagged_trees, majority_subsets,
-                               positive_region_predictor, rule_mask, select_rules, top_features)
+                               positive_leaf_rules, positive_region_predictor, prune_rules, rule_mask,
+                               select_rules, top_features)
 from .tree_learner import TDL, concepts_reducer
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,12 @@ class TDLForest(TDL):
         Candidate rules are the root-to-positive-leaf paths of all trees. Each rule's precision is estimated on the
         examples its tree did not see (out-of-bag). Rules with at least ``min_precision`` are picked by greedy set
         cover over the positives and the hypothesis is their union. Readable.
+    ``"best_tree"``
+        Of ``n_trees`` bagged trees, the one with the best out-of-bag F1, read as the union of its positive-leaf
+        conjunctions. The control for ``"pruned"``.
+    ``"pruned"``
+        ``"best_tree"`` derefined on its own out-of-bag rows: literals and whole conjunctions are dropped while the
+        out-of-bag F1 does not fall by more than ``prune_tolerance`` (:func:`prune_rules`).
     ``"vote"``
         The exact majority vote of ``vote_trees`` (3, 5 or 7) trees as a class expression: the union over all
         majority subsets of the intersection of the members' expressions. Exact, but its size is combinatorial in
@@ -54,6 +61,7 @@ class TDLForest(TDL):
         n_trees: Number of bagged trees (``feature_selection``, ``rules``, ``forest_predictor``).
         vote_trees: Number of voters for ``vote``; odd, between 3 and 7.
         top_k: Number of features kept by ``feature_selection``.
+        prune_tolerance: Largest out-of-bag F1 drop an edit may cause in ``pruned``.
         min_precision: Minimum out-of-bag precision (Laplace-corrected) of a rule in ``rules``.
         max_features: Features tried per split (sklearn semantics, ``"sqrt"`` by default).
         random_state: Seed of the bootstrap samples and of the trees; fits are deterministic given the seed.
@@ -61,7 +69,8 @@ class TDLForest(TDL):
     """
 
     def __init__(self, knowledge_base, mode: str = "feature_selection", n_trees: int = 25, vote_trees: int = 5,
-                 top_k: int = 30, min_precision: float = 0.8, max_features="sqrt", random_state: int = 0, **kwargs):
+                 top_k: int = 30, min_precision: float = 0.8, max_features="sqrt", random_state: int = 0,
+                 prune_tolerance: float = 0.0, **kwargs):
         if mode not in FOREST_MODES:
             raise ValueError(f"mode must be one of {FOREST_MODES}. Currently: {mode!r}")
         if mode == "vote" and (vote_trees % 2 == 0 or not 3 <= vote_trees <= 7):
@@ -72,6 +81,7 @@ class TDLForest(TDL):
         self.mode = mode
         self.n_trees, self.vote_trees, self.top_k = n_trees, vote_trees, top_k
         self.min_precision, self.max_features, self.random_state = min_precision, max_features, random_state
+        self.prune_tolerance = prune_tolerance
         self.forest: List = []  # fitted bagged trees ('vote', 'forest_predictor')
         self.selected_features: Optional[list] = None  # columns kept by 'feature_selection'
         self.fell_back = False
@@ -152,15 +162,42 @@ class TDLForest(TDL):
             self.fell_back = True
             self._single_tree(X, y, list(range(X.shape[1])), Xv, yv)
             return
+        self._use_rules(X, y, Xv, yv, chosen)
+
+    def _fit_best_tree(self, X, y, Xv, yv, trees):
+        self._use_rules(X, y, Xv, yv, positive_leaf_rules(self._best_oob_tree(trees, yv, Xv)[0]))
+
+    def _fit_pruned(self, X, y, Xv, yv, trees):
+        """The tree of ``best_tree``, derefined on its out-of-bag rows (see :func:`prune_rules`)."""
+        clf, oob = self._best_oob_tree(trees, yv, Xv)
+        self._use_rules(X, y, Xv, yv, prune_rules(positive_leaf_rules(clf), Xv[oob], yv[oob], self.prune_tolerance))
+
+    @staticmethod
+    def _best_oob_tree(trees, yv, Xv):
+        """The (tree, out-of-bag rows) with the best out-of-bag F1 (the first maximum: deterministic)."""
+        def oob_f1(tree):
+            rows = tree[1] if len(tree[1]) > 0 else np.arange(len(yv))
+            return sklearn.metrics.f1_score(yv[rows], tree[0].predict(Xv[rows]), zero_division=0)
+        return max(trees, key=oob_f1)
+
+    def _use_rules(self, X, y, Xv, yv, rules):
+        """Make the union of the conjunctions `rules` (lists of ``(column, holds)``) the hypothesis and the model."""
+        if not rules:
+            logger.warning("No positive rule was found; falling back to a single tree.")
+            self.fell_back = True
+            self._single_tree(X, y, list(range(X.shape[1])), Xv, yv)
+            return
+        thing = self.knowledge_base.generator.thing  # the empty conjunction: a tree whose root already predicts positive
         conjunctions = [concepts_reducer([X.columns[c] if holds else X.columns[c].get_object_complement_of()
-                                          for c, holds in rule], OWLObjectIntersectionOf) for rule in chosen]
+                                          for c, holds in rule], OWLObjectIntersectionOf) if rule else thing
+                        for rule in rules]
         covered = np.zeros(len(yv), dtype=bool)
-        for rule in chosen:
+        for rule in rules:
             covered |= rule_mask(Xv, rule)
         self._set_hypotheses(conjunctions)
         self._set_report(y, covered.astype(int))
-        self._row_predictor = lambda rows: np.any([rule_mask(rows, rule) for rule in chosen], axis=0).astype(int)
-        self._used_columns = sorted({c for rule in chosen for c, _ in rule})
+        self._row_predictor = lambda rows: np.any([rule_mask(rows, rule) for rule in rules], axis=0).astype(int)
+        self._used_columns = sorted({c for rule in rules for c, _ in rule})
 
     def _fit_vote(self, X, y, Xv, yv, trees):
         thing, nothing = self.knowledge_base.generator.thing, self.knowledge_base.generator.nothing

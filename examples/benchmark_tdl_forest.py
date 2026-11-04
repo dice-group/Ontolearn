@@ -42,6 +42,8 @@ UNTUNED = {
     'vote5': ('vote', {'vote_trees': 5}, 'predict'),
     'forest_tree': ('forest_predictor', {}, 'hypothesis'),
     'forest_vote': ('forest_predictor', {}, 'predict'),
+    'best_tree': ('best_tree', {}, 'hypothesis'),  # the control of 'pruned': same tree, not derefined
+    'pruned': ('pruned', {}, 'hypothesis'),
 }
 # name -> (mode, grid of parameter dicts (simplest first, ties keep the first), scoring)
 TUNED = {
@@ -53,9 +55,14 @@ TUNED = {
                                            for n, f, leaf in itertools.product((25, 100), ('sqrt', None), (1, 3))],
                       'predict'),
 }
+_TREE_GRID = [{'kwargs_classifier': {'max_depth': d, 'min_samples_leaf': leaf}}
+              for d, leaf in itertools.product((None, 3, 5), (1, 2, 5))]
+TUNED['best_tree_t'] = ('best_tree', _TREE_GRID, 'hypothesis')
+TUNED['pruned_t'] = ('pruned', _TREE_GRID, 'hypothesis')
 CONFIGS = list(UNTUNED) + list(TUNED)
-BASELINES = {'untuned': 'tree', 'tuned': 'tree_t'}  # what each family of configurations is compared to
-FAMILIES = {'untuned': [c for c in UNTUNED if c != 'tree'], 'tuned': [c for c in TUNED if c != 'tree_t']}
+BASELINES = {'untuned': 'tree', 'tuned': 'tree_t', 'derefinement, untuned': 'best_tree', 'derefinement, tuned': 'best_tree_t'}  # what each family of configurations is compared to
+FAMILIES = {'untuned': [c for c in UNTUNED if c != 'tree'], 'tuned': [c for c in TUNED if c != 'tree_t'],
+            'derefinement, untuned': ['pruned'], 'derefinement, tuned': ['pruned_t']}  # pruned vs. its unpruned control
 
 with open('LPs/Family/lps.json') as _f:
     _FAMILY = list(json.load(_f)['problems'])
@@ -74,6 +81,9 @@ def _scores(predicted_positive, pos, neg):
     fn, tn = len(pos) - tp, len(neg) - fp
     f1 = 0.0 if tp == 0 else 2 * tp / (2 * tp + fp + fn)
     return f1, (tp + tn) / (len(pos) + len(neg))
+
+
+_ONLY = None  # restrict run_fold to these configurations (set by --configs; inherited by forked workers)
 
 
 def run_fold(task):
@@ -150,6 +160,7 @@ def run_fold(task):
     rows = []
     jobs = [(name, mode, [params], scoring) for name, (mode, params, scoring) in UNTUNED.items()]
     jobs += [(name, mode, grid, scoring) for name, (mode, grid, scoring) in TUNED.items()]
+    jobs = [j for j in jobs if _ONLY is None or j[0] in _ONLY]
     for name, mode, grid, scoring in jobs:
         start = time.time()
         params = grid[0] if len(grid) == 1 else tune(mode, grid)
@@ -175,10 +186,12 @@ def cmd_run(args):
     done = set()
     try:
         with open(args.out) as f:
-            done = {(r['problem'], r['repeat'], r['fold']) for r in map(json.loads, f)}
+            done = {(r['problem'], r['repeat'], r['fold']) for r in map(json.loads, f)}  # per file: new configs go to a new file
     except FileNotFoundError:
         pass
     tasks = [t for t in tasks if t not in done]
+    global _ONLY
+    _ONLY = set(args.configs.split(',')) if args.configs else None
     print(f'{len(tasks)} outer folds to do ({len(done)} done in {args.out})', flush=True)
     # ProcessPoolExecutor (non-daemonic workers): owlready2 spawns a child process while parsing an ontology
     with ProcessPoolExecutor(args.workers) as pool, open(args.out, 'a') as out:
@@ -213,7 +226,9 @@ def corrected_resampled_t(diffs, test_fraction):
 
 def cmd_report(args):
     from scipy.stats import friedmanchisquare, wilcoxon
-    rows = [json.loads(line) for line in open(args.out)]
+    rows = [json.loads(line) for out in args.out for line in open(out)]
+    global CONFIGS
+    CONFIGS = [c for c in CONFIGS if any(r['config'] == c for r in rows)]
     problems = [p for p in PROBLEMS if any(r['problem'] == p for r in rows)]
     # per[metric][config][problem] -> {(repeat, fold): value}, so differences are paired by fold
     per = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
@@ -251,6 +266,9 @@ def cmd_report(args):
     rng = np.random.RandomState(0)
     for family, configs in FAMILIES.items():
         base = BASELINES[family]
+        configs = [c for c in configs if c in CONFIGS]
+        if base not in CONFIGS or not configs:
+            continue
         print(f'== {family} variants vs. {base}: problem-level paired comparison (F1) ==')
         print(f'{"config":<14}{"mean diff":>10}{"95% CI (bootstrap over problems)":>36}{"w/t/l":>10}{"Wilcoxon p":>12}'
               f'{"Holm p":>9}   problems significantly better/worse (corrected t, p<0.05)')
@@ -271,7 +289,9 @@ def cmd_report(args):
                   f'   {better}/{worse}')
         print()
 
-    for name in ('rules', 'rules_t'):
+    for name in ('rules', 'rules_t', 'best_tree', 'best_tree_t', 'pruned', 'pruned_t'):
+        if not any(r['config'] == name for r in rows):
+            continue
         share = np.mean([r['fell_back'] for r in rows if r['config'] == name])
         print(f'{name}: no rule reached min_precision and a single tree was returned in {share:.0%} of the folds')
     print()
@@ -290,6 +310,11 @@ if __name__ == '__main__':
     ap.add_argument('cmd', choices=['run', 'report'])
     ap.add_argument('--repeats', type=int, default=4)
     ap.add_argument('--workers', type=int, default=16)
-    ap.add_argument('--out', default='tdl_forest_results.jsonl')
+    ap.add_argument('--out', action='append', help='results file; `report` accepts several and merges them')
+    ap.add_argument('--configs', help='run: comma separated configurations to run (default all)')
     a = ap.parse_args()
+    a.out = a.out or ['tdl_forest_results.jsonl']
+    if a.cmd == 'run':
+        assert len(a.out) == 1, 'run writes to one file'
+        a.out = a.out[0]
     {'run': cmd_run, 'report': cmd_report}[a.cmd](a)
