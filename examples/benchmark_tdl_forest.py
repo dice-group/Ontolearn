@@ -57,12 +57,21 @@ TUNED = {
 }
 _TREE_GRID = [{'kwargs_classifier': {'max_depth': d, 'min_samples_leaf': leaf}}
               for d, leaf in itertools.product((None, 3, 5), (1, 2, 5))]
+_TOLERANCES = [{'prune_tolerance': t} for t in (0.0, 0.01, 0.02, 0.05, 0.1)]
+LAMBDA = 0.01  # F1 points per doubling of the expression length, used as a tuning objective by the '*_l' configs
+UNTUNED['full_rules'] = ('full_rules', {}, 'hypothesis')  # the control of 'pruned_full': same tree, not derefined
+UNTUNED['pruned_full0'] = ('pruned_full', {'prune_tolerance': 0.0}, 'hypothesis')  # lossless: only removes redundancy
+TUNED['pruned_full_t'] = ('pruned_full', _TOLERANCES, 'hypothesis')  # tolerance tuned for F1
+# the same, but tuned for F1 - LAMBDA * log2(length): the 4th element is the weight of the length
+TUNED['tree_l'] = ('tree', _TREE_GRID, 'hypothesis', LAMBDA)
+TUNED['pruned_full_l'] = ('pruned_full', _TOLERANCES, 'hypothesis', LAMBDA)
 TUNED['best_tree_t'] = ('best_tree', _TREE_GRID, 'hypothesis')
 TUNED['pruned_t'] = ('pruned', _TREE_GRID, 'hypothesis')
 CONFIGS = list(UNTUNED) + list(TUNED)
-BASELINES = {'untuned': 'tree', 'tuned': 'tree_t', 'derefinement, untuned': 'best_tree', 'derefinement, tuned': 'best_tree_t'}  # what each family of configurations is compared to
+BASELINES = {'untuned': 'tree', 'tuned': 'tree_t', 'derefinement, untuned': 'best_tree', 'derefinement, tuned': 'best_tree_t',
+             'full-tree derefinement': 'full_rules'}  # what each family of configurations is compared to
 FAMILIES = {'untuned': [c for c in UNTUNED if c != 'tree'], 'tuned': [c for c in TUNED if c != 'tree_t'],
-            'derefinement, untuned': ['pruned'], 'derefinement, tuned': ['pruned_t']}  # pruned vs. its unpruned control
+            'derefinement, untuned': ['pruned'], 'derefinement, tuned': ['pruned_t'], 'full-tree derefinement': ['pruned_full0']}  # pruned vs. its unpruned control
 
 with open('LPs/Family/lps.json') as _f:
     _FAMILY = list(json.load(_f)['problems'])
@@ -142,8 +151,9 @@ def run_fold(task):
         fn = int(((pred_positive == 0) & (truth == 1)).sum())
         return 0.0 if tp == 0 else 2 * tp / (2 * tp + fp + fn)
 
-    def tune(mode, grid):
-        """The parameters with the best mean F1 over an inner CV of the training fold (never sees the test fold)."""
+    def tune(mode, grid, length_weight=0.0):
+        """The parameters with the best mean F1 (minus `length_weight` per doubling of the hypothesis length) over an
+        inner CV of the training fold; the test fold is never seen."""
         inner = list(StratifiedKFold(INNER_FOLDS, shuffle=True, random_state=seed).split(np.zeros(len(y_train)),
                                                                                          y_train))
         best, best_score = None, -1.0
@@ -152,18 +162,21 @@ def run_fold(task):
             for tr, va in inner:
                 model = make(mode, params)
                 model.fit_features(X.iloc[tr], y.iloc[tr])
-                score += inner_f1(model.predict(list(X.index[va]), proba=False), y_train[va]) / len(inner)
+                fold_score = inner_f1(model.predict(list(X.index[va]), proba=False), y_train[va])
+                if length_weight:
+                    fold_score -= length_weight * np.log2(len(owl_expression_to_dl(model.best_hypotheses(1))))
+                score += fold_score / len(inner)
             if score > best_score + 1e-12:  # ties keep the earlier (simpler) setting
                 best, best_score = params, score
         return best
 
     rows = []
-    jobs = [(name, mode, [params], scoring) for name, (mode, params, scoring) in UNTUNED.items()]
-    jobs += [(name, mode, grid, scoring) for name, (mode, grid, scoring) in TUNED.items()]
+    jobs = [(name, mode, [params], scoring) for name, (mode, params, scoring) in UNTUNED.items()]  # (+ length weight)
+    jobs += [(name, mode, grid, scoring, *rest) for name, (mode, grid, scoring, *rest) in TUNED.items()]
     jobs = [j for j in jobs if _ONLY is None or j[0] in _ONLY]
-    for name, mode, grid, scoring in jobs:
+    for name, mode, grid, scoring, *weight in jobs:
         start = time.time()
-        params = grid[0] if len(grid) == 1 else tune(mode, grid)
+        params = grid[0] if len(grid) == 1 else tune(mode, grid, weight[0] if weight else 0.0)
         model = make(mode, params)
         model.fit_features(X, y)
         fit_time = time.time() - start
@@ -222,6 +235,56 @@ def corrected_resampled_t(diffs, test_fraction):
         return 1.0 if d.mean() == 0 else 0.0
     variance = (1 / len(d) + test_fraction / (1 - test_fraction)) * d.var(ddof=1)
     return float(2 * student.sf(abs(d.mean() / np.sqrt(variance)), len(d) - 1))
+
+
+LAMBDAS = (0.0, 0.005, 0.01, 0.02, 0.05)  # F1 points charged per doubling of the length
+
+
+def length_aware_report(per, problems, rng):
+    """Judge the configurations by F1 *and* length (characters of the DL rendering of the hypothesis).
+
+    The length of a hypothesis is a quality in its own right (readability, less overfitting). Three views:
+    the Pareto front of (F1, length); the average rank under S = F1 - lambda * log2(length) for several lambdas
+    (a doubling of the length costs lambda F1); and the break-even lambda against the tuned tree, the exchange rate at
+    which a configuration that is shorter but less accurate becomes the better choice.
+    """
+    configs = [c for c in CONFIGS if all(per['length'][c].get(p) for p in problems)]
+    f1 = {c: np.array([np.mean(list(per['f1'][c][p].values())) for p in problems]) for c in configs}
+    log_length = {c: np.array([np.mean(np.log2(list(per['length'][c][p].values()))) for p in problems])
+                  for c in configs}
+    print('\n== length-aware evaluation (length = characters of the DL expression; log2 per doubling) ==')
+    means = {c: (f1[c].mean(), log_length[c].mean()) for c in configs}
+    front = [c for c in configs if not any(o != c and means[o][0] >= means[c][0] and means[o][1] <= means[c][1] and
+                                           means[o] != means[c] for o in configs)]
+    print(f'{"config":<15}{"F1":>8}{"log2 len":>10}{"geo len":>9}  Pareto' + ''.join(f'{"rank@" + str(x):>10}' for x in LAMBDAS))
+    ranks = {}
+    for lam in LAMBDAS:
+        matrix = np.array([[f1[c][i] - lam * log_length[c][i] for c in configs] for i in range(len(problems))])
+        ranks[lam] = np.mean([(-row).argsort().argsort() + 1 for row in matrix], axis=0)
+    for k, c in enumerate(sorted(configs, key=lambda c: -means[c][0])):
+        index = configs.index(c)
+        print(f'{c:<15}{means[c][0]:>8.4f}{means[c][1]:>10.2f}{2 ** means[c][1]:>9.0f}  {"*" if c in front else " ":<6}' +
+              ''.join(f'{ranks[lam][index]:>11.2f}' for lam in LAMBDAS))
+    base = BASELINES['tuned']
+    print(f'\nbreak-even lambda vs. {base}: delta F1 / delta log2(length). A configuration that is shorter and less '
+          f'accurate is the better choice once a doubling of the length is worth more than this many F1 points.')
+    for c in configs:
+        if c == base:
+            continue
+        d_f1, d_len = f1[c] - f1[base], log_length[c] - log_length[base]
+        boot = []
+        for _ in range(5000):
+            idx = rng.randint(0, len(d_f1), len(d_f1))
+            if abs(d_len[idx].mean()) > 1e-9:
+                boot.append(d_f1[idx].mean() / d_len[idx].mean())
+        ratio = d_f1.mean() / d_len.mean() if abs(d_len.mean()) > 1e-9 else float('nan')
+        verdict = ('dominates (F1 up, length down)' if d_f1.mean() >= 0 and d_len.mean() <= 0 else
+                   'dominated (F1 down, length up)' if d_f1.mean() <= 0 and d_len.mean() >= 0 else
+                   f'shorter, preferred if lambda > {ratio:.4f}' if d_len.mean() < 0 else
+                   f'longer, preferred if lambda < {ratio:.4f}')
+        print(f'{c:<15}dF1={d_f1.mean():+.4f}  dlog2len={d_len.mean():+.2f}  '
+              f'ratio 95% CI [{np.percentile(boot, 2.5):+.4f}, {np.percentile(boot, 97.5):+.4f}]  {verdict}')
+    print()
 
 
 def cmd_report(args):
@@ -288,6 +351,8 @@ def cmd_report(args):
                   f'{f"{(d > 0).sum()}/{(d == 0).sum()}/{(d < 0).sum()}":>10}{p_raw:>12.4f}{p_adj:>9.4f}'
                   f'   {better}/{worse}')
         print()
+
+    length_aware_report(per, problems, rng)
 
     for name in ('rules', 'rules_t', 'best_tree', 'best_tree_t', 'pruned', 'pruned_t'):
         if not any(r['config'] == name for r in rows):

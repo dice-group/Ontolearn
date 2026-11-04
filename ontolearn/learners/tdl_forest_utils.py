@@ -16,7 +16,7 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
 #: Ways to use a forest in ``TDLForest(mode=...)``; see :class:`ontolearn.learners.tree_learner_forest.TDLForest`.
-FOREST_MODES = ("tree", "feature_selection", "rules", "vote", "forest_predictor", "best_tree", "pruned")
+FOREST_MODES = ("tree", "feature_selection", "rules", "vote", "forest_predictor", "best_tree", "pruned", "full_rules", "pruned_full")
 
 Rule = Tuple[Tuple[int, bool], ...]
 
@@ -189,33 +189,61 @@ def rules_f1(X: np.ndarray, y: np.ndarray, rules: Sequence[Rule]) -> float:
 
 
 def prune_rules(rules: Sequence[Rule], X: np.ndarray, y: np.ndarray, tolerance: float = 0.0) -> List[Rule]:
-    """Derefine a union of rules on held-out rows (reduced-error pruning of a class expression).
+    """Derefine a union of rules on the rows `(X, y)` (reduced-error pruning of a class expression).
 
     The hypothesis is the union of the conjunctions `rules`. Two kinds of edit make it simpler and more general:
     dropping one literal from a conjunction (a conjunction keeps at least one literal) and dropping a whole
-    conjunction (at least one stays). Each round applies the edit with the best F1 on `(X, y)`; it is accepted if
-    that F1 is not more than `tolerance` below the current one, so with ``tolerance=0`` ties are resolved in favour
-    of the simpler hypothesis. Pruning stops when no edit is acceptable. `(X, y)` must be rows the rules were not
-    fitted on (e.g. out-of-bag rows), otherwise the edits just undo the fit.
+    conjunction (at least one stays). Each round applies the edit with the best F1 on `(X, y)` (the first of equally
+    good edits, so the result is deterministic). It is accepted if the F1 stays within `tolerance` of the F1 of the
+    *unpruned* rules; with ``tolerance=0`` that means ties are resolved in favour of the simpler hypothesis, which
+    removes redundancy without changing the F1. Pruning stops when no edit is acceptable.
+
+    The rows decide what is pruned. On rows the rules were fitted on (training rows) only a positive `tolerance`
+    simplifies beyond redundancy, and it has to be tuned; on rows the rules did not see (e.g. out-of-bag rows) edits
+    also undo overfitting.
 
     If `y` has no positive row there is nothing to measure and the rules are returned unchanged.
     """
     rules = [tuple(r) for r in rules]
     if not rules or int((y == 1).sum()) == 0:
         return rules
-    current = rules_f1(X, y, rules)
+    positive = y == 1
+    n_positive = int(positive.sum())
+
+    def mask_of(literals):
+        mask = np.ones(len(y), dtype=bool)
+        for column, holds in literals:
+            mask &= (X[:, column] > 0.5) == holds
+        return mask
+
+    def f1_of(covered):
+        tp = int((covered & positive).sum())
+        return 0.0 if tp == 0 else 2 * tp / (int(covered.sum()) + n_positive)
+
+    masks = [mask_of(r) for r in rules]
+    count = np.sum(masks, axis=0)  # how many rules cover each row: the union without rule i is count - masks[i] > 0
+    floor = f1_of(count > 0) - tolerance - 1e-12
     while True:
         best_score, best = -1.0, None
         for i, rule in enumerate(rules):
-            edits = []
-            if len(rules) > 1:
-                edits.append(rules[:i] + rules[i + 1:])  # drop the whole conjunction
-            if len(rule) > 1:
-                edits += [rules[:i] + [rule[:j] + rule[j + 1:]] + rules[i + 1:] for j in range(len(rule))]
-            for edit in edits:
-                score = rules_f1(X, y, edit)
-                if score > best_score + 1e-12:  # the first of equally good edits wins: deterministic
-                    best_score, best = score, edit
-        if best is None or best_score < current - tolerance - 1e-12:
+            rest = count - masks[i]
+            if len(rules) > 1:  # drop the whole conjunction
+                score = f1_of(rest > 0)
+                if score > best_score + 1e-12:
+                    best_score, best = score, (i, None, None)
+            if len(rule) > 1:  # drop one literal
+                for j in range(len(rule)):
+                    shorter = rule[:j] + rule[j + 1:]
+                    mask = mask_of(shorter)
+                    score = f1_of((rest + mask) > 0)
+                    if score > best_score + 1e-12:
+                        best_score, best = score, (i, shorter, mask)
+        if best is None or best_score < floor:
             return rules
-        rules, current = best, best_score
+        i, shorter, mask = best
+        if shorter is None:
+            count = count - masks[i]
+            del rules[i], masks[i]
+        else:
+            count = count - masks[i] + mask
+            rules[i], masks[i] = shorter, mask

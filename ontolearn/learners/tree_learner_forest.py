@@ -5,6 +5,7 @@ from typing import Callable, List, Optional, Set
 import numpy as np
 import pandas as pd
 import sklearn
+from sklearn.tree import DecisionTreeClassifier
 from owlapy.class_expression import OWLClassExpression, OWLObjectIntersectionOf, OWLObjectUnionOf
 from owlapy.owl_individual import OWLNamedIndividual
 
@@ -43,6 +44,14 @@ class TDLForest(TDL):
     ``"pruned"``
         ``"best_tree"`` derefined on its own out-of-bag rows: literals and whole conjunctions are dropped while the
         out-of-bag F1 does not fall by more than ``prune_tolerance`` (:func:`prune_rules`).
+    ``"full_rules"``
+        One tree on all rows (no bagging), read as the union of its positive-leaf conjunctions. The control for
+        ``"pruned_full"``.
+    ``"pruned_full"``
+        ``"full_rules"`` derefined on the training rows themselves: literals and conjunctions are dropped while the
+        training F1 does not fall by more than ``prune_tolerance`` (:func:`prune_rules`). ``prune_tolerance=0`` only
+        removes redundancy; larger values trade training F1 for shorter expressions and should be tuned by
+        cross-validation.
     ``"vote"``
         The exact majority vote of ``vote_trees`` (3, 5 or 7) trees as a class expression: the union over all
         majority subsets of the intersection of the members' expressions. Exact, but its size is combinatorial in
@@ -61,7 +70,8 @@ class TDLForest(TDL):
         n_trees: Number of bagged trees (``feature_selection``, ``rules``, ``forest_predictor``).
         vote_trees: Number of voters for ``vote``; odd, between 3 and 7.
         top_k: Number of features kept by ``feature_selection``.
-        prune_tolerance: Largest out-of-bag F1 drop an edit may cause in ``pruned``.
+        prune_tolerance: Largest F1 drop (against the unpruned rules) that pruning may cause in ``pruned`` (out-of-bag
+            rows) and ``pruned_full`` (training rows).
         min_precision: Minimum out-of-bag precision (Laplace-corrected) of a rule in ``rules``.
         max_features: Features tried per split (sklearn semantics, ``"sqrt"`` by default).
         random_state: Seed of the bootstrap samples and of the trees; fits are deterministic given the seed.
@@ -133,7 +143,7 @@ class TDLForest(TDL):
         if self.mode == "tree":
             self._single_tree(X, y, list(range(X.shape[1])), Xv, yv)
             return
-        n = self.vote_trees if self.mode == "vote" else self.n_trees
+        n = {"vote": self.vote_trees, "full_rules": 0, "pruned_full": 0}.get(self.mode, self.n_trees)  # no bagging
         trees = fit_bagged_trees(Xv, yv, n, self.max_features, self.kwargs_classifier, self.random_state)
         getattr(self, f"_fit_{self.mode}")(X, y, Xv, yv, trees)
 
@@ -171,6 +181,19 @@ class TDLForest(TDL):
         """The tree of ``best_tree``, derefined on its out-of-bag rows (see :func:`prune_rules`)."""
         clf, oob = self._best_oob_tree(trees, yv, Xv)
         self._use_rules(X, y, Xv, yv, prune_rules(positive_leaf_rules(clf), Xv[oob], yv[oob], self.prune_tolerance))
+
+    def _fit_full_rules(self, X, y, Xv, yv, trees):
+        self._use_rules(X, y, Xv, yv, positive_leaf_rules(self._full_tree(Xv, yv)))
+
+    def _fit_pruned_full(self, X, y, Xv, yv, trees):
+        """The tree on all rows of ``full_rules``, derefined on the training rows (see :func:`prune_rules`)."""
+        rules = positive_leaf_rules(self._full_tree(Xv, yv))
+        self._use_rules(X, y, Xv, yv, prune_rules(rules, Xv, yv, self.prune_tolerance))
+
+    def _full_tree(self, Xv, yv):
+        kwargs = dict(self.kwargs_classifier)
+        kwargs["random_state"] = self.random_state
+        return DecisionTreeClassifier(**kwargs).fit(Xv, yv)
 
     @staticmethod
     def _best_oob_tree(trees, yv, Xv):

@@ -2,6 +2,7 @@ import json
 
 import numpy as np
 import pytest
+from sklearn.metrics import f1_score as sklearn_f1
 from owlapy.owl_individual import OWLNamedIndividual
 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -91,6 +92,32 @@ def test_pruned_hypothesis_is_not_longer_than_best_tree():
     assert len(owl_expression_to_dl(pruned.best_hypotheses(1))) <= len(owl_expression_to_dl(best.best_hypotheses(1)))
 
 
+def test_prune_tolerance_is_measured_against_the_unpruned_rules():
+    rng = np.random.RandomState(1)
+    X = (rng.rand(80, 8) > 0.5).astype(float)
+    y = ((X[:, 0] * X[:, 1] + X[:, 2] * X[:, 3]) > 0).astype(int)
+    rules = [((0, True), (1, True), (4, False)), ((2, True), (3, True), (5, True)), ((6, True), (7, True))]
+    start, previous_size = rules_f1(X, y, rules), None
+    for tolerance in (0.0, 0.05, 0.2, 1.0):
+        pruned = prune_rules(rules, X, y, tolerance)
+        assert rules_f1(X, y, pruned) >= start - tolerance - 1e-9  # no drift from edit to edit
+        size = sum(map(len, pruned))
+        assert previous_size is None or size <= previous_size  # more tolerance never keeps more
+        previous_size = size
+    assert len(prune_rules(rules, X, y, 1.0)) >= 1  # at least one conjunction always stays
+
+
+def test_pruned_full_with_zero_tolerance_keeps_the_training_f1():
+    kb, lp, pos, neg = _uncle()
+    kwargs = dict(knowledge_base=kb, verbose=0, report_classification=False)
+    full = TDLForest(mode='full_rules', **kwargs).fit(lp)
+    pruned = TDLForest(mode='pruned_full', prune_tolerance=0.0, **kwargs).fit(lp)
+    rows, y = full.X.values.astype(float), full.y.values.ravel().astype(int)
+    assert rules_f1(rows, y, [()]) <= 1  # sanity of the helper
+    f1 = lambda m: sklearn_f1(y, m.predict_rows(rows))  # noqa: E731
+    assert f1(pruned) == pytest.approx(f1(full))
+
+
 def test_a_tree_that_predicts_positive_everywhere_gives_thing():
     # The root-only tree has the empty rule; its conjunction is Thing (concepts_reducer would return None).
     kb, lp, pos, neg = _uncle()
@@ -140,7 +167,7 @@ def _f1(covered, pos, neg):
 
 
 @pytest.mark.parametrize('mode', ['tree', 'feature_selection', 'rules', 'vote', 'forest_predictor', 'best_tree',
-                                  'pruned'])
+                                  'pruned', 'full_rules', 'pruned_full'])
 def test_every_mode_learns_a_good_hypothesis(mode):
     kb, lp, pos, neg = _uncle()
     model = TDLForest(knowledge_base=kb, mode=mode, verbose=0, report_classification=False, n_trees=15, vote_trees=3,
@@ -157,6 +184,8 @@ def test_every_mode_learns_a_good_hypothesis(mode):
     ('rules', {}),
     ('best_tree', {}),
     ('pruned', {}),
+    ('full_rules', {}),
+    ('pruned_full', {'prune_tolerance': 0.05}),
     ('vote', {'vote_trees': 3, 'kwargs_classifier': {'max_depth': 3}}),
 ])
 def test_row_predictions_equal_retrieving_the_hypothesis(mode, kwargs):
