@@ -182,14 +182,23 @@ def run_fold(task):
         fit_time = time.time() - start
         if scoring == 'predict':
             predicted = {i for i, p in zip(test_inds, model.predict(test_inds, proba=False)) if p == 1}
+            retrieval = [None]
             length = None  # the equivalent expression has C(n, n//2+1) conjunctions
         else:
             hypothesis = model.best_hypotheses(1)
+            # Time to retrieve all instances of the hypothesis from the KB: one warm-up (fills the reasoner's lazy
+            # per-class/per-property caches), then the minimum of three runs. Cold-start costs are not what we compare.
+            kb.individuals(hypothesis)
+            retrieval = []
+            for _ in range(3):
+                t0 = time.perf_counter()
+                kb.individuals(hypothesis)
+                retrieval.append(time.perf_counter() - t0)
             predicted = set(kb.individuals(hypothesis)) & set(test_inds)
             length = len(owl_expression_to_dl(hypothesis))
         f1, accuracy = _scores(predicted, p_te, n_te)
         rows.append(dict(problem=problem, repeat=repeat, fold=fold, config=name, f1=f1, accuracy=accuracy,
-                         length=length, fit_time=fit_time, params=params if len(grid) > 1 else None,
+                         length=length, fit_time=fit_time, retrieval_time=None if retrieval[0] is None else min(retrieval), params=params if len(grid) > 1 else None,
                          n_test=len(test_inds), fell_back=model.fell_back))
     return rows
 
