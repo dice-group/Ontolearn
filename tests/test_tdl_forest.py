@@ -197,8 +197,8 @@ def test_row_predictions_equal_retrieving_the_hypothesis(mode, kwargs):
     individuals = sorted(pos | neg, key=str)
     covered = set(kb.individuals(model.best_hypotheses(1)))
     assert model.predict(individuals, proba=False).tolist() == [1 if i in covered else 0 for i in individuals]
-    # The row predictor itself, on rows built from the reasoner (not from the training matrix: a few of its cells,
-    # e.g. for "∀ r.⊤", disagree with the reasoner, see test_training_matrix_semantics below).
+    # The row predictor itself, on rows built from the reasoner (see test_training_matrix_semantics below: the training
+    # matrix agrees with the reasoner, so this is the same as using its rows).
     rows = np.array([[1.0 if i in set(kb.individuals(c)) else 0.0 for c in model.X.columns] for i in individuals])
     assert model.predict_rows(rows).tolist() == [1 if i in covered else 0 for i in individuals]
 
@@ -244,16 +244,12 @@ def test_fits_are_deterministic_across_processes():
 
 
 def test_training_matrix_semantics():
-    # Documents a property of TDL's feature extraction that the evaluation has to respect: a handful of cells of the
-    # training matrix (universal restrictions such as "∀ hasParent⁻.⊤", vacuously true for individuals without such
-    # a successor) say False where the reasoner says True. Everything else agrees. Hypotheses are therefore always
-    # scored by retrieving them from the reasoner, never from the matrix.
+    # Every cell of the training matrix agrees with the reasoner (it did not before TDL stopped creating the tautological
+    # feature "∀ r⁻.⊤", see tests/test_tdl.py). Hypotheses are still scored by retrieving them from the reasoner.
     kb, lp, pos, neg = _uncle()
     X, _ = TDLForest(knowledge_base=kb, verbose=0).training_data(lp)
-    disagreeing = [c for c in X.columns
-                   if any((i in set(kb.individuals(c))) != bool(X.loc[i, c]) for i in X.index)]
-    assert 0 < len(disagreeing) <= 0.02 * X.shape[1]
-    assert all(type(c).__name__ == 'OWLObjectAllValuesFrom' for c in disagreeing)
+    disagreeing = [c for c in X.columns if any((i in set(kb.individuals(c))) != bool(X.loc[i, c]) for i in X.index)]
+    assert disagreeing == []
 
 
 def test_tree_mode_is_exactly_tdl():
