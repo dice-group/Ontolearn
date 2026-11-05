@@ -30,6 +30,7 @@ from owlapy.class_expression import (
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 from ontolearn.utils.static_funcs import compute_f1_score
 import json
+from owlapy import owl_expression_to_dl
 import numpy as np
 import pandas as pd
 
@@ -642,6 +643,28 @@ class TestTDLPerformance(unittest.TestCase):
         self.assertGreaterEqual(f1, 0.85)
 
 
+class TestTrainingMatrixSemantics(unittest.TestCase):
+    """Every cell of the feature matrix TDL trains on must agree with the reasoner."""
+
+    def test_inverse_features_agree_with_the_reasoner(self):
+        # Regression test: with use_inverse the extractor used to add the column "∀ r⁻.⊤" next to "∃ r⁻.⊤" and set it
+        # for exactly the individuals that have a predecessor. But "∀ r⁻.⊤" is a tautology, so the matrix said False
+        # where the reasoner says True (e.g. for individuals without a predecessor), and a split on that column was
+        # read back as the expression Thing (or Nothing).
+        with open('examples/synthetic_problems.json') as f:
+            settings = json.load(f)
+        example = settings['problems']['Uncle']
+        kb = KnowledgeBase(path=settings['data_path'][3:])
+        lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in example['positive_examples']},
+                              neg={OWLNamedIndividual(i) for i in example['negative_examples']})
+        model = TDL(knowledge_base=kb, use_inverse=True, verbose=0, report_classification=False)
+        X, _ = model.create_training_data(lp)
+        disagreeing = [owl_expression_to_dl(c) for c in X.columns
+                       if any((i in set(kb.individuals(c))) != bool(X.loc[i, c]) for i in X.index)]
+        self.assertEqual(disagreeing, [])
+        self.assertTrue(any('⁻' in owl_expression_to_dl(c) for c in X.columns), "no inverse feature was extracted")
+
+
 if __name__ == '__main__':
     unittest.main()
 
@@ -663,3 +686,4 @@ class TestTDLNoInformativeFeatures(unittest.TestCase):
         model.fit(PosNegLPStandard(pos=pos, neg=neg))
         self.assertEqual(model.best_hypotheses(), kb.generator.thing)
         self.assertIsNone(model.clf)
+
