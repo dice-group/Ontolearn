@@ -12,6 +12,15 @@ date) and use that section as the basis for the GitHub release notes.
 ## [Unreleased]
 
 ### Added
+- `TDL(hypothesis_extraction="pruned_leaves", prune_tolerance=0.0)`: the `predicted_leaves` expression derefined on
+  the training examples by reduced-error pruning (`ontolearn.learners.tdl_pruning.prune_rules`; drops literals and
+  whole conjunctions while the training F1 stays within `prune_tolerance`). **Not part of the published,
+  peer-reviewed TDL algorithm**: it is an Ontolearn addition, stated as such in the code and docstrings, opt-in, and
+  the default is unchanged. Evaluated in nested CV on 20 problems (issue #672, after the `∀ r⁻.⊤` fix): with
+  `prune_tolerance=0` the expressions are 1.2x shorter at the geometric mean (38 to 32 characters), their instances
+  are retrieved 1.6x faster (faster on 20/20 problems; Mutagenesis median 3.6 s to 0.3 s with a tuned tolerance
+  and a length penalty), and held-out F1 changes by -0.0006 (Holm p=0.35; non-inferiority was not tested). 18 of
+  the 20 problems are one synthetic KB, so treat the efficiency gain as measured and the "no loss" as unproven.
 - `EvoLearner(selection='lexicase')`: lexicase parent selection (`ontolearn.ea_semantic.lexicase_select`), which
   filters the population on randomly ordered examples and breaks ties toward the shortest tree, so specialists
   that solve different subsets of the examples survive. Every evaluated individual now carries a per-example
