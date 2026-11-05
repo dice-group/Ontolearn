@@ -8,3 +8,5 @@ Raw rows of the TDLForest benchmark (`examples/benchmark_tdl_forest.py`), one JS
 | `d_retrieval_time.jsonl.gz` | tree, tree_t, tree_l, full_rules, pruned_full0, pruned_full_t, pruned_full_l, with `retrieval_time` | `run --workers 8 --configs ...` |
 
 Report: `python examples/benchmark_tdl_forest.py report --out a.jsonl --out b.jsonl --out c.jsonl` (unzip first). `retrieval_time` is in seconds (minimum of 3 warm runs); `length` is the number of characters of the DL rendering.
+
+**Fixed-matrix rerun.** Files a-d predate the fix in #673 (the tautological `∀ r⁻.⊤` column). `e_fixed_matrix_all.jsonl.gz` holds all configurations (with `retrieval_time`) rerun after the fix, with the same seeds and protocol; use it in place of a-d. The conclusions are the same (see the comment on #672).
