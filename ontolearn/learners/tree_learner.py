@@ -34,7 +34,6 @@ from owlapy.class_expression import (
     OWLObjectOneOf,
     OWLObjectHasValue,
     OWLObjectSomeValuesFrom,
-    OWLObjectAllValuesFrom,
     OWLObjectMinCardinality,
     OWLObjectMaxCardinality,
     OWLObjectExactCardinality,
@@ -599,13 +598,9 @@ class TDL:
                         if str_dl_concept not in features:
                             features[str_dl_concept] = inv_exist
 
-                        # Create inverse universal restriction: ∀r⁻.⊤
-                        inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
-                                                         filler=self.knowledge_base.generator.thing)
-                        str_dl_concept = owl_expression_to_dl(inv_univ)
-                        individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
-                        if str_dl_concept not in features:
-                            features[str_dl_concept] = inv_univ
+                        # No universal restriction ∀r⁻.⊤ is added: with the filler ⊤ it is a tautology (it holds for
+                        # every individual, including those without a predecessor), so a column that is 1 only
+                        # for individuals with a predecessor would not describe the expression it is named after.
                         break  # Found at least one, that's enough for the feature
         except Exception as e:
             logger.warning("Error extracting inverse property features for %s: %s", individual, e, exc_info=True)
