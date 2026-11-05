@@ -26,6 +26,13 @@ date) and use that section as the basis for the GitHub release notes.
   if that is shorter). `tests/test_tdl_hypothesis_extraction.py` compares the modes on a synthetic KB.
 
 ### Fixed
+- `TDL` with `use_inverse=True` no longer creates the feature `∀ r⁻.⊤` next to `∃ r⁻.⊤`. With the filler `⊤` it is a
+  tautology (the reasoner returns every individual), but its column was set only for individuals that have a
+  predecessor, so the training matrix disagreed with the reasoner on 123 of 26,752 cells of the Family `Uncle`
+  problem and a split on that column was read back as `⊤` or `⊥`. The column duplicated `∃ r⁻.⊤` and, sorting first
+  by DL string, won ties against it. Learned hypotheses can change: in 5-fold CV on the 18 Family problems 4 of
+  them differ (Cousin 0.822 to 0.777, Grandgrandson 0.899 to 0.882, PersonWithASibling 0.930 to 1.000, Uncle 0.893
+  to 0.906 held-out F1; mean over the 18 problems 0.9647 to 0.9658).
 - `EvoLearner.best_hypotheses(n>1, return_node=True)` (and `return_info=True`) could report the quality, tree
   length and depth of the wrong individual: the deduplicated hypotheses were paired with the non-deduplicated
   population, so a duplicate of the best individual shifted every later hypothesis's reported values. (#669)
