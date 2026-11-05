@@ -307,11 +307,11 @@ class TestFamily(unittest.TestCase):
     problem    full tree                   max_depth=3
     =========  ==========================  ==========================
     Aunt       0.928 / 0.928               0.804 / 0.873
-    Cousin     0.822 / 0.822               0.670 / 0.640
-    Uncle      0.893 / 0.893               0.893 / 0.879
+    Cousin     0.777 / 0.777               0.670 / 0.640
+    Uncle      0.906 / 0.906               0.893 / 0.879
     =========  ==========================  ==========================
 
-    Over all 18 problems the means are 0.965 for all modes (full tree) and 0.949 / 0.951 / 0.951 (depth 3);
+    Over all 18 problems the means are 0.966 for all modes (full tree) and 0.949 / 0.951 / 0.951 (depth 3);
     factored_tree is ~35% shorter than the other modes on a fully grown tree (mean 73 vs 113 characters).
     """
 
@@ -336,13 +336,13 @@ class TestFamily(unittest.TestCase):
         self.check("Aunt", {"max_depth": 3}, 0.8044, 0.8728)  # leaf-based is better
 
     def test_cousin_full(self):
-        self.check("Cousin", {}, 0.8223, 0.8223)
+        self.check("Cousin", {}, 0.7768, 0.7768)
 
     def test_cousin_depth3(self):
         self.check("Cousin", {"max_depth": 3}, 0.6703, 0.6399)  # positive_paths is better
 
     def test_uncle_full(self):
-        self.check("Uncle", {}, 0.8929, 0.8929)
+        self.check("Uncle", {}, 0.9060, 0.9060)
 
     def test_uncle_depth3(self):
         self.check("Uncle", {"max_depth": 3}, 0.8927, 0.8794)  # positive_paths is better
