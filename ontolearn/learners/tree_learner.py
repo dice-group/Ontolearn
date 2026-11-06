@@ -26,6 +26,7 @@ from typing import Dict, Set, Tuple, List, Union, Callable
 import numpy as np
 import pandas as pd
 from ontolearn.verbalizer import verbalize_learner_prediction
+from .tdl_pruning import prune_rules
 from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
@@ -271,7 +272,7 @@ def contains_data_property(expr: OWLClassExpression, include_boolean:bool = Fals
     return found
 
 
-HYPOTHESIS_EXTRACTION_MODES = ("positive_paths", "predicted_leaves", "factored_tree")
+HYPOTHESIS_EXTRACTION_MODES = ("positive_paths", "predicted_leaves", "factored_tree", "pruned_leaves")
 r"""Ways of turning the trained decision tree into one OWL class expression (``TDL(hypothesis_extraction=...)``).
 
 Every split of the tree tests one *binary* feature, i.e. one OWL class expression ``C`` that an individual either
@@ -320,6 +321,16 @@ Worked example. Features ``B``, ``C``; leaves are shown as ``(#positives/#negati
     (e.g. ``¬(¬C ⊓ B)`` instead of a union of three conjunctions). It makes the same predictions as
     ``predicted_leaves``; only the notation is shorter.
 
+``"pruned_leaves"``  (NOT part of the published TDL algorithm)
+    The ``predicted_leaves`` expression, derefined on the training examples by reduced-error pruning
+    (:func:`ontolearn.learners.tdl_pruning.prune_rules`): literals and whole conjunctions are dropped as long as the
+    training F1 does not fall by more than ``prune_tolerance`` (default 0: the training F1 is kept and only
+    redundancy is removed). Example: in the tree above, if every training example that satisfies ``¬C`` is positive
+    whatever ``B`` says, ``¬C ⊓ ¬B`` is shortened to ``¬C``. This is an addition made in Ontolearn after TDL was published. It is
+    not from a peer-reviewed work and has only been evaluated in Ontolearn (issue #672), where it gave expressions
+    about 1.2x shorter at the geometric mean and retrieved about 1.6x faster (``prune_tolerance=0``), with no
+    significant change in held-out F1 (-0.0006, 20 problems). Opt-in; the default mode is unchanged.
+
 Held-out F1 observed in 5-fold cross-validation (see ``tests/test_tdl_hypothesis_extraction.py``)::
 
                                     positive_paths  predicted_leaves  factored_tree
@@ -355,12 +366,15 @@ class TDL:
                  plot_feature_importance: bool = False,
                  verbose: int = 10,
                  verbalize: bool = False,
-                 hypothesis_extraction: str = "positive_paths"):
+                 hypothesis_extraction: str = "positive_paths",
+                 prune_tolerance: float = 0.0):
 
         if hypothesis_extraction not in HYPOTHESIS_EXTRACTION_MODES:
             raise ValueError(f"hypothesis_extraction must be one of {HYPOTHESIS_EXTRACTION_MODES}. "
                              f"Currently: {hypothesis_extraction!r}")
         self.hypothesis_extraction = hypothesis_extraction
+        # Only used by hypothesis_extraction="pruned_leaves" (not part of the published TDL, see HYPOTHESIS_EXTRACTION_MODES)
+        self.prune_tolerance = prune_tolerance
         self.use_inverse = use_inverse
         self.use_data_properties_boolean = use_data_properties_boolean
         self.use_data_properties_string = use_data_properties_string
@@ -709,6 +723,8 @@ class TDL:
             return self._expressions_from_predicted_leaves(X)
         if self.hypothesis_extraction == "factored_tree":
             return [self._factored_expression_from_tree(X)]
+        if self.hypothesis_extraction == "pruned_leaves":
+            return self._expressions_from_pruned_leaves(X, y)
         return self._expressions_from_positive_paths(X, y)
 
     def _tree_feature_expression(self, X: pd.DataFrame, node_id: int) -> OWLClassExpression:
@@ -759,6 +775,30 @@ class TDL:
         visit(0, [])
         # No positive leaf at all: the hypothesis is the empty class.
         return conjunctions if conjunctions else [nothing]
+
+    def _expressions_from_pruned_leaves(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLClassExpression]:
+        """Mode ``pruned_leaves`` (an Ontolearn addition, not part of the published TDL): the positive leaves of the
+        tree as in ``predicted_leaves``, derefined on the training rows with
+        :func:`ontolearn.learners.tdl_pruning.prune_rules` (tolerance ``self.prune_tolerance``)."""
+        tree_ = self.clf.tree_
+        thing, nothing = self.knowledge_base.generator.thing, self.knowledge_base.generator.nothing
+        rules = []
+
+        def visit(node_id: int, path: tuple):
+            if tree_.children_left[node_id] == -1:
+                if self._is_positive_leaf(node_id):
+                    rules.append(path)
+                return
+            feature = int(tree_.feature[node_id])
+            visit(tree_.children_left[node_id], path + ((feature, False),))
+            visit(tree_.children_right[node_id], path + ((feature, True),))
+
+        visit(0, ())
+        if not rules:
+            return [nothing]
+        rules = prune_rules(rules, X.values, np.asarray(y).ravel().astype(int), self.prune_tolerance)
+        return [concepts_reducer([X.columns[c] if holds else X.columns[c].get_object_complement_of() for c, holds in rule],
+                                 OWLObjectIntersectionOf) if rule else thing for rule in rules]
 
     def _factored_expression_from_tree(self, X: pd.DataFrame) -> OWLClassExpression:
         r"""Mode ``factored_tree``: fold the tree into one simplified, nested class expression.

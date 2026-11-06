@@ -36,7 +36,9 @@ from ontolearn.learners.tree_learner import HYPOTHESIS_EXTRACTION_MODES
 from ontolearn.learning_problem import PosNegLPStandard
 
 NS = "http://example.com/tdl#"
-POSITIVE_PATHS, PREDICTED_LEAVES, FACTORED_TREE = HYPOTHESIS_EXTRACTION_MODES
+# The three modes of the published TDL; "pruned_leaves" is an Ontolearn addition with its own tests (test_tdl_pruning.py)
+MODES = HYPOTHESIS_EXTRACTION_MODES[:3]
+POSITIVE_PATHS, PREDICTED_LEAVES, FACTORED_TREE = MODES
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,13 +74,13 @@ def cross_validate(kb, pos, neg, kwargs_classifier=None, folds=5):
     pos, neg = np.array(pos), np.array(neg)
     examples = np.concatenate([pos, neg])
     labels = np.array([1] * len(pos) + [0] * len(neg))
-    scores = {m: [] for m in HYPOTHESIS_EXTRACTION_MODES}
-    sizes = {m: [] for m in HYPOTHESIS_EXTRACTION_MODES}
+    scores = {m: [] for m in MODES}
+    sizes = {m: [] for m in MODES}
     for train, test in StratifiedKFold(folds, shuffle=True, random_state=0).split(examples, labels):
         train_pos, train_neg = examples[train][labels[train] == 1], examples[train][labels[train] == 0]
         test_pos, test_neg = set(examples[test][labels[test] == 1]), set(examples[test][labels[test] == 0])
-        model = fit(kb, train_pos, train_neg, HYPOTHESIS_EXTRACTION_MODES[0], kwargs_classifier)
-        for m in HYPOTHESIS_EXTRACTION_MODES:
+        model = fit(kb, train_pos, train_neg, MODES[0], kwargs_classifier)
+        for m in MODES:
             model.hypothesis_extraction = m
             model._finalize_predictions(model.X, model.y)
             h = model.best_hypotheses()
@@ -226,7 +228,7 @@ class TestSyntheticKB(unittest.TestCase):
 
     def scores(self, **kwargs_classifier):
         out = {m: evaluate(self.kb, self.pos, self.neg, (self.test_pos, self.test_neg), m, kwargs_classifier)
-               for m in HYPOTHESIS_EXTRACTION_MODES}
+               for m in MODES}
         report(f"synthetic KB {kwargs_classifier or 'fully grown tree'}", out)
         return out
 
@@ -268,7 +270,7 @@ class TestSyntheticKB(unittest.TestCase):
             path = os.path.join(d, "kb.owl")
             pos, neg, test_pos, test_neg = write_kb(path, noise=0.0)
             kb = KnowledgeBase(path=path)
-            out = {m: evaluate(kb, pos, neg, (test_pos, test_neg), m) for m in HYPOTHESIS_EXTRACTION_MODES}
+            out = {m: evaluate(kb, pos, neg, (test_pos, test_neg), m) for m in MODES}
             for m in (PREDICTED_LEAVES, FACTORED_TREE):
                 self.assertAlmostEqual(out[m][0], out[POSITIVE_PATHS][0], places=9)
             self.assertLessEqual(out[FACTORED_TREE][1], out[POSITIVE_PATHS][1])
@@ -380,7 +382,7 @@ class TestCarcinogenesis(unittest.TestCase):
     def test_full_tree(self):
         out = cross_validate(self.kb, self.pos, self.neg)
         report("Carcinogenesis full tree", out)
-        for m in HYPOTHESIS_EXTRACTION_MODES:
+        for m in MODES:
             self.assertAlmostEqual(out[m][0], 0.620, places=3)
         self.assertLess(out[FACTORED_TREE][1], 0.5 * out[POSITIVE_PATHS][1])  # 560 vs 1632 characters
 
