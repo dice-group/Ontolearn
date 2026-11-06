@@ -206,16 +206,16 @@ class TDL_refinement(TDL):
             return None
         lb, ub = range_values
         prop_values = np.sort(np.array(data_property_values))
-        # where can maybe be runtime optimized
-        lb_index = np.where(prop_values[np.abs(prop_values - lb).argmin()] == prop_values)
-        ub_index = np.where(prop_values[np.abs(prop_values - ub).argmin()] == prop_values)
-        # if self.verbose>10:
-        logger.debug("lb: %s  ub: %s", lb_index[0][0], ub_index[0][0])
-        if lb_index[0][0] >= ub_index[0][0]:
+        # window = all values v with lb <= v <= ub, including every duplicate of either bound
+        lb_index = np.searchsorted(prop_values, lb, side="left")
+        ub_index = np.searchsorted(prop_values, ub, side="right")
+        window = prop_values[lb_index:ub_index]
+        logger.debug("lb: %s  ub: %s", lb_index, ub_index)
+        if len(np.unique(window)) < 2:
             if self.verbose > 0:
-                logger.warning("Lower bound and upper bound indices are the same. Refinement may not be effective.")
+                logger.warning("Fewer than two distinct values in range [%s, %s]. Refinement may not be effective.", lb, ub)
             return None
-        return self._compute_ranges(prop_values[lb_index[0][0] : ub_index[0][0]])
+        return self._compute_ranges(window)
 
     def _extract_ranges_from_data_properties(
         self,

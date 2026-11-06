@@ -786,6 +786,24 @@ class TestExtractRefinedRanges(unittest.TestCase):
             values, (90.0, 10.0))
         self.assertIsNone(result)
 
+    def test_window_includes_upper_bound_and_duplicates(self):
+        """Values equal to ub (incl. duplicates) are refined; values outside [lb, ub] are not."""
+        model = TDL_refinement(knowledge_base=self.kb, range_strategy="kmeans", n_clusters=5, verbose=0)
+        values = [0.0, 1.0, 1.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0, 9.0]
+        result = model._extract_refined_ranges_from_data_properties(values, (1.0, 4.0))
+        self.assertEqual(result, [(1.0, 1.0), (2.0, 2.0), (3.0, 3.0), (4.0, 4.0)])
+
+    def test_window_with_two_levels_keeps_both(self):
+        model = TDL_refinement(knowledge_base=self.kb, range_strategy="kmeans", n_clusters=5, verbose=0)
+        result = model._extract_refined_ranges_from_data_properties([2.0, 2.0, 7.0, 7.0], (2.0, 7.0))
+        self.assertEqual(result, [(2.0, 2.0), (7.0, 7.0)])
+
+    def test_bounds_between_data_values_do_not_snap_outside(self):
+        """lb/ub that are not data values must not pull in the nearest value outside the range."""
+        model = TDL_refinement(knowledge_base=self.kb, range_strategy="kmeans", n_clusters=5, verbose=0)
+        result = model._extract_refined_ranges_from_data_properties([1.4, 1.6, 1.8, 2.6], (1.5, 2.5))
+        self.assertEqual(result, [(1.6, 1.6), (1.8, 1.8)])
+
 class TestExtractRangesFromDataProperties(unittest.TestCase):
     """Test range extraction"""
  
