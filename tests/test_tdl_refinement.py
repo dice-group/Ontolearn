@@ -714,10 +714,21 @@ class TestComputePdfRanges(unittest.TestCase):
         cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.model = TDL_refinement(knowledge_base=cls.kb, use_data_properties_numeric=True, verbose=0)
  
-    def test_returns_six_ranges_for_normal(self):
+    def test_returns_eight_ranges_for_normal(self):
+        """Six closed mu +- k*sigma buckets plus two open tails."""
         best_dist = {"norm": {"loc": 0.0, "scale": 1.0}}
         ranges = self.model._compute_dt_pdf_ranges(best_dist)
-        self.assertEqual(len(ranges), 6)
+        self.assertEqual(len(ranges), 8)
+
+    def test_open_tails_beyond_three_std(self):
+        """For N(10, 2) the tails are (None, 4] and [16, None)."""
+        best_dist = {"norm": {"loc": 10.0, "scale": 2.0}}
+        ranges = self.model._compute_dt_pdf_ranges(best_dist)
+        lower_tail, upper_tail = ranges[6], ranges[7]
+        self.assertIsNone(lower_tail[0])
+        self.assertAlmostEqual(float(lower_tail[1]), 4.0)
+        self.assertAlmostEqual(float(upper_tail[0]), 16.0)
+        self.assertIsNone(upper_tail[1])
  
     def test_ranges_match_mean_std_of_norm(self):
         """For N(10, 2): mean=10, std=2 with known known interval boundaries."""
@@ -731,7 +742,10 @@ class TestComputePdfRanges(unittest.TestCase):
     def test_each_range_is_lb_ub_tuple(self):
         best_dist = {"norm": {"loc": 0.0, "scale": 1.0}}
         for lb, ub in self.model._compute_dt_pdf_ranges(best_dist):
-            self.assertLess(float(lb), float(ub))
+            # open tails have exactly one unbounded side
+            self.assertFalse(lb is None and ub is None)
+            if lb is not None and ub is not None:
+                self.assertLess(float(lb), float(ub))
  
 
 class TestFindBestDistribution(unittest.TestCase):
@@ -777,7 +791,7 @@ class TestExtractRefinedRanges(unittest.TestCase):
         result = self.model._extract_refined_ranges_from_data_properties(
             values, (80.0, 120.0))
         self.assertIsNotNone(result)
-        self.assertEqual(len(result), 6)
+        self.assertEqual(len(result), 8)
  
     def test_inverted_bounds_return_none(self):
         """lb > ub should hit the collapsed-index warning path."""
@@ -849,17 +863,20 @@ class TestExtractRangesFromDataProperties(unittest.TestCase):
         all_mapped = set().union(*generated.values())
         self.assertIn(self.ind_a, all_mapped)
  
-    def test_out_of_range_individual_gets_no_concept(self):
+    def test_outlier_individual_gets_only_open_upper_tail(self):
         rng = np.random.default_rng(3)
         values = rng.normal(loc=40, scale=1, size=300).tolist()
         data_properties_dict = {self.prop: values}
-        # value ~1000 lies outside mean +- 3*std of N(40, 1)
+        # value ~1000 lies beyond mean + 3*std of N(40, 1), so only the open upper tail [mean + 3*std, inf) matches
         per_individual = {self.ind_a: {self.prop: [1000.0]}}
         features = {}
         mapping = {self.ind_a.str: set()}
         self.model._extract_ranges_from_data_properties(
             features, mapping, data_properties_dict, per_individual)
-        self.assertEqual(len(mapping[self.ind_a.str]), 0)
+        self.assertEqual(len(mapping[self.ind_a.str]), 1)
+        (concept,) = mapping[self.ind_a.str]
+        self.assertIn("≥", concept)
+        self.assertNotIn("≤", concept)
 
 class TestRefineNumericalFeatures(unittest.TestCase):
     """Test refining process"""
