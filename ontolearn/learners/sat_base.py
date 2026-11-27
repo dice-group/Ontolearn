@@ -110,17 +110,17 @@ class SATBaseLearner:
         for cls in self.kb.ontology.classes_in_signature():
             if cls.is_owl_thing() or cls.is_owl_nothing():
                 continue
-            cls_name = cls.iri.get_remainder()
-            if cls_name:
+            cls_iri = cls.iri.as_str()
+            if cls_iri:
                 instances = set(self.reasoner.instances(cls))
-                cn_ext[cls_name] = {self._owl_to_ind[ind] for ind in instances 
-                                    if ind in self._owl_to_ind}
-        
+                cn_ext[cls_iri] = {self._owl_to_ind[ind] for ind in instances
+                                   if ind in self._owl_to_ind}
+
         # Extract role names and their extensions
         rn_ext = {i: set() for i in range(max_ind)}
         for prop in self.kb.ontology.object_properties_in_signature():
-            prop_name = prop.iri.get_remainder()
-            if prop_name:
+            prop_iri = prop.iri.as_str()
+            if prop_iri:
                 for ind in all_individuals:
                     if ind in self._owl_to_ind:
                         ind_idx = self._owl_to_ind[ind]
@@ -128,7 +128,7 @@ class SATBaseLearner:
                         for value in self.reasoner.object_property_values(ind, prop):
                             if value in self._owl_to_ind:
                                 value_idx = self._owl_to_ind[value]
-                                rn_ext[ind_idx].add((value_idx, prop_name))
+                                rn_ext[ind_idx].add((value_idx, prop_iri))
 
         # Create individual name mapping
         indmap = {ind.iri.as_str(): idx for ind, idx in self._owl_to_ind.items()}
@@ -147,54 +147,40 @@ class SATBaseLearner:
     def _structure_to_owl_expression(self, query: Structure) -> OWLClassExpression:
         """
         Convert a Structure query result to an OWL class expression.
-        
+
         Args:
             query: Structure object representing a query/concept.
-            
+
         Returns:
             OWL class expression.
         """
-        # Get base IRI for the ontology
-        onto = self.kb.ontology
-        if hasattr(onto, 'get_ontology_iri'):
-            base_iri = onto.get_ontology_iri().as_str()
-        else:
-            # Fallback: try to extract from any class IRI
-            try:
-                some_class = next(iter(onto.classes_in_signature()))
-                base_iri = some_class.iri.as_str().rsplit('#', 1)[0]
-            except StopIteration:
-                base_iri = "http://example.org/ontology"
-        
         # Build concept expression from query structure
         # Start with the root node (index 0)
-        return self._build_expression_from_query(query, 0, base_iri)
-    
-    def _build_expression_from_query(self, query: Structure, node_idx: int, base_iri: str) -> OWLClassExpression:
+        return self._build_expression_from_query(query, 0)
+
+    def _build_expression_from_query(self, query: Structure, node_idx: int) -> OWLClassExpression:
         """
         Recursively build an OWL expression from a query structure.
-        
+
         Args:
             query: Structure query object.
             node_idx: Current node index in the query.
-            base_iri: Base IRI for the ontology.
-            
+
         Returns:
             OWL class expression for this node.
         """
         # Get concept assertions for this node
         concepts = []
-        for cn_name, cn_inds in query.cn_ext.items():
+        for cn_iri, cn_inds in query.cn_ext.items():
             if node_idx in cn_inds:
-                concept_iri = IRI.create(base_iri + "#" + cn_name)
-                concepts.append(OWLClass(concept_iri))
-        
+                concepts.append(OWLClass(IRI.create(cn_iri)))
+
         # Get role assertions for this node
         role_restrictions = []
         if node_idx in query.rn_ext:
-            for target_idx, role_name in query.rn_ext[node_idx]:
-                prop = OWLObjectProperty(IRI.create(base_iri + "#" + role_name))
-                filler = self._build_expression_from_query(query, target_idx, base_iri)
+            for target_idx, role_iri in query.rn_ext[node_idx]:
+                prop = OWLObjectProperty(IRI.create(role_iri))
+                filler = self._build_expression_from_query(query, target_idx)
                 role_restrictions.append(OWLObjectSomeValuesFrom(prop, filler))
         
         # Combine all parts

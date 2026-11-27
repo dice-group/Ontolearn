@@ -112,18 +112,6 @@ class ALCSAT(SATBaseLearner):
         """
         
         node_label = tree.node[1]
-        
-        # Get base IRI for the ontology
-        onto = self.kb.ontology
-        if hasattr(onto, 'get_ontology_iri'):
-            base_iri = onto.get_ontology_iri().as_str()
-        else:
-            # Fallback: try to extract from any class IRI
-            try:
-                some_class = next(iter(onto.classes_in_signature()))
-                base_iri = some_class.iri.as_str().rsplit('#', 1)[0]
-            except StopIteration:
-                base_iri = "http://example.org/ontology"
 
         # Handle atomic concepts
         if node_label == "TOP":
@@ -132,16 +120,16 @@ class ALCSAT(SATBaseLearner):
             return OWLNothing
         elif node_label.startswith("ex."):
             # Existential restriction
-            role_name = node_label[3:]
-            prop = OWLObjectProperty(IRI.create(base_iri + "#" + role_name))
+            role_iri = node_label[3:]
+            prop = OWLObjectProperty(IRI.create(role_iri))
             if tree.children:
                 filler = self._tree_to_owl_expression(tree.children[0])
                 return OWLObjectSomeValuesFrom(prop, filler)
             return OWLThing
         elif node_label.startswith("all."):
             # Universal restriction
-            role_name = node_label[4:]
-            prop = OWLObjectProperty(IRI.create(base_iri + "#" + role_name))
+            role_iri = node_label[4:]
+            prop = OWLObjectProperty(IRI.create(role_iri))
             if tree.children:
                 filler = self._tree_to_owl_expression(tree.children[0])
                 return OWLObjectAllValuesFrom(prop, filler)
@@ -165,9 +153,8 @@ class ALCSAT(SATBaseLearner):
                 return OWLObjectUnionOf(operands)
             return OWLThing
         else:
-            # Assume it's a concept name
-            concept_iri = IRI.create(base_iri + "#" + node_label)
-            return OWLClass(concept_iri)
+            # Assume it's a concept IRI
+            return OWLClass(IRI.create(node_label))
     
     def fit(self, lp: PosNegLPStandard):
         """
